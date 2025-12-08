@@ -1,0 +1,42 @@
+{
+	"name": "tnxg-blog",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start"
+	},
+	"dependencies": {
+		"@iconify/react": "^6.0.2",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"motion": "^12.23.25",
+		"next": "16.0.7",
+		"next-themes": "^0.4.6",
+		"react": "19.2.0",
+		"react-dom": "19.2.0",
+		"tailwind-merge": "^3.4.0",
+		"tailwindcss-animate": "^1.0.7"
+	},
+	"devDependencies": {
+		"@antfu/eslint-config": "^6.5.1",
+		"@eslint-react/eslint-plugin": "^2.3.12",
+		"@iconify-json/mingcute": "^1.2.5",
+		"@tailwindcss/postcss": "^4",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"@unocss/eslint-plugin": "^66.5.10",
+		"@unocss/preset-wind4": "^66.5.10",
+		"babel-plugin-react-compiler": "1.0.0",
+		"eslint": "^9.39.1",
+		"eslint-plugin-format": "^1.1.0",
+		"eslint-plugin-react-hooks": "^7.0.1",
+		"eslint-plugin-react-refresh": "^0.4.24",
+		"tailwindcss": "^4",
+		"typescript": "^5",
+		"unocss": "^66.5.10",
+		"unplugin-icons": "^22.5.0"
+	}
+}
