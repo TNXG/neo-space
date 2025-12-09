@@ -1,0 +1,14 @@
+[default]
+# Server configuration
+port = 8000
+address = "0.0.0.0"
+
+# Database configuration
+[default.mongodb]
+host = "192.168.3.4"
+port = 27017
+database = "mx-space"
+
+# CORS configuration
+[default.cors]
+allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]

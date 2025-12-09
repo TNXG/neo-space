@@ -1,0 +1,20 @@
+[package]
+name = "tnxg-blog-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json"] }
+mongodb = "3.1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.42", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+rocket_cors = "0.6.0"
+bson = { version = "2.13", features = ["chrono-0_4"] }
+futures = "0.3"
+dotenv = "0.15"
+
+[dependencies.rocket_db_pools]
+version = "0.2.0"
+features = ["mongodb"]
