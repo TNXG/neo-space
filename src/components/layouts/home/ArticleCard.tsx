@@ -1,31 +1,32 @@
-import { IconClock } from "@/components/icons";
-import { GlassCard, Tag } from "@/components/ui";
+import type { Post } from "@/types/api";
+import { AbbreviationText } from "@/components/common/nbnhhsh";
 
 interface ArticleCardProps {
-	title: string;
-	date: string;
-	category: string;
-	readTime: string;
-	onClick?: () => void;
+	article: Post;
 }
 
-export function ArticleCard({ title, date, category, readTime, onClick }: ArticleCardProps) {
+/**
+ * Article card component with two display variants
+ * - Featured: Large card with summary
+ * - List: Compact list item
+ */
+export function ArticleCard({ article }: ArticleCardProps) {
+	const formattedDate = article.created
+		? new Date(article.created).toLocaleDateString("zh-CN", {
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			})
+		: "";
+
 	return (
-		<GlassCard hoverEffect={true} onClick={onClick} className="group flex flex-col h-full">
-			<div className="mb-3 flex items-center justify-between">
-				<Tag label={category} />
-				<span className="text---text-sub text-([10px]) font-mono">{date}</span>
-			</div>
-			<h3 className="group-hover:text---accent text-lg leading-tight font-bold mb-2 transition-colors">
-				{title}
+		<div className="group py-3 border-b border-dashed border-neutral-300 flex cursor-pointer items-baseline justify-between last:border-0">
+			<h3 className="text-lg font-medium transition-colors duration-150 text-primary-500 group-hover:text-accent-600">
+				<AbbreviationText>{article.title}</AbbreviationText>
 			</h3>
-			<p className="text---text-sub text-(xs) leading-relaxed mb-4 line-clamp-2">
-				A brief exploration into the depths of user interface design and how we can improve clarity through reduction.
-			</p>
-			<div className="text---text-sub text-([10px]) font-bold mt-auto flex gap-2 uppercase items-center">
-				<IconClock className="h-2.5 w-2.5" />
-				<span>{readTime}</span>
-			</div>
-		</GlassCard>
+			<span className="text-sm font-mono ml-4 shrink-0 text-neutral-500">
+				{formattedDate}
+			</span>
+		</div>
 	);
 }

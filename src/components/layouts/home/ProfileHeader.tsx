@@ -1,0 +1,106 @@
+import type { User } from "@/types/api";
+import { AbbreviationText } from "@/components/common/nbnhhsh";
+import { SocialLink } from "@/components/ui/SocialLink";
+
+interface ProfileHeaderProps {
+	profile: User;
+}
+
+/**
+ * Homepage profile header section
+ * Displays user avatar, name, bio, intro, and social links
+ */
+export function ProfileHeader({ profile }: ProfileHeaderProps) {
+	return (
+		<header className="animate-fade-in space-y-6">
+			<div className="flex gap-5 items-center">
+				<div className="group rounded-2xl bg-stone-200 h-20 w-20 shadow-sm relative overflow-hidden dark:bg-stone-700">
+					{profile.avatar
+						? (
+								<img
+									src={profile.avatar}
+									alt={profile.name}
+									className="h-full w-full object-cover"
+									onError={(e) => {
+										// Fallback to initial if image fails to load
+										const target = e.target as HTMLImageElement;
+										target.style.display = "none";
+										const fallback = target.nextElementSibling as HTMLElement;
+										if (fallback) {
+											fallback.classList.remove("hidden");
+										}
+									}}
+								/>
+							)
+						: null}
+					{/* Fallback avatar */}
+					<div className={`text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br dark:from-stone-700 dark:to-stone-800 text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
+						{profile.name.charAt(0).toUpperCase()}
+					</div>
+					{/* Status indicator */}
+					<div className="rounded-full flex h-4 w-4 items-center bottom-1 right-1 justify-center absolute bg-neutral-50">
+						<div className="rounded-full bg-teal-500 h-2.5 w-2.5 animate-pulse" />
+					</div>
+				</div>
+				<div>
+					<h1 className="text-3xl tracking-tight font-bold mb-2 text-primary-800">
+						{profile.name}
+					</h1>
+					<p className="text-sm flex gap-2 items-center text-neutral-700">
+						@
+						{profile.username}
+					</p>
+				</div>
+			</div>
+
+			<p className="text-xl leading-relaxed max-w-lg text-neutral-700">
+				<AbbreviationText>{profile.introduce}</AbbreviationText>
+			</p>
+
+			<div className="pt-2 flex gap-5">
+				{profile.social_ids?.github && (
+					<SocialLink
+						icon="mingcute:github-line"
+						href={`https://github.com/${profile.social_ids.github}`}
+						label="GitHub"
+					/>
+				)}
+				{profile.social_ids?.twitter && (
+					<SocialLink
+						icon="mingcute:twitter-line"
+						href={`https://twitter.com/${profile.social_ids.twitter}`}
+						label="Twitter"
+					/>
+				)}
+				{profile.mail && (
+					<SocialLink
+						icon="mingcute:mail-line"
+						href={`mailto:${profile.mail}`}
+						label="Email"
+					/>
+				)}
+				{profile.social_ids?.bilibili && (
+					<SocialLink
+						icon="mingcute:tv-2-line"
+						href={`https://space.bilibili.com/${profile.social_ids.bilibili}`}
+						label="Bilibili"
+					/>
+				)}
+				{profile.url && (
+					<SocialLink
+						icon="mingcute:world-line"
+						href={profile.url}
+						label="Website"
+					/>
+				)}
+				{profile.social_ids?.rss && (
+					<SocialLink
+						icon="mingcute:rss-line"
+						href={profile.social_ids.rss}
+						label="RSS"
+					/>
+				)}
+			</div>
+		</header>
+	);
+}
