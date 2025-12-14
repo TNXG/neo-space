@@ -68,9 +68,13 @@ async fn rocket() -> _ {
             routes::categories::list_categories,
             // Links routes
             routes::links::list_links,
-            // Activities routes
-            routes::activities::list_activities,
             // Recentlies (Moments) routes
             routes::recentlies::list_recentlies,
+            // Users routes
+            routes::users::get_user_profile,
+            routes::users::list_readers,
+            routes::users::get_reader_by_id,
+            // Nbnhhsh routes
+            routes::nbnhhsh::guess,
         ])
 }
