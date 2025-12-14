@@ -6,7 +6,6 @@ const atf = antfu({
 		"node_modules/**",
 	],
 	formatters: true,
-	unocss: true,
 	react: true,
 	stylistic: {
 		indent: "tab",

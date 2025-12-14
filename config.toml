@@ -1,0 +1,264 @@
+# =================================================================
+# |                    配置文件 (config.toml)                     |
+# =================================================================
+#
+# 说明:
+# 1. 此文件包含敏感信息，已添加到 .gitignore
+# 2. 请勿将此文件提交到版本控制系统
+# 3. 部署时可通过 CONFIG_PATH 环境变量指定配置文件路径
+#
+
+# -------------------------------------------------------------
+# 系统模型配置
+# -------------------------------------------------------------
+[system_models.validator]
+api_key = "sk-BKU2RlNwIxPgk0bngwpGJhSN9dhyPSFPhpAj9GmQX9Ic1Zg3"
+base_url = "https://newapi.yumetsuki.moe"
+model = "gemini-2.5-flash"
+# -------------------------------------------------------------
+# 评分模型配置
+# -------------------------------------------------------------
+default_model = 0
+
+[[grading_models]]
+name = "Gemini 3 Pro Preview"
+base_url = "https://newapi.sisuo.de/v1"
+api_key = "sk-s50E2QA6PoLzxO7plci42c5DaeaGbnr3OzVNmOGE2vG8dB70"
+model = "按次-gemini-3-pro-preview"
+description = "代表目前认知智能巅峰的旗舰模型，具备极强的深层语义理解能力，专为深度文学批评与复杂文本重构而生。"
+enabled = true
+premium = true
+features = [
+  "深层叙事逻辑与隐喻分析",
+  "极高复杂度的长文本解构",
+  "大师级的修辞与风格模仿",
+  "精准的情感颗粒度捕捉",
+]
+advantages = [
+  "能够洞察文本背后的潜台词、讽刺意味及深层主旨，提供专家级的文学批评",
+  "在处理小说伏笔、学术论证逻辑或剧本冲突等高难度任务时表现卓越",
+  "极低的幻觉率，确保对专业术语和复杂事实的引用准确无误",
+]
+usageScenario = "适用于全书核心情节梳理、高难度文学润色、深度风格模仿、学术论文逻辑精修等需要极高智力参与的场景。"
+
+[[grading_models]]
+name = "Gemini 2.5 Pro"
+base_url = "https://newapi.sisuo.de/v1"
+api_key = "sk-s50E2QA6PoLzxO7plci42c5DaeaGbnr3OzVNmOGE2vG8dB70"
+model = "按次-gemini-2.5-pro"
+description = "专为专业写作分析打造的增强型模型，在多维度评估与结构化反馈方面表现优异，是深度润色的理想选择。"
+enabled = true
+premium = true
+features = [
+  "稳健的篇章结构分析",
+  "多维度的内容质量评估",
+  "连贯的逻辑推演能力",
+  "丰富的词汇与句式建议",
+]
+advantages = [
+  "擅长从宏观视角评估文章的起承转合，并提供可操作性强的结构调整建议",
+  "能够精准识别写作风格（如严肃、幽默、商务），并提供一致性的优化方案",
+  "相比极速版，它能提供更详尽的修改理由和背景解析，不仅知其然更知其所以然",
+]
+usageScenario = "适用于散文/随笔的深度点评、商务报告的逻辑检查、文章风格的统一性评估以及针对性的修辞优化。"
+
+[[grading_models]]
+name = "Gemini 2.5 Flash"
+base_url = "https://newapi.yumetsuki.moe/v1"
+api_key = "sk-BKU2RlNwIxPgk0bngwpGJhSN9dhyPSFPhpAj9GmQX9Ic1Zg3"
+model = "gemini-2.5-flash"
+description = "专注于极速响应的轻量化模型，能够在毫秒间完成文本扫描，提供即时的流畅度与基础质量反馈。"
+enabled = true
+premium = false
+features = [
+  "毫秒级的文本扫描速度",
+  "高效率的语法与拼写校对",
+  "基础的段落大意概括",
+  "流畅的语言组织能力",
+]
+advantages = [
+  "响应速度极快，特别适合在写作过程中进行即时的灵感捕捉或片段检查",
+  "能够快速识别明显的语病、冗余表达和标点错误，提升初稿的整洁度",
+  "资源占用低，适合处理大批量短文本的快速筛选与分类",
+]
+usageScenario = "适用于初稿的快速通读、段落级别的即时润色、语病纠错、大纲生成以及头脑风暴时的快速灵感扩展。"
+
+[[grading_models]]
+name = "DeepSeek V3"
+base_url = "https://api.deepseek.com"
+api_key = "sk-cae7c27325de4c3dbd535186129b6869"
+model = "deepseek-chat"
+description = "专精于中文语境的深度推理模型，在处理本土化表达、隐喻理解及长文本逻辑方面表现惊人。"
+enabled = true
+premium = false
+features = [
+  "地道的中文语义理解",
+  "强大的逻辑推理内核",
+  "精准的成语与典故分析",
+  "极具“人味”的语言风格",
+]
+advantages = [
+  "在分析中文小说、散文时，能精准捕捉西方模型容易忽略的文化隐喻和语境暗示",
+  "生成的建议非常符合中文写作习惯，减少了“翻译腔”带来的生硬感",
+  "推理能力媲美顶级商业模型，但响应速度和成本控制更为优秀",
+]
+usageScenario = "适用于中文创意写作的深度润色、检查文章是否具有“翻译腔”、成语和修辞的准确性评估以及复杂的逻辑推演。"
+
+[[grading_models]]
+name = "GLM-4.6"
+base_url = "https://open.bigmodel.cn/api/paas/v4/"
+api_key = "c5ae1b5987694da39e0a3ce3e5a80841.pSaGHe5Remm5ezte"
+model = "glm-4.6"
+description = "智谱AI的旗舰级模型，拥有超长的上下文记忆与严谨的逻辑架构能力，特别擅长处理长篇巨著的分析任务。"
+enabled = true
+premium = true
+features = [
+  "超长上下文无损记忆",
+  "宏观叙事结构把控",
+  "复杂指令的高保真执行",
+  "严谨的逻辑推演风格",
+]
+advantages = [
+  "在分析数万字的长篇内容时，依然能保持对开头细节的记忆，不会出现'遗忘'现象",
+  "非常擅长梳理人物关系网、时间线以及复杂的因果逻辑链条",
+  "输出风格偏向理性与结构化，适合做大纲梳理和矛盾检查",
+]
+usageScenario = "适用于长篇小说的人物小传生成、全书情节连贯性检查、剧本杀逻辑复盘以及复杂的学术文献综述。"
+
+[[grading_models]]
+name = "GLM-4.5 Flash"
+base_url = "https://open.bigmodel.cn/api/paas/v4/"
+api_key = "c5ae1b5987694da39e0a3ce3e5a80841.pSaGHe5Remm5ezte"
+model = "glm-4.5-flash"
+description = "兼具速度与长文本处理能力的轻量级模型，能够快速吞吐大量文本并提供精准的摘要与基础分析。"
+enabled = true
+premium = false
+features = [
+  "海量文本的极速吞吐",
+  "优秀的归纳总结能力",
+  "高性价比的分析服务",
+  "稳定的基础指令遵循",
+]
+advantages = [
+  "能够一次性读取并分析超长文档，而无需将文本切分成小块",
+  "在进行资料清洗、风格预判和快速摘要时，效率远超同类模型",
+  "非常适合作为预处理工具，先用它快速扫描，再用高级模型进行精修",
+]
+usageScenario = "适用于参考文献的快速提取、长篇素材的初步筛选、会议记录整理以及海量文本的风格分类。"
+
+[[grading_models]]
+name = "Doubao-Seed-1.6"
+base_url = "https://ark.cn-beijing.volces.com/api/v3/"
+api_key = "88f35f48-f6c0-4593-8b84-36ff382f40e7"
+model = "doubao-seed-1-6-251015"
+description = "豆包系列的新一代主力模型，在长窗口记忆、逻辑推理与拟人化交互方面实现了全面升级，适合处理复杂任务。"
+enabled = true
+premium = true
+features = [
+  "卓越的中文语境理解能力",
+  "强大的长文本逻辑关联",
+  "富有情感的拟人化表达",
+  "精准的任务指令执行",
+]
+advantages = [
+  "在处理复杂逻辑推理和深度内容创作时，表现出极高的连贯性与稳定性",
+  "拥有超大的上下文窗口，能够轻松回顾和理解长篇对话或文档的历史信息",
+  "相比同级别大模型，在中文俚语、文化隐喻的理解上更具优势",
+]
+usageScenario = "适用于深度文章写作、复杂逻辑分析、角色扮演（RP）、代码辅助以及长文档的深度阅读理解。"
+warning = "⚠️ 隐私提示：您输入的文本可能会被模型提供平台收集并用于模型训练和优化。如果您的内容涉及敏感信息或个人隐私，请谨慎使用此模型。"
+
+[[grading_models]]
+name = "Doubao-Seed-1.6 Flash"
+base_url = "https://ark.cn-beijing.volces.com/api/v3/"
+api_key = "88f35f48-f6c0-4593-8b84-36ff382f40e7"
+model = "doubao-seed-1-6-flash-250828"
+description = "追求极致速度与成本效益的轻量化模型，专为高并发、低延迟场景设计，提供流畅的即时响应体验。"
+enabled = true
+premium = false
+features = [
+  "毫秒级的极速首字响应",
+  "极具竞争力的调用成本",
+  "流畅自然的日常对话",
+  "高效的信息筛选能力",
+]
+advantages = [
+  "启动速度极快，特别适合需要即时反馈的实时交互应用",
+  "在保证基础理解能力的前提下，大幅降低了大规模数据处理的成本",
+  "非常适合作为'第一道防线'，用于快速识别意图或过滤无效信息",
+]
+usageScenario = "适用于即时聊天机器人（Chatbot）、实时翻译、简单信息抽取、大量数据的初步分类与标签化。"
+warning = "⚠️ 隐私提示：您输入的文本可能会被模型提供平台收集并用于模型训练和优化。如果您的内容涉及敏感信息或个人隐私，请谨慎使用此模型。"
+
+# -------------------------------------------------------------
+# MongoDB 配置
+# -------------------------------------------------------------
+[mongodb]
+host = "192.168.3.4"
+port = 27017
+# user = "admin"        # 可选，无认证时注释掉å
+# password = "password" # 可选，无认证时注释掉
+
+# -------------------------------------------------------------
+# 爱发电配置
+# -------------------------------------------------------------
+[afdian]
+api_token = "WXMD3mhjGNk4adcPQf5EpR9TY76CSbnF"
+user_id = "01883016939711ea8fd852540025c377"
+client_id = "inkbattles"
+client_secret = "MDE4ODMwMTY5Mzk3MTFlYThmZDg1MjU0MDAyNWMzNzdfaW5rYmF0dGxlcw=="
+redirect_uri = "https://ink-battles.couqie.moe/oauth/afdian/callback"
+
+# -------------------------------------------------------------
+# 内部 API 配置
+# -------------------------------------------------------------
+[api]
+key = "tZKC1cPot7VYJr2rljExyCo+Fx9Yjw=="
+user = 4
+
+# -------------------------------------------------------------
+# 邮件服务配置
+# -------------------------------------------------------------
+[email]
+host = "smtp.exmail.qq.com"
+port = 465
+user = "noreply@rikki.top"
+password = "TyX4ieW8bQncPw7f"
+
+# -------------------------------------------------------------
+# JWT 配置
+# -------------------------------------------------------------
+[jwt]
+secret = "ib-jwt-secret-key"
+
+# -------------------------------------------------------------
+# 注册配置
+# -------------------------------------------------------------
+[registration]
+# 是否启用邀请码注册（启用后注册必须提供有效邀请码）
+invite_code_required = true
+
+# -------------------------------------------------------------
+# 应用配置
+# -------------------------------------------------------------
+[app]
+app_name = "Ink Battles"
+base_url = "https://ink-battles.couqie.moe"
+
+[app.notice]
+enabled = true
+content = "欢迎使用 Ink Battles！请查看最新公告。"
+link = "https://ink-battles.couqie.moe"
+
+# -------------------------------------------------------------
+# 友情链接
+# -------------------------------------------------------------
+[[friends]]
+title = "作家战力分析系统 (梦月版)"
+description = "提供更有趣味的分析结果"
+url = "https://ink-battles.yumetsuki.moe"
+
+[[friends]]
+title = "天翔TNXGの自留地"
+description = "明日尚未到来，希望凝于心上"
+url = "https://tnxg.top"
