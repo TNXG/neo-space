@@ -112,6 +112,11 @@ export interface Recently {
 	refType?: string;
 }
 
+/** 带预渲染内容的 Recently（用于首页） */
+export interface RecentlyWithRendered extends Recently {
+	renderedContent: React.ReactNode;
+}
+
 export interface UserSocialIds {
 	github?: string;
 	bilibili?: string;
@@ -132,7 +137,7 @@ export interface User {
 	url: string;
 	created: string;
 	last_login_time: string;
-	social_ids?: UserSocialIds;
+	socialIds?: UserSocialIds;
 }
 
 export interface Reader {
