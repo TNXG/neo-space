@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize, Serializer};
 use bson::oid::ObjectId;
+use serde::{Deserialize, Serialize, Serializer};
 
 // ============================================================================
 // Serialization Helpers
@@ -33,7 +33,10 @@ where
 }
 
 /// Serialize Option<bson::DateTime> as optional ISO 8601 string
-fn serialize_optional_datetime<S>(dt: &Option<bson::DateTime>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_optional_datetime<S>(
+    dt: &Option<bson::DateTime>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -73,6 +76,7 @@ impl<T> ApiResponse<T> {
         }
     }
 
+    #[allow(unused)]
     pub fn error(code: u16, message: String) -> ApiResponse<()> {
         ApiResponse {
             code,
@@ -176,7 +180,11 @@ pub struct Note {
     pub comments_index: i32,
     #[serde(default)]
     pub password: Option<String>,
-    #[serde(rename = "publicAt", default, serialize_with = "serialize_optional_datetime")]
+    #[serde(
+        rename = "publicAt",
+        default,
+        serialize_with = "serialize_optional_datetime"
+    )]
     pub public_at: Option<bson::DateTime>,
     #[serde(default)]
     pub coordinates: Option<String>,
@@ -228,18 +236,6 @@ pub struct Link {
     #[serde(serialize_with = "serialize_datetime")]
     pub created: bson::DateTime,
     pub email: Option<String>,
-}
-
-/// Activity model
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Activity {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
-    pub id: ObjectId,
-    #[serde(rename = "type")]
-    pub activity_type: i32,
-    pub payload: String,
-    #[serde(serialize_with = "serialize_datetime")]
-    pub created: bson::DateTime,
 }
 
 /// Recently model (Moments)

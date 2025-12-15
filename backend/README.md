@@ -30,10 +30,10 @@ All responses follow this structure:
 
 ```typescript
 interface ApiResponse<T> {
-  code: number;
-  status: "success" | "failed";
-  message: string;
-  data: T;
+	code: number;
+	status: "success" | "failed";
+	message: string;
+	data: T;
 }
 ```
 
