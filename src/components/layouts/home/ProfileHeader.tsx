@@ -58,17 +58,17 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 			</p>
 
 			<div className="pt-2 flex gap-5">
-				{profile.social_ids?.github && (
+				{profile.socialIds?.github && (
 					<SocialLink
 						icon="mingcute:github-line"
-						href={`https://github.com/${profile.social_ids.github}`}
+						href={`https://github.com/${profile.socialIds.github}`}
 						label="GitHub"
 					/>
 				)}
-				{profile.social_ids?.twitter && (
+				{profile.socialIds?.twitter && (
 					<SocialLink
 						icon="mingcute:twitter-line"
-						href={`https://twitter.com/${profile.social_ids.twitter}`}
+						href={`https://twitter.com/${profile.socialIds.twitter}`}
 						label="Twitter"
 					/>
 				)}
@@ -79,11 +79,25 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 						label="Email"
 					/>
 				)}
-				{profile.social_ids?.bilibili && (
+				{profile.socialIds?.bilibili && (
 					<SocialLink
 						icon="mingcute:tv-2-line"
-						href={`https://space.bilibili.com/${profile.social_ids.bilibili}`}
+						href={`https://space.bilibili.com/${profile.socialIds.bilibili}`}
 						label="Bilibili"
+					/>
+				)}
+				{profile.socialIds?.netease && (
+					<SocialLink
+						icon="mingcute:music-line"
+						href={`https://music.163.com/#/user/home?id=${profile.socialIds.netease}`}
+						label="NetEase Music"
+					/>
+				)}
+				{profile.socialIds?.telegram && (
+					<SocialLink
+						icon="mingcute:telegram-line"
+						href={`https://t.me/${profile.socialIds.telegram}`}
+						label="Telegram"
 					/>
 				)}
 				{profile.url && (
@@ -93,10 +107,10 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 						label="Website"
 					/>
 				)}
-				{profile.social_ids?.rss && (
+				{profile.socialIds?.rss && (
 					<SocialLink
 						icon="mingcute:rss-line"
-						href={profile.social_ids.rss}
+						href={profile.socialIds.rss}
 						label="RSS"
 					/>
 				)}

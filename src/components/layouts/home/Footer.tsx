@@ -17,52 +17,6 @@ export function Footer({ user }: FooterProps) {
 			{/* 分隔线 */}
 			<div className="h-px bg-linear-to-r from-transparent via-neutral-300 to-transparent mb-10" />
 
-			{/* 社交链接 */}
-			<div className="flex justify-center items-center gap-2 mb-8">
-				{user.social_ids?.github && (
-					<a
-						href={`https://github.com/${user.social_ids.github}`}
-						className="p-2.5 rounded-full text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label="GitHub"
-					>
-						<Icon icon="mingcute:github-line" className="text-xl" />
-					</a>
-				)}
-				{user.social_ids?.twitter && (
-					<a
-						href={`https://twitter.com/${user.social_ids.twitter}`}
-						className="p-2.5 rounded-full text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label="Twitter"
-					>
-						<Icon icon="mingcute:twitter-line" className="text-xl" />
-					</a>
-				)}
-				{user.social_ids?.mail && (
-					<a
-						href={`mailto:${user.social_ids.mail}`}
-						className="p-2.5 rounded-full text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
-						aria-label="Email"
-					>
-						<Icon icon="mingcute:mail-line" className="text-xl" />
-					</a>
-				)}
-				{user.social_ids?.rss && (
-					<a
-						href={user.social_ids.rss}
-						className="p-2.5 rounded-full text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label="RSS"
-					>
-						<Icon icon="mingcute:rss-line" className="text-xl" />
-					</a>
-				)}
-			</div>
-
 			{/* 底部信息 */}
 			<div className="text-center space-y-2">
 				{/* 版权信息 */}
@@ -81,12 +35,12 @@ export function Footer({ user }: FooterProps) {
 					Powered by
 					{" "}
 					<a
-						href="https://github.com/tnxg/neo-space"
-						className="text-accent/80 hover:text-accent hover:underline underline-offset-2 cursor-pointer transition-colors"
+						href="https://github.com/tnxg/neo-space-space"
+						className="text-accent-800 hover:text-accent-500 underline underline-offset-2 cursor-pointer transition-colors"
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						neo-space
+						Neo-Space
 					</a>
 					<span className="mx-1.5 text-neutral-300">|</span>
 					Built with Next.js & Rocket.rs

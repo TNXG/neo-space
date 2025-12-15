@@ -1,9 +1,9 @@
-import type { Recently } from "@/types/api";
+import type { RecentlyWithRendered } from "@/types/api";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { RecentlyItem } from "./RecentlyItem";
 
 interface RecentlySectionProps {
-	recently: Recently[];
+	recently: RecentlyWithRendered[];
 }
 
 /**

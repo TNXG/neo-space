@@ -1,6 +1,6 @@
 "use client";
 
-import type { Note, Post, Recently, User } from "@/types/api";
+import type { Note, Post, RecentlyWithRendered, User } from "@/types/api";
 import { FloatingNav } from "@/components/common/navigation/FloatingNav";
 import { ArticlesSection } from "./home/ArticlesSection";
 import { Footer } from "./home/Footer";
@@ -12,7 +12,7 @@ interface HomePageProps {
 	profile: User;
 	articles: Post[];
 	notes: Note[];
-	recently: Recently[];
+	recently: RecentlyWithRendered[];
 }
 
 /**
