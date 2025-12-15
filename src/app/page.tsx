@@ -1,3 +1,4 @@
+import { MarkdownPreview } from "@/components/common/markdown";
 import { HomePage } from "@/components/layouts/HomePage";
 import { getNotes, getPosts, getRecently, getUserProfile } from "@/lib/api-client";
 
@@ -25,13 +26,22 @@ export default async function Page() {
 			},
 		})),
 	]);
+
+	// 服务端预渲染碎碎念的 markdown 内容
+	const recentlyWithRendered = recentlyResponse.data.items.map(item => ({
+		...item,
+		renderedContent: item.content
+			? <MarkdownPreview content={item.content} maxLength={200} />
+			: null,
+	}));
+
 	return (
 		<>
 			<HomePage
 				profile={profileResponse.data}
 				articles={postsResponse.data.items}
 				notes={notesResponse.data.items}
-				recently={recentlyResponse.data.items}
+				recently={recentlyWithRendered}
 			/>
 		</>
 	);

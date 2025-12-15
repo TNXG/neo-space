@@ -1,154 +1,113 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
-@theme {
-	/* Primary Scale - 主要品牌色 */
-	--color-primary-50: var(--primary-50);
-	--color-primary-100: var(--primary-100);
-	--color-primary-200: var(--primary-200);
-	--color-primary-300: var(--primary-300);
-	--color-primary-400: var(--primary-400);
-	--color-primary-500: var(--primary-500);
-	--color-primary-600: var(--primary-600);
-	--color-primary-700: var(--primary-700);
-	--color-primary-800: var(--primary-800);
-	--color-primary-900: var(--primary-900);
-	--color-primary-950: var(--primary-950);
-
-	/* Accent Scale - 强调色 */
-	--color-accent-50: var(--accent-50);
-	--color-accent-100: var(--accent-100);
-	--color-accent-200: var(--accent-200);
-	--color-accent-300: var(--accent-300);
-	--color-accent-400: var(--accent-400);
-	--color-accent-500: var(--accent-500);
-	--color-accent-600: var(--accent-600);
-	--color-accent-700: var(--accent-700);
-	--color-accent-800: var(--accent-800);
-	--color-accent-900: var(--accent-900);
-	--color-accent-950: var(--accent-950);
-
-	/* Neutral Scale - 中性色 */
-	--color-neutral-50: var(--neutral-50);
-	--color-neutral-100: var(--neutral-100);
-	--color-neutral-200: var(--neutral-200);
-	--color-neutral-300: var(--neutral-300);
-	--color-neutral-400: var(--neutral-400);
-	--color-neutral-500: var(--neutral-500);
-	--color-neutral-600: var(--neutral-600);
-	--color-neutral-700: var(--neutral-700);
-	--color-neutral-800: var(--neutral-800);
-	--color-neutral-900: var(--neutral-900);
-	--color-neutral-950: var(--neutral-950);
-
-	/* Surface Scale - 表面色 */
-	--color-surface-50: var(--surface-50);
-	--color-surface-100: var(--surface-100);
-	--color-surface-200: var(--surface-200);
-	--color-surface-300: var(--surface-300);
-	--color-surface-400: var(--surface-400);
-	--color-surface-500: var(--surface-500);
-	--color-surface-600: var(--surface-600);
-	--color-surface-700: var(--surface-700);
-	--color-surface-800: var(--surface-800);
-	--color-surface-900: var(--surface-900);
-	--color-surface-950: var(--surface-950);
-
-	/* Shadow Values */
-	--shadow-sm: var(--shadow-sm);
-	--shadow-md: var(--shadow-md);
-	--shadow-glass: var(--shadow-glass);
-}
+@custom-variant dark (&:is(.dark *));
 
 :root {
 	/* =========================================
-	原有配色方案：Stone & Teal (石色与青绿)
-	风格：自然、沉稳、现代极简
+	核心色板定义 (Base Palette)
 	========================================= */
 
-	/*
-	Primary Scale - 主色系 (石色/暖灰)
-	----------------------------------------
-	用途：这是品牌的基础色调。由于它是暖灰色，
-	通常用于主要文本(900-700)、深色背景(900-800)或极简风格的组件边框。
-	相比纯黑，石色能减少视觉疲劳，增加阅读的舒适感。
-	*/
-	--primary-50: #fafaf9; /* 极浅背景 */
-	--primary-100: #f5f5f4; /* 页面背景 */
-	--primary-200: #e7e5e4; /* 次级背景/输入框填充 */
-	--primary-300: #d6d3d1; /* 禁用状态/占位符 */
-	--primary-400: #a8a29e; /* 次要边框/图标 */
-	--primary-500: #78716c; /* 中性文本/强调图标 */
-	--primary-600: #57534e; /* 次要文本 */
-	--primary-700: #44403c; /* 主要文本 */
-	--primary-800: #292524; /* 标题文本 */
-	--primary-900: #1c1917; /* 强对比文本 */
-	--primary-950: #0c0a09; /* 纯黑替代品 */
+	/* Primary Scale - 石色 (Stone) - 用于背景、文本、边框 */
+	--primary-50: #fafaf9;
+	--primary-100: #f5f5f4;
+	--primary-200: #e7e5e4;
+	--primary-300: #d6d3d1;
+	--primary-400: #a8a29e;
+	--primary-500: #78716c;
+	--primary-600: #57534e;
+	--primary-700: #44403c;
+	--primary-800: #292524;
+	--primary-900: #1c1917;
+	--primary-950: #0c0a09;
 
-	/*
-	Accent Scale - 强调色系 (青绿/松石)
-	----------------------------------------
-	用途：用于行动点(Call to Action)、链接、高亮状态和品牌识别元素。
-	青绿色系给人以清新、科技且不失人文关怀的感觉。
-	*/
+	/* Accent Scale - 青绿 (Teal) - 用于品牌色、行动点 */
 	--accent-50: #f0fdfa;
-	--accent-100: #ccfbf1; /* 激活状态背景 */
+	--accent-100: #ccfbf1;
 	--accent-200: #99f6e4;
 	--accent-300: #5eead4;
-	--accent-400: #2dd4bf; /* 聚焦环/装饰性边框 */
-	--accent-500: #14b8a6; /* 主要按钮背景 */
-	--accent-600: #0d9488; /* 按钮悬停状态 */
-	--accent-700: #0f766e; /* 按钮点击状态 */
+	--accent-400: #2dd4bf;
+	--accent-500: #14b8a6;
+	--accent-600: #0d9488;
+	--accent-700: #0f766e;
 	--accent-800: #115e59;
 	--accent-900: #134e4a;
 	--accent-950: #042f2e;
 
-	/*
-	Neutral Scale - 中性色系
-	----------------------------------------
-	用途：构建页面的骨架。用于边框、分割线、卡片背景等。
-	此处与 Primary 相同，但在设计系统中分离变量名是为了
-	未来如果品牌色变更为彩色时，中性色依然保持灰色，互不影响。
-	*/
-	--neutral-50: #fafaf9;
-	--neutral-100: #f5f5f4;
-	--neutral-200: #e7e5e4; /* 常用边框色 */
-	--neutral-300: #d6d3d1;
-	--neutral-400: #a8a29e;
-	--neutral-500: #78716c;
-	--neutral-600: #57534e;
-	--neutral-700: #44403c;
-	--neutral-800: #292524;
-	--neutral-900: #1c1917;
-	--neutral-950: #0c0a09;
-
-	/*
-	Surface Scale - 表面材质色 (带透明度)
-	----------------------------------------
-	用途：用于覆盖在其他元素之上的图层，如模态框(Modal)、
-	浮动导航栏、玻璃拟态(Glassmorphism)效果。
-	透明度逐级递减，50为不透明，950为几乎全透。
-	*/
+	/* Surface Scale - 玻璃拟态/遮罩 */
 	--surface-50: #ffffff;
-	--surface-100: rgba(255, 255, 255, 0.95); /* 导航栏背景 */
+	--surface-100: rgba(255, 255, 255, 0.95);
 	--surface-200: rgba(255, 255, 255, 0.9);
-	--surface-300: rgba(255, 255, 255, 0.8); /* 玻璃卡片 */
-	--surface-400: rgba(255, 255, 255, 0.7);
-	--surface-500: rgba(255, 255, 255, 0.6);
-	--surface-600: rgba(255, 255, 255, 0.5);
-	--surface-700: rgba(255, 255, 255, 0.4);
-	--surface-800: rgba(255, 255, 255, 0.3);
+	--surface-300: rgba(255, 255, 255, 0.8);
 	--surface-900: rgba(255, 255, 255, 0.2);
-	--surface-950: rgba(255, 255, 255, 0.1);
 
-	/* Shadows - 阴影系统 */
+	/* =========================================
+	Shadcn UI 语义映射 (Semantic Mapping)
+	这里将 Shadcn 的逻辑变量绑定到你的颜色系统上
+	========================================= */
+
+	/* 基础背景 */
+	--background: var(--primary-100); /* 页面背景：暖灰 */
+	--foreground: var(--primary-900); /* 页面文字：深灰 */
+
+	/* 卡片与弹窗 */
+	--card: var(--surface-200); /* 玻璃感卡片背景 */
+	--card-foreground: var(--primary-900);
+	--popover: var(--surface-100); /* 弹窗背景 */
+	--popover-foreground: var(--primary-900);
+
+	/* 主色调 (Action) - 映射到青绿 (Accent) */
+	--primary: var(--accent-600); /* 主按钮背景 */
+	--primary-foreground: #ffffff; /* 主按钮文字 */
+
+	/* 次色调 (Muted/Secondary) - 映射到石色 (Stone) */
+	--secondary: var(--primary-200);
+	--secondary-foreground: var(--primary-900);
+	--muted: var(--primary-200); /* 禁用/次要背景 */
+	--muted-foreground: var(--primary-600);
+
+	/* 强调色 (Accent) - 用于 Hover 或选中项 */
+	--accent: var(--accent-100); /* 选中状态背景 */
+	--accent-foreground: var(--accent-900);
+
+	/* 破坏性操作 */
+	--destructive: #ef4444; /* 保持红色警示 */
+	--destructive-foreground: #ffffff;
+
+	/* 边框与输入框 */
+	--border: var(--primary-200); /* 边框颜色 */
+	--input: var(--primary-200); /* 输入框边框 */
+	--ring: var(--accent-400); /* 聚焦光环 */
+
+	/* 圆角与阴影 */
+	--radius: 0.625rem;
 	--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-	--shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08); /* 玻璃质感专用柔光阴影 */
+	--shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+
+	/* 图表颜色 (适配青绿/石色) */
+	--chart-1: var(--accent-600);
+	--chart-2: var(--primary-600);
+	--chart-3: var(--accent-400);
+	--chart-4: var(--primary-400);
+	--chart-5: var(--accent-800);
+
+	/* Sidebar (Shadcn Sidebar组件) */
+	--sidebar-background: var(--primary-50);
+	--sidebar-foreground: var(--primary-900);
+	--sidebar-primary: var(--accent-600);
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: var(--primary-200);
+	--sidebar-accent-foreground: var(--primary-900);
+	--sidebar-border: var(--primary-200);
+	--sidebar-ring: var(--accent-400);
 }
 
-/* 深色模式配置 */
+/* =========================================
+   深色模式配置
+   ========================================= */
 .dark {
-	/* Primary Scale - 反转亮度，保持色相 */
+	/* 核心色板反转 (保持色相，反转亮度) */
 	--primary-50: #0c0a09;
 	--primary-100: #1c1917;
 	--primary-200: #292524;
@@ -161,96 +120,241 @@
 	--primary-900: #f5f5f4;
 	--primary-950: #fafaf9;
 
-	/* Accent Scale - 调整亮度以适应深色背景 */
-	/* 注意：在深色模式下，高亮色通常需要降低亮度以避免刺眼，或者增加亮度以确保对比度 */
+	/* 青绿系微调 - 深色模式下稍微降低亮度以免刺眼 */
 	--accent-50: #042f2e;
 	--accent-100: #134e4a;
 	--accent-200: #115e59;
 	--accent-300: #0f766e;
 	--accent-400: #0d9488;
 	--accent-500: #14b8a6;
-	--accent-600: #2dd4bf;
+	--accent-600: #2dd4bf; /* 稍微提亮以便在深色背景显示 */
 	--accent-700: #5eead4;
 	--accent-800: #99f6e4;
 	--accent-900: #ccfbf1;
 	--accent-950: #f0fdfa;
 
-	/* Neutral Scale - 深色模式反转 */
-	--neutral-50: #0c0a09;
-	--neutral-100: #1c1917;
-	--neutral-200: #292524;
-	--neutral-300: #44403c;
-	--neutral-400: #57534e;
-	--neutral-500: #78716c;
-	--neutral-600: #a8a29e;
-	--neutral-700: #d6d3d1;
-	--neutral-800: #e7e5e4;
-	--neutral-900: #f5f5f4;
-	--neutral-950: #fafaf9;
-
-	/* Surface Scale - 使用深色半透明背景 */
+	/* Surface 反转 */
 	--surface-50: rgba(12, 10, 9, 1);
 	--surface-100: rgba(28, 25, 23, 0.95);
 	--surface-200: rgba(41, 37, 36, 0.9);
 	--surface-300: rgba(68, 64, 60, 0.8);
-	--surface-400: rgba(87, 83, 78, 0.7);
-	--surface-500: rgba(120, 113, 108, 0.6);
-	--surface-600: rgba(168, 162, 158, 0.5);
-	--surface-700: rgba(214, 211, 209, 0.4);
-	--surface-800: rgba(231, 229, 228, 0.3);
 	--surface-900: rgba(245, 245, 244, 0.2);
-	--surface-950: rgba(250, 250, 249, 0.1);
 
-	/* Shadows - 深色模式下阴影需要加深不透明度才能被看见 */
+	/* Shadcn 语义映射 (深色) */
+	--background: var(--primary-50);
+	--foreground: var(--primary-900);
+
+	--card: var(--surface-200);
+	--card-foreground: var(--primary-900);
+	--popover: var(--surface-100);
+	--popover-foreground: var(--primary-900);
+
+	--primary: var(--accent-600);
+	--primary-foreground: #0c0a09; /* 深色背景上的主按钮文字用深色 */
+
+	--secondary: var(--primary-200);
+	--secondary-foreground: var(--primary-900);
+	--muted: var(--primary-200);
+	--muted-foreground: var(--primary-500);
+
+	--accent: var(--accent-200); /* 深色模式下的选中背景 */
+	--accent-foreground: var(--accent-900);
+
+	--destructive: #7f1d1d;
+	--destructive-foreground: #fef2f2;
+
+	--border: var(--primary-200);
+	--input: var(--primary-200);
+	--ring: var(--accent-500);
+
 	--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-	--shadow-glass: none; /* 深色模式通常移除复杂的玻璃光晕，或改为高光边框 */
+	--shadow-glass: none;
+
+	--sidebar-background: var(--primary-100);
+	--sidebar-foreground: var(--primary-900);
+	--sidebar-primary: var(--accent-600);
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: var(--primary-200);
+	--sidebar-accent-foreground: var(--primary-900);
+	--sidebar-border: var(--primary-200);
+	--sidebar-ring: var(--accent-500);
+}
+
+@theme {
+	/*
+	Shadcn UI 语义颜色注册
+	*/
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+
+	--color-sidebar: var(--sidebar-background);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	/*
+	原始色板 (Stone & Teal)
+	*/
+	--color-primary-50: var(--primary-50);
+	--color-primary-100: var(--primary-100);
+	--color-primary-200: var(--primary-200);
+	--color-primary-300: var(--primary-300);
+	--color-primary-400: var(--primary-400);
+	--color-primary-500: var(--primary-500);
+	--color-primary-600: var(--primary-600);
+	--color-primary-700: var(--primary-700);
+	--color-primary-800: var(--primary-800);
+	--color-primary-900: var(--primary-900);
+	--color-primary-950: var(--primary-950);
+
+	--color-accent-50: var(--accent-50);
+	--color-accent-100: var(--accent-100);
+	--color-accent-200: var(--accent-200);
+	--color-accent-300: var(--accent-300);
+	--color-accent-400: var(--accent-400);
+	--color-accent-500: var(--accent-500);
+	--color-accent-600: var(--accent-600);
+	--color-accent-700: var(--accent-700);
+	--color-accent-800: var(--accent-800);
+	--color-accent-900: var(--accent-900);
+	--color-accent-950: var(--accent-950);
+
+	/*
+	修正点：必须显式展开 Neutral 映射
+	(将 Neutral 映射到 Primary/Stone)
+	*/
+	--color-neutral-50: var(--primary-50);
+	--color-neutral-100: var(--primary-100);
+	--color-neutral-200: var(--primary-200);
+	--color-neutral-300: var(--primary-300);
+	--color-neutral-400: var(--primary-400);
+	--color-neutral-500: var(--primary-500);
+	--color-neutral-600: var(--primary-600);
+	--color-neutral-700: var(--primary-700);
+	--color-neutral-800: var(--primary-800);
+	--color-neutral-900: var(--primary-900);
+	--color-neutral-950: var(--primary-950);
+
+	/*
+	修正点：必须显式展开 Surface 映射
+	*/
+	--color-surface-50: var(--surface-50);
+	--color-surface-100: var(--surface-100);
+	--color-surface-200: var(--surface-200);
+	--color-surface-300: var(--surface-300);
+	--color-surface-900: var(--surface-900);
+
+	/* 阴影和圆角 */
+	--shadow-sm: var(--shadow-sm);
+	--shadow-md: var(--shadow-md);
+	--shadow-glass: var(--shadow-glass);
+
+	--radius-lg: var(--radius);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) - 4px);
+	--animate-pulse-ring: pulse-ring 2s ease-out infinite;
+	--animate-pulse-ring-delayed: pulse-ring 2s ease-out infinite 1s;
+
+	--animate-fade-in: fade-in 0.5s ease-out;
+
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	@keyframes pulse-ring {
+		0% {
+			transform: scale(1);
+			opacity: 0.8;
+		}
+		50% {
+			opacity: 0.4;
+		}
+		100% {
+			transform: scale(1.3);
+			opacity: 0;
+		}
+	}
 }
 
 /* ===================================
-   Base Styles
+   Base Styles & Utilities
    =================================== */
 
-* {
-	box-sizing: border-box;
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+		transition:
+			background-color 300ms ease,
+			color 300ms ease;
+	}
+	html {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
 }
 
-html {
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-}
-
-body {
-	background-color: var(--neutral-50);
-	color: var(--primary-900);
-	transition:
-		background-color 300ms ease,
-		color 300ms ease;
-}
-
-/* ===================================
-   Glassmorphism Utilities
-   =================================== */
-
-.glass {
+/* Glassmorphism Utilities */
+@utility glass {
 	background: var(--surface-200);
 	backdrop-filter: blur(8px);
 	-webkit-backdrop-filter: blur(8px);
 }
 
-.glass-card {
-	background: var(--surface-200);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	border: 1px solid var(--neutral-200);
-	border-radius: 16px;
+@utility glass-card {
+	@apply glass rounded-2xl border border-neutral-200;
+	/* 注意：这里复用了上面的 glass utility */
 }
 
-.glass-nav {
+@utility glass-nav {
 	background: rgba(255, 255, 255, 0.85);
 	backdrop-filter: blur(20px) saturate(180%);
 	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 	box-shadow:
 		0 8px 32px rgba(0, 0, 0, 0.12),
 		inset 0 1px 0 rgba(255, 255, 255, 0.6),
@@ -259,94 +363,34 @@ body {
 
 .dark .glass-nav {
 	background: rgba(28, 25, 23, 0.85);
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	box-shadow:
 		0 8px 32px rgba(0, 0, 0, 0.3),
 		inset 0 1px 0 rgba(255, 255, 255, 0.1),
 		inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.glass-tooltip {
-	background: rgba(28, 25, 23, 0.95);
-	color: #fafaf9;
-	backdrop-filter: blur(12px) saturate(150%);
-	-webkit-backdrop-filter: blur(12px) saturate(150%);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	box-shadow:
-		0 4px 16px rgba(0, 0, 0, 0.25),
-		inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* ===================================
-   Animation Utilities
-   =================================== */
-
-@keyframes fade-in {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-.animate-fade-in {
-	animation: fade-in 0.5s ease-out;
-}
-
-/* Pulse ring animation for avatar */
-@keyframes pulse-ring {
-	0% {
-		transform: scale(1);
-		opacity: 0.3;
-	}
-	100% {
-		transform: scale(1.6);
-		opacity: 0;
-	}
-}
-
-.animate-pulse-ring {
-	animation: pulse-ring 2s ease-out infinite;
-}
-
-.animate-pulse-ring-delayed {
-	animation: pulse-ring 2s ease-out infinite 1s;
-}
-
-/* ===================================
-   Custom Scrollbar
-   =================================== */
-
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
-
 ::-webkit-scrollbar-track {
 	background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-	background: var(--neutral-300);
+	background: var(--primary-300);
 	border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--neutral-400);
+	background: var(--primary-400);
 }
 
-/* ===================================
-   Selection
-   =================================== */
-
+/* Selection */
 ::selection {
 	background-color: var(--accent-200);
 	color: var(--primary-900);
 }
-
 .dark ::selection {
 	background-color: var(--accent-300);
 }

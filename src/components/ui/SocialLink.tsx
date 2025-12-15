@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react/offline";
-import type {IconifyIcon} from "@iconify/react/offline" 
+import type {IconifyIcon} from "@iconify/react/offline";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SocialLinkProps {
   icon: string | IconifyIcon;
@@ -8,18 +9,27 @@ interface SocialLinkProps {
 }
 
 /**
- * Social media link component with icon
+ * Social media link component with icon and tooltip
  */
 export function SocialLink({ icon, href, label }: SocialLinkProps) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className="transition-colors duration-150 text-neutral-400"
-    >
-      <Icon icon={icon} className="text-[20px] hover:opacity-70" />
-    </a>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          className="transition-colors duration-150 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+        >
+          <Icon icon={icon} className="text-[20px]" />
+        </a>
+      </TooltipTrigger>
+      {label && (
+        <TooltipContent>
+          <p>{label}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }

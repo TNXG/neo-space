@@ -3,6 +3,7 @@ import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import { IconProvider } from "@/components/common/IconProvider";
 import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { ThemeProvider } from "@/components/common/theme";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
 
@@ -33,10 +34,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						enableSystem
 						disableTransitionOnChange={false}
 					>
-						<NbnhhshProvider>
-							{children}
-							<NbnhhshPanel />
-						</NbnhhshProvider>
+						<TooltipProvider>
+							<NbnhhshProvider>
+								{children}
+								<NbnhhshPanel />
+							</NbnhhshProvider>
+						</TooltipProvider>
 					</ThemeProvider>
 				</IconProvider>
 			</body>

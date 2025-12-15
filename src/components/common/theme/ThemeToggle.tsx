@@ -3,6 +3,11 @@
 import { Icon } from "@iconify/react/offline";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
  * Theme toggle button component
@@ -63,16 +68,18 @@ export function ThemeToggle() {
 	};
 
 	return (
-		<button
-			type="button"
-			onClick={toggleTheme}
-			className="group p-2 rounded-full shrink-0 cursor-pointer transition-colors duration-200 relative hover:bg-accent-100 text-neutral-600"
-			aria-label={`当前: ${themeConfig.label}`}
-		>
-			<Icon icon={themeConfig.icon} className="text-[18px]" />
-			<span className="glass-tooltip text-xs px-2 py-1 rounded opacity-0 pointer-events-none whitespace-nowrap transition-opacity duration-200 left-1/2 absolute group-hover:opacity-100 -translate-x-1/2 -top-10">
-				{themeConfig.label}
-			</span>
-		</button>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					onClick={toggleTheme}
+					className="p-2 rounded-full shrink-0 cursor-pointer transition-colors duration-200 hover:bg-accent-100 text-neutral-600"
+					aria-label={`当前: ${themeConfig.label}`}
+				>
+					<Icon icon={themeConfig.icon} className="text-[18px]" />
+				</button>
+			</TooltipTrigger>
+			<TooltipContent side="top">{themeConfig.label}</TooltipContent>
+		</Tooltip>
 	);
 }

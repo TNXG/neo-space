@@ -4,8 +4,13 @@ import type { User } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItem {
 	id: string;
@@ -39,10 +44,52 @@ interface FloatingNavProps {
  */
 export function FloatingNav({ user }: FloatingNavProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
+	const [isSpinning, setIsSpinning] = useState(false);
 
 	const scrollToTop = useCallback(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, []);
+
+	// Control Back to Top visibility
+	const [showBackToTop, setShowBackToTop] = useState(() => {
+		if (typeof window !== "undefined") {
+			return window.scrollY > 300;
+		}
+		return false;
+	});
+
+	const handleScrollToTopAction = useCallback((e?: React.MouseEvent) => {
+		if (e?.preventDefault)
+			e.preventDefault();
+		// Only spin if we actually have distance to scroll
+		if (window.scrollY > 100) {
+			setIsSpinning(true);
+		}
+		scrollToTop();
+	}, [scrollToTop]);
+
+	// Monitor scroll position
+	const handleScroll = useCallback(() => {
+		const scrollY = window.scrollY;
+		setShowBackToTop(scrollY > 300);
+
+		if (isSpinning && scrollY < 10) {
+			setIsSpinning(false);
+		}
+	}, [isSpinning]);
+
+	useEffect(() => {
+		window.addEventListener("scroll", handleScroll);
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, [handleScroll]);
+
+	// Safety timeout for spinner
+	useEffect(() => {
+		if (!isSpinning)
+			return;
+		const timeoutId = setTimeout(() => setIsSpinning(false), 3000);
+		return () => clearTimeout(timeoutId);
+	}, [isSpinning]);
 
 	// 动态计算展开宽度：基础宽度 + 分隔线(1+24) + 导航按钮总宽度
 	const expandedWidth = COLLAPSED_WIDTH + 25 + NAV_ITEMS.length * NAV_BUTTON_WIDTH + (NAV_ITEMS.length - 1) * NAV_GAP;
@@ -66,6 +113,13 @@ export function FloatingNav({ user }: FloatingNavProps) {
 				<div className="px-3 flex gap-3 items-center">
 					{/* Avatar with pulse hint */}
 					<div className="shrink-0 relative">
+						{/* Pulse ring animation - 外部光环 */}
+						<div
+							className={`absolute inset-0 transition-opacity duration-300 ${isExpanded ? "opacity-0" : "opacity-100"}`}
+						>
+							<div className="absolute inset-[-3px] rounded-full border-2 border-accent-500 animate-pulse-ring" />
+							<div className="absolute inset-[-3px] rounded-full border-2 border-accent-500 animate-pulse-ring-delayed" />
+						</div>
 						{user.avatar
 							? (
 									<img
@@ -79,13 +133,6 @@ export function FloatingNav({ user }: FloatingNavProps) {
 										{user.name.charAt(0).toUpperCase()}
 									</div>
 								)}
-						{/* Pulse rings - 使用 CSS 动画避免闪烁 */}
-						<div
-							className={`absolute inset-0 rounded-full bg-accent-500 z-0 animate-pulse-ring transition-opacity duration-300 ${isExpanded ? "opacity-0" : "opacity-100"}`}
-						/>
-						<div
-							className={`absolute inset-0 rounded-full bg-accent-500 z-0 animate-pulse-ring-delayed transition-opacity duration-300 ${isExpanded ? "opacity-0" : "opacity-100"}`}
-						/>
 					</div>
 
 					{/* Status / Name */}
@@ -109,34 +156,39 @@ export function FloatingNav({ user }: FloatingNavProps) {
 						<div className="border-neutral-300 shrink-0 h-6 w-px bg-current" />
 						<div className="flex gap-1 items-center">
 							{NAV_ITEMS.map((item, index) => (
-								<motion.div
-									key={item.id}
-									initial={{ backgroundColor: "transparent" }}
-									animate={{
-										opacity: isExpanded ? 1 : 0,
-										scale: isExpanded ? 1 : 0.5,
-										backgroundColor: "transparent",
-									}}
-									whileHover={{
-										backgroundColor: "var(--accent-100)",
-									}}
-									transition={{
-										duration: 0.15,
-										delay: isExpanded ? index * 0.03 : 0,
-									}}
-									className="p-2 rounded-full cursor-pointer"
-								>
-									<Link
-										href={item.href}
-										className="text-neutral-600 group block"
-										title={item.title}
-									>
-										<Icon icon={item.icon} className="text-[18px]" />
-										<span className="glass-tooltip text-xs px-2 py-1 rounded opacity-0 pointer-events-none whitespace-nowrap transition-opacity duration-200 left-1/2 absolute group-hover:opacity-100 -translate-x-1/2 -top-10">
-											{item.title}
-										</span>
-									</Link>
-								</motion.div>
+								<Tooltip key={item.id}>
+									<TooltipTrigger asChild>
+										<motion.div
+											initial={{ backgroundColor: "transparent" }}
+											animate={{
+												opacity: isExpanded ? 1 : 0,
+												scale: isExpanded ? 1 : 0.5,
+												backgroundColor: "transparent",
+											}}
+											whileHover={{
+												backgroundColor: "var(--accent-100)",
+											}}
+											transition={{
+												duration: 0.15,
+												delay: isExpanded ? index * 0.03 : 0,
+											}}
+											className="p-2 rounded-full cursor-pointer"
+										>
+											<Link
+												href={item.href}
+												className="text-neutral-600 block"
+												onClick={(e) => {
+													if (item.id === "home") {
+														handleScrollToTopAction(e);
+													}
+												}}
+											>
+												<Icon icon={item.icon} className="text-[18px]" />
+											</Link>
+										</motion.div>
+									</TooltipTrigger>
+									<TooltipContent side="top">{item.title}</TooltipContent>
+								</Tooltip>
 							))}
 						</div>
 					</motion.div>
@@ -145,31 +197,57 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
 			{/* Right Section: Actions (Back to Top + Theme Toggle) */}
 			<motion.div
-				className="glass-nav px-2 rounded-full flex gap-1 h-14 pointer-events-auto items-center"
+				className="glass-nav rounded-full flex h-14 pointer-events-auto items-center overflow-hidden"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 30 }}
 			>
-				{/* Back to Top */}
-				<motion.button
-					type="button"
-					onClick={scrollToTop}
-					className="text-neutral-600 group p-2 rounded-full cursor-pointer relative"
-					initial={{ backgroundColor: "transparent" }}
-					whileHover={{
-						backgroundColor: "var(--accent-100)",
+				{/* Back to Top - Only show when scrolled > 300px */}
+				<motion.div
+					animate={{
+						width: showBackToTop ? "auto" : 0,
+						opacity: showBackToTop ? 1 : 0,
+						scale: showBackToTop ? 1 : 0,
+						paddingLeft: showBackToTop ? 12 : 0,
 					}}
-					transition={{ duration: 0.2 }}
-					aria-label="返回顶部"
+					initial={{ width: 0, opacity: 0, scale: 0, paddingLeft: 0 }}
+					transition={{ duration: 0.3 }}
+					style={{ overflow: "hidden" }}
 				>
-					<Icon icon="mingcute:arrow-up-line" className="text-[18px]" />
-					<span className="glass-tooltip text-xs px-2 py-1 rounded opacity-0 pointer-events-none whitespace-nowrap transition-opacity duration-200 left-1/2 absolute group-hover:opacity-100 -translate-x-1/2 -top-10">
-						返回顶部
-					</span>
-				</motion.button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<motion.button
+								type="button"
+								onClick={handleScrollToTopAction}
+								className="text-neutral-600 p-2 rounded-full cursor-pointer whitespace-nowrap"
+								initial={{ backgroundColor: "transparent" }}
+								whileHover={{
+									backgroundColor: "var(--accent-100)",
+								}}
+								transition={{ duration: 0.2 }}
+								aria-label="返回顶部"
+							>
+								{isSpinning
+									? (
+											<motion.div
+												className="h-[18px] w-[18px] border-2 border-current border-t-transparent rounded-full"
+												animate={{ rotate: 360 }}
+												transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+											/>
+										)
+									: (
+											<Icon icon="mingcute:arrow-up-line" className="text-[18px]" />
+										)}
+							</motion.button>
+						</TooltipTrigger>
+						<TooltipContent side="top">返回顶部</TooltipContent>
+					</Tooltip>
+				</motion.div>
 
 				{/* Theme Toggle */}
-				<ThemeToggle />
+				<div className="px-3">
+					<ThemeToggle />
+				</div>
 			</motion.div>
 		</div>
 	);

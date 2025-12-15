@@ -65,7 +65,7 @@ export function NbnhhshPanel() {
 					<button
 						type="button"
 						onClick={close}
-						className="text-primary-500 hover:text-primary-700 transition-colors text-lg leading-none"
+						className="text-primary-500 hover:text-primary-700 transition-colors text-lg leading-none cursor-pointer"
 						aria-label="关闭"
 					>
 						×
@@ -94,7 +94,7 @@ export function NbnhhshPanel() {
 																{item.trans.map((t) => {
 																	const { main, note } = parseTranslation(t);
 																	return (
-																		<span key={`${item.name}-${main}`} className="text-primary-700 relative inline-block mr-2">
+																		<span key={`${item.name}-${t}`} className="text-primary-700 relative inline-block mr-2">
 																			{main}
 																			{note && (
 																				<sup className="ml-0.5 text-[10px] text-accent-500 bg-accent-100 px-1 rounded">
