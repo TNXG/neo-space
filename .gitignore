@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 db_structure_report.md
+
+.dev-backend.pid
+.dev-frontend.pid
