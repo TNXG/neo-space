@@ -1,5 +1,4 @@
 import type { User } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 
 interface FooterProps {
 	user: User;

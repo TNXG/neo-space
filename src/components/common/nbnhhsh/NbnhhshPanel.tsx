@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react/offline";
 import { useEffect } from "react";
 import { useNbnhhsh } from "./useNbnhhsh";
 
@@ -65,10 +66,10 @@ export function NbnhhshPanel() {
 					<button
 						type="button"
 						onClick={close}
-						className="text-primary-500 hover:text-primary-700 transition-colors text-lg leading-none cursor-pointer"
+						className="text-primary-500 hover:text-primary-700 transition-colors p-1 rounded-md hover:bg-primary-100"
 						aria-label="关闭"
 					>
-						×
+						<Icon icon="mingcute:close-line" className="text-[16px]" />
 					</button>
 				</div>
 
