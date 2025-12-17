@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react/offline";
 import type {IconifyIcon} from "@iconify/react/offline" 
+import Link from "next/link";
 
 interface SectionHeaderProps {
   title: string;
@@ -19,7 +20,7 @@ export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeader
         {title}
       </h2>
       {linkText && linkHref && (
-        <a
+        <Link
           href={linkHref}
           className="group text-sm flex gap-1 transition-colors duration-150 items-center text-neutral-700"
         >
@@ -28,7 +29,7 @@ export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeader
             icon={icon}
             className="text-[14px] opacity-0 transition-opacity duration-150 -ml-1 group-hover:ml-0 group-hover:opacity-100"
           />
-        </a>
+        </Link>
       )}
     </div>
   );

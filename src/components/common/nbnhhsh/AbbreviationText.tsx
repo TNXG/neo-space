@@ -80,7 +80,11 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 			}
 
 			// 使用 Fragment 包裹，避免返回数组导致某些父级报错
-			return <Fragment key={`frag-${text.slice(0, 10)}`}>{parts}</Fragment>;
+			// 使用文本内容的前后部分和长度来确保唯一性，避免哈希冲突
+			const textKey = text.length > 20 
+				? `${text.slice(0, 10)}...${text.slice(-10)}-${text.length}`
+				: `${text}-${text.length}`;
+			return <Fragment key={`frag-${textKey}`}>{parts}</Fragment>;
 		},
 		[handleClick],
 	);
