@@ -45,6 +45,8 @@ interface FloatingNavProps {
 export function FloatingNav({ user }: FloatingNavProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isSpinning, setIsSpinning] = useState(false);
+	const [readingProgress, setReadingProgress] = useState(0);
+	const [animationProgress, setAnimationProgress] = useState(0);
 
 	const scrollToTop = useCallback(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
@@ -64,17 +66,27 @@ export function FloatingNav({ user }: FloatingNavProps) {
 		// Only spin if we actually have distance to scroll
 		if (window.scrollY > 100) {
 			setIsSpinning(true);
+			setAnimationProgress(readingProgress); // 开始动画时记录当前进度
 		}
 		scrollToTop();
-	}, [scrollToTop]);
+	}, [scrollToTop, readingProgress]);
 
-	// Monitor scroll position
+	// Monitor scroll position and calculate reading progress
 	const handleScroll = useCallback(() => {
 		const scrollY = window.scrollY;
-		setShowBackToTop(scrollY > 300);
+		const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+		const progress = documentHeight > 0 ? (scrollY / documentHeight) * 100 : 0;
 
-		if (isSpinning && scrollY < 10) {
-			setIsSpinning(false);
+		setShowBackToTop(scrollY > 300);
+		setReadingProgress(Math.min(progress, 100));
+
+		// 如果正在执行返回顶部动画，更新动画进度
+		if (isSpinning) {
+			setAnimationProgress(Math.min(progress, 100));
+			if (scrollY < 10) {
+				setIsSpinning(false);
+				setAnimationProgress(0);
+			}
 		}
 	}, [isSpinning]);
 
@@ -219,28 +231,77 @@ export function FloatingNav({ user }: FloatingNavProps) {
 							<motion.button
 								type="button"
 								onClick={handleScrollToTopAction}
-								className="text-neutral-600 p-2 rounded-full cursor-pointer whitespace-nowrap"
+								className="text-neutral-600 rounded-full cursor-pointer whitespace-nowrap relative w-10 h-10 flex items-center justify-center"
 								initial={{ backgroundColor: "transparent" }}
 								whileHover={{
 									backgroundColor: "var(--accent-100)",
 								}}
 								transition={{ duration: 0.2 }}
-								aria-label="返回顶部"
+								aria-label={`返回顶部 (${Math.round(isSpinning ? animationProgress : readingProgress)}%)`}
 							>
-								{isSpinning
-									? (
-											<motion.div
-												className="h-[18px] w-[18px] border-2 border-current border-t-transparent rounded-full"
-												animate={{ rotate: 360 }}
-												transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-											/>
-										)
-									: (
-											<Icon icon="mingcute:arrow-up-line" className="text-[18px]" />
-										)}
+								{/* 进度圈背景 */}
+								<svg
+									className="absolute inset-0 w-full h-full -rotate-90"
+									viewBox="0 0 36 36"
+								>
+									{/* 背景圈 */}
+									<circle
+										cx="18"
+										cy="18"
+										r="16"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+										opacity="0.1"
+									/>
+									{/* 进度圈 */}
+									<motion.circle
+										cx="18"
+										cy="18"
+										r="16"
+										fill="none"
+										stroke={
+											(isSpinning ? animationProgress : readingProgress) >= 95
+												? "var(--accent-400)"
+												: "var(--accent-500)"
+										}
+										strokeWidth="2"
+										strokeLinecap="round"
+										strokeDasharray="100.53"
+										initial={{ strokeDashoffset: 100.53 }}
+										animate={{
+											strokeDashoffset: isSpinning
+												? 100.53 - (animationProgress / 100) * 100.53
+												: 100.53 - (readingProgress / 100) * 100.53,
+										}}
+										transition={{
+											duration: 0.3,
+											ease: "easeOut",
+										}}
+									/>
+								</svg>
+
+								{/* 图标 */}
+								<div className="relative z-10">
+									{isSpinning
+										? (
+												<motion.div
+													className="h-[18px] w-[18px] border-2 border-current border-t-transparent rounded-full"
+													animate={{ rotate: 360 }}
+													transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+												/>
+											)
+										: (
+												<Icon icon="mingcute:arrow-up-line" className="text-[18px]" />
+											)}
+								</div>
 							</motion.button>
 						</TooltipTrigger>
-						<TooltipContent side="top">返回顶部</TooltipContent>
+						<TooltipContent side="top">
+							返回顶部 (
+							{Math.round(isSpinning ? animationProgress : readingProgress)}
+							%)
+						</TooltipContent>
 					</Tooltip>
 				</motion.div>
 

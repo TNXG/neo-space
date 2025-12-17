@@ -143,6 +143,9 @@
 	--surface-300: rgba(68, 64, 60, 0.8);
 	--surface-900: rgba(245, 245, 244, 0.2);
 
+	/* Glass 暗色模式 - 比背景稍亮，形成层次感 */
+	--bg-glass: oklch(22% 0.005 60 / 0.9);
+
 	/* Shadcn 语义映射 (深色) */
 	--background: var(--primary-50);
 	--foreground: var(--primary-900);
@@ -365,7 +368,7 @@
 }
 
 @utility glass-card {
-	@apply glass rounded-2xl border border-neutral-200;
+	@apply glass rounded-2xl border border-border;
 	/* 注意：这里复用了上面的 glass utility */
 }
 

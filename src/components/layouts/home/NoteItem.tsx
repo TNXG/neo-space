@@ -24,6 +24,7 @@ export function NoteItem({ note }: NoteItemProps) {
 			{note.created && (
 				<SmartDate
 					date={note.created}
+					modifiedDate={note.modified}
 					className="text-xs font-mono text-neutral-500 ml-3 shrink-0"
 				/>
 			)}

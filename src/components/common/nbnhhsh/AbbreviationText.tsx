@@ -61,7 +61,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 							// 3. Key 策略：使用内容+偏移量，确保绝对唯一且稳定
 							key={`abbr-${token.value}-${tokenStart}`}
 							onClick={e => handleClick(e, token.value)}
-							className="border-b border-dashed border-accent-500 cursor-pointer hover:text-accent-600 hover:border-accent-600 transition-colors relative z-10"
+							className="border-b border-dashed border-primary cursor-pointer hover:text-primary hover:border-primary/80 transition-colors relative z-10"
 							title="点击查询缩写含义"
 						>
 							{token.value}
@@ -81,7 +81,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 
 			// 使用 Fragment 包裹，避免返回数组导致某些父级报错
 			// 使用文本内容的前后部分和长度来确保唯一性，避免哈希冲突
-			const textKey = text.length > 20 
+			const textKey = text.length > 20
 				? `${text.slice(0, 10)}...${text.slice(-10)}-${text.length}`
 				: `${text}-${text.length}`;
 			return <Fragment key={`frag-${textKey}`}>{parts}</Fragment>;

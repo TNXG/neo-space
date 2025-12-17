@@ -23,22 +23,22 @@ interface MarkdownRendererProps {
 
 const components: Components = {
 	h1: ({ children }) => (
-		<h1 className="scroll-mt-24 text-3xl md:text-4xl font-extrabold tracking-tight text-primary-900 dark:text-primary-50 mt-10 mb-6 first:mt-0">
+		<h1 className="scroll-mt-24 text-3xl md:text-4xl font-extrabold tracking-tight text-primary-900 mt-10 mb-6 first:mt-0">
 			{children}
 		</h1>
 	),
 	h2: ({ children }) => (
-		<h2 className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 dark:text-primary-100 mt-12 mb-5 pb-2 border-b border-primary-200/50 dark:border-primary-800/50">
+		<h2 className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 dark:border-primary-800/50">
 			{children}
 		</h2>
 	),
 	h3: ({ children }) => (
-		<h3 className="scroll-mt-24 text-xl md:text-2xl font-semibold text-primary-800 dark:text-primary-200 mt-8 mb-4">
+		<h3 className="scroll-mt-24 text-xl md:text-2xl font-semibold text-primary-800 mt-8 mb-4">
 			{children}
 		</h3>
 	),
 	h4: ({ children }) => (
-		<h4 className="scroll-mt-24 text-lg md:text-xl font-semibold text-primary-800 dark:text-primary-200 mt-6 mb-3">
+		<h4 className="scroll-mt-24 text-lg md:text-xl font-semibold text-primary-800 mt-6 mb-3">
 			{children}
 		</h4>
 	),
@@ -60,7 +60,7 @@ const components: Components = {
 		}
 
 		return (
-			<p className="text-base md:text-lg leading-relaxed text-primary-700 dark:text-primary-300 mb-6 last:mb-0">
+			<p className="text-base md:text-lg leading-relaxed text-primary-700 mb-6 last:mb-0">
 				{children}
 			</p>
 		);
@@ -72,7 +72,7 @@ const components: Components = {
 		return (
 			<a
 				href={href}
-				className="inline-flex items-center gap-0.5 font-medium text-accent-600 dark:text-accent-400 decoration-accent-300/50 underline-offset-4 hover:underline hover:text-accent-700 dark:hover:text-accent-300 transition-colors cursor-pointer"
+				className="inline-flex items-center gap-0.5 font-medium text-accent-600 decoration-accent-300/50 underline-offset-4 hover:underline hover:text-accent-700 transition-colors cursor-pointer"
 				target={isInternal ? "_self" : "_blank"}
 				rel={isInternal ? undefined : "noopener noreferrer"}
 			>
@@ -84,12 +84,12 @@ const components: Components = {
 
 	// 列表：增加左侧 padding，调整 marker 颜色
 	ul: ({ children }) => (
-		<ul className="list-disc list-outside ml-6 mb-6 space-y-2 text-primary-700 dark:text-primary-300 marker:text-accent-500/70">
+		<ul className="list-disc list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500/70">
 			{children}
 		</ul>
 	),
 	ol: ({ children }) => (
-		<ol className="list-decimal list-outside ml-6 mb-6 space-y-2 text-primary-700 dark:text-primary-300 marker:text-accent-500 font-medium">
+		<ol className="list-decimal list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500 font-medium">
 			{children}
 		</ol>
 	),
@@ -99,7 +99,7 @@ const components: Components = {
 
 	// 引用块：应用 Glassmorphism 风格，左侧 Accent 强调线
 	blockquote: ({ children }) => (
-		<blockquote className="relative my-8 pl-6 py-4 pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 dark:bg-surface-200/10 backdrop-blur-sm italic text-primary-600 dark:text-primary-400 shadow-sm">
+		<blockquote className="relative my-8 pl-6 py-4 pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm">
 			{children}
 		</blockquote>
 	),
@@ -109,7 +109,7 @@ const components: Components = {
 		const isInline = !className;
 		if (isInline) {
 			return (
-				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-sm font-mono bg-primary-100 dark:bg-primary-800/50 text-accent-700 dark:text-accent-300 border border-primary-200/50 dark:border-primary-700/30 align-middle">
+				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-sm font-mono bg-primary-100 text-accent-700 border border-primary-200/50 align-middle">
 					{children}
 				</code>
 			);
@@ -123,7 +123,7 @@ const components: Components = {
 		<div className="relative my-8 group">
 			<pre
 				{...props}
-				className="overflow-x-auto rounded-2xl border border-primary-200 dark:border-primary-800 bg-[#0d1117] p-5 text-sm leading-6 shadow-md dark:shadow-none scrollbar-thin scrollbar-thumb-primary-700 scrollbar-track-transparent"
+				className="overflow-x-auto rounded-2xl border border-primary-200 bg-[#0d1117] p-5 text-sm leading-6 shadow-md scrollbar-thin scrollbar-thumb-primary-700 scrollbar-track-transparent"
 			>
 				{children}
 			</pre>
@@ -135,26 +135,26 @@ const components: Components = {
 		<img
 			src={src}
 			alt={alt}
-			className="rounded-2xl border border-primary-200 dark:border-primary-800 shadow-md dark:shadow-black/30 w-full h-auto max-h-[800px] object-cover bg-primary-50 dark:bg-primary-900 my-4"
+			className="rounded-2xl border border-primary-200 shadow-md w-full h-auto max-h-[800px] object-cover bg-primary-50 my-4"
 			loading="lazy"
 		/>
 	),
 
 	// 表格：容器滚动，边框风格
 	table: ({ children }) => (
-		<div className="my-8 w-full overflow-x-auto rounded-xl border border-primary-200 dark:border-primary-800 shadow-sm">
-			<table className="min-w-full divide-y divide-primary-200 dark:divide-primary-800 text-left text-sm">
+		<div className="my-8 w-full overflow-x-auto rounded-xl border border-primary-200 shadow-sm">
+			<table className="min-w-full divide-y divide-primary-200 text-left text-sm">
 				{children}
 			</table>
 		</div>
 	),
 	thead: ({ children }) => (
-		<thead className="bg-primary-50 dark:bg-primary-900/50 font-semibold text-primary-900 dark:text-primary-100">
+		<thead className="bg-primary-50 font-semibold text-primary-900 dark:text-primary-100">
 			{children}
 		</thead>
 	),
 	tbody: ({ children }) => (
-		<tbody className="divide-y divide-primary-200 dark:divide-primary-800 bg-transparent">
+		<tbody className="divide-y divide-primary-200 bg-transparent">
 			{children}
 		</tbody>
 	),
@@ -169,14 +169,14 @@ const components: Components = {
 		</th>
 	),
 	td: ({ children }) => (
-		<td className="px-4 py-3 text-primary-700 dark:text-primary-300 align-top whitespace-normal leading-relaxed">
+		<td className="px-4 py-3 text-primary-700 align-top whitespace-normal leading-relaxed">
 			{children}
 		</td>
 	),
 
 	// 分割线：虚线，弱化视觉
 	hr: () => (
-		<hr className="my-12 border-dashed border-primary-200 dark:border-primary-800 w-1/2 mx-auto" />
+		<hr className="my-12 border-dashed border-primary-200 w-1/2 mx-auto" />
 	),
 
 	// 自定义组件保持不变

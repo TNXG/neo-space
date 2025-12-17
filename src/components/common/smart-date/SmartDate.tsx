@@ -18,8 +18,10 @@ import { cn } from "@/lib/utils";
 export type DateDisplayMode = "auto" | "absolute" | "relative";
 
 export interface SmartDateProps {
-	/** 日期值 - 支持 Date、ISO 字符串或时间戳 */
+	/** 创建日期 - 支持 Date、ISO 字符串或时间戳 */
 	date: Date | string | number;
+	/** 修改日期 - 可选，如果提供则优先显示修改时间 */
+	modifiedDate?: Date | string | number;
 	/** 显示模式：auto（自动切换）、absolute（强制绝对时间）、relative（强制相对时间） */
 	mode?: DateDisplayMode;
 	/** 相对时间阈值（天数），默认 7 天 */
@@ -47,6 +49,7 @@ export interface SmartDateProps {
  */
 export function SmartDate({
 	date,
+	modifiedDate,
 	mode = "auto",
 	threshold = 7,
 	prefix,
@@ -54,39 +57,62 @@ export function SmartDate({
 	className,
 	showTooltip = true,
 }: SmartDateProps) {
-	const { displayText, fullDateTime, isoString } = useMemo(() => {
-		const parsedDate
-			= typeof date === "string"
-				? new Date(date)
-				: date instanceof Date
-					? date
-					: new Date(date);
+	const { displayText, tooltipContent, isoString } = useMemo(() => {
+		// 优先使用修改时间，如果没有则使用创建时间
+		const displayDate = modifiedDate || date;
 
-		const iso = parsedDate.toISOString();
-		const full = getFullDateTime(date);
+		const parsedDisplayDate
+			= typeof displayDate === "string"
+				? new Date(displayDate)
+				: displayDate instanceof Date
+					? displayDate
+					: new Date(displayDate);
+
+		const iso = parsedDisplayDate.toISOString();
+		const createdFull = getFullDateTime(date);
 
 		let text: string;
 		switch (mode) {
 			case "absolute":
-				text = formatSmartDate(date);
+				text = formatSmartDate(displayDate);
 				break;
 			case "relative":
-				text = getRelativeTime(date);
+				text = getRelativeTime(displayDate);
 				break;
 			case "auto":
 			default:
-				text = shouldShowRelative(date, threshold)
-					? getRelativeTime(date)
-					: formatSmartDate(date);
+				text = shouldShowRelative(displayDate, threshold)
+					? getRelativeTime(displayDate)
+					: formatSmartDate(displayDate);
 				break;
+		}
+
+		// 构建 tooltip 内容
+		let tooltip: React.ReactNode;
+		if (modifiedDate) {
+			const modifiedFull = getFullDateTime(modifiedDate);
+			tooltip = (
+				<div className="flex flex-col gap-1 text-xs">
+					<div>
+						创建于:
+						{createdFull}
+					</div>
+					<div>
+						修改于:
+						{modifiedFull}
+					</div>
+				</div>
+			);
+		} else {
+			tooltip = createdFull;
 		}
 
 		return {
 			displayText: text,
-			fullDateTime: full,
+			tooltipContent: tooltip,
 			isoString: iso,
 		};
-	}, [date, mode, threshold]);
+	}, [date, modifiedDate, mode, threshold]);
 
 	const timeElement = (
 		<time
@@ -110,7 +136,7 @@ export function SmartDate({
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>{timeElement}</TooltipTrigger>
-			<TooltipContent side="top">{fullDateTime}</TooltipContent>
+			<TooltipContent side="top">{tooltipContent}</TooltipContent>
 		</Tooltip>
 	);
 }

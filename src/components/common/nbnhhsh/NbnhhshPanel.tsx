@@ -62,11 +62,11 @@ export function NbnhhshPanel() {
 				style={position ? { left: position.x, top: position.y } : undefined}
 			>
 				<div className="flex items-center justify-between mb-3">
-					<h3 className="text-sm font-medium text-primary-800">能不能好好说话</h3>
+					<h3 className="text-sm font-medium text-foreground">能不能好好说话</h3>
 					<button
 						type="button"
 						onClick={close}
-						className="text-primary-500 hover:text-primary-700 transition-colors p-1 rounded-md hover:bg-primary-100"
+						className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
 						aria-label="关闭"
 					>
 						<Icon icon="mingcute:close-line" className="text-[16px]" />
@@ -76,29 +76,29 @@ export function NbnhhshPanel() {
 				{isLoading
 					? (
 							<div className="flex items-center justify-center py-4">
-								<div className="w-5 h-5 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+								<div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
 							</div>
 						)
 					: results.length === 0
 						? (
-								<p className="text-sm text-primary-500">暂无翻译结果</p>
+								<p className="text-sm text-muted-foreground">暂无翻译结果</p>
 							)
 						: (
 								<>
 									<ul className="space-y-3">
 										{results.map(item => (
 											<li key={item.name} className="text-sm">
-												<span className="font-mono text-accent-600 font-medium">{item.name}</span>
+												<span className="font-mono text-primary font-medium">{item.name}</span>
 												{item.trans && item.trans.length > 0
 													? (
 															<div className="mt-1 space-y-1">
 																{item.trans.map((t) => {
 																	const { main, note } = parseTranslation(t);
 																	return (
-																		<span key={`${item.name}-${t}`} className="text-primary-700 relative inline-block mr-2">
+																		<span key={`${item.name}-${t}`} className="text-foreground relative inline-block mr-2">
 																			{main}
 																			{note && (
-																				<sup className="ml-0.5 text-[10px] text-accent-500 bg-accent-100 px-1 rounded">
+																				<sup className="ml-0.5 text-[10px] text-primary bg-accent px-1 rounded">
 																					{note}
 																				</sup>
 																			)}
@@ -109,25 +109,25 @@ export function NbnhhshPanel() {
 														)
 													: item.inputting && item.inputting.length > 0
 														? (
-																<p className="text-primary-500 mt-1 italic">
+																<p className="text-muted-foreground mt-1 italic">
 																	可能是：
 																	{item.inputting.slice(0, 5).join("、")}
 																</p>
 															)
 														: (
-																<p className="text-primary-400 mt-1">未找到翻译</p>
+																<p className="text-muted-foreground mt-1">未找到翻译</p>
 															)}
 											</li>
 										))}
 									</ul>
-									<p className="mt-3 pt-2 border-t border-primary-200 text-xs text-primary-400">
+									<p className="mt-3 pt-2 border-t border-border text-xs text-muted-foreground">
 										以上为 API 提供的可能含义
 										<span className="mx-1">·</span>
 										<a
 											href="https://lab.magiconch.com/nbnhhsh/"
 											target="_blank"
 											rel="noopener noreferrer"
-											className="text-accent-500 hover:text-accent-600 underline"
+											className="text-primary hover:text-primary/80 underline"
 										>
 											补充含义
 										</a>

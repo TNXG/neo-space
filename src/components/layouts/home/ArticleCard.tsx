@@ -24,6 +24,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
 			{article.created && (
 				<SmartDate
 					date={article.created}
+					modifiedDate={article.modified}
 					className="text-sm font-mono shrink-0 text-neutral-500"
 				/>
 			)}
