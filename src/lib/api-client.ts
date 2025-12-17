@@ -1,4 +1,4 @@
-import type { ApiResponse, Category, Link, Note, PaginatedResponse, Post, Reader, Recently, User } from "@/types/api";
+import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, User } from "@/types/api";
 import process from "node:process";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -38,6 +38,13 @@ export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
 }
 
 /**
+ * Pages API
+ */
+export async function getPageBySlug(slug: string): Promise<ApiResponse<Page>> {
+	return apiClient<ApiResponse<Page>>(`/pages/${slug}`);
+}
+
+/**
  * Notes API
  */
 export async function getNotes(page = 1, size = 10): Promise<PaginatedResponse<Note>> {
@@ -46,6 +53,10 @@ export async function getNotes(page = 1, size = 10): Promise<PaginatedResponse<N
 
 export async function getNoteById(id: string): Promise<ApiResponse<Note>> {
 	return apiClient<ApiResponse<Note>>(`/notes/${id}`);
+}
+
+export async function getNoteByNid(nid: number): Promise<ApiResponse<Note>> {
+	return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}`);
 }
 
 /**
