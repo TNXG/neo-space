@@ -4,7 +4,7 @@ use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use std::str::FromStr;
 
-use crate::models::{Post, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
+use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
 
 /// List published posts with pagination
 #[get("/posts?<page>&<size>")]
@@ -12,12 +12,13 @@ pub async fn list_posts(
     db: &State<Database>,
     page: Option<i64>,
     size: Option<i64>,
-) -> Result<Json<PaginatedResponse<Post>>, Status> {
+) -> Result<Json<PaginatedResponse<PostWithCategory>>, Status> {
     let page = page.unwrap_or(1).max(1);
     let size = size.unwrap_or(10).clamp(1, 100);
     let skip = (page - 1) * size;
 
-    let collection = db.collection::<Post>("posts");
+    let posts_collection = db.collection::<Post>("posts");
+    let categories_collection = db.collection::<Category>("categories");
     
     // Query only published posts, sorted by creation date (newest first)
     let filter = doc! { "isPublished": true };
@@ -28,25 +29,36 @@ pub async fn list_posts(
         .build();
 
     // Get total count
-    let total = collection.count_documents(filter.clone()).await
+    let total = posts_collection.count_documents(filter.clone()).await
         .map_err(|e| {
             eprintln!("Error counting posts: {:?}", e);
             Status::InternalServerError
         })?;
 
     // Fetch posts
-    let mut cursor = collection.find(filter).with_options(find_options).await
+    let mut cursor = posts_collection.find(filter).with_options(find_options).await
         .map_err(|e| {
             eprintln!("Error finding posts: {:?}", e);
             Status::InternalServerError
         })?;
 
     let mut items = Vec::new();
-    while let Some(result) = cursor.try_next().await.map_err(|e| {
+    while let Some(post) = cursor.try_next().await.map_err(|e| {
         eprintln!("Error iterating posts cursor: {:?}", e);
         Status::InternalServerError
     })? {
-        items.push(result);
+        // Fetch category information
+        let category = categories_collection
+            .find_one(doc! { "_id": post.category_id })
+            .await
+            .map_err(|e| {
+                eprintln!("Error finding category: {:?}", e);
+                Status::InternalServerError
+            })?;
+
+        let mut post_with_category = PostWithCategory::from(post);
+        post_with_category.category = category;
+        items.push(post_with_category);
     }
 
     let total_page = (total as f64 / size as f64).ceil() as i64;
@@ -67,15 +79,26 @@ pub async fn list_posts(
 pub async fn get_post_by_id(
     db: &State<Database>,
     id: String,
-) -> Result<Json<ApiResponse<Post>>, Status> {
+) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
     let object_id = ObjectId::from_str(&id).map_err(|_| Status::BadRequest)?;
     
-    let collection = db.collection::<Post>("posts");
-    let post = collection.find_one(doc! { "_id": object_id, "isPublished": true }).await
+    let posts_collection = db.collection::<Post>("posts");
+    let categories_collection = db.collection::<Category>("categories");
+    
+    let post = posts_collection.find_one(doc! { "_id": object_id, "isPublished": true }).await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
-    Ok(Json(ApiResponse::success(post)))
+    // Fetch category information
+    let category = categories_collection
+        .find_one(doc! { "_id": post.category_id })
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let mut post_with_category = PostWithCategory::from(post);
+    post_with_category.category = category;
+
+    Ok(Json(ApiResponse::success(post_with_category)))
 }
 
 /// Get post by slug
@@ -83,11 +106,22 @@ pub async fn get_post_by_id(
 pub async fn get_post_by_slug(
     db: &State<Database>,
     slug: String,
-) -> Result<Json<ApiResponse<Post>>, Status> {
-    let collection = db.collection::<Post>("posts");
-    let post = collection.find_one(doc! { "slug": slug, "isPublished": true }).await
+) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
+    let posts_collection = db.collection::<Post>("posts");
+    let categories_collection = db.collection::<Category>("categories");
+    
+    let post = posts_collection.find_one(doc! { "slug": slug, "isPublished": true }).await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
-    Ok(Json(ApiResponse::success(post)))
+    // Fetch category information
+    let category = categories_collection
+        .find_one(doc! { "_id": post.category_id })
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let mut post_with_category = PostWithCategory::from(post);
+    post_with_category.category = category;
+
+    Ok(Json(ApiResponse::success(post_with_category)))
 }

@@ -77,3 +77,17 @@ pub async fn get_note_by_id(
 
     Ok(Json(ApiResponse::success(note)))
 }
+
+/// Get note by numeric ID (nid)
+#[get("/notes/nid/<nid>")]
+pub async fn get_note_by_nid(
+    db: &State<Database>,
+    nid: i32,
+) -> Result<Json<ApiResponse<Note>>, Status> {
+    let collection = db.collection::<Note>("notes");
+    let note = collection.find_one(doc! { "nid": nid, "isPublished": true }).await
+        .map_err(|_| Status::InternalServerError)?
+        .ok_or(Status::NotFound)?;
+
+    Ok(Json(ApiResponse::success(note)))
+}
