@@ -35,6 +35,7 @@ export interface Post {
 	text: string;
 	slug: string;
 	categoryId: string;
+	category?: Category;
 	summary?: string;
 	tags: string[];
 	created: string;
@@ -150,4 +151,14 @@ export interface Reader {
 	email_verified?: boolean;
 	created_at: string;
 	updated_at: string;
+}
+
+export interface Page {
+	_id: string;
+	title: string;
+	text: string;
+	slug: string;
+	created: string;
+	allowComment: boolean;
+	commentsIndex: number;
 }
