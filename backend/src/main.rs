@@ -64,6 +64,7 @@ async fn rocket() -> _ {
             // Notes routes
             routes::notes::list_notes,
             routes::notes::get_note_by_id,
+            routes::notes::get_note_by_nid,
             // Categories routes
             routes::categories::list_categories,
             // Links routes
@@ -76,5 +77,7 @@ async fn rocket() -> _ {
             routes::users::get_reader_by_id,
             // Nbnhhsh routes
             routes::nbnhhsh::guess,
+            // Pages routes
+            routes::pages::get_page_by_slug,
         ])
 }

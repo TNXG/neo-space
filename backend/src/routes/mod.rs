@@ -5,3 +5,4 @@ pub mod links;
 pub mod recentlies;
 pub mod users;
 pub mod nbnhhsh;
+pub mod pages;
