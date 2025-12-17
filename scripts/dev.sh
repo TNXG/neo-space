@@ -15,6 +15,19 @@ cd "$PROJECT_ROOT"
 FRONTEND_PID_FILE="$PROJECT_ROOT/.dev-frontend.pid"
 BACKEND_PID_FILE="$PROJECT_ROOT/.dev-backend.pid"
 
+
+# 启动前清理端口占用
+kill_ports() {
+    echo -e "${YELLOW}检查并清理端口占用 (3000, 8000)...${NC}"
+    PIDS=$(lsof -ti:3000,8000)
+    if [ -n "$PIDS" ]; then
+        echo -e "${BLUE}发现占用端口的进程，正在终止: $PIDS${NC}"
+        kill -9 $PIDS 2>/dev/null
+    else
+        echo -e "${GREEN}端口空闲，无需处理${NC}"
+    fi
+}
+
 # 清理函数
 cleanup() {
     echo -e "\n${YELLOW}正在停止开发服务...${NC}"
@@ -93,6 +106,8 @@ install_deps() {
 # 启动服务函数
 start_services() {
     echo -e "${BLUE}启动开发服务...${NC}"
+
+    kill_ports
     
     # 检查 pnpm
     if ! check_command pnpm; then

@@ -41,6 +41,9 @@
 	--surface-300: rgba(255, 255, 255, 0.8);
 	--surface-900: rgba(255, 255, 255, 0.2);
 
+	/* AGANT.md Glass Spec */
+	--bg-glass: oklch(95% 0.01 240 / 0.8);
+
 	/* =========================================
 	Shadcn UI 语义映射 (Semantic Mapping)
 	这里将 Shadcn 的逻辑变量绑定到你的颜色系统上
@@ -340,9 +343,25 @@
 
 /* Glassmorphism Utilities */
 @utility glass {
-	background: var(--surface-200);
+	background: var(--bg-glass);
 	backdrop-filter: blur(8px);
 	-webkit-backdrop-filter: blur(8px);
+}
+
+@utility toc-scrollbar {
+	&::-webkit-scrollbar {
+		width: 4px;
+	}
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	&::-webkit-scrollbar-thumb {
+		background: var(--primary-300);
+		border-radius: 20px;
+	}
+	&::-webkit-scrollbar-thumb:hover {
+		background: var(--primary-400);
+	}
 }
 
 @utility glass-card {
@@ -393,4 +412,29 @@
 }
 .dark ::selection {
 	background-color: var(--accent-300);
+}
+/* Spoiler styles */
+.spoiler {
+	background-color: var(--primary-800);
+	color: var(--primary-800);
+	border-radius: 4px;
+	padding: 2px 4px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+}
+
+.spoiler:hover {
+	background-color: var(--primary-700);
+	color: var(--primary-100);
+}
+
+.dark .spoiler {
+	background-color: var(--primary-200);
+	color: var(--primary-200);
+}
+
+.dark .spoiler:hover {
+	background-color: var(--primary-300);
+	color: var(--primary-900);
 }

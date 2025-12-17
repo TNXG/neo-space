@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import { IconProvider } from "@/components/common/IconProvider";
+import { FloatingNav } from "@/components/common/navigation/FloatingNav";
 import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { ThemeProvider } from "@/components/common/theme";
+import { Footer } from "@/components/layouts/Footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getUserProfile } from "@/lib/api-client";
 
 import "./globals.css";
 
@@ -23,7 +26,22 @@ export const metadata: Metadata = {
 	description: "Personal blog powered by Next.js",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+	// 获取用户数据用于 Footer
+	const profileResponse = await getUserProfile().catch(() => ({
+		data: {
+			_id: "",
+			username: "guest",
+			name: "访客用户",
+			introduce: "欢迎来到我的博客",
+			avatar: "/default-avatar.png",
+			mail: "",
+			url: "",
+			created: new Date().toISOString(),
+			last_login_time: new Date().toISOString(),
+		},
+	}));
+
 	return (
 		<html lang="zh-CN" suppressHydrationWarning>
 			<body className={`${notoSans.variable}  ${jetbrainsMono.variable} selection:bg-accent-500/30 selection:text-primary-900 font-sans flex flex-col min-h-screen`}>
@@ -36,7 +54,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					>
 						<TooltipProvider>
 							<NbnhhshProvider>
-								{children}
+								<div className="flex flex-col min-h-screen">
+									<main className="flex-1">
+										{children}
+									</main>
+									<Footer user={profileResponse.data} />
+									<FloatingNav user={profileResponse.data} />
+								</div>
 								<NbnhhshPanel />
 							</NbnhhshProvider>
 						</TooltipProvider>
