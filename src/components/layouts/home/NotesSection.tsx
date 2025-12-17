@@ -19,12 +19,10 @@ export function NotesSection({ notes }: NotesSectionProps) {
 				linkText="更多记录"
 				linkHref="#"
 			/>
-			<div className="p-6 border border-neutral-200 rounded-xl shadow-sm bg-surface-50">
-				<div className="flex flex-col gap-1">
-					{notes.map(note => (
-						<NoteItem key={note._id} note={note} />
-					))}
-				</div>
+			<div className="flex flex-col gap-1">
+				{notes.map(note => (
+					<NoteItem key={note._id} note={note} />
+				))}
 			</div>
 		</section>
 	);

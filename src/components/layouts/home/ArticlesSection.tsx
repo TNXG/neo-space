@@ -17,7 +17,7 @@ export function ArticlesSection({ articles }: ArticlesSectionProps) {
 				title="文章"
 				icon="mingcute:book-2-line"
 				linkText="阅读全部"
-				linkHref="#"
+				linkHref="/posts"
 			/>
 			<div className="space-y-4">
 				{articles.map(article => (
