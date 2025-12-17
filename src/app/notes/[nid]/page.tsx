@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
+import { ArticleLayout, NoteHeader } from "@/components/layouts/article";
 import { getNoteByNid } from "@/lib/api-client";
+import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 60;
 
@@ -36,47 +38,30 @@ export default async function NotePage({ params }: PageProps) {
 		notFound();
 
 	let note;
+	let toc;
 	try {
 		const { data } = await getNoteByNid(nidNum);
 		note = data;
+		toc = await extractTOC(note.text);
 	} catch {
 		notFound();
 	}
 
 	return (
-		<main className="container mx-auto px-4 py-8 max-w-4xl">
-			<article>
-				<header className="mb-8 border-b border-gray-200 dark:border-gray-700 pb-8">
-					<h1 className="text-4xl font-bold bg-linear-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
-						{note.title}
-					</h1>
-					<div className="flex flex-wrap gap-4 text-sm text-gray-500">
-						<span>
-							记录于
-							{new Date(note.created).toLocaleDateString()}
-						</span>
-						{note.weather && (
-							<span>
-								天气:
-								{note.weather}
-							</span>
-						)}
-						{note.mood && (
-							<span>
-								心情:
-								{note.mood}
-							</span>
-						)}
-						{note.location && (
-							<span>
-								地点:
-								{note.location}
-							</span>
-						)}
-					</div>
-				</header>
-				<MarkdownRenderer content={note.text} />
-			</article>
-		</main>
+		<ArticleLayout
+			toc={toc}
+			header={(
+				<NoteHeader
+					title={note.title}
+					nid={note.nid}
+					created={note.created}
+					modified={note.modified}
+					mood={note.mood}
+					weather={note.weather}
+					location={note.location}
+				/>
+			)}
+			content={<MarkdownRenderer content={note.text} />}
+		/>
 	);
 }

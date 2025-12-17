@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
+import { Toaster } from "sonner";
 import { IconProvider } from "@/components/common/IconProvider";
 import { FloatingNav } from "@/components/common/navigation/FloatingNav";
 import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
@@ -62,6 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 									<FloatingNav user={profileResponse.data} />
 								</div>
 								<NbnhhshPanel />
+								<Toaster richColors position="top-center" />
 							</NbnhhshProvider>
 						</TooltipProvider>
 					</ThemeProvider>
