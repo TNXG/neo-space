@@ -105,7 +105,7 @@ pub async fn get_post_by_id(
 #[get("/posts/slug/<slug>")]
 pub async fn get_post_by_slug(
     db: &State<Database>,
-    slug: String,
+    slug: &str,
 ) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
     let posts_collection = db.collection::<Post>("posts");
     let categories_collection = db.collection::<Category>("categories");
