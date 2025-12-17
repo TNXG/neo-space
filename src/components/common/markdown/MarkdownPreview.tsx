@@ -1,6 +1,7 @@
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
@@ -73,7 +74,10 @@ export async function MarkdownPreview({
 		<span className="text-primary-500 **:text-inherit">
 			<ReactMarkdown
 				remarkPlugins={[remarkGfm, remarkBreaks]}
-				rehypePlugins={[rehypeRaw]}
+				rehypePlugins={[
+					rehypeRaw,
+					rehypeSanitize,
+				]}
 				components={previewComponents}
 			>
 				{truncated}
