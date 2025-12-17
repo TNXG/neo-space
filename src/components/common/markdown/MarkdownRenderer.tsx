@@ -7,6 +7,8 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { ClientOnlyScript } from "./components/ClientOnlyScript";
 import { ClientOnlySpan } from "./components/ClientOnlySpan";
+import { CodeBlock } from "./components/CodeBlock";
+import { EnhancedHeading } from "./components/EnhancedHeading";
 import { ImageFigure } from "./components/ImageFigure";
 import { Spoiler } from "./components/Spoiler";
 import { getHighlighter } from "./highlighter";
@@ -22,25 +24,41 @@ interface MarkdownRendererProps {
 } // 可选：用于外部链接图标
 
 const components: Components = {
-	h1: ({ children }) => (
-		<h1 className="scroll-mt-24 text-3xl md:text-4xl font-extrabold tracking-tight text-primary-900 mt-10 mb-6 first:mt-0">
+	h1: ({ children, id }) => (
+		<EnhancedHeading
+			id={id}
+			level={1}
+			className="scroll-mt-24 text-3xl md:text-4xl font-extrabold tracking-tight text-primary-900 mt-10 mb-6 first:mt-0"
+		>
 			{children}
-		</h1>
+		</EnhancedHeading>
 	),
-	h2: ({ children }) => (
-		<h2 className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 dark:border-primary-800/50">
+	h2: ({ children, id }) => (
+		<EnhancedHeading
+			id={id}
+			level={2}
+			className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 dark:border-primary-800/50"
+		>
 			{children}
-		</h2>
+		</EnhancedHeading>
 	),
-	h3: ({ children }) => (
-		<h3 className="scroll-mt-24 text-xl md:text-2xl font-semibold text-primary-800 mt-8 mb-4">
+	h3: ({ children, id }) => (
+		<EnhancedHeading
+			id={id}
+			level={3}
+			className="scroll-mt-24 text-xl md:text-2xl font-semibold text-primary-800 mt-8 mb-4"
+		>
 			{children}
-		</h3>
+		</EnhancedHeading>
 	),
-	h4: ({ children }) => (
-		<h4 className="scroll-mt-24 text-lg md:text-xl font-semibold text-primary-800 mt-6 mb-3">
+	h4: ({ children, id }) => (
+		<EnhancedHeading
+			id={id}
+			level={4}
+			className="scroll-mt-24 text-lg md:text-xl font-semibold text-primary-800 mt-6 mb-3"
+		>
 			{children}
-		</h4>
+		</EnhancedHeading>
 	),
 
 	// 正文：行高 1.6 (leading-relaxed)，对比度 > 4.5:1
@@ -77,7 +95,6 @@ const components: Components = {
 				rel={isInternal ? undefined : "noopener noreferrer"}
 			>
 				{children}
-				{/* 如果需要外部链接图标，可以在这里加 */}
 			</a>
 		);
 	},
@@ -109,26 +126,46 @@ const components: Components = {
 		const isInline = !className;
 		if (isInline) {
 			return (
-				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-sm font-mono bg-primary-100 text-accent-700 border border-primary-200/50 align-middle">
+				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-base font-mono align-middle">
 					{children}
 				</code>
 			);
 		}
-		// 块级代码的实际内容由 Shiki 处理，这里只处理容器
+		// 块级代码完全由 Shiki 处理，保留其 className
 		return <code className={className}>{children}</code>;
 	},
 
-	// 代码块容器：大圆角，深色背景，内部滚动
-	pre: ({ children, ...props }) => (
-		<div className="relative my-8 group">
-			<pre
-				{...props}
-				className="overflow-x-auto rounded-2xl border border-primary-200 bg-[#0d1117] p-5 text-sm leading-6 shadow-md scrollbar-thin scrollbar-thumb-primary-700 scrollbar-track-transparent"
-			>
+	// 代码块容器：macOS 风格窗口，Shiki 负责高亮
+	pre: ({ children, className: preClassName }) => {
+		// 从 code 元素的 className 中提取语言信息
+		// Shiki 会将语言信息添加到 code 元素的 className 中，格式为 "language-xxx"
+		let language: string | undefined;
+
+		// 尝试多种方式提取语言信息
+		if (children && typeof children === "object" && "props" in children) {
+			const childProps = (children as { props?: { "className"?: string; "data-language"?: string } }).props;
+
+			// 方式1: 从 className 提取
+			const codeClassName = childProps?.className;
+			if (typeof codeClassName === "string") {
+				const match = codeClassName.match(/language-(\w+)/);
+				if (match?.[1]) {
+					language = match[1];
+				}
+			}
+
+			// 方式2: 从 data-language 属性提取（Shiki 可能使用这个）
+			if (!language && childProps?.["data-language"]) {
+				language = childProps["data-language"];
+			}
+		}
+
+		return (
+			<CodeBlock className={preClassName} language={language}>
 				{children}
-			</pre>
-		</div>
-	),
+			</CodeBlock>
+		);
+	},
 
 	// 图片：大圆角，阴影，响应式
 	img: ({ src, alt }) => (
@@ -197,19 +234,35 @@ const components: Components = {
 /**
  * SSR Markdown 渲染组件
  */
-export async function MarkdownRenderer({
-	content,
-	className = "",
-}: MarkdownRendererProps) {
-	const highlighter = await getHighlighter();
+export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+	// 1. 预扫描：提取 Markdown 中用到的所有代码块语言
+	const usedLanguages = new Set<string>();
+	// 正则匹配 ```lang 格式
+	const codeBlockRegex = /```(\w+)/g;
+	let match = codeBlockRegex.exec(content);
+	while (match !== null) {
+		if (match[1])
+			usedLanguages.add(match[1].toLowerCase());
+		match = codeBlockRegex.exec(content);
+	}
+	const highlighter = await getHighlighter(Array.from(usedLanguages));
 	const rehypePlugins: any[] = [
 		rehypeRaw,
 		rehypeSlug,
-		[rehypeShikiFromHighlighter, highlighter, { theme: "github-dark-default" }],
+		[
+			rehypeShikiFromHighlighter,
+			highlighter,
+			{
+				themes: {
+					light: "light-plus",
+					dark: "dark-plus",
+				},
+				addLanguageClass: true,
+			},
+		],
 	];
-
 	return (
-		<div className={className}>
+		<div className={`markdown-body ${className}`}>
 			<ReactMarkdown
 				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
 				rehypePlugins={rehypePlugins}
