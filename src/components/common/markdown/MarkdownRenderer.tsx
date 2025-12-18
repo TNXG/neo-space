@@ -38,6 +38,38 @@ const isTextOnlyContent = (node: ReactNode): boolean => {
 	return true;
 };
 
+const flattenNodeToArray = (node: ReactNode): ReactNode[] => {
+	if (node === null || node === undefined || typeof node === "boolean")
+		return [];
+	if (Array.isArray(node))
+		return node.reduce<ReactNode[]>((acc, child) => acc.concat(flattenNodeToArray(child)), []);
+	return [node];
+};
+
+const getStandaloneImageProps = (
+	node: ReactNode,
+): { src: string; alt?: string } | null => {
+	const nodes = flattenNodeToArray(node).filter((child) => {
+		if (child === null || child === undefined || typeof child === "boolean")
+			return false;
+		if (typeof child === "string")
+			return child.trim().length > 0;
+		return true;
+	});
+
+	if (nodes.length !== 1)
+		return null;
+
+	const onlyChild = nodes[0];
+	if (isValidElement(onlyChild) && onlyChild.type === "img") {
+		const { src, alt } = (onlyChild.props ?? {}) as { src?: string; alt?: string };
+		if (typeof src === "string" && src.length > 0) {
+			return { src, alt };
+		}
+	}
+	return null;
+};
+
 const components: Components = {
 	h1: ({ children, id }) => (
 		<EnhancedHeading
@@ -78,18 +110,9 @@ const components: Components = {
 
 	// 正文：行高 1.6 (leading-relaxed)，对比度 > 4.5:1
 	p: ({ children }) => {
-		// 检查是否只包含一个图片元素
-		if (
-			Array.isArray(children)
-			&& children.length === 1
-			&& typeof children[0] === "object"
-			&& children[0]
-			&& "type" in children[0]
-			&& children[0].type === "img"
-		) {
-			// 如果段落只包含一个图片，使用 ImageFigure 组件
-			const imgProps = children[0].props;
-			return <ImageFigure src={imgProps.src} alt={imgProps.alt} />;
+		const standaloneImage = getStandaloneImageProps(children);
+		if (standaloneImage) {
+			return <ImageFigure src={standaloneImage.src} alt={standaloneImage.alt} />;
 		}
 
 		const isTextOnly = isTextOnlyContent(children);
@@ -148,14 +171,10 @@ const components: Components = {
 				</code>
 			);
 		}
-		// 块级代码完全由 Shiki 处理，保留其 className
 		return <code className={className}>{children}</code>;
 	},
 
-	// 代码块容器：macOS 风格窗口，Shiki 负责高亮
 	pre: ({ children, className: preClassName }) => {
-		// 从 code 元素的 className 中提取语言信息
-		// Shiki 会将语言信息添加到 code 元素的 className 中，格式为 "language-xxx"
 		let language: string | undefined;
 
 		// 尝试多种方式提取语言信息

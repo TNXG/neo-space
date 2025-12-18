@@ -1,22 +1,26 @@
+"use client";
+
 interface ImageFigureProps {
-	src?: string;
+	src: string;
 	alt?: string;
 }
 
 export function ImageFigure({ src, alt }: ImageFigureProps) {
 	return (
-		<figure className="my-8 flex flex-col items-center">
-			<img
-				src={src}
-				alt={alt}
-				className="rounded-2xl border border-primary-200 dark:border-primary-800 shadow-md dark:shadow-black/30 w-full h-auto max-h-[800px] object-cover bg-primary-50 dark:bg-primary-900"
-				loading="lazy"
-			/>
-			{alt && (
-				<figcaption className="mt-3 text-sm text-center text-primary-500 italic">
+		<figure className="my-8 flex flex-col items-center gap-3">
+			<div className="w-full overflow-hidden rounded-2xl border border-primary-200 bg-primary-50 shadow-md">
+				<img
+					src={src}
+					alt={alt}
+					className="h-auto w-full max-h-[800px] object-cover"
+					loading="lazy"
+				/>
+			</div>
+			{alt ? (
+				<figcaption className="text-center text-sm text-primary-500">
 					{alt}
 				</figcaption>
-			)}
+			) : null}
 		</figure>
 	);
 }
