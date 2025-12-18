@@ -4,6 +4,7 @@ import type { User } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
 import {
@@ -20,11 +21,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-	{ id: "home", title: "首页", icon: "mingcute:home-2-line", href: "#" },
-	{ id: "articles", title: "文章", icon: "mingcute:book-2-line", href: "#articles" },
-	{ id: "notes", title: "手记", icon: "mingcute:pen-line", href: "#notes" },
-	{ id: "thoughts", title: "想法", icon: "mingcute:comment-line", href: "#thoughts" },
-	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "#about" },
+	{ id: "home", title: "首页", icon: "mingcute:home-2-line", href: "/" },
+	{ id: "articles", title: "文章", icon: "mingcute:book-2-line", href: "/articles" },
+	{ id: "notes", title: "手记", icon: "mingcute:pen-line", href: "/notes" },
+	{ id: "thoughts", title: "想法", icon: "mingcute:comment-line", href: "/thoughts" },
+	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "/about" },
 ];
 
 // 头像(32) + 间距(12) + 名字区域(约50) = 约94px 基础宽度，加上 padding
@@ -47,11 +48,43 @@ export function FloatingNav({ user }: FloatingNavProps) {
 	const [isSpinning, setIsSpinning] = useState(false);
 	const [readingProgress, setReadingProgress] = useState(0);
 	const [animationProgress, setAnimationProgress] = useState(0);
+	const pathname = usePathname();
+	const router = useRouter();
+	const isHomePage = pathname === "/";
 
 	const scrollToTop = useCallback(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, []);
 
+	/**
+	 * 处理导航点击
+	 * 如果在首页且是锚点链接，平滑滚动到对应位置
+	 * 如果不在首页，跳转到首页对应锚点
+	 */
+	const handleNavClick = useCallback((e: React.MouseEvent, item: NavItem) => {
+		if (item.id === "home") {
+			e.preventDefault();
+			if (isHomePage) {
+				scrollToTop();
+			} else {
+				router.push("/");
+			}
+			return;
+		}
+
+		// 锚点链接处理
+		if (item.href.startsWith("/#")) {
+			const hash = item.href.slice(1); // 获取 #xxx
+			if (isHomePage) {
+				e.preventDefault();
+				const element = document.querySelector(hash);
+				if (element) {
+					element.scrollIntoView({ behavior: "smooth" });
+				}
+			}
+			// 不在首页时，让 Link 正常跳转到 /#xxx
+		}
+	}, [isHomePage, router, scrollToTop]);
 	// Control Back to Top visibility
 	const [showBackToTop, setShowBackToTop] = useState(() => {
 		if (typeof window !== "undefined") {
@@ -189,11 +222,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 											<Link
 												href={item.href}
 												className="text-neutral-600 block"
-												onClick={(e) => {
-													if (item.id === "home") {
-														handleScrollToTopAction(e);
-													}
-												}}
+												onClick={e => handleNavClick(e, item)}
 											>
 												<Icon icon={item.icon} className="text-[18px]" />
 											</Link>

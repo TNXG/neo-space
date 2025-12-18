@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { TOCItem } from "@/lib/toc";
 import { ArticleContent } from "./ArticleContent";
+import { ArticleNavButtons } from "./ArticleNavButtons";
 import { ArticleTOC } from "./ArticleTOC";
 
 interface ArticleLayoutProps {
@@ -12,11 +13,15 @@ interface ArticleLayoutProps {
 	toc: TOCItem[];
 	/** 文章底部（评论、相关文章等） */
 	footer?: ReactNode;
+	/** 上一篇文章链接 */
+	prevLink?: string;
+	/** 下一篇文章链接 */
+	nextLink?: string;
 }
 
 /**
  * 文章布局组件
- * 桌面端：左侧正文 + 右侧 TOC
+ * 桌面端：正文居中 + TOC 浮动在右侧（不挤压正文）
  * 移动端：单列布局，TOC 隐藏
  */
 export function ArticleLayout({
@@ -24,31 +29,32 @@ export function ArticleLayout({
 	content,
 	toc,
 	footer,
+	prevLink,
+	nextLink,
 }: ArticleLayoutProps) {
 	return (
 		<main className="min-h-screen bg-background text-foreground">
 			<div className="max-w-7xl mx-auto pt-24 pb-16 px-4 lg:px-8">
-				<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-					{/* 左侧正文区 (9列) */}
-					<article className="lg:col-span-9 min-w-0">
-						{header}
-						<div className="prose-container">
-							<ArticleContent items={toc}>
-								{content}
-							</ArticleContent>
+				{/* 正文区 - 居中显示 */}
+				<article className="max-w-3xl mx-auto min-w-0">
+					{header}
+					<div className="prose-container">
+						<ArticleContent items={toc}>
+							{content}
+						</ArticleContent>
+					</div>
+					{footer && (
+						<div className="mt-16 pt-8 border-t border-border/50">
+							{footer}
 						</div>
-						{footer && (
-							<div className="mt-16 pt-8 border-t border-border/50">
-								{footer}
-							</div>
-						)}
-					</article>
+					)}
+				</article>
 
-					{/* 右侧 TOC 区 (3列) - 仅桌面端显示 */}
-					<aside className="hidden lg:block lg:col-span-3">
-						<ArticleTOC />
-					</aside>
-				</div>
+				{/* 右侧 TOC 区 - fixed 定位，固定在视口 */}
+				<aside className="hidden xl:block fixed top-24 w-56" style={{ left: "calc(50% + 400px + 2rem)" }}>
+					<ArticleTOC />
+					<ArticleNavButtons prevLink={prevLink} nextLink={nextLink} />
+				</aside>
 			</div>
 		</main>
 	);

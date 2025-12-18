@@ -7,14 +7,20 @@ import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+
 import { AbbreviationText } from "@/components/common/nbnhhsh";
+
 import { ClientOnlyScript } from "./components/ClientOnlyScript";
 import { ClientOnlySpan } from "./components/ClientOnlySpan";
 import { CodeBlock } from "./components/CodeBlock";
 import { EnhancedHeading } from "./components/EnhancedHeading";
 import { ImageFigure } from "./components/ImageFigure";
+import { MermaidDiagram } from "./components/MermaidDiagram";
 import { Spoiler } from "./components/Spoiler";
+
 import { getHighlighter } from "./highlighter";
+
+import { remarkMermaid } from "./plugins/mermaid";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 interface MarkdownRendererProps {
@@ -252,6 +258,15 @@ const components: Components = {
 		<hr className="my-12 border-dashed border-primary-200 w-1/2 mx-auto" />
 	),
 
+	// Mermaid 图表容器
+	div: ({ children, ...props }) => {
+		const mermaidChart = (props as { "data-mermaid-chart"?: string })["data-mermaid-chart"];
+		if (mermaidChart) {
+			return <MermaidDiagram chart={decodeURIComponent(mermaidChart)} />;
+		}
+		return <div {...props}>{children}</div>;
+	},
+
 	// 自定义组件保持不变
 	span: ({ className, children, ...props }) => {
 		if (className === "spoiler") {
@@ -300,7 +315,7 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
 	return (
 		<div className={`markdown-body ${className}`}>
 			<ReactMarkdown
-				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
+				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler, remarkMermaid]}
 				rehypePlugins={rehypePlugins}
 				components={components}
 			>

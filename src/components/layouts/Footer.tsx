@@ -35,7 +35,7 @@ export function Footer({ user }: FooterProps) {
 						Powered by
 						{" "}
 						<a
-							href="https://github.com/tnxg/neo-space-space"
+							href="https://github.com/tnxg/neo-space"
 							className="text-accent-800 hover:text-accent-500 underline underline-offset-2 cursor-pointer transition-colors"
 							target="_blank"
 							rel="noopener noreferrer"

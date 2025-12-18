@@ -13,25 +13,25 @@ import "server-only";
 
 /**
  * 预览模式的组件样式（简化，图片和代码块用文字替代）
- * 使用深色文字确保可读性
+ * 使用中间色调文字确保可读性
  */
 const previewComponents: Components = {
-	p: ({ children }) => (<p className="text-primary-500"><AbbreviationText>{children}</AbbreviationText></p>),
-	h1: ({ children }) => <span className="text-primary-500">{children}</span>,
-	h2: ({ children }) => <span className="text-primary-500">{children}</span>,
-	h3: ({ children }) => <span className="text-primary-500">{children}</span>,
-	a: ({ href, children, ...props }) => <a href={href} className="text-primary-500" {...props}>{children}</a>,
-	ul: ({ children }) => <span className="text-primary-500">{children}</span>,
-	ol: ({ children }) => <span className="text-primary-500">{children}</span>,
+	p: ({ children }) => (<p><AbbreviationText>{children}</AbbreviationText></p>),
+	h1: ({ children }) => <span>{children}</span>,
+	h2: ({ children }) => <span>{children}</span>,
+	h3: ({ children }) => <span>{children}</span>,
+	a: ({ href, children, ...props }) => <a href={href} className="text-primary hover:underline" {...props}>{children}</a>,
+	ul: ({ children }) => <span>{children}</span>,
+	ol: ({ children }) => <span>{children}</span>,
 	li: ({ children }) => (
-		<span className="text-primary-500">
+		<span>
 			{children}
 			{" "}
 		</span>
 	),
-	blockquote: ({ children }) => <span className="text-primary-500">{children}</span>,
+	blockquote: ({ children }) => <span>{children}</span>,
 	// 图片替换为文字
-	img: () => <span className="text-neutral-400 dark:text-neutral-500 italic">[图片]</span>,
+	img: () => <span className="text-muted-foreground italic">[图片]</span>,
 	// 代码块替换为文字
 	pre: ({ children }) => {
 		// 尝试从 code 子元素获取语言信息
@@ -44,17 +44,17 @@ const previewComponents: Components = {
 				lang = match[1];
 		}
 		return (
-			<span className="text-neutral-400 dark:text-neutral-500 italic">
+			<span className="text-muted-foreground italic">
 				{lang ? `[${lang} 代码]` : "[代码块]"}
 			</span>
 		);
 	},
 	code: ({ children }) => (
-		<code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded text-sm text-primary-500 dark:text-primary-100">
+		<code className="bg-muted px-1 rounded text-sm">
 			{children}
 		</code>
 	),
-	table: () => <span className="text-neutral-400 dark:text-neutral-500 italic">[表格]</span>,
+	table: () => <span className="text-muted-foreground italic">[表格]</span>,
 	hr: () => null,
 };
 
@@ -71,7 +71,7 @@ export async function MarkdownPreview({
 	const truncated = truncateText(content, maxLength);
 
 	return (
-		<span className="text-primary-500 **:text-inherit">
+		<span className="text-foreground/70 **:text-inherit">
 			<ReactMarkdown
 				remarkPlugins={[remarkGfm, remarkBreaks]}
 				rehypePlugins={[

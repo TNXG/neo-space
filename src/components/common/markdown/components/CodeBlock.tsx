@@ -106,14 +106,14 @@ export function CodeBlock({ children, className, language = "text", filename, st
 				<pre
 					ref={preRef}
 					className={cn(
-						"min-w-full p-4 text-[13px] leading-relaxed font-mono custom-scrollbar",
-						"bg-transparent",
+						"min-w-full p-4 text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
 						className,
 					)}
 					style={{
 						...style,
 						margin: 0,
 					}}
+					suppressHydrationWarning
 				>
 					{children}
 				</pre>

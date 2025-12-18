@@ -1,4 +1,5 @@
 import type { Category } from "@/types/api";
+import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { SmartDate } from "@/components/common/smart-date";
 
@@ -9,6 +10,8 @@ interface ArticleHeaderProps {
 	created: string;
 	modified?: string;
 	summary?: string;
+	/** AI 生成的摘要 */
+	aiSummary?: string;
 	/** 文章类型标签 */
 	typeLabel?: string;
 }
@@ -26,8 +29,13 @@ export function ArticleHeader({
 	created,
 	modified,
 	summary,
+	aiSummary,
 	typeLabel = "Article",
 }: ArticleHeaderProps) {
+	// 优先使用 AI 摘要，否则使用手动摘要
+	const displaySummary = aiSummary || summary;
+	const isAiSummary = !!aiSummary;
+
 	return (
 		<header className="mb-12 pb-8 border-b border-border/50">
 			{/* 类型标签 */}
@@ -41,10 +49,20 @@ export function ArticleHeader({
 			</h1>
 
 			{/* 摘要 */}
-			{summary && (
-				<p className="text-lg text-muted-foreground font-light leading-relaxed max-w-2xl mb-6">
-					{summary}
-				</p>
+			{displaySummary && (
+				<div className="my-6 pl-4 border-l-4 border-accent-400 dark:border-accent-600">
+					{isAiSummary && (
+						<div className="flex items-center gap-1.5 mb-2">
+							<Icon icon="mingcute:sparkles-line" className="w-4 h-4 text-accent-500" />
+							<span className="text-xs font-medium text-accent-600 dark:text-accent-400">
+								AI 摘要
+							</span>
+						</div>
+					)}
+					<p className="text-base text-foreground/80 dark:text-foreground/90 leading-relaxed">
+						{displaySummary}
+					</p>
+				</div>
 			)}
 
 			{/* 元信息 */}
