@@ -15,13 +15,11 @@ export async function generateMetadata({ params }: PageProps) {
 	try {
 		const { data: page } = await getPageBySlug(slug);
 		return {
-			title: `${page.title} | 天翔的博客`,
+			title: page.title,
 			description: page.text.slice(0, 100),
 		};
 	} catch {
-		return {
-			title: "页面不存在 | 天翔的博客",
-		};
+		return { title: "页面不存在" };
 	}
 }
 

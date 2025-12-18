@@ -1,4 +1,4 @@
-import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, User } from "@/types/api";
+import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, User } from "@/types/api";
 import process from "node:process";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -122,4 +122,17 @@ export async function guessAbbreviation(text: string): Promise<NbnhhshResult[]> 
 	}
 
 	return response.json();
+}
+
+/**
+ * Site Config API
+ */
+export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
+	return apiClient<ApiResponse<SiteConfig>>("/config", {
+		cache: "force-cache",
+		next: {
+			tags: ["site-config"],
+			revalidate: 3600, // 1小时重新验证
+		},
+	});
 }

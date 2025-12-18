@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
-import { ArticleHeader, ArticleLayout } from "@/components/layouts/article";
-import { getPostBySlug } from "@/lib/api-client";
+import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
+import { getPostBySlug, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 60;
@@ -20,19 +20,16 @@ export async function generateMetadata({ params }: PageProps) {
 		const { data: post } = await getPostBySlug(slug);
 
 		if (post.category?.slug !== category) {
-			return {
-				title: "文章不存在 | 天翔的博客",
-			};
+			return { title: "文章不存在" };
 		}
 
 		return {
-			title: `${post.title} | 天翔的博客`,
+			title: post.title,
 			description: post.summary || post.text.slice(0, 100),
+			keywords: post.tags,
 		};
 	} catch {
-		return {
-			title: "文章不存在 | 天翔的博客",
-		};
+		return { title: "文章不存在" };
 	}
 }
 
@@ -47,9 +44,14 @@ export default async function PostPage({ params }: PageProps) {
 
 	let post;
 	let toc;
+	let authorName = "作者";
 	try {
-		const { data } = await getPostBySlug(slug);
+		const [{ data }, { data: user }] = await Promise.all([
+			getPostBySlug(slug),
+			getUserProfile(),
+		]);
 		post = data;
+		authorName = user.name;
 
 		if (post.category?.slug !== category) {
 			notFound();
@@ -59,6 +61,9 @@ export default async function PostPage({ params }: PageProps) {
 	} catch {
 		notFound();
 	}
+
+	// 获取文章发布年份
+	const postYear = new Date(post.created).getFullYear().toString();
 
 	return (
 		<ArticleLayout
@@ -71,10 +76,23 @@ export default async function PostPage({ params }: PageProps) {
 					created={post.created}
 					modified={post.modified}
 					summary={post.summary}
+					aiSummary={post.aiSummary}
 					typeLabel="Article"
 				/>
 			)}
-			content={<MarkdownRenderer content={post.text} />}
+			content={(
+				<>
+					<OutdatedAlert lastUpdated={post.modified || post.created} />
+					<MarkdownRenderer content={post.text} />
+				</>
+			)}
+			footer={post.copyright && (
+				<CopyrightCard
+					author={authorName}
+					year={postYear}
+					postTitle={post.title}
+				/>
+			)}
 		/>
 	);
 }

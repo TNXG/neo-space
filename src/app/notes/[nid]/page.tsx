@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
-import { ArticleLayout, NoteHeader } from "@/components/layouts/article";
+import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
 import { getNoteByNid } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
@@ -16,18 +16,16 @@ export async function generateMetadata({ params }: PageProps) {
 	const { nid } = await params;
 	const nidNum = Number.parseInt(nid, 10);
 	if (Number.isNaN(nidNum))
-		return { title: "日记不存在 | 天翔的博客" };
+		return { title: "日记不存在" };
 
 	try {
 		const { data: note } = await getNoteByNid(nidNum);
 		return {
-			title: `${note.title} | 天翔的博客`,
+			title: note.title,
 			description: note.text.slice(0, 100),
 		};
 	} catch {
-		return {
-			title: "日记不存在 | 天翔的博客",
-		};
+		return { title: "日记不存在" };
 	}
 }
 
@@ -61,7 +59,12 @@ export default async function NotePage({ params }: PageProps) {
 					location={note.location}
 				/>
 			)}
-			content={<MarkdownRenderer content={note.text} />}
+			content={(
+				<>
+					<OutdatedAlert lastUpdated={note.modified || note.created} />
+					<MarkdownRenderer content={note.text} />
+				</>
+			)}
 		/>
 	);
 }

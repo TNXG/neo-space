@@ -7,7 +7,7 @@ import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { ThemeProvider } from "@/components/common/theme";
 import { Footer } from "@/components/layouts/Footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { getUserProfile } from "@/lib/api-client";
+import { getSiteConfig, getUserProfile } from "@/lib/api-client";
 
 import "./globals.css";
 
@@ -22,10 +22,33 @@ const jetbrainsMono = JetBrains_Mono({
 	subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-	title: "TNXG Blog",
-	description: "Personal blog powered by Next.js",
-};
+/**
+ * 生成动态 SEO 元数据
+ */
+export async function generateMetadata(): Promise<Metadata> {
+	try {
+		const configResponse = await getSiteConfig();
+		const { seo } = configResponse.data;
+
+		return {
+			title: {
+				template: `%s | ${seo.title}`,
+				default: seo.title,
+			},
+			description: seo.description,
+			keywords: seo.keywords,
+		};
+	} catch {
+		// 降级到默认值
+		return {
+			title: {
+				template: "%s | Blog",
+				default: "Blog",
+			},
+			description: "Personal blog powered by Neo-Space",
+		};
+	}
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
 	// 获取用户数据用于 Footer

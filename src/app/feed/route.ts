@@ -1,6 +1,5 @@
-
-import { getPosts } from "@/lib/api-client";
 import { Feed } from "feed";
+import { getPosts } from "@/lib/api-client";
 
 export async function GET() {
 	const { data: posts } = await getPosts(1, 20);

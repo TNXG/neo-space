@@ -3,8 +3,8 @@ import { ArticleCard } from "@/components/layouts/home/ArticleCard";
 import { getPosts } from "@/lib/api-client";
 
 export const metadata: Metadata = {
-	title: "文章列表 | 天翔的博客",
-	description: "这里是天翔写下的所有文章",
+	title: "文章列表",
+	description: "这里是我写下的所有文章",
 };
 
 export const revalidate = 60;
