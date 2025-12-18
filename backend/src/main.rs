@@ -1,22 +1,24 @@
 #[macro_use]
 extern crate rocket;
 
-mod db;
+mod config;
 mod models;
 mod routes;
+mod services;
+mod utils;
 
 use rocket::http::Method;
 use rocket::serde::json::Json;
-use rocket::{Request, catch};
+use rocket::Request;
 use rocket_cors::{AllowedOrigins, CorsOptions};
-use models::ApiResponse;
+use models::{ApiResponse, ResponseStatus};
 
 /// 404 Not Found error catcher - returns JSON
 #[catch(404)]
 fn not_found(_req: &Request) -> Json<ApiResponse<()>> {
     Json(ApiResponse {
         code: 404,
-        status: models::ResponseStatus::Failed,
+        status: ResponseStatus::Failed,
         message: "Resource not found".to_string(),
         data: (),
     })
@@ -27,7 +29,7 @@ fn not_found(_req: &Request) -> Json<ApiResponse<()>> {
 fn internal_error(_req: &Request) -> Json<ApiResponse<()>> {
     Json(ApiResponse {
         code: 500,
-        status: models::ResponseStatus::Failed,
+        status: ResponseStatus::Failed,
         message: "Internal server error".to_string(),
         data: (),
     })
@@ -36,7 +38,7 @@ fn internal_error(_req: &Request) -> Json<ApiResponse<()>> {
 #[launch]
 async fn rocket() -> _ {
     // Initialize database connection
-    let database = db::init_db().await.expect("Failed to connect to MongoDB");
+    let database = services::init_db().await.expect("Failed to connect to MongoDB");
 
     // Configure CORS for frontend communication
     let cors = CorsOptions::default()
@@ -79,5 +81,7 @@ async fn rocket() -> _ {
             routes::nbnhhsh::guess,
             // Pages routes
             routes::pages::get_page_by_slug,
+            // Config routes
+            routes::config::get_site_config,
         ])
 }
