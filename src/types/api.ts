@@ -37,6 +37,8 @@ export interface Post {
 	categoryId: string;
 	category?: Category;
 	summary?: string;
+	/** AI 生成的摘要 */
+	aiSummary?: string;
 	tags: string[];
 	created: string;
 	modified?: string;
@@ -161,4 +163,67 @@ export interface Page {
 	created: string;
 	allowComment: boolean;
 	commentsIndex: number;
+}
+
+/**
+ * Site Configuration (from options collection)
+ */
+
+export interface SeoOptions {
+	title: string;
+	description: string;
+	keywords: string[];
+}
+
+export interface UrlOptions {
+	wsUrl?: string;
+	adminUrl?: string;
+	serverUrl?: string;
+	webUrl?: string;
+}
+
+export interface FeatureListOptions {
+	emailSubscribe: boolean;
+}
+
+export interface FriendLinkOptions {
+	allowApply: boolean;
+	allowSubPath: boolean;
+}
+
+export interface CommentOptionsPublic {
+	disableComment: boolean;
+	disableNoChinese: boolean;
+}
+
+export interface OAuthProvider {
+	type: string;
+	enabled: boolean;
+}
+
+export interface OAuthPublicOptions {
+	providers: OAuthProvider[];
+	github_client_id?: string;
+}
+
+export interface AlgoliaPublicOptions {
+	enable: boolean;
+	appId?: string;
+	indexName?: string;
+}
+
+export interface AdminExtraPublic {
+	title?: string;
+	background?: string;
+}
+
+export interface SiteConfig {
+	seo: SeoOptions;
+	url: UrlOptions;
+	features: FeatureListOptions;
+	friend_link: FriendLinkOptions;
+	comment: CommentOptionsPublic;
+	oauth: OAuthPublicOptions;
+	algolia: AlgoliaPublicOptions;
+	admin_extra: AdminExtraPublic;
 }
