@@ -1,10 +1,13 @@
+import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
+import { isValidElement } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { ClientOnlyScript } from "./components/ClientOnlyScript";
 import { ClientOnlySpan } from "./components/ClientOnlySpan";
 import { CodeBlock } from "./components/CodeBlock";
@@ -22,6 +25,18 @@ interface MarkdownRendererProps {
 	/** 是否包含需要客户端执行的脚本 */
 	hasScript?: boolean;
 } // 可选：用于外部链接图标
+
+const isTextOnlyContent = (node: ReactNode): boolean => {
+	if (node === null || node === undefined || typeof node === "boolean")
+		return true;
+	if (typeof node === "string" || typeof node === "number")
+		return true;
+	if (Array.isArray(node))
+		return node.every(child => isTextOnlyContent(child));
+	if (isValidElement(node))
+		return false;
+	return true;
+};
 
 const components: Components = {
 	h1: ({ children, id }) => (
@@ -77,9 +92,11 @@ const components: Components = {
 			return <ImageFigure src={imgProps.src} alt={imgProps.alt} />;
 		}
 
+		const isTextOnly = isTextOnlyContent(children);
+
 		return (
 			<p className="text-base md:text-lg leading-relaxed text-primary-700 mb-6 last:mb-0">
-				{children}
+				{isTextOnly ? <AbbreviationText>{children}</AbbreviationText> : children}
 			</p>
 		);
 	},
