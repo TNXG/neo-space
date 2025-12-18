@@ -20,7 +20,7 @@ export function SocialLink({ icon, href, label }: SocialLinkProps) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
-          className="transition-colors duration-150 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+          className="transition-colors duration-150 text-muted-foreground hover:text-foreground"
         >
           <Icon icon={icon} className="text-[20px]" />
         </a>

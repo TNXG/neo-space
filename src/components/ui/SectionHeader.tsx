@@ -14,15 +14,15 @@ interface SectionHeaderProps {
  */
 export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeaderProps) {
   return (
-    <div className="mb-6 pb-2 border-b border-neutral-300 flex items-baseline justify-between">
-      <h2 className="text-xl font-semibold flex gap-2 items-center text-primary-800">
-        <Icon icon={icon} className="text-[18px] text-neutral-500" />
+    <div className="mb-6 pb-2 border-b border-border flex items-baseline justify-between">
+      <h2 className="text-xl font-semibold flex gap-2 items-center text-foreground">
+        <Icon icon={icon} className="text-[18px] text-muted-foreground" />
         {title}
       </h2>
       {linkText && linkHref && (
         <Link
           href={linkHref}
-          className="group text-sm flex gap-1 transition-colors duration-150 items-center text-neutral-700"
+          className="group text-sm flex gap-1 transition-colors duration-150 items-center text-muted-foreground hover:text-foreground"
         >
           {linkText}
           <Icon

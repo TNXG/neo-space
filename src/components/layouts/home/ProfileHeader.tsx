@@ -43,17 +43,17 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 					</div>
 				</div>
 				<div>
-					<h1 className="text-3xl tracking-tight font-bold mb-2 text-primary-800">
+					<h1 className="text-3xl tracking-tight font-bold mb-2 text-foreground">
 						{profile.name}
 					</h1>
-					<p className="text-sm flex gap-2 items-center text-neutral-700">
+					<p className="text-sm flex gap-2 items-center text-muted-foreground">
 						@
 						{profile.username}
 					</p>
 				</div>
 			</div>
 
-			<p className="text-xl leading-relaxed max-w-lg text-neutral-700">
+			<p className="text-xl leading-relaxed max-w-lg text-secondary-foreground">
 				<AbbreviationText>{profile.introduce}</AbbreviationText>
 			</p>
 
