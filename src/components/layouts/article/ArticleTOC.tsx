@@ -46,9 +46,7 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 
 	return (
 		<div className={`sticky top-24 ${className}`}>
-			<h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-2">
-				目录
-			</h4>
+			<h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-6 px-2">Table of Contents</h4>
 
 			<div className="relative group">
 				<nav
@@ -96,7 +94,7 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 													animate={{ opacity: 1, height: "75%" }}
 													exit={{ opacity: 0, height: 0 }}
 													transition={{ duration: 0.3 }}
-													className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] bg-accent-600 rounded-r-full"
+													className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 bg-accent-600 rounded-r-full"
 												/>
 											)}
 										</AnimatePresence>
