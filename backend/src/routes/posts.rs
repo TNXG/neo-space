@@ -4,7 +4,7 @@ use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use std::str::FromStr;
 
-use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
+use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
 
 /// List published posts with pagination
 #[get("/posts?<page>&<size>")]
@@ -74,6 +74,24 @@ pub async fn list_posts(
     Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
 }
 
+/// Helper function to get the latest AI summary for a given ref ID
+async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<String> {
+    let ai_summaries_collection = db.collection::<AiSummary>("ai_summaries");
+    
+    // Find the latest AI summary for this ref ID and language
+    let find_options = mongodb::options::FindOneOptions::builder()
+        .sort(doc! { "created": -1 })
+        .build();
+    
+    ai_summaries_collection
+        .find_one(doc! { "refId": ref_id, "lang": lang })
+        .with_options(find_options)
+        .await
+        .ok()
+        .flatten()
+        .map(|s| s.summary)
+}
+
 /// Get post by ID
 #[get("/posts/<id>")]
 pub async fn get_post_by_id(
@@ -97,6 +115,9 @@ pub async fn get_post_by_id(
 
     let mut post_with_category = PostWithCategory::from(post);
     post_with_category.category = category;
+    
+    // Fetch AI summary (default to Chinese)
+    post_with_category.ai_summary = get_ai_summary(db, &id, "zh").await;
 
     Ok(Json(ApiResponse::success(post_with_category)))
 }
@@ -114,6 +135,9 @@ pub async fn get_post_by_slug(
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
+    // Get post ID as string for AI summary lookup
+    let post_id = post.id.to_hex();
+
     // Fetch category information
     let category = categories_collection
         .find_one(doc! { "_id": post.category_id })
@@ -122,6 +146,9 @@ pub async fn get_post_by_slug(
 
     let mut post_with_category = PostWithCategory::from(post);
     post_with_category.category = category;
+    
+    // Fetch AI summary (default to Chinese)
+    post_with_category.ai_summary = get_ai_summary(db, &post_id, "zh").await;
 
     Ok(Json(ApiResponse::success(post_with_category)))
 }
