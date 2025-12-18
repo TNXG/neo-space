@@ -5,16 +5,18 @@ edition = "2021"
 
 [dependencies]
 rocket = { version = "0.5.1", features = [ "json" ] }
-mongodb = "3.1.0"
-serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0"
-tokio = { version = "1.42", features = [ "full" ] }
-chrono = { version = "0.4", features = [ "serde" ] }
+mongodb = "3.4.1"
+serde = { version = "1.0.228", features = [ "derive" ] }
+serde_json = "1.0.145"
+tokio = { version = "1.48.0", features = [ "full" ] }
+chrono = { version = "0.4.42", features = [ "serde" ] }
 rocket_cors = "0.6.0"
 bson = { version = "2.13", features = [ "chrono-0_4" ] }
-futures = "0.3"
-dotenv = "0.15"
-reqwest = { version = "0.12", features = [ "json" ] }
+futures = "0.3.31"
+dotenv = "0.15.0"
+reqwest = { version = "0.12.26", features = [ "json" ] }
+async-openai = { version = "0.31.1", features = [ "chat-completion" ] }
+sha1 = "0.10"
 
 [dependencies.rocket_db_pools]
 version = "0.2.0"

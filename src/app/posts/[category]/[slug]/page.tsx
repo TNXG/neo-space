@@ -82,7 +82,11 @@ export default async function PostPage({ params }: PageProps) {
 			)}
 			content={(
 				<>
-					<OutdatedAlert lastUpdated={post.modified || post.created} />
+					<OutdatedAlert
+						refId={post._id}
+						refType="post"
+						lastUpdated={post.modified || post.created}
+					/>
 					<MarkdownRenderer content={post.text} />
 				</>
 			)}

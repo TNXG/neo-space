@@ -83,5 +83,8 @@ async fn rocket() -> _ {
             routes::pages::get_page_by_slug,
             // Config routes
             routes::config::get_site_config,
+            // AI routes
+            routes::ai::analyze_time_capsule,
+            routes::ai::get_time_capsule,
         ])
 }

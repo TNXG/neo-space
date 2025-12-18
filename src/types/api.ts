@@ -166,6 +166,23 @@ export interface Page {
 }
 
 /**
+ * Time Capsule - 文章时效性分析
+ */
+export type TimeSensitivity = "high" | "medium" | "low";
+
+export interface TimeCapsuleResponse {
+	sensitivity: TimeSensitivity;
+	reason: string;
+	markers: string[];
+	isNew: boolean;
+}
+
+export interface TimeCapsuleRequest {
+	refId: string;
+	refType?: "post" | "note" | "page";
+}
+
+/**
  * Site Configuration (from options collection)
  */
 

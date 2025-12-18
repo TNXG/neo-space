@@ -1,4 +1,4 @@
-import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, User } from "@/types/api";
+import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, User } from "@/types/api";
 import process from "node:process";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -135,4 +135,22 @@ export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
 			revalidate: 3600, // 1小时重新验证
 		},
 	});
+}
+
+/**
+ * Time Capsule API - 文章时效性分析
+ */
+export async function analyzeTimeCapsule(
+	request: TimeCapsuleRequest,
+): Promise<ApiResponse<TimeCapsuleResponse>> {
+	return apiClient<ApiResponse<TimeCapsuleResponse>>("/ai/time-capsule", {
+		method: "POST",
+		body: JSON.stringify(request),
+	});
+}
+
+export async function getTimeCapsule(
+	refId: string,
+): Promise<ApiResponse<TimeCapsuleResponse>> {
+	return apiClient<ApiResponse<TimeCapsuleResponse>>(`/ai/time-capsule/${refId}`);
 }
