@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { TOCItem } from "@/lib/toc";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTOCStore } from "@/lib/stores/toc-store";
 
 interface ArticleContentProps {
@@ -20,11 +20,21 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const lastScrollY = useRef(0);
 	const scrollDirection = useRef<"down" | "up">("down");
+	const lastActiveId = useRef<string>("");
+	const rafId = useRef<number | null>(null);
 
 	// 初始化 items
 	useEffect(() => {
 		setItems(items);
 	}, [items, setItems]);
+
+	// 防抖的 setActiveId，避免快速滚动时抖动
+	const debouncedSetActiveId = useCallback((id: string) => {
+		if (id === lastActiveId.current)
+			return;
+		lastActiveId.current = id;
+		setActiveId(id);
+	}, [setActiveId]);
 
 	// 追踪滚动方向
 	useEffect(() => {
@@ -57,27 +67,34 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 			if (headings.length === 0)
 				return;
 
-			// 使用 scroll 事件来检测标题位置
+			// 使用 scroll 事件来检测标题位置，通过 RAF 节流
 			scrollHandler = () => {
-				const viewportHeight = window.innerHeight;
-				// 30% 触发线：页面下滑时用底部 30%，页面上滑时用顶部 30%
-				const triggerLine = scrollDirection.current === "down"
-					? viewportHeight * 0.7
-					: viewportHeight * 0.3;
+				if (rafId.current)
+					return;
 
-				let activeHeading: Element | null = null;
+				rafId.current = requestAnimationFrame(() => {
+					rafId.current = null;
 
-				// 找最后一个已经越过触发线的标题
-				for (const heading of headings) {
-					const rect = heading.getBoundingClientRect();
-					if (rect.top <= triggerLine) {
-						activeHeading = heading;
+					const viewportHeight = window.innerHeight;
+					// 30% 触发线：页面下滑时用底部 30%，页面上滑时用顶部 30%
+					const triggerLine = scrollDirection.current === "down"
+						? viewportHeight * 0.7
+						: viewportHeight * 0.3;
+
+					let activeHeading: Element | null = null;
+
+					// 找最后一个已经越过触发线的标题
+					for (const heading of headings) {
+						const rect = heading.getBoundingClientRect();
+						if (rect.top <= triggerLine) {
+							activeHeading = heading;
+						}
 					}
-				}
 
-				if (activeHeading && activeHeading.id) {
-					setActiveId(activeHeading.id);
-				}
+					if (activeHeading && activeHeading.id) {
+						debouncedSetActiveId(activeHeading.id);
+					}
+				});
 			};
 
 			// 初始化
@@ -89,11 +106,14 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 
 		return () => {
 			clearTimeout(timer);
+			if (rafId.current) {
+				cancelAnimationFrame(rafId.current);
+			}
 			if (scrollHandler) {
 				window.removeEventListener("scroll", scrollHandler);
 			}
 		};
-	}, [items, setActiveId]);
+	}, [items, debouncedSetActiveId]);
 
 	return <div ref={contentRef}>{children}</div>;
 }

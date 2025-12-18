@@ -65,22 +65,38 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 		return true;
 	};
 
-	// TOC 自动重聚焦
+	// TOC 自动重聚焦（带防抖，避免快速滚动时抖动）
+	const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	useEffect(() => {
 		if (!activeId || !tocRef.current)
 			return;
 
-		const activeLink = document.getElementById(`toc-link-${activeId}`);
-		if (activeLink) {
-			const container = tocRef.current;
-			const relativeTop = activeLink.offsetTop;
-			const targetScroll = relativeTop - (container.clientHeight / 2) + (activeLink.clientHeight / 2);
-
-			container.scrollTo({
-				top: targetScroll,
-				behavior: "smooth",
-			});
+		// 清除之前的定时器
+		if (scrollTimeoutRef.current) {
+			clearTimeout(scrollTimeoutRef.current);
 		}
+
+		// 延迟执行滚动，防止快速滚动时抖动
+		scrollTimeoutRef.current = setTimeout(() => {
+			const activeLink = document.getElementById(`toc-link-${activeId}`);
+			if (activeLink && tocRef.current) {
+				const container = tocRef.current;
+				const relativeTop = activeLink.offsetTop;
+				const targetScroll = relativeTop - (container.clientHeight / 2) + (activeLink.clientHeight / 2);
+
+				container.scrollTo({
+					top: targetScroll,
+					behavior: "smooth",
+				});
+			}
+		}, 100);
+
+		return () => {
+			if (scrollTimeoutRef.current) {
+				clearTimeout(scrollTimeoutRef.current);
+			}
+		};
 	}, [activeId]);
 
 	if (items.length === 0)
