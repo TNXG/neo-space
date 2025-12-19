@@ -5,10 +5,6 @@ import { Icon } from "@iconify/react/offline";
 import { useEffect, useState } from "react";
 import { analyzeTimeCapsule } from "@/lib/api-client";
 
-// ========================================================================
-// 组件
-// ========================================================================
-
 interface OutdatedAlertProps {
 	/** 文章 ID */
 	refId: string;
@@ -38,12 +34,11 @@ export function OutdatedAlert({
 }: OutdatedAlertProps) {
 	const [capsule, setCapsule] = useState<TimeCapsuleResponse | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [mounted, setMounted] = useState(false);
+	const [mounted] = useState(() => typeof window !== "undefined");
 
-	// 获取 AI 分析并标记挂载
+	// 获取 AI 分析
 	useEffect(() => {
 		let cancelled = false;
-		setMounted(true);
 
 		async function fetchCapsule() {
 			try {
@@ -84,6 +79,38 @@ export function OutdatedAlert({
 	const timeDesc = years > 0
 		? `${years} 年${months > 0 ? ` ${months} 个月` : ""}`
 		: `${months} 个月`;
+
+	// 加载中显示骨架屏（仅当文章已过期时）
+	if (loading && isOutdated) {
+		return (
+			<div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
+				<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 dark:border-primary-600 bg-primary-100/50 dark:bg-primary-200/50 backdrop-blur-sm p-1">
+					<div className="relative overflow-hidden rounded-lg bg-white/60 dark:bg-primary-100/60 border border-primary-200 dark:border-primary-300 p-5 md:p-6">
+						<div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center animate-pulse">
+							{/* 图标骨架 */}
+							<div className="shrink-0">
+								<div className="w-12 h-12 rounded-xl bg-primary-200 dark:bg-primary-300" />
+							</div>
+							{/* 文本骨架 */}
+							<div className="flex-1 space-y-3">
+								<div className="flex gap-2">
+									<div className="h-4 w-20 rounded bg-primary-200 dark:bg-primary-300" />
+									<div className="h-4 w-16 rounded bg-primary-200 dark:bg-primary-300" />
+								</div>
+								<div className="h-5 w-48 rounded bg-primary-200 dark:bg-primary-300" />
+								<div className="h-4 w-full max-w-md rounded bg-primary-200 dark:bg-primary-300" />
+								<div className="flex gap-1.5">
+									<div className="h-5 w-16 rounded bg-primary-200 dark:bg-primary-300" />
+									<div className="h-5 w-20 rounded bg-primary-200 dark:bg-primary-300" />
+									<div className="h-5 w-14 rounded bg-primary-200 dark:bg-primary-300" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	// 判断是否显示：时间过期 或 AI 判断为高时效性内容
 	const shouldShow = isOutdated || (!loading && capsule?.sensitivity === "high");

@@ -37,8 +37,7 @@ pub struct TimeCapsule {
     /// 内容哈希（用于判断是否需要重新分析）
     pub hash: String,
     /// 创建时间
-    #[serde(serialize_with = "serialize_datetime")]
-    pub created: bson::DateTime,
+    pub created: bson::Bson,
 }
 
 /// 创建 Time Capsule 的请求体

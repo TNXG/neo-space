@@ -157,21 +157,33 @@ pub async fn analyze_time_capsule(
         .sort(doc! { "created": -1 })
         .build();
 
-    if let Ok(Some(existing)) = capsules_collection
+    eprintln!("Looking for refId: {}, current_hash: {}", &request.ref_id, content_hash);
+
+    match capsules_collection
         .find_one(doc! { "refId": &request.ref_id })
         .with_options(find_options)
         .await
     {
-        // 4. 如果 hash 匹配，直接返回缓存结果
-        if existing.hash == content_hash {
-            return Ok(Json(ApiResponse::success(TimeCapsuleResponse {
-                sensitivity: existing.sensitivity,
-                reason: existing.reason,
-                markers: existing.markers,
-                is_new: false,
-            })));
+        Ok(Some(existing)) => {
+            eprintln!("Found existing record, db_hash: {}, current_hash: {}", existing.hash, content_hash);
+            // 4. 如果 hash 匹配，直接返回缓存结果
+            if existing.hash == content_hash {
+                eprintln!("Hash matched, returning cached result");
+                return Ok(Json(ApiResponse::success(TimeCapsuleResponse {
+                    sensitivity: existing.sensitivity,
+                    reason: existing.reason,
+                    markers: existing.markers,
+                    is_new: false,
+                })));
+            }
+            eprintln!("Hash mismatch, will call AI");
         }
-        // hash 不匹配说明内容已更新，继续调用 AI 重新分析
+        Ok(None) => {
+            eprintln!("No existing record found");
+        }
+        Err(e) => {
+            eprintln!("Database query error: {:?}", e);
+        }
     }
 
     // 调用 AI 服务分析
@@ -210,7 +222,7 @@ pub async fn analyze_time_capsule(
         reason: reason.clone(),
         markers: markers.clone(),
         hash: content_hash,
-        created: bson::DateTime::now(),
+        created: bson::Bson::DateTime(bson::DateTime::now()),
     };
 
     capsules_collection
