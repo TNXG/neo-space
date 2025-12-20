@@ -17,6 +17,7 @@ dotenv = "0.15.0"
 reqwest = { version = "0.12.26", features = [ "json" ] }
 async-openai = { version = "0.31.1", features = [ "chat-completion" ] }
 sha1 = "0.10"
+md5 = "0.7"
 
 [dependencies.rocket_db_pools]
 version = "0.2.0"
