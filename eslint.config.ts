@@ -4,6 +4,7 @@ const atf = antfu({
 	ignores: [
 		"src/components/ui/**",
 		"node_modules/**",
+		"backend/target/**",
 	],
 	formatters: true,
 	react: true,

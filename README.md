@@ -8,6 +8,7 @@ Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的�
 ## � 核心技术架构
 
 ### 前端 (Next.js 16 + React 19)
+
 - **渲染策略**: 全面采用 App Router 模型。首页、文章页等主要页面均为 **Server Components**，实现高效的服务器端渲染与数据获取。
 - **设计系统**:
   - **Tailwind CSS v4**: 构建了完整的语义化设计系统，使用 OKLCH 色彩空间定义主题色。
@@ -16,6 +17,7 @@ Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的�
 - **动效**: 使用 **Framer Motion** 实现平滑的页面切换与微交互。
 
 ### 后端 (Rust + Rocket v0.5)
+
 - **高性能基础**: 基于 **Rust** 编写，使用 **Rocket** 框架。异步 I/O (Tokio) 确保了请求响应的高并发处理能力。
 - **数据存储**: **MongoDB**。通过 `mongodb` 官方驱动与 Rust 类型系统集成，实现强类型的数据映射。
 - **API 范式**: 标准的 RESTful 架构，所有接口统一使用 JSON 格式。
@@ -43,7 +45,7 @@ Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的�
 
 后端集成了基于 OpenAI 协议的 AI 能力，并实现了结果持久化。
 
-- **AI 摘要 (AI Summary)**: 
+- **AI 摘要 (AI Summary)**:
   - 文章与手记详情接口会根据 `refId` 自动从 `ai_summaries` 集合中匹配并注入摘要内容。
 - **时效性分析仪 (Time Capsule)**:
   - `POST /api/ai/time-capsule`: 动态分析文章内容的时效性风险。
@@ -61,13 +63,13 @@ Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的�
 
 前端 `MarkdownRenderer.tsx` 针对多种复杂场景进行了深度适配：
 
-| 特性 | 实现方式/说明 |
-| :--- | :--- |
-| **代码高亮** | 基于 Shiki (Highlighter) 的服务器端组件驱动，支持多语言与暗色模式。 |
-| **Mermaid** | 通过 `remarkMermaid` 插件支持流程图、时序图渲染。 |
-| **容器组件** | 自定义 `::: container` 语法，支持特定的 UI 块布局。 |
-| **模糊遮盖 (Spoiler)** | 支持 `!!spoiler!!` 语法，点击可见。 |
-| **名词解析** | 集成 `AbbreviationText` 自动匹配并解析 nbnhhsh 缩写。 |
+| 特性                   | 实现方式/说明                                                       |
+| :--------------------- | :------------------------------------------------------------------ |
+| **代码高亮**           | 基于 Shiki (Highlighter) 的服务器端组件驱动，支持多语言与暗色模式。 |
+| **Mermaid**            | 通过 `remarkMermaid` 插件支持流程图、时序图渲染。                   |
+| **容器组件**           | 自定义 `::: container` 语法，支持特定的 UI 块布局。                 |
+| **模糊遮盖 (Spoiler)** | 支持 `!!spoiler!!` 语法，点击可见。                                 |
+| **名词解析**           | 集成 `AbbreviationText` 自动匹配并解析 nbnhhsh 缩写。               |
 
 ## 📂 项目目录结构 ( As-Is )
 
@@ -101,7 +103,8 @@ Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的�
    ```bash
    ./scripts/dev.sh start
    ```
-   *注意：将同时监听 3000 (Next.js) 与 8000 (Rust) 端口。*
+   _注意：将同时监听 3000 (Next.js) 与 8000 (Rust) 端口。_
 
 ---
+
 © 2025 Neo Space | 坚持真实文档，拒绝虚构功能。

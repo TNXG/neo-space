@@ -1,0 +1,5 @@
+# 排除特定的配置文件
+postcss.config.mjs linguist-detectable=false
+
+# 排除特定的脚本文件
+scripts/dev.sh linguist-detectable=false

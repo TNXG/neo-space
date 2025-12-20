@@ -41,7 +41,8 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 	// 2. 核心文本处理逻辑：将 string 转换为 ReactNode 数组
 	const processString = useCallback(
 		(text: string): ReactNode => {
-			if (!text) return text;
+			if (!text)
+				return text;
 
 			const fragmentId = globalCounter++;
 			const tokens = tokenizer.tokenize(text);
@@ -63,7 +64,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 						<span
 							// 3. Key 策略：使用全局计数器确保绝对唯一
 							key={`abbr-${spanId}`}
-							onClick={(e) => handleClick(e, token.value)}
+							onClick={e => handleClick(e, token.value)}
 							className="border-b border-dashed border-primary cursor-pointer hover:text-primary hover:border-primary/80 transition-colors relative z-10"
 							title="点击查询缩写含义"
 						>
@@ -98,7 +99,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 
 			// Case B: 数组 -> 原生 map 递归
 			if (Array.isArray(node)) {
-				return node.map((child) => traverse(child));
+				return node.map(child => traverse(child));
 			}
 
 			// Case C: React 元素 -> 递归 children 并重建

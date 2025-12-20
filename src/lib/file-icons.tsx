@@ -64,6 +64,8 @@ export function FileIcon({ extension, className, ...props }: { extension?: strin
 			xmlns="http://www.w3.org/2000/svg"
 			viewBox={`0 0 ${svgData.attributes.width} ${svgData.attributes.height}`}
 			className={className}
+			// 可信的内部资源
+			// eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
 			dangerouslySetInnerHTML={{ __html: svgData.body }}
 			{...props}
 		/>
