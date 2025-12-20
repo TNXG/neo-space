@@ -56,8 +56,13 @@ pub async fn list_posts(
                 Status::InternalServerError
             })?;
 
+        let post_id = post.id.to_hex();
         let mut post_with_category = PostWithCategory::from(post);
         post_with_category.category = category;
+        
+        // Fetch AI summary (default to Chinese)
+        post_with_category.ai_summary = get_ai_summary(db, &post_id, "zh").await;
+        
         items.push(post_with_category);
     }
 
@@ -151,4 +156,131 @@ pub async fn get_post_by_slug(
     post_with_category.ai_summary = get_ai_summary(db, &post_id, "zh").await;
 
     Ok(Json(ApiResponse::success(post_with_category)))
+}
+
+/// Get adjacent posts (previous and next) by slug
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AdjacentPosts {
+    pub prev: Option<AdjacentPost>,
+    pub next: Option<AdjacentPost>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AdjacentPost {
+    pub slug: String,
+    pub title: String,
+    #[serde(rename = "categorySlug")]
+    pub category_slug: String,
+}
+
+/// Minimal post structure for projection queries
+#[derive(Debug, Serialize, Deserialize)]
+struct MinimalPost {
+    #[serde(rename = "_id")]
+    pub id: ObjectId,
+    pub slug: String,
+    pub title: String,
+    #[serde(rename = "categoryId")]
+    pub category_id: ObjectId,
+    pub created: bson::DateTime,
+}
+
+#[get("/posts/slug/<slug>/adjacent")]
+pub async fn get_adjacent_posts(
+    db: &State<Database>,
+    slug: &str,
+) -> Result<Json<ApiResponse<AdjacentPosts>>, Status> {
+    let posts_collection = db.collection::<MinimalPost>("posts");
+    let categories_collection = db.collection::<Category>("categories");
+    
+    // First, get the current post to find its creation date
+    let current_post = posts_collection
+        .find_one(doc! { "slug": slug, "isPublished": true })
+        .await
+        .map_err(|e| {
+            eprintln!("Error finding current post: {:?}", e);
+            Status::InternalServerError
+        })?
+        .ok_or(Status::NotFound)?;
+    
+    // Find previous post (older, smaller created date)
+    let prev_filter = doc! { 
+        "created": { "$lt": current_post.created },
+        "isPublished": true 
+    };
+    let prev_options = mongodb::options::FindOneOptions::builder()
+        .sort(doc! { "created": -1 })
+        .build();
+    
+    let prev_post = posts_collection.find_one(prev_filter)
+        .with_options(prev_options)
+        .await
+        .map_err(|e| {
+            eprintln!("Error finding previous post: {:?}", e);
+            Status::InternalServerError
+        })?;
+    
+    // Find next post (newer, larger created date)
+    let next_filter = doc! { 
+        "created": { "$gt": current_post.created },
+        "isPublished": true 
+    };
+    let next_options = mongodb::options::FindOneOptions::builder()
+        .sort(doc! { "created": 1 })
+        .build();
+    
+    let next_post = posts_collection.find_one(next_filter)
+        .with_options(next_options)
+        .await
+        .map_err(|e| {
+            eprintln!("Error finding next post: {:?}", e);
+            Status::InternalServerError
+        })?;
+    
+    // Build adjacent posts with category slugs
+    let prev = if let Some(post) = prev_post {
+        let category = categories_collection
+            .find_one(doc! { "_id": post.category_id })
+            .await
+            .ok()
+            .flatten();
+        
+        if let Some(cat) = category {
+            Some(AdjacentPost {
+                slug: post.slug,
+                title: post.title,
+                category_slug: cat.slug,
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    
+    let next = if let Some(post) = next_post {
+        let category = categories_collection
+            .find_one(doc! { "_id": post.category_id })
+            .await
+            .ok()
+            .flatten();
+        
+        if let Some(cat) = category {
+            Some(AdjacentPost {
+                slug: post.slug,
+                title: post.title,
+                category_slug: cat.slug,
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    
+    let adjacent = AdjacentPosts { prev, next };
+    
+    Ok(Json(ApiResponse::success(adjacent)))
 }

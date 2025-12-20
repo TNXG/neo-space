@@ -63,10 +63,12 @@ async fn rocket() -> _ {
             routes::posts::list_posts,
             routes::posts::get_post_by_id,
             routes::posts::get_post_by_slug,
+            routes::posts::get_adjacent_posts,
             // Notes routes
             routes::notes::list_notes,
             routes::notes::get_note_by_id,
             routes::notes::get_note_by_nid,
+            routes::notes::get_adjacent_notes,
             // Categories routes
             routes::categories::list_categories,
             // Links routes

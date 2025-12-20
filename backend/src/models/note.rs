@@ -40,6 +40,8 @@ pub struct Note {
     pub coordinates: Option<String>,
     #[serde(default)]
     pub count: Option<NoteCount>,
+    #[serde(default, rename = "aiSummary", skip_serializing_if = "Option::is_none")]
+    pub ai_summary: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
