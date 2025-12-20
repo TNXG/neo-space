@@ -17,7 +17,7 @@ export function NotesSection({ notes }: NotesSectionProps) {
 				title="手记"
 				icon="mingcute:pen-line"
 				linkText="更多记录"
-				linkHref="#"
+				linkHref="/notes"
 			/>
 			<div className="flex flex-col gap-1">
 				{notes.map(note => (

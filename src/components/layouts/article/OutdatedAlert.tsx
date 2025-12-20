@@ -34,10 +34,18 @@ export function OutdatedAlert({
 }: OutdatedAlertProps) {
 	const [capsule, setCapsule] = useState<TimeCapsuleResponse | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [mounted] = useState(() => typeof window !== "undefined");
+	const [mounted, setMounted] = useState(false);
+
+	// 客户端挂载标记
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	// 获取 AI 分析
 	useEffect(() => {
+		if (!mounted)
+			return;
+
 		let cancelled = false;
 
 		async function fetchCapsule() {
@@ -59,7 +67,7 @@ export function OutdatedAlert({
 		return () => {
 			cancelled = true;
 		};
-	}, [refId, refType]);
+	}, [refId, refType, mounted]);
 
 	// 服务端渲染时不显示，避免 hydration 问题
 	if (!mounted) {

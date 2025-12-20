@@ -3,6 +3,15 @@ import type { TOCItem } from "@/lib/toc";
 import { ArticleContent } from "./ArticleContent";
 import { ArticleNavButtons } from "./ArticleNavButtons";
 import { ArticleTOC } from "./ArticleTOC";
+import { ArticleTOCWrapper } from "./ArticleTOCWrapper";
+
+export interface ArticleNavigation {
+	prevLink?: string;
+	nextLink?: string;
+	prevTitle?: string;
+	nextTitle?: string;
+	type?: "post" | "note";
+}
 
 interface ArticleLayoutProps {
 	/** 文章头部（标题、元信息等） */
@@ -13,10 +22,8 @@ interface ArticleLayoutProps {
 	toc: TOCItem[];
 	/** 文章底部（评论、相关文章等） */
 	footer?: ReactNode;
-	/** 上一篇文章链接 */
-	prevLink?: string;
-	/** 下一篇文章链接 */
-	nextLink?: string;
+	/** 导航数据 */
+	navigation?: ArticleNavigation;
 }
 
 /**
@@ -29,12 +36,11 @@ export function ArticleLayout({
 	content,
 	toc,
 	footer,
-	prevLink,
-	nextLink,
+	navigation,
 }: ArticleLayoutProps) {
 	return (
 		<main className="min-h-screen bg-background text-foreground">
-			<div className="max-w-7xl mx-auto pt-24 pb-16 px-4 lg:px-8">
+			<div className="max-w-7xl mx-auto pt-24 pb-16 px-4 lg:px-8 relative">
 				{/* 正文区 - 居中显示 */}
 				<article className="max-w-3xl mx-auto min-w-0">
 					{header}
@@ -50,11 +56,11 @@ export function ArticleLayout({
 					)}
 				</article>
 
-				{/* 右侧 TOC 区 - fixed 定位，固定在视口 */}
-				<aside className="hidden xl:block fixed top-24 w-56" style={{ left: "calc(50% + 400px + 2rem)" }}>
+				{/* 右侧 TOC 区 - 使用智能定位包装器 */}
+				<ArticleTOCWrapper>
 					<ArticleTOC />
-					<ArticleNavButtons prevLink={prevLink} nextLink={nextLink} />
-				</aside>
+					{navigation && <ArticleNavButtons {...navigation} />}
+				</ArticleTOCWrapper>
 			</div>
 		</main>
 	);

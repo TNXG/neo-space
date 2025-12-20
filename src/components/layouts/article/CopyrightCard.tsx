@@ -182,7 +182,7 @@ export function CopyrightCard({
 								);
 							})}
 						</div>
-						<div className="flex-1 min-h-[24px] flex items-center justify-center sm:justify-start relative">
+						<div className="flex-1 min-h-6 flex items-center justify-center sm:justify-start relative">
 							{/* 悬停时显示的图标描述 - 始终渲染所有可能的描述，通过 opacity 控制显示 */}
 							{config.atoms.map(atom => (
 								<div

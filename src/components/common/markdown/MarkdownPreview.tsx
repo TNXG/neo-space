@@ -9,8 +9,6 @@ import { AbbreviationText } from "@/components/common/nbnhhsh/AbbreviationText";
 
 import { truncateText } from "./utils";
 
-import "server-only";
-
 /**
  * 预览模式的组件样式（简化，图片和代码块用文字替代）
  * 使用中间色调文字确保可读性

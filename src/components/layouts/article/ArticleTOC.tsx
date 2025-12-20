@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTOCStore } from "@/lib/stores/toc-store";
 
@@ -8,96 +8,83 @@ interface ArticleTOCProps {
 	className?: string;
 }
 
-/**
- * 文章目录组件
- * 使用 zustand 状态管理实现 TOC 和正文同步高亮
- * 当进入某个大标题区域时，其子节点会略微放大并更显眼
- */
 export function ArticleTOC({ className = "" }: ArticleTOCProps) {
-	const { activeId, items, scrollToCenter } = useTOCStore();
+	const { activeId, items, scrollToCenter, isAutoScrollEnabled } = useTOCStore();
 	const tocRef = useRef<HTMLElement>(null);
 
-	// 计算当前激活的父级 H2 标题 ID
-	const activeParentH2Id = useMemo(() => {
+	// 1. 解决 Compiler 警告：移除复杂的条件 return，改为扁平化计算
+	// 计算当前激活项的索引
+	const activeIndex = useMemo(() => {
 		if (!activeId || items.length === 0)
-			return null;
-
-		const activeIndex = items.findIndex(item => item.id === activeId);
-		if (activeIndex === -1)
-			return null;
-
-		// 如果当前激活的就是 H2，返回它自己
-		if (items[activeIndex].depth === 2)
-			return activeId;
-
-		// 向上查找最近的 H2 父级
-		for (let i = activeIndex - 1; i >= 0; i--) {
-			if (items[i].depth === 2)
-				return items[i].id;
-		}
-
-		return null;
+			return -1;
+		return items.findIndex(item => item.id === activeId);
 	}, [activeId, items]);
 
-	// 判断某个子标题是否属于当前激活的 H2 区域
-	const isInActiveSection = (itemId: string, itemDepth: number): boolean => {
-		if (!activeParentH2Id || itemDepth === 2)
-			return false;
+	// 2. 预计算激活区域的范围 (范围: [activeSectionStart, activeSectionEnd))
+	// 这样在渲染循环中只需要做简单的 index 比较，性能极佳
+	const { activeParentIndex, activeSectionEndIndex } = useMemo(() => {
+		if (activeIndex === -1)
+			return { activeParentIndex: -1, activeSectionEndIndex: -1 };
 
-		const parentIndex = items.findIndex(item => item.id === activeParentH2Id);
-		const itemIndex = items.findIndex(item => item.id === itemId);
+		let parentIndex = -1;
 
-		if (parentIndex === -1 || itemIndex === -1 || itemIndex <= parentIndex)
-			return false;
-
-		// 检查是否在下一个 H2 之前
-		for (let i = parentIndex + 1; i < itemIndex; i++) {
-			if (items[i].depth === 2)
-				return false;
+		// 如果当前是 H2，它自己就是父级
+		if (items[activeIndex].depth === 2) {
+			parentIndex = activeIndex;
+		} else {
+			// 否则向上查找最近的 H2
+			for (let i = activeIndex - 1; i >= 0; i--) {
+				if (items[i].depth === 2) {
+					parentIndex = i;
+					break;
+				}
+			}
 		}
 
-		// 检查 itemIndex 之后是否有 H2（确保 item 在当前 section 内）
-		for (let i = itemIndex + 1; i < items.length; i++) {
-			if (items[i].depth === 2)
-				return true;
+		// 如果没找到父级（比如第一个标题就是 H3），则没有激活区域
+		if (parentIndex === -1)
+			return { activeParentIndex: -1, activeSectionEndIndex: -1 };
+
+		// 查找当前区域的结束位置（下一个 H2 的位置或列表末尾）
+		let endIndex = items.length;
+		for (let i = parentIndex + 1; i < items.length; i++) {
+			if (items[i].depth === 2) {
+				endIndex = i;
+				break;
+			}
 		}
 
-		return true;
-	};
+		return { activeParentIndex: parentIndex, activeSectionEndIndex: endIndex };
+	}, [activeIndex, items]);
 
-	// TOC 自动重聚焦（带防抖，避免快速滚动时抖动）
+	// 滚动逻辑保持不变，但依赖更稳定的 activeId
 	const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
-		if (!activeId || !tocRef.current)
+		if (!isAutoScrollEnabled || !activeId || !tocRef.current)
 			return;
 
-		// 清除之前的定时器
-		if (scrollTimeoutRef.current) {
+		if (scrollTimeoutRef.current)
 			clearTimeout(scrollTimeoutRef.current);
-		}
 
-		// 延迟执行滚动，防止快速滚动时抖动
 		scrollTimeoutRef.current = setTimeout(() => {
 			const activeLink = document.getElementById(`toc-link-${activeId}`);
 			if (activeLink && tocRef.current) {
 				const container = tocRef.current;
 				const relativeTop = activeLink.offsetTop;
-				const targetScroll = relativeTop - (container.clientHeight / 2) + (activeLink.clientHeight / 2);
+				const targetScroll = relativeTop - container.clientHeight / 2 + activeLink.clientHeight / 2;
 
-				container.scrollTo({
-					top: targetScroll,
-					behavior: "smooth",
+				requestAnimationFrame(() => {
+					container.scrollTo({ top: targetScroll, behavior: "smooth" });
 				});
 			}
-		}, 100);
+		}, 150);
 
 		return () => {
-			if (scrollTimeoutRef.current) {
+			if (scrollTimeoutRef.current)
 				clearTimeout(scrollTimeoutRef.current);
-			}
 		};
-	}, [activeId]);
+	}, [activeId, isAutoScrollEnabled]);
 
 	if (items.length === 0)
 		return null;
@@ -110,28 +97,35 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 	};
 
 	return (
-		<div className={`sticky top-24 ${className}`}>
-			<h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-6 px-2">Table of Contents</h4>
+		<div className={className}>
+			<h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-6 px-2">
+				Table of Contents
+			</h4>
 
 			<div className="relative group">
 				<nav
 					ref={tocRef}
 					className={`
-						${isShortTOC ? "" : "max-h-[40vh] overflow-y-auto"} 
-						pr-2 relative -ml-2 scroll-smooth
-					`}
+            ${isShortTOC ? "" : "max-h-[40vh] overflow-y-auto"} 
+            pr-2 relative -ml-2 scroll-smooth
+          `}
 					style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
 				>
-					<style>
-						{`nav::-webkit-scrollbar { display: none; }`}
-					</style>
+					<style>{`nav::-webkit-scrollbar { display: none; }`}</style>
 
 					<ul className={`space-y-0.5 ${isShortTOC ? "" : "pb-10"}`}>
-						{items.map((item) => {
-							const isActive = activeId === item.id;
+						{items.map((item, index) => {
+							const isActive = index === activeIndex;
 							const isH2 = item.depth === 2;
-							const isActiveParent = activeParentH2Id === item.id;
-							const inActiveSection = isInActiveSection(item.id, item.depth);
+
+							// 判断是否是当前激活区域的 H2 标题
+							const isActiveParent = index === activeParentIndex;
+
+							// 判断是否在当前激活区域内（不包含 H2 自身）
+							const inActiveSection
+								= !isH2
+									&& index > activeParentIndex
+									&& index < activeSectionEndIndex;
 
 							return (
 								<li key={item.id}>
@@ -140,71 +134,79 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 										href={`#${item.id}`}
 										onClick={e => handleClick(e, item.id)}
 										className={`
-											flex items-center py-1 px-2.5 rounded-md relative cursor-pointer
-											${isH2 ? "font-medium" : "pl-5"}
-											${isActive
+                      flex items-center py-1 px-2.5 rounded-md relative cursor-pointer origin-left transition-colors duration-200
+                      ${isH2 ? "font-medium text-xs" : "pl-5 text-[11px]"}
+                      ${
+								isActive
 									? "text-foreground font-semibold"
 									: isActiveParent
 										? "text-foreground font-medium"
 										: inActiveSection
 											? "text-foreground/90 font-medium"
-											: "text-muted-foreground/70 hover:text-foreground hover:bg-accent/20"}
-										`}
-										initial={false}
+											: "text-muted-foreground/70 hover:text-foreground hover:bg-accent/20"
+								}
+                    `}
+										// 使用 animate 属性直接控制样式，比 AnimatePresence 更稳定
 										animate={{
 											backgroundColor: isActive
 												? "rgba(var(--accent-rgb), 0.4)"
 												: inActiveSection
 													? "rgba(var(--accent-rgb), 0.08)"
 													: "rgba(0, 0, 0, 0)",
-											fontSize: isH2
-												? (isActive || isActiveParent ? "13px" : "12px")
-												: (isActive ? "12.5px" : inActiveSection ? "12px" : "11px"),
-											paddingLeft: !isH2 ? (inActiveSection ? "16px" : "20px") : undefined,
-											opacity: (!isActive && !isActiveParent && !inActiveSection) ? 0.6 : 1,
+											scale: isH2
+												? isActive || isActiveParent
+													? 1.05
+													: 1
+												: isActive
+													? 1.08
+													: inActiveSection
+														? 1.02
+														: 1,
+											opacity: !isActive && !isActiveParent && !inActiveSection ? 0.6 : 1,
 										}}
-										transition={{ duration: 0.25 }}
+										transition={{ duration: 0.15, ease: "easeOut" }}
 									>
-										{/* 左侧激活色条 */}
-										<AnimatePresence>
-											{isActive && (
-												<motion.span
-													key={`toc-indicator-${item.id}`}
-													initial={{ opacity: 0, height: 0 }}
-													animate={{ opacity: 1, height: "75%" }}
-													exit={{ opacity: 0, height: 0 }}
-													transition={{ duration: 0.3 }}
-													className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 bg-accent-600 rounded-r-full"
-												/>
-											)}
-										</AnimatePresence>
-										{/* 父级 H2 的侧边指示条 */}
-										<AnimatePresence>
-											{isActiveParent && !isActive && (
-												<motion.span
-													key={`toc-parent-indicator-${item.id}`}
-													initial={{ opacity: 0, height: 0 }}
-													animate={{ opacity: 0.7, height: "70%" }}
-													exit={{ opacity: 0, height: 0 }}
-													transition={{ duration: 0.25 }}
-													className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 bg-accent-500 rounded-r-full"
-												/>
-											)}
-										</AnimatePresence>
-										{/* 激活区域内子节点的侧边指示点 */}
-										<AnimatePresence>
-											{inActiveSection && !isActive && (
-												<motion.span
-													key={`toc-section-indicator-${item.id}`}
-													initial={{ opacity: 0, scale: 0 }}
-													animate={{ opacity: 0.6, scale: 1 }}
-													exit={{ opacity: 0, scale: 0 }}
-													transition={{ duration: 0.2 }}
-													className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-1 bg-accent-400 rounded-full"
-												/>
-											)}
-										</AnimatePresence>
-										<span className="truncate">{item.title}</span>
+										{/*
+                       3. 彻底消除闪烁的关键：
+                       移除 AnimatePresence，让指示器始终存在，
+                       只通过 opacity 和 scale 动画来显示/隐藏。
+                       这样 DOM 结构不会变动，不会触发布局重算。
+                    */}
+
+										{/* 左侧激活色条 (Active Item) */}
+										<motion.span
+											className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 bg-accent-600 rounded-r-full"
+											initial={false}
+											animate={{
+												opacity: isActive ? 1 : 0,
+												height: isActive ? "75%" : "0%",
+											}}
+											transition={{ duration: 0.2 }}
+										/>
+
+										{/* 父级 H2 的侧边指示条 (Active Parent) */}
+										<motion.span
+											className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 bg-accent-500 rounded-r-full"
+											initial={false}
+											animate={{
+												opacity: isActiveParent && !isActive ? 0.7 : 0,
+												height: isActiveParent && !isActive ? "70%" : "0%",
+											}}
+											transition={{ duration: 0.2 }}
+										/>
+
+										{/* 激活区域内子节点的侧边指示点 (In Section) */}
+										<motion.span
+											className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-1 bg-accent-400 rounded-full"
+											initial={false}
+											animate={{
+												opacity: inActiveSection && !isActive ? 0.6 : 0,
+												scale: inActiveSection && !isActive ? 1 : 0,
+											}}
+											transition={{ duration: 0.2 }}
+										/>
+
+										<span className="truncate relative z-10">{item.title}</span>
 									</motion.a>
 								</li>
 							);
@@ -213,7 +215,7 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 				</nav>
 
 				{!isShortTOC && (
-					<div className="absolute bottom-0 left-0 w-full h-10 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
+					<div className="absolute bottom-0 left-0 w-full h-10 bg-linear-to-t from-background via-background/80 to-transparent pointer-events-none z-10" />
 				)}
 			</div>
 		</div>

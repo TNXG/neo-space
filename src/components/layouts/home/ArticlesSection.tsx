@@ -1,6 +1,6 @@
 import type { Post } from "@/types/api";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { ArticleCard } from "./ArticleCard";
+import { ArticlePreview } from "./ArticlePreview";
 
 interface ArticlesSectionProps {
 	articles: Post[];
@@ -21,7 +21,7 @@ export function ArticlesSection({ articles }: ArticlesSectionProps) {
 			/>
 			<div className="space-y-4">
 				{articles.map(article => (
-					<ArticleCard key={article._id} article={article} />
+					<ArticlePreview key={article._id} article={article} />
 				))}
 			</div>
 		</section>

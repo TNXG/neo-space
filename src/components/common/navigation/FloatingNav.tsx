@@ -22,7 +22,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
 	{ id: "home", title: "首页", icon: "mingcute:home-2-line", href: "/" },
-	{ id: "articles", title: "文章", icon: "mingcute:book-2-line", href: "/articles" },
+	{ id: "articles", title: "文章", icon: "mingcute:book-2-line", href: "/posts" },
 	{ id: "notes", title: "手记", icon: "mingcute:pen-line", href: "/notes" },
 	{ id: "thoughts", title: "想法", icon: "mingcute:comment-line", href: "/thoughts" },
 	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "/about" },

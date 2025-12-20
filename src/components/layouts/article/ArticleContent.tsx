@@ -91,6 +91,16 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 						}
 					}
 
+					// 如果没有找到激活的标题，但最后一个标题已经在视口上方
+					// 则保持最后一个标题为激活状态（防止滚动到底部时闪烁）
+					if (!activeHeading && headings.length > 0) {
+						const lastHeading = headings[headings.length - 1];
+						const lastRect = lastHeading.getBoundingClientRect();
+						if (lastRect.top < 0) {
+							activeHeading = lastHeading;
+						}
+					}
+
 					if (activeHeading && activeHeading.id) {
 						debouncedSetActiveId(activeHeading.id);
 					}
