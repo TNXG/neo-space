@@ -4,6 +4,7 @@ pub mod response;
 pub mod post;
 pub mod note;
 pub mod category;
+pub mod comment;
 pub mod link;
 pub mod page;
 pub mod recently;
@@ -17,6 +18,7 @@ pub use response::{ApiResponse, ResponseStatus, Pagination, PaginatedData, Pagin
 pub use post::{Post, PostWithCategory, PostImage};
 pub use note::{Note, NoteImage, NoteCount};
 pub use category::Category;
+pub use comment::{Comment, CommentTree, CreateCommentRequest, UpdateCommentRequest, CommentListResponse};
 pub use link::Link;
 pub use page::Page;
 pub use recently::Recently;

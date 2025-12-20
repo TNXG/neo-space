@@ -71,6 +71,11 @@ async fn rocket() -> _ {
             routes::notes::get_adjacent_notes,
             // Categories routes
             routes::categories::list_categories,
+            // Comments routes
+            routes::comments::list_comments,
+            routes::comments::create_comment,
+            routes::comments::update_comment,
+            routes::comments::delete_comment,
             // Links routes
             routes::links::list_links,
             // Recentlies (Moments) routes

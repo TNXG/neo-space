@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod categories;
+pub mod comments;
 pub mod config;
 pub mod links;
 pub mod nbnhhsh;
