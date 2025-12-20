@@ -73,14 +73,26 @@ export const getStandaloneImageProps = (node: ReactNode): { src: string; alt?: s
 
 	if (meaningfulNodes.length === 1) {
 		const onlyChild = meaningfulNodes[0];
+
+		// 检查是否为原始 img 标签
 		if (isValidElement(onlyChild) && onlyChild.type === "img") {
 			const { src, alt } = (onlyChild.props ?? {}) as { src?: string; alt?: string };
 			if (typeof src === "string" && src.length > 0)
 				return { src, alt };
 		}
-		if (isValidElement(onlyChild) && (onlyChild.type as any).name === "ImageFigure") {
-			const props = onlyChild.props as any;
-			return { src: props.src, alt: props.alt };
+
+		// 检查是否为 ImageFigure 组件（通过函数名或 displayName）
+		if (isValidElement(onlyChild)) {
+			const type = onlyChild.type as any;
+			const isImageFigure
+				= type?.name === "ImageFigure"
+					|| type?.displayName === "ImageFigure"
+					|| (typeof type === "function" && type.toString().includes("ImageFigure"));
+
+			if (isImageFigure) {
+				const props = onlyChild.props as any;
+				return { src: props.src, alt: props.alt };
+			}
 		}
 	}
 	return null;

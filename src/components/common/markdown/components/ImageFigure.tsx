@@ -206,9 +206,12 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
 					)}
 				</WrapperTag>
 				{isBlock && alt && (
-					<figcaption className="max-w-[90%] text-center text-sm text-primary-500 dark:text-primary-400">
-						{alt}
-					</figcaption>
+					<>
+						<div className="w-16 h-px bg-primary-300/50 dark:bg-primary-600/50" />
+						<figcaption className="max-w-[90%] text-center text-sm text-primary-500 dark:text-primary-400">
+							{alt}
+						</figcaption>
+					</>
 				)}
 			</ContainerTag>
 			{mounted && isOpen && (
