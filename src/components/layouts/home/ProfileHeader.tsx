@@ -34,7 +34,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 							)
 						: null}
 					{/* Fallback avatar */}
-					<div className={`text-xl md:text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br dark:from-stone-700 dark:to-stone-800 text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
+					<div className={`text-xl md:text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
 						{profile.name.charAt(0).toUpperCase()}
 					</div>
 					{/* Status indicator */}

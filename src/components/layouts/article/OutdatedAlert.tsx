@@ -99,25 +99,25 @@ export function OutdatedAlert({
 	if (loading) {
 		return (
 			<div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
-				<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 dark:border-primary-600 bg-primary-100/50 dark:bg-primary-200/50 backdrop-blur-sm p-1">
-					<div className="relative overflow-hidden rounded-lg bg-white/60 dark:bg-primary-100/60 border border-primary-200 dark:border-primary-300 p-5 md:p-6">
+				<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 bg-primary-100/50 backdrop-blur-sm p-1">
+					<div className="relative overflow-hidden rounded-lg bg-white/60 border border-primary-200 p-5 md:p-6">
 						<div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center animate-pulse">
 							{/* 图标骨架 */}
 							<div className="shrink-0">
-								<div className="w-12 h-12 rounded-xl bg-primary-200 dark:bg-primary-300" />
+								<div className="w-12 h-12 rounded-xl bg-primary-200" />
 							</div>
 							{/* 文本骨架 */}
 							<div className="flex-1 space-y-3">
 								<div className="flex gap-2">
-									<div className="h-4 w-20 rounded bg-primary-200 dark:bg-primary-300" />
-									<div className="h-4 w-16 rounded bg-primary-200 dark:bg-primary-300" />
+									<div className="h-4 w-20 rounded bg-primary-200" />
+									<div className="h-4 w-16 rounded bg-primary-200" />
 								</div>
-								<div className="h-5 w-48 rounded bg-primary-200 dark:bg-primary-300" />
-								<div className="h-4 w-full max-w-md rounded bg-primary-200 dark:bg-primary-300" />
+								<div className="h-5 w-48 rounded bg-primary-200" />
+								<div className="h-4 w-full max-w-md rounded bg-primary-200" />
 								<div className="flex gap-1.5">
-									<div className="h-5 w-16 rounded bg-primary-200 dark:bg-primary-300" />
-									<div className="h-5 w-20 rounded bg-primary-200 dark:bg-primary-300" />
-									<div className="h-5 w-14 rounded bg-primary-200 dark:bg-primary-300" />
+									<div className="h-5 w-16 rounded bg-primary-200" />
+									<div className="h-5 w-20 rounded bg-primary-200" />
+									<div className="h-5 w-14 rounded bg-primary-200" />
 								</div>
 							</div>
 						</div>
@@ -146,11 +146,11 @@ export function OutdatedAlert({
 	return (
 		<div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
 			{/* 外层虚线边框容器 */}
-			<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 dark:border-primary-600 bg-primary-100/50 dark:bg-primary-200/50 backdrop-blur-sm p-1">
+			<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 bg-primary-100/50 backdrop-blur-sm p-1">
 				{/* 内层实线容器 */}
-				<div className="relative overflow-hidden rounded-lg bg-white/60 dark:bg-primary-100/60 border border-primary-200 dark:border-primary-300 p-5 md:p-6">
+				<div className="relative overflow-hidden rounded-lg bg-white/60 border border-primary-200 p-5 md:p-6">
 					{/* 背景水印 */}
-					<div className="absolute -right-6 -bottom-8 text-primary-400/10 dark:text-primary-600/10 pointer-events-none select-none z-0">
+					<div className="absolute -right-6 -bottom-8 text-primary-400/10 pointer-events-none select-none z-0">
 						<Icon
 							icon="mingcute:sandglass-line"
 							width={160}
@@ -162,7 +162,7 @@ export function OutdatedAlert({
 					<div className="relative z-10 flex flex-col sm:flex-row gap-5 items-start sm:items-center">
 						{/* 左侧图标 */}
 						<div className="shrink-0">
-							<div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-200 dark:bg-primary-300 text-primary-600 dark:text-primary-700 border border-primary-300 dark:border-primary-400 shadow-sm">
+							<div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-200 text-primary-600 border border-primary-300 shadow-sm">
 								<Icon icon="mingcute:sandglass-line" width={24} height={24} />
 							</div>
 						</div>
@@ -171,16 +171,16 @@ export function OutdatedAlert({
 						<div className="flex-1 space-y-2">
 							{/* 标签 */}
 							<div className="flex flex-wrap items-center gap-2">
-								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-primary-200 dark:bg-primary-300 text-primary-700 dark:text-primary-800 border border-primary-300 dark:border-primary-400">
+								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-primary-200 text-primary-700 border border-primary-300 dark:border-primary-400">
 									Time Capsule
 								</span>
 								{sensitivityLabel && (
 									<span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
 										capsule?.sensitivity === "high"
-											? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
+											? "bg-amber-100 text-amber-700 dark:text-amber-400"
 											: capsule?.sensitivity === "low"
-												? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
-												: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
+												? "bg-green-100 text-green-700 dark:text-green-400"
+												: "bg-blue-100 text-blue-700 dark:text-blue-400"
 									}`}
 									>
 										{sensitivityLabel}
@@ -194,7 +194,7 @@ export function OutdatedAlert({
 										<h4 className="text-base font-bold text-foreground">
 											本文最后更新于
 											{" "}
-											<span className="text-accent-600 dark:text-accent-500 border-b-2 border-accent-300 dark:border-accent-600">
+											<span className="text-accent-600 border-b-2 border-accent-300 dark:border-accent-600">
 												{timeDesc}
 											</span>
 											{" "}
@@ -229,7 +229,7 @@ export function OutdatedAlert({
 									{capsule.markers.map(marker => (
 										<span
 											key={marker}
-											className="px-2 py-0.5 rounded text-xs bg-primary-200/80 dark:bg-primary-400/50 text-primary-700 dark:text-primary-800"
+											className="px-2 py-0.5 rounded text-xs bg-primary-200/80 text-primary-700 dark:text-primary-800"
 										>
 											{marker}
 										</span>

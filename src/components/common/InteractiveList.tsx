@@ -172,7 +172,7 @@ export function InteractiveList<T extends Item>({
 					{/* Category */}
 					{post.category && (
 						<div className="flex justify-start">
-							<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300">
+							<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:text-primary-300">
 								<Icon icon="mingcute:folder-open-line" />
 								{post.category.name}
 							</span>
@@ -180,7 +180,7 @@ export function InteractiveList<T extends Item>({
 					)}
 
 					{/* Summary */}
-					<div className="text-primary-600 dark:text-primary-400 text-sm leading-7">
+					<div className="text-primary-600 text-sm leading-7">
 						{post.aiSummary && !post.summary && (
 							<div className="flex items-center gap-1.5 mb-2">
 								<Icon icon="mingcute:sparkles-line" className="w-3.5 h-3.5 text-accent-500" />
@@ -200,7 +200,7 @@ export function InteractiveList<T extends Item>({
 					{post.tags && post.tags.length > 0 && (
 						<div className="flex flex-wrap justify-start gap-2 pt-2">
 							{post.tags.map(tag => (
-								<span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 dark:bg-accent-950/40 px-2 py-1 rounded-md border border-accent-100 dark:border-accent-900/50">
+								<span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100 dark:border-accent-900/50">
 									<Icon icon="mingcute:tag-line" />
 									{tag}
 								</span>
@@ -260,19 +260,19 @@ export function InteractiveList<T extends Item>({
 				{/* Mood & Weather & Location */}
 				<div className="flex flex-wrap justify-start gap-2">
 					{note.mood && (
-						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 dark:bg-pink-800 text-pink-700 dark:text-pink-300">
+						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700 dark:text-pink-300">
 							<Icon icon="mingcute:emoji-line" />
 							{note.mood}
 						</span>
 					)}
 					{note.weather && (
-						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300">
+						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:text-blue-300">
 							<Icon icon="mingcute:cloud-line" />
 							{note.weather}
 						</span>
 					)}
 					{note.location && (
-						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300">
+						<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:text-green-300">
 							<Icon icon="mingcute:location-line" />
 							{note.location}
 						</span>
@@ -280,7 +280,7 @@ export function InteractiveList<T extends Item>({
 				</div>
 
 				{/* Text Preview */}
-				<div className="text-primary-600 dark:text-primary-400 text-sm leading-7">
+				<div className="text-primary-600 text-sm leading-7">
 					{note.aiSummary && (
 						<div className="flex items-center gap-1.5 mb-2">
 							<Icon icon="mingcute:sparkles-line" className="w-3.5 h-3.5 text-accent-500" />
@@ -356,7 +356,7 @@ export function InteractiveList<T extends Item>({
 										<h3 className={cn(
 											"text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
 											isActive && !isMobile
-												? "text-accent-600 dark:text-accent-400 font-semibold"
+												? "text-accent-600 font-semibold"
 												: "text-foreground/80 font-medium",
 										)}
 										>

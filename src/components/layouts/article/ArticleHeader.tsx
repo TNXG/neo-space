@@ -59,7 +59,7 @@ export function ArticleHeader({
 							</span>
 						</div>
 					)}
-					<p className="text-base text-foreground/80 dark:text-foreground/90 leading-relaxed">
+					<p className="text-base text-foreground/80 leading-relaxed">
 						{displaySummary}
 					</p>
 				</div>
@@ -100,7 +100,7 @@ export function ArticleHeader({
 					{tags.map(tag => (
 						<span
 							key={tag}
-							className="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-300"
+							className="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700 dark:text-primary-300"
 						>
 							#
 							{tag}

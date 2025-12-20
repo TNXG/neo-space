@@ -179,7 +179,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
 				} ${className || "my-8"}`}
 			>
 				<WrapperTag
-					className={`relative w-fit max-w-full overflow-hidden rounded-xl border border-primary-200 bg-transparent shadow-sm transition-all duration-300 hover:shadow-md hover:border-accent-300/50 dark:border-primary-800 ${wrapperClassExtra}`}
+					className={`relative w-fit max-w-full overflow-hidden rounded-xl border border-primary-200 bg-transparent shadow-sm transition-all duration-300 hover:shadow-md hover:border-accent-300/50 ${wrapperClassExtra}`}
 				>
 					<img
 						ref={imgRef}
@@ -207,8 +207,8 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
 				</WrapperTag>
 				{isBlock && alt && (
 					<>
-						<div className="w-12 md:w-16 h-px bg-primary-300/50 dark:bg-primary-600/50" />
-						<figcaption className="max-w-[95%] md:max-w-[90%] text-center text-xs md:text-sm text-primary-500 dark:text-primary-400 px-2">
+						<div className="w-12 md:w-16 h-px bg-primary-300/50" />
+						<figcaption className="max-w-[95%] md:max-w-[90%] text-center text-xs md:text-sm text-primary-500 px-2">
 							{alt}
 						</figcaption>
 					</>
