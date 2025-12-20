@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
-import { getNoteByNid } from "@/lib/api-client";
+import { getAdjacentNotes, getNoteByNid } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 60;
@@ -37,9 +37,17 @@ export default async function NotePage({ params }: PageProps) {
 
 	let note;
 	let toc;
+	let adjacentNotes;
+
 	try {
-		const { data } = await getNoteByNid(nidNum);
-		note = data;
+		// 并行获取手记内容和相邻手记信息
+		const [noteResponse, adjacentResponse] = await Promise.all([
+			getNoteByNid(nidNum),
+			getAdjacentNotes(nidNum),
+		]);
+
+		note = noteResponse.data;
+		adjacentNotes = adjacentResponse.data;
 		toc = await extractTOC(note.text);
 	} catch {
 		notFound();
@@ -61,10 +69,21 @@ export default async function NotePage({ params }: PageProps) {
 			)}
 			content={(
 				<>
-					<OutdatedAlert lastUpdated={note.modified || note.created} />
+					<OutdatedAlert
+						refId={note._id}
+						refType="note"
+						lastUpdated={note.modified || note.created}
+					/>
 					<MarkdownRenderer content={note.text} />
 				</>
 			)}
+			navigation={{
+				type: "note",
+				prevLink: adjacentNotes.prev ? `/notes/${adjacentNotes.prev.nid}` : undefined,
+				nextLink: adjacentNotes.next ? `/notes/${adjacentNotes.next.nid}` : undefined,
+				prevTitle: adjacentNotes.prev?.title,
+				nextTitle: adjacentNotes.next?.title,
+			}}
 		/>
 	);
 }

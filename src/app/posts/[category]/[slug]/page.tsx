@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
-import { getPostBySlug, getUserProfile } from "@/lib/api-client";
+import { getAdjacentPosts, getPostBySlug, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 60;
@@ -45,13 +45,17 @@ export default async function PostPage({ params }: PageProps) {
 	let post;
 	let toc;
 	let authorName = "作者";
+	let adjacentPosts;
+
 	try {
-		const [{ data }, { data: user }] = await Promise.all([
+		const [{ data }, { data: user }, adjacentResponse] = await Promise.all([
 			getPostBySlug(slug),
 			getUserProfile(),
+			getAdjacentPosts(slug),
 		]);
 		post = data;
 		authorName = user.name;
+		adjacentPosts = adjacentResponse.data;
 
 		if (post.category?.slug !== category) {
 			notFound();
@@ -97,6 +101,13 @@ export default async function PostPage({ params }: PageProps) {
 					postTitle={post.title}
 				/>
 			)}
+			navigation={{
+				type: "post",
+				prevLink: adjacentPosts.prev ? `/posts/${adjacentPosts.prev.categorySlug}/${adjacentPosts.prev.slug}` : undefined,
+				nextLink: adjacentPosts.next ? `/posts/${adjacentPosts.next.categorySlug}/${adjacentPosts.next.slug}` : undefined,
+				prevTitle: adjacentPosts.prev?.title,
+				nextTitle: adjacentPosts.next?.title,
+			}}
 		/>
 	);
 }

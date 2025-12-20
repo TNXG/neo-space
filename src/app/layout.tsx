@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 		return {
 			title: {
-				template: `%s | ${seo.title}`,
+				template: `%s - ${seo.title}`,
 				default: seo.title,
 			},
 			description: seo.description,
@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 		// 降级到默认值
 		return {
 			title: {
-				template: "%s | Blog",
+				template: "%s - Blog",
 				default: "Blog",
 			},
 			description: "Personal blog powered by Neo-Space",
