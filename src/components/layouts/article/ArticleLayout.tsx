@@ -40,7 +40,7 @@ export function ArticleLayout({
 }: ArticleLayoutProps) {
 	return (
 		<main className="min-h-screen bg-background text-foreground">
-			<div className="max-w-7xl mx-auto pt-24 pb-16 px-4 lg:px-8 relative">
+			<div className="max-w-7xl mx-auto pt-16 md:pt-24 pb-12 md:pb-16 px-4 lg:px-8 relative">
 				{/* 正文区 - 居中显示 */}
 				<article className="max-w-3xl mx-auto min-w-0">
 					{header}

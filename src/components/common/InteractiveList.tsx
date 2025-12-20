@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
+import { useIsMobile } from "@/hook/use-is-mobile";
 import { cn } from "@/lib/utils";
 
 type Item = Post | Note;
@@ -33,10 +34,11 @@ export function InteractiveList<T extends Item>({
 	emptyMessage = "选择一项查看详情",
 }: InteractiveListProps<T>) {
 	const [hoveredId, setHoveredId] = useState<string | null>(null);
+	const isMobile = useIsMobile();
 
-	// 初始化时尝试选中第一个，如果没有数据则为 null
+	// 初始化时尝试选中第一个，移动端不选中
 	const [selectedId, setSelectedId] = useState<string | null>(
-		items.length > 0 ? items[0]._id : null,
+		!isMobile && items.length > 0 ? items[0]._id : null,
 	);
 
 	// 用于追踪指示条位置
@@ -46,11 +48,15 @@ export function InteractiveList<T extends Item>({
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const activeItem = hoveredId
-		? items.find(item => item._id === hoveredId)
-		: (selectedId && items.find(item => item._id === selectedId)) // 检查 selectedId 是否在当前列表中
-				? items.find(item => item._id === selectedId)
-				: items[0]; // 如果没选中或选中项不在当前页（翻页了），默认使用第一项
+
+	// 移动端不显示预览，activeItem 为 null
+	const activeItem = isMobile
+		? null
+		: hoveredId
+			? items.find(item => item._id === hoveredId)
+			: (selectedId && items.find(item => item._id === selectedId)) // 检查 selectedId 是否在当前列表中
+					? items.find(item => item._id === selectedId)
+					: items[0]; // 如果没选中或选中项不在当前页（翻页了），默认使用第一项
 
 	// 当 activeItem 变化时，直接更新 DOM（不触发 re-render）
 	useLayoutEffect(() => {
@@ -86,6 +92,9 @@ export function InteractiveList<T extends Item>({
 	};
 
 	const handleMouseEnter = (id: string) => {
+		// 移动端不处理 hover
+		if (isMobile)
+			return;
 		setHoveredId(id);
 		setSelectedId(id);
 	};
@@ -292,8 +301,8 @@ export function InteractiveList<T extends Item>({
 
 	return (
 		<div className="max-w-5xl mx-auto">
-			<div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-8 relative items-start">
-				{/* Left Panel - Preview */}
+			<div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 md:gap-8 relative items-start">
+				{/* Left Panel - Preview (Desktop Only) */}
 				<aside className="hidden lg:block sticky top-24 h-fit pr-4">
 					<AnimatePresence mode="wait">
 						{renderPreview()}
@@ -301,16 +310,16 @@ export function InteractiveList<T extends Item>({
 				</aside>
 
 				{/* Right Panel - List */}
-				<div className="flex flex-col gap-6">
+				<div className="flex flex-col gap-4 md:gap-6">
 					<div
 						ref={listRef}
-						className="space-y-1 lg:border-l lg:border-border/50 relative min-h-[500px]"
+						className="space-y-0 lg:space-y-1 lg:border-l lg:border-border/50 relative min-h-[400px] md:min-h-[500px]"
 						onMouseLeave={() => setHoveredId(null)}
 					>
-						{/* 指示条 - 使用 CSS 变量控制位置 */}
+						{/* 指示条 - 使用 CSS 变量控制位置 (Desktop Only) */}
 						<div
 							ref={indicatorRef}
-							className="absolute left-0 w-[3px] bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
+							className="hidden lg:block absolute left-0 w-[3px] bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
 							style={{
 								top: "var(--indicator-top, 0)",
 								height: "var(--indicator-height, 0)",
@@ -331,22 +340,22 @@ export function InteractiveList<T extends Item>({
 									}}
 									href={itemUrl}
 									onMouseEnter={() => handleMouseEnter(item._id)}
-									className="group relative block outline-none"
+									className="group relative block outline-none border-b border-dashed border-border/30 lg:border-0 last:border-0"
 								>
 									<motion.div
-										className="absolute -inset-y-2 -inset-x-4 rounded-xl -z-10"
+										className="absolute -inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4 rounded-xl -z-10"
 										animate={{
-											backgroundColor: isActive ? "var(--bg-glass)" : "transparent",
+											backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "transparent",
 										}}
 										style={{
-											backgroundColor: isActive ? "rgba(var(--primary-100), 0.5)" : "transparent",
+											backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "transparent",
 										}}
 									/>
 
-									<div className="flex items-baseline justify-between gap-6 py-2 pl-6 transition-transform duration-200 group-hover:translate-x-1">
+									<div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
 										<h3 className={cn(
-											"text-lg min-w-0 flex-1 truncate transition-colors duration-200",
-											isActive
+											"text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
+											isActive && !isMobile
 												? "text-accent-600 dark:text-accent-400 font-semibold"
 												: "text-foreground/80 font-medium",
 										)}
@@ -355,8 +364,8 @@ export function InteractiveList<T extends Item>({
 										</h3>
 
 										<div className={cn(
-											"shrink-0 flex items-center gap-2 text-sm transition-colors min-w-[60px] justify-end",
-											isActive ? "text-accent-600/80" : "text-muted-foreground/50",
+											"shrink-0 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm transition-colors min-w-[50px] md:min-w-[60px] justify-end",
+											isActive && !isMobile ? "text-accent-600/80" : "text-muted-foreground/50",
 										)}
 										>
 											<SmartDate
@@ -373,19 +382,19 @@ export function InteractiveList<T extends Item>({
 
 					{/* Pagination */}
 					{pagination.totalPages > 1 && (
-						<div className="flex justify-center gap-2 py-8 border-t border-border/40 mt-4">
+						<div className="flex justify-center gap-2 py-6 md:py-8 border-t border-border/40 mt-2 md:mt-4">
 							<button
 								type="button"
 								disabled={pagination.currentPage <= 1}
 								onClick={() => handlePageChange(pagination.currentPage - 1)}
-								className="p-2 rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+								className="p-1.5 md:p-2 rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+								aria-label="上一页"
 							>
-								<Icon icon="mingcute:left-line" className="w-5 h-5" />
+								<Icon icon="mingcute:left-line" className="w-4 h-4 md:w-5 md:h-5" />
 							</button>
 
-							<span className="flex items-center px-4 font-mono text-sm text-muted-foreground">
-								Page
-								{" "}
+							<span className="flex items-center px-3 md:px-4 font-mono text-xs md:text-sm text-muted-foreground">
+								<span className="hidden sm:inline">Page </span>
 								{pagination.currentPage}
 								{" "}
 								/
@@ -397,9 +406,10 @@ export function InteractiveList<T extends Item>({
 								type="button"
 								disabled={pagination.currentPage >= pagination.totalPages}
 								onClick={() => handlePageChange(pagination.currentPage + 1)}
-								className="p-2 rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+								className="p-1.5 md:p-2 rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+								aria-label="下一页"
 							>
-								<Icon icon="mingcute:right-line" className="w-5 h-5" />
+								<Icon icon="mingcute:right-line" className="w-4 h-4 md:w-5 md:h-5" />
 							</button>
 						</div>
 					)}

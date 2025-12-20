@@ -12,9 +12,9 @@ interface ProfileHeaderProps {
  */
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
 	return (
-		<header className="animate-fade-in space-y-6">
-			<div className="flex gap-5 items-center">
-				<div className="group rounded-2xl bg-stone-200 h-20 w-20 shadow-sm relative overflow-hidden dark:bg-stone-700">
+		<header className="animate-fade-in space-y-5 md:space-y-6">
+			<div className="flex gap-4 md:gap-5 items-center">
+				<div className="group rounded-2xl bg-stone-200 h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden dark:bg-stone-700">
 					{profile.avatar
 						? (
 								<img
@@ -34,30 +34,30 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 							)
 						: null}
 					{/* Fallback avatar */}
-					<div className={`text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br dark:from-stone-700 dark:to-stone-800 text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
+					<div className={`text-xl md:text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br dark:from-stone-700 dark:to-stone-800 text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
 						{profile.name.charAt(0).toUpperCase()}
 					</div>
 					{/* Status indicator */}
-					<div className="rounded-full flex h-4 w-4 items-center bottom-1 right-1 justify-center absolute bg-neutral-50">
-						<div className="rounded-full bg-teal-500 h-2.5 w-2.5 animate-pulse" />
+					<div className="rounded-full flex h-3.5 w-3.5 md:h-4 md:w-4 items-center bottom-0.5 right-0.5 md:bottom-1 md:right-1 justify-center absolute bg-neutral-50">
+						<div className="rounded-full bg-teal-500 h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse" />
 					</div>
 				</div>
 				<div>
-					<h1 className="text-3xl tracking-tight font-bold mb-2 text-foreground">
+					<h1 className="text-2xl md:text-3xl tracking-tight font-bold mb-1.5 md:mb-2 text-foreground">
 						{profile.name}
 					</h1>
-					<p className="text-sm flex gap-2 items-center text-muted-foreground">
+					<p className="text-xs md:text-sm flex gap-2 items-center text-muted-foreground">
 						@
 						{profile.username}
 					</p>
 				</div>
 			</div>
 
-			<p className="text-xl leading-relaxed max-w-lg text-secondary-foreground">
+			<p className="text-base md:text-xl leading-relaxed max-w-lg text-secondary-foreground">
 				<AbbreviationText>{profile.introduce}</AbbreviationText>
 			</p>
 
-			<div className="pt-2 flex gap-5">
+			<div className="pt-1 md:pt-2 flex gap-4 md:gap-5 flex-wrap">
 				{profile.socialIds?.github && (
 					<SocialLink
 						icon="mingcute:github-line"

@@ -341,6 +341,14 @@
 	html {
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+		/* 移动端优化：防止横向滚动 */
+		overflow-x: hidden;
+	}
+	body {
+		/* 移动端优化：防止横向滚动 */
+		overflow-x: hidden;
+		/* 移动端优化：改善触摸滚动 */
+		-webkit-overflow-scrolling: touch;
 	}
 }
 
@@ -397,6 +405,14 @@
 	width: 8px;
 	height: 8px;
 }
+
+@media (max-width: 768px) {
+	::-webkit-scrollbar {
+		width: 4px;
+		height: 4px;
+	}
+}
+
 ::-webkit-scrollbar-track {
 	background: transparent;
 }

@@ -200,15 +200,15 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
 						title="点击放大"
 					/>
 					{exif && (
-						<span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-300">
+						<span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-300">
 							EXIF
 						</span>
 					)}
 				</WrapperTag>
 				{isBlock && alt && (
 					<>
-						<div className="w-16 h-px bg-primary-300/50 dark:bg-primary-600/50" />
-						<figcaption className="max-w-[90%] text-center text-sm text-primary-500 dark:text-primary-400">
+						<div className="w-12 md:w-16 h-px bg-primary-300/50 dark:bg-primary-600/50" />
+						<figcaption className="max-w-[95%] md:max-w-[90%] text-center text-xs md:text-sm text-primary-500 dark:text-primary-400 px-2">
 							{alt}
 						</figcaption>
 					</>
@@ -417,14 +417,14 @@ function LightboxPortal({
 		>
 			<button
 				type="button"
-				className="absolute top-5 right-5 p-2 rounded-full bg-black/20 text-white/70 hover:bg-white/20 hover:text-white transition-colors z-50 cursor-pointer"
+				className="absolute top-3 right-3 md:top-5 md:right-5 p-1.5 md:p-2 rounded-full bg-black/20 text-white/70 hover:bg-white/20 hover:text-white transition-colors z-50 cursor-pointer"
 				onClick={(e) => {
 					e.stopPropagation();
 					onClose();
 				}}
 				aria-label="Close"
 			>
-				<Icon icon="mingcute:close-line" width={24} height={24} />
+				<Icon icon="mingcute:close-line" width={20} height={20} className="md:w-6 md:h-6" />
 			</button>
 
 			<div
@@ -461,19 +461,19 @@ function LightboxPortal({
 			</div>
 
 			<div
-				className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-3 animate-in slide-in-from-bottom-4 duration-500 pointer-events-auto z-50"
+				className="absolute bottom-8 md:bottom-12 left-0 right-0 flex flex-col items-center gap-2 md:gap-3 animate-in slide-in-from-bottom-4 duration-500 pointer-events-auto z-50 px-4"
 				onClick={e => e.stopPropagation()}
 			>
 				{exif && (
-					<p className="text-white/70 text-sm font-light tracking-wide select-none bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm">
+					<p className="text-white/70 text-xs md:text-sm font-light tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
 						{exif.model && <span className="text-accent-300 font-semibold">{exif.model}</span>}
-						{exif.model && (exif.focalLength || exif.fNumber || exif.exposureTime || exif.iso) && <span className="mx-2">·</span>}
+						{exif.model && (exif.focalLength || exif.fNumber || exif.exposureTime || exif.iso) && <span className="mx-1.5 md:mx-2">·</span>}
 						{exif.focalLength && <span>{exif.focalLength}</span>}
-						{exif.focalLength && (exif.fNumber || exif.exposureTime || exif.iso) && <span className="mx-2">·</span>}
+						{exif.focalLength && (exif.fNumber || exif.exposureTime || exif.iso) && <span className="mx-1.5 md:mx-2">·</span>}
 						{exif.fNumber && <span>{exif.fNumber}</span>}
-						{exif.fNumber && (exif.exposureTime || exif.iso) && <span className="mx-2">·</span>}
+						{exif.fNumber && (exif.exposureTime || exif.iso) && <span className="mx-1.5 md:mx-2">·</span>}
 						{exif.exposureTime && <span>{exif.exposureTime}</span>}
-						{exif.exposureTime && exif.iso && <span className="mx-2">·</span>}
+						{exif.exposureTime && exif.iso && <span className="mx-1.5 md:mx-2">·</span>}
 						{exif.iso && (
 							<span>
 								ISO
@@ -483,7 +483,7 @@ function LightboxPortal({
 					</p>
 				)}
 				{alt && (
-					<p className="text-white/70 text-sm font-light tracking-wide select-none bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm">
+					<p className="text-white/70 text-xs md:text-sm font-light tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
 						{alt}
 					</p>
 				)}

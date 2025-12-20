@@ -12,6 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hook/use-is-mobile";
 
 interface NavItem {
 	id: string;
@@ -27,8 +28,10 @@ const NAV_ITEMS: NavItem[] = [
 	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "/about-me" },
 ];
 
-// 头像(32) + 间距(12) + 名字区域(约50) = 约94px 基础宽度，加上 padding
-const COLLAPSED_WIDTH = 130;
+// 移动端：头像(28) + 间距(8) + 名字区域(约45) = 约81px 基础宽度，加上 padding
+// 桌面端：头像(32) + 间距(12) + 名字区域(约50) = 约94px 基础宽度，加上 padding
+const COLLAPSED_WIDTH_MOBILE = 110;
+const COLLAPSED_WIDTH_DESKTOP = 130;
 // 每个导航按钮 34px (p-2 = 8px*2 + 18px icon)，加上 gap-1 = 4px
 const NAV_BUTTON_WIDTH = 34;
 const NAV_GAP = 4;
@@ -47,6 +50,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 	const [isSpinning, setIsSpinning] = useState(false);
 	const [readingProgress, setReadingProgress] = useState(0);
 	const [animationProgress, setAnimationProgress] = useState(0);
+	const isMobile = useIsMobile();
 	const pathname = usePathname();
 	const router = useRouter();
 	const isHomePage = pathname === "/";
@@ -135,25 +139,27 @@ export function FloatingNav({ user }: FloatingNavProps) {
 	}, [isSpinning]);
 
 	// 动态计算展开宽度：基础宽度 + 分隔线(1+24) + 导航按钮总宽度
-	const expandedWidth = COLLAPSED_WIDTH + 25 + NAV_ITEMS.length * NAV_BUTTON_WIDTH + (NAV_ITEMS.length - 1) * NAV_GAP;
+	const collapsedWidth = isMobile ? COLLAPSED_WIDTH_MOBILE : COLLAPSED_WIDTH_DESKTOP;
+	const expandedWidth = collapsedWidth + 25 + NAV_ITEMS.length * NAV_BUTTON_WIDTH + (NAV_ITEMS.length - 1) * NAV_GAP;
 
 	return (
-		<div className="flex gap-3 pointer-events-none bottom-8 left-0 right-0 justify-center fixed z-50">
+		<div className="flex gap-2 md:gap-3 pointer-events-none bottom-4 md:bottom-8 left-0 right-0 justify-center fixed z-50 px-4">
 			{/* Left Section: Expandable Navigation Card */}
 			<motion.div
-				className="glass-nav rounded-full flex h-14 pointer-events-auto items-center"
+				className="glass-nav rounded-full flex h-12 md:h-14 pointer-events-auto items-center shrink-0"
 				animate={{
-					width: isExpanded ? expandedWidth : COLLAPSED_WIDTH,
+					width: isExpanded ? expandedWidth : collapsedWidth,
 				}}
 				transition={{
 					type: "spring",
 					stiffness: 400,
 					damping: 35,
 				}}
-				onMouseEnter={() => setIsExpanded(true)}
-				onMouseLeave={() => setIsExpanded(false)}
+				onMouseEnter={() => !isMobile && setIsExpanded(true)}
+				onMouseLeave={() => !isMobile && setIsExpanded(false)}
+				onClick={() => isMobile && setIsExpanded(!isExpanded)}
 			>
-				<div className="px-3 flex gap-3 items-center">
+				<div className="px-2 md:px-3 flex gap-2 md:gap-3 items-center">
 					{/* Avatar with pulse hint */}
 					<div className="shrink-0 relative">
 						{/* Pulse ring animation - 外部光环 */}
@@ -168,11 +174,11 @@ export function FloatingNav({ user }: FloatingNavProps) {
 									<img
 										src={user.avatar}
 										alt={user.name}
-										className="relative z-10 text-neutral-600 rounded-full h-8 w-8 object-cover"
+										className="relative z-10 text-neutral-600 rounded-full h-7 w-7 md:h-8 md:w-8 object-cover"
 									/>
 								)
 							: (
-									<div className="relative z-10 text-neutral-600 text-xs font-bold rounded-full flex h-8 w-8 items-center justify-center from-stone-200 to-stone-300 bg-linear-to-tr dark:from-stone-700 dark:to-stone-600">
+									<div className="relative z-10 text-neutral-600 text-xs font-bold rounded-full flex h-7 w-7 md:h-8 md:w-8 items-center justify-center from-stone-200 to-stone-300 bg-linear-to-tr dark:from-stone-700 dark:to-stone-600">
 										{user.name.charAt(0).toUpperCase()}
 									</div>
 								)}
@@ -180,9 +186,9 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
 					{/* Status / Name */}
 					<div className="shrink-0">
-						<span className="text-primary-900 text-xs font-bold whitespace-nowrap">{user.name}</span>
-						<span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center">
-							<Icon icon="mingcute:sparkles-line" className="text-[8px]" />
+						<span className="text-primary-900 text-[11px] md:text-xs font-bold whitespace-nowrap">{user.name}</span>
+						<span className="text-accent-600 text-[9px] md:text-[10px] flex gap-1 whitespace-nowrap items-center">
+							<Icon icon="mingcute:sparkles-line" className="text-[7px] md:text-[8px]" />
 							在线
 						</span>
 					</div>
@@ -236,7 +242,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
 			{/* Right Section: Actions (Back to Top + Theme Toggle) */}
 			<motion.div
-				className="glass-nav rounded-full flex h-14 pointer-events-auto items-center overflow-hidden"
+				className="glass-nav rounded-full flex h-12 md:h-14 pointer-events-auto items-center overflow-hidden shrink-0"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 30 }}
@@ -247,7 +253,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 						width: showBackToTop ? "auto" : 0,
 						opacity: showBackToTop ? 1 : 0,
 						scale: showBackToTop ? 1 : 0,
-						paddingLeft: showBackToTop ? 12 : 0,
+						paddingLeft: showBackToTop ? 8 : 0,
 					}}
 					initial={{ width: 0, opacity: 0, scale: 0, paddingLeft: 0 }}
 					transition={{ duration: 0.3 }}
@@ -258,7 +264,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 							<motion.button
 								type="button"
 								onClick={handleScrollToTopAction}
-								className="text-neutral-600 rounded-full cursor-pointer whitespace-nowrap relative w-10 h-10 flex items-center justify-center"
+								className="text-neutral-600 rounded-full cursor-pointer whitespace-nowrap relative w-9 h-9 md:w-10 md:h-10 flex items-center justify-center"
 								initial={{ backgroundColor: "transparent" }}
 								whileHover={{
 									backgroundColor: "var(--accent-100)",
@@ -333,7 +339,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 				</motion.div>
 
 				{/* Theme Toggle */}
-				<div className="px-3">
+				<div className="px-2 md:px-3">
 					<ThemeToggle />
 				</div>
 			</motion.div>

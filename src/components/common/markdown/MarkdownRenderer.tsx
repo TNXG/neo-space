@@ -47,7 +47,7 @@ const components: Components = {
 		<EnhancedHeading
 			id={id}
 			level={1}
-			className="scroll-mt-24 text-3xl md:text-4xl font-extrabold tracking-tight text-primary-900 mt-10 mb-6 first:mt-0 wrap-break-word"
+			className="scroll-mt-20 md:scroll-mt-24 text-2xl md:text-4xl font-extrabold tracking-tight text-primary-900 mt-8 md:mt-10 mb-5 md:mb-6 first:mt-0 wrap-break-word"
 		>
 			{children}
 		</EnhancedHeading>
@@ -56,7 +56,7 @@ const components: Components = {
 		<EnhancedHeading
 			id={id}
 			level={2}
-			className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 wrap-break-word"
+			className="scroll-mt-20 md:scroll-mt-24 text-xl md:text-3xl font-bold tracking-tight text-primary-900 mt-10 md:mt-12 mb-4 md:mb-5 pb-2 border-b border-primary-200/50 wrap-break-word"
 		>
 			{children}
 		</EnhancedHeading>
@@ -65,7 +65,7 @@ const components: Components = {
 		<EnhancedHeading
 			id={id}
 			level={3}
-			className="scroll-mt-24 text-xl md:text-2xl font-semibold text-primary-800 mt-8 mb-4 wrap-break-word"
+			className="scroll-mt-20 md:scroll-mt-24 text-lg md:text-2xl font-semibold text-primary-800 mt-6 md:mt-8 mb-3 md:mb-4 wrap-break-word"
 		>
 			{children}
 		</EnhancedHeading>
@@ -74,7 +74,7 @@ const components: Components = {
 		<EnhancedHeading
 			id={id}
 			level={4}
-			className="scroll-mt-24 text-lg md:text-xl font-semibold text-primary-800 mt-6 mb-3 wrap-break-word"
+			className="scroll-mt-20 md:scroll-mt-24 text-base md:text-xl font-semibold text-primary-800 mt-5 md:mt-6 mb-2.5 md:mb-3 wrap-break-word"
 		>
 			{children}
 		</EnhancedHeading>
@@ -95,13 +95,13 @@ const components: Components = {
 	},
 
 	ul: ({ children }) => (
-		<ul className="list-disc list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500/70">
+		<ul className="list-disc list-outside ml-5 md:ml-6 mb-5 md:mb-6 space-y-1.5 md:space-y-2 text-primary-700 marker:text-accent-500/70">
 			{children}
 		</ul>
 	),
 
 	ol: ({ children }) => (
-		<ol className="list-decimal list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500 font-medium">
+		<ol className="list-decimal list-outside ml-5 md:ml-6 mb-5 md:mb-6 space-y-1.5 md:space-y-2 text-primary-700 marker:text-accent-500 font-medium">
 			{children}
 		</ol>
 	),
@@ -109,7 +109,7 @@ const components: Components = {
 	li: ({ children }) => <li className="leading-relaxed pl-1 wrap-break-word">{children}</li>,
 
 	blockquote: ({ children }) => (
-		<blockquote className="relative my-8 pl-6 py-4 pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word">
+		<blockquote className="relative my-6 md:my-8 pl-4 md:pl-6 py-3 md:py-4 pr-3 md:pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word">
 			{children}
 		</blockquote>
 	),
@@ -179,8 +179,8 @@ const components: Components = {
 	},
 
 	table: ({ children }) => (
-		<div className="my-8 w-full overflow-x-auto rounded-xl border border-primary-200 shadow-sm scrollbar-thin">
-			<table className="min-w-full divide-y divide-primary-200 text-left text-sm">{children}</table>
+		<div className="my-6 md:my-8 w-full overflow-x-auto rounded-xl border border-primary-200 shadow-sm scrollbar-thin">
+			<table className="min-w-full divide-y divide-primary-200 text-left text-xs md:text-sm">{children}</table>
 		</div>
 	),
 
@@ -199,16 +199,16 @@ const components: Components = {
 	),
 
 	th: ({ children }) => (
-		<th className="px-4 py-3 text-left font-medium tracking-wider whitespace-nowrap">{children}</th>
+		<th className="px-3 md:px-4 py-2 md:py-3 text-left font-medium tracking-wider whitespace-nowrap">{children}</th>
 	),
 
 	td: ({ children }) => (
-		<td className="px-4 py-3 text-primary-700 align-top whitespace-normal leading-relaxed min-w-30">
+		<td className="px-3 md:px-4 py-2 md:py-3 text-primary-700 align-top whitespace-normal leading-relaxed min-w-30">
 			{children}
 		</td>
 	),
 
-	hr: () => <hr className="my-12 border-dashed border-primary-200 w-1/2 mx-auto" />,
+	hr: () => <hr className="my-10 md:my-12 border-dashed border-primary-200 w-1/2 mx-auto" />,
 
 	div: ({ children, ...props }) => {
 		const containerType = (props as any)["data-container-type"];
@@ -279,7 +279,7 @@ const components: Components = {
 		const isTextOnly = isTextOnlyContent(children);
 
 		return (
-			<p className="text-base md:text-lg leading-relaxed text-primary-700 mb-6 last:mb-0 wrap-break-word">
+			<p className="text-[15px] md:text-lg leading-relaxed text-primary-700 mb-5 md:mb-6 last:mb-0 wrap-break-word">
 				{isTextOnly ? <AbbreviationText>{children}</AbbreviationText> : children}
 			</p>
 		);
