@@ -245,3 +245,47 @@ export interface SiteConfig {
 	algolia: AlgoliaPublicOptions;
 	admin_extra: AdminExtraPublic;
 }
+
+/**
+ * Comment Types
+ */
+
+export interface Comment {
+	_id: string;
+	ref: string;
+	refType: "posts" | "pages" | "notes";
+	author: string;
+	text: string;
+	state: number;
+	children: Comment[];
+	commentsIndex: number;
+	key: string;
+	pin: boolean;
+	isWhispers: boolean;
+	isAdmin?: boolean;
+	source?: string;
+	avatar?: string;
+	created: string;
+	location?: string;
+	url?: string;
+	parent?: string;
+}
+
+export interface CommentListResponse {
+	comments: Comment[];
+	count: number;
+}
+
+export interface CreateCommentRequest {
+	ref: string;
+	refType: "posts" | "pages" | "notes";
+	author: string;
+	mail: string;
+	text: string;
+	url?: string;
+	parent?: string;
+}
+
+export interface UpdateCommentRequest {
+	text: string;
+}

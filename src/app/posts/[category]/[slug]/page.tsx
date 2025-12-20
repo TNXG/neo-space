@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CommentSection } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
 import { getAdjacentPosts, getPostBySlug, getUserProfile } from "@/lib/api-client";
@@ -94,12 +95,22 @@ export default async function PostPage({ params }: PageProps) {
 					<MarkdownRenderer content={post.text} />
 				</>
 			)}
-			footer={post.copyright && (
-				<CopyrightCard
-					author={authorName}
-					year={postYear}
-					postTitle={post.title}
-				/>
+			footer={(
+				<>
+					{post.copyright && (
+						<CopyrightCard
+							author={authorName}
+							year={postYear}
+							postTitle={post.title}
+						/>
+					)}
+					{post.allowComment && (
+						<CommentSection
+							refId={post._id}
+							refType="posts"
+						/>
+					)}
+				</>
 			)}
 			navigation={{
 				type: "post",

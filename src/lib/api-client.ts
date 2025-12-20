@@ -1,4 +1,4 @@
-import type { ApiResponse, Category, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, User } from "@/types/api";
+import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 import process from "node:process";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -184,8 +184,39 @@ export async function analyzeTimeCapsule(
 	});
 }
 
-export async function getTimeCapsule(
+/**
+ * Comments API
+ */
+export async function getComments(
 	refId: string,
-): Promise<ApiResponse<TimeCapsuleResponse>> {
-	return apiClient<ApiResponse<TimeCapsuleResponse>>(`/ai/time-capsule/${refId}`);
+	refType: string,
+): Promise<ApiResponse<CommentListResponse>> {
+	return apiClient<ApiResponse<CommentListResponse>>(
+		`/comments?ref_id=${refId}&ref_type=${refType}`,
+	);
+}
+
+export async function createComment(
+	request: CreateCommentRequest,
+): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>("/comments", {
+		method: "POST",
+		body: JSON.stringify(request),
+	});
+}
+
+export async function updateComment(
+	id: string,
+	request: UpdateCommentRequest,
+): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}`, {
+		method: "PUT",
+		body: JSON.stringify(request),
+	});
+}
+
+export async function deleteComment(id: string): Promise<ApiResponse<void>> {
+	return apiClient<ApiResponse<void>>(`/comments/${id}`, {
+		method: "DELETE",
+	});
 }

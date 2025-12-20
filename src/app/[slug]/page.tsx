@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import { CommentSection } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
+import { ArticleLayout } from "@/components/layouts/article";
 import { getPageBySlug } from "@/lib/api-client";
+import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 60;
 
@@ -34,22 +37,37 @@ export default async function PageDetail({ params }: PageProps) {
 		notFound();
 	}
 
+	// 提取 TOC
+	const toc = await extractTOC(page.text);
+
 	return (
-		<main className="container mx-auto px-4 py-8 max-w-4xl">
-			<article>
-				<header className="mb-8 border-b border-gray-200 dark:border-gray-700 pb-8">
+		<ArticleLayout
+			toc={toc}
+			header={(
+				<header className="mb-8 border-b border-primary-200 pb-8">
 					<h1 className="text-4xl font-bold bg-linear-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
 						{page.title}
 					</h1>
-					<div className="flex flex-wrap gap-4 text-sm text-gray-500">
+					<div className="flex flex-wrap gap-4 text-sm text-zinc-500 dark:text-zinc-400">
 						<span>
 							更新于
+							{" "}
 							{new Date(page.created).toLocaleDateString()}
 						</span>
 					</div>
 				</header>
-				<MarkdownRenderer content={page.text} />
-			</article>
-		</main>
+			)}
+			content={<MarkdownRenderer content={page.text} />}
+			footer={
+				page.allowComment && (
+					<div className="mt-16">
+						<CommentSection
+							refId={page._id}
+							refType="pages"
+						/>
+					</div>
+				)
+			}
+		/>
 	);
 }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CommentSection } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
 import { getAdjacentNotes, getNoteByNid } from "@/lib/api-client";
@@ -76,6 +77,12 @@ export default async function NotePage({ params }: PageProps) {
 					/>
 					<MarkdownRenderer content={note.text} />
 				</>
+			)}
+			footer={note.allowComment && (
+				<CommentSection
+					refId={note._id}
+					refType="notes"
+				/>
 			)}
 			navigation={{
 				type: "note",
