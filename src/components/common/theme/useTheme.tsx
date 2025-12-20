@@ -1,7 +1,8 @@
 "use client";
 
 import { useTheme as useNextTheme } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useHasMounted } from "@/hook/use-has-mounted";
 
 /**
  * 主题管理 Hook
@@ -9,13 +10,7 @@ import { useCallback, useEffect, useState } from "react";
  */
 export const useTheme = () => {
 	const { setTheme, theme, systemTheme, resolvedTheme } = useNextTheme();
-	const [mounted, setMounted] = useState(false);
-
-	// 使用 requestAnimationFrame 延迟状态更新，避免 SSR hydration 问题
-	useEffect(() => {
-		const id = requestAnimationFrame(() => setMounted(true));
-		return () => cancelAnimationFrame(id);
-	}, []);
+	const mounted = useHasMounted();
 
 	/**
 	 * 循环切换主题: system -> light -> dark -> system

@@ -44,7 +44,7 @@ export function ArticleNavButtons({
 					<button
 						type="button"
 						onClick={handleBack}
-						className="group flex items-center gap-1.5 px-3 py-1.5 -ml-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 dark:hover:bg-primary-800"
+						className="group flex items-center gap-1.5 px-3 py-1.5 -ml-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 dark:hover:bg-primary-800 cursor-pointer"
 					>
 						<Icon
 							icon="mingcute:arrow-left-line"
@@ -55,7 +55,7 @@ export function ArticleNavButtons({
 
 					<Link
 						href="/"
-						className="group flex items-center gap-1.5 px-3 py-1.5 -mr-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 dark:hover:bg-primary-800"
+						className="group flex items-center gap-1.5 px-3 py-1.5 -mr-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 dark:hover:bg-primary-800 cursor-pointer"
 					>
 						<span className="font-medium">首页</span>
 						<Icon
@@ -72,7 +72,7 @@ export function ArticleNavButtons({
 						? (
 								<Link
 									href={prevLink}
-									className="group relative flex flex-col justify-between p-4 min-h-[88px] rounded-xl border border-border/60 bg-primary-50/50 dark:bg-primary-900/20 hover:border-accent-200 dark:hover:border-accent-800 hover:bg-accent-50/50 dark:hover:bg-accent-950/30 transition-all duration-300"
+									className="group relative flex flex-col justify-between p-4 min-h-[88px] rounded-xl border border-border/60 bg-primary-50/50 dark:bg-primary-900/20 hover:border-accent-200 dark:hover:border-accent-800 hover:bg-accent-50/50 dark:hover:bg-accent-950/30 transition-all duration-300 cursor-pointer"
 								>
 									{/* Hover Indicator */}
 									<div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-accent-500 rounded-r-full group-hover:h-10 transition-all duration-300 opacity-0 group-hover:opacity-100" />
@@ -105,7 +105,7 @@ export function ArticleNavButtons({
 						? (
 								<Link
 									href={nextLink}
-									className="group relative flex flex-col justify-between items-end p-4 min-h-[88px] rounded-xl border border-border/60 bg-primary-50/50 dark:bg-primary-900/20 hover:border-accent-200 dark:hover:border-accent-800 hover:bg-accent-50/50 dark:hover:bg-accent-950/30 transition-all duration-300 text-right"
+									className="group relative flex flex-col justify-between items-end p-4 min-h-[88px] rounded-xl border border-border/60 bg-primary-50/50 dark:bg-primary-900/20 hover:border-accent-200 dark:hover:border-accent-800 hover:bg-accent-50/50 dark:hover:bg-accent-950/30 transition-all duration-300 text-right cursor-pointer"
 								>
 									{/* Hover Indicator */}
 									<div className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-accent-500 rounded-l-full group-hover:h-10 transition-all duration-300 opacity-0 group-hover:opacity-100" />

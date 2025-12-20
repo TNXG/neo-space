@@ -3,6 +3,7 @@
 import type { TimeCapsuleResponse } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { useEffect, useState } from "react";
+import { useHasMounted } from "@/hook/use-has-mounted";
 import { analyzeTimeCapsule } from "@/lib/api-client";
 
 interface OutdatedAlertProps {
@@ -33,29 +34,41 @@ export function OutdatedAlert({
 	className = "",
 }: OutdatedAlertProps) {
 	const [capsule, setCapsule] = useState<TimeCapsuleResponse | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [mounted, setMounted] = useState(false);
+	const [loading, setLoading] = useState(false); // 默认不加载
+	const mounted = useHasMounted();
 
-	// 客户端挂载标记
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	// 计算时间差（只计算一次）
+	const now = currentDate ?? new Date();
+	const updated = new Date(lastUpdated);
+	const diffTime = Math.abs(now.getTime() - updated.getTime());
+	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+	const isOutdated = diffDays > threshold;
 
-	// 获取 AI 分析
+	// 判断是否需要 AI 分析
+	const shouldSkipAI = diffDays < 30 || diffDays > 730 || (isOutdated && diffDays > 365);
+	const needsAI = !shouldSkipAI;
+
+	// 获取 AI 分析 - 智能判断是否需要调用 AI
 	useEffect(() => {
-		if (!mounted)
+		// Only run if mounted and AI is actually needed
+		if (!mounted || !needsAI)
 			return;
 
 		let cancelled = false;
 
 		async function fetchCapsule() {
+			// Set loading immediately to prevent flash
+			if (!cancelled) {
+				setLoading(true);
+			}
+
 			try {
 				const response = await analyzeTimeCapsule({ refId, refType });
 				if (!cancelled && response.status === "success") {
 					setCapsule(response.data);
 				}
 			} catch {
-				// 静默失败
+				// 静默失败 - AI 服务不可用时不影响页面显示
 			} finally {
 				if (!cancelled) {
 					setLoading(false);
@@ -64,22 +77,16 @@ export function OutdatedAlert({
 		}
 
 		fetchCapsule();
+
 		return () => {
 			cancelled = true;
 		};
-	}, [refId, refType, mounted]);
+	}, [refId, refType, mounted, needsAI]);
 
 	// 服务端渲染时不显示，避免 hydration 问题
 	if (!mounted) {
 		return null;
 	}
-
-	// 计算时间差
-	const now = currentDate ?? new Date();
-	const updated = new Date(lastUpdated);
-	const diffTime = Math.abs(now.getTime() - updated.getTime());
-	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-	const isOutdated = diffDays > threshold;
 
 	// 计算时间描述
 	const years = Math.floor(diffDays / 365);
@@ -88,8 +95,8 @@ export function OutdatedAlert({
 		? `${years} 年${months > 0 ? ` ${months} 个月` : ""}`
 		: `${months} 个月`;
 
-	// 加载中显示骨架屏（仅当文章已过期时）
-	if (loading && isOutdated) {
+	// 加载中显示骨架屏（只有在真正调用 AI 分析时才显示）
+	if (loading) {
 		return (
 			<div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
 				<div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 dark:border-primary-600 bg-primary-100/50 dark:bg-primary-200/50 backdrop-blur-sm p-1">

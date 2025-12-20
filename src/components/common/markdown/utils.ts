@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { isValidElement } from "react";
+
 /**
  * 截断文本内容
  */
@@ -37,3 +40,48 @@ export function stripMarkdown(text: string): string {
 		// 移除首尾空白
 		.trim();
 }
+
+export const isTextOnlyContent = (node: ReactNode): boolean => {
+	if (node === null || node === undefined || typeof node === "boolean")
+		return true;
+	if (typeof node === "string" || typeof node === "number")
+		return true;
+	if (Array.isArray(node))
+		return node.every(child => isTextOnlyContent(child));
+	if (isValidElement(node))
+		return false;
+	return true;
+};
+
+const flattenNodeToArray = (node: ReactNode): ReactNode[] => {
+	if (node === null || node === undefined || typeof node === "boolean")
+		return [];
+	if (Array.isArray(node))
+		return node.reduce<ReactNode[]>((acc, child) => acc.concat(flattenNodeToArray(child)), []);
+	return [node];
+};
+
+export const getStandaloneImageProps = (node: ReactNode): { src: string; alt?: string } | null => {
+	const nodes = flattenNodeToArray(node);
+	const meaningfulNodes = nodes.filter((child) => {
+		if (child === null || child === undefined || typeof child === "boolean")
+			return false;
+		if (typeof child === "string")
+			return child.trim().length > 0;
+		return true;
+	});
+
+	if (meaningfulNodes.length === 1) {
+		const onlyChild = meaningfulNodes[0];
+		if (isValidElement(onlyChild) && onlyChild.type === "img") {
+			const { src, alt } = (onlyChild.props ?? {}) as { src?: string; alt?: string };
+			if (typeof src === "string" && src.length > 0)
+				return { src, alt };
+		}
+		if (isValidElement(onlyChild) && (onlyChild.type as any).name === "ImageFigure") {
+			const props = onlyChild.props as any;
+			return { src: props.src, alt: props.alt };
+		}
+	}
+	return null;
+};

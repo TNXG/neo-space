@@ -24,8 +24,7 @@ const NAV_ITEMS: NavItem[] = [
 	{ id: "home", title: "首页", icon: "mingcute:home-2-line", href: "/" },
 	{ id: "articles", title: "文章", icon: "mingcute:book-2-line", href: "/posts" },
 	{ id: "notes", title: "手记", icon: "mingcute:pen-line", href: "/notes" },
-	{ id: "thoughts", title: "想法", icon: "mingcute:comment-line", href: "/thoughts" },
-	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "/about" },
+	{ id: "about", title: "关于", icon: "mingcute:user-4-line", href: "/about-me" },
 ];
 
 // 头像(32) + 间距(12) + 名字区域(约50) = 约94px 基础宽度，加上 padding
@@ -82,7 +81,6 @@ export function FloatingNav({ user }: FloatingNavProps) {
 					element.scrollIntoView({ behavior: "smooth" });
 				}
 			}
-			// 不在首页时，让 Link 正常跳转到 /#xxx
 		}
 	}, [isHomePage, router, scrollToTop]);
 	// Control Back to Top visibility

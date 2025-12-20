@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
+import { useHasMounted } from "@/hook/use-has-mounted";
 
 interface ClientOnlyScriptProps {
 	children: React.ReactNode;
@@ -10,20 +11,8 @@ interface ClientOnlyScriptProps {
 	[key: string]: any;
 }
 
-function getSnapshot() {
-	return typeof window !== "undefined";
-}
-
-function getServerSnapshot() {
-	return false;
-}
-
 export function ClientOnlyScript({ children, node: _node, src, type, ...props }: ClientOnlyScriptProps) {
-	const isMounted = useSyncExternalStore(
-		() => () => {},
-		getSnapshot,
-		getServerSnapshot,
-	);
+	const isMounted = useHasMounted();
 	const scriptRef = useRef<HTMLScriptElement>(null);
 
 	useEffect(() => {

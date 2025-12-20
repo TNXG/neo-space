@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react";
 import React, { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useHasMounted } from "@/hook/use-has-mounted";
 import { FileIcon } from "@/lib/file-icons";
 import { cn } from "@/lib/utils";
 
@@ -10,16 +11,18 @@ interface CodeBlockProps {
 	children: React.ReactNode;
 	className?: string;
 	language?: string;
-	filename?: string; // 新增：支持显示文件名
+	filename?: string;
 	style?: React.CSSProperties;
+	fallbackText?: string;
 }
 
-export function CodeBlock({ children, className, language = "text", filename, style }: CodeBlockProps) {
+export function CodeBlock({ children, className, language = "text", filename, style, fallbackText }: CodeBlockProps) {
 	const [copied, setCopied] = useState(false);
+	const mounted = useHasMounted();
 	const preRef = useRef<HTMLPreElement>(null);
 
 	const handleCopy = async () => {
-		const codeText = (preRef.current?.textContent ?? extractTextContent(children)).trimEnd();
+		const codeText = (preRef.current?.textContent ?? fallbackText ?? extractTextContent(children)).trimEnd();
 
 		if (!codeText) {
 			toast.error("没有可复制的内容");
@@ -27,22 +30,9 @@ export function CodeBlock({ children, className, language = "text", filename, st
 		}
 
 		try {
-			if (navigator.clipboard && window.isSecureContext) {
-				await navigator.clipboard.writeText(codeText);
-			} else {
-				const textarea = document.createElement("textarea");
-				textarea.value = codeText;
-				textarea.setAttribute("readonly", "");
-				textarea.style.position = "fixed";
-				textarea.style.left = "-9999px";
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand("copy");
-				document.body.removeChild(textarea);
-			}
+			await navigator.clipboard.writeText(codeText);
 			setCopied(true);
-			toast.success("代码已复制到剪贴板"); // Sonner 提示
-
+			toast.success("代码已复制到剪贴板");
 			setTimeout(() => setCopied(false), 2000);
 		} catch (err) {
 			console.error("Failed to copy:", err);
@@ -60,17 +50,13 @@ export function CodeBlock({ children, className, language = "text", filename, st
 						<div className="h-3 w-3 rounded-full bg-[#28c840] ring-1 ring-inset ring-black/10" />
 					</div>
 					<div className="flex items-center gap-2 select-none">
-						<FileIcon
-							extension={language}
-							className="h-4 w-4 shrink-0"
-						/>
+						<FileIcon extension={language} className="h-4 w-4 shrink-0" />
 						<span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
 							{filename || language}
 						</span>
 					</div>
 				</div>
 
-				{/* 右侧：复制按钮 */}
 				<button
 					type="button"
 					onClick={handleCopy}
@@ -101,22 +87,32 @@ export function CodeBlock({ children, className, language = "text", filename, st
 				</button>
 			</div>
 
-			{/* 代码内容区域 */}
 			<div className="relative overflow-x-auto">
-				<pre
-					ref={preRef}
-					className={cn(
-						"min-w-full p-4 text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
-						className,
-					)}
-					style={{
-						...style,
-						margin: 0,
-					}}
-					suppressHydrationWarning
-				>
-					{children}
-				</pre>
+				{!mounted
+					? (
+							<pre
+								className={cn(
+									"min-w-full p-4 text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
+									className,
+								)}
+								style={{ ...style, margin: 0 }}
+							>
+								<code>{fallbackText || extractTextContent(children)}</code>
+							</pre>
+						)
+					: (
+							<pre
+								ref={preRef}
+								className={cn(
+									"min-w-full p-4 text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
+									className,
+								)}
+								style={{ ...style, margin: 0 }}
+								suppressHydrationWarning
+							>
+								{children}
+							</pre>
+						)}
 			</div>
 		</div>
 	);

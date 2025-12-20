@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
-import { isValidElement } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
@@ -11,27 +10,28 @@ import remarkGfm from "remark-gfm";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 
 import { ClientOnlyScript } from "./components/ClientOnlyScript";
-import { ClientOnlySpan } from "./components/ClientOnlySpan";
 import { CodeBlock } from "./components/CodeBlock";
+import { ContainerBlock } from "./components/ContainerBlock";
 import { EnhancedHeading } from "./components/EnhancedHeading";
 import { ImageFigure } from "./components/ImageFigure";
 import { MermaidDiagram } from "./components/MermaidDiagram";
+
 import { Spoiler } from "./components/Spoiler";
 
 import { getHighlighter } from "./highlighter";
-
+import { remarkContainer } from "./plugins/container";
 import { remarkMermaid } from "./plugins/mermaid";
+
 import { remarkSpoiler } from "./plugins/spoiler";
+import { getStandaloneImageProps } from "./utils";
 
 interface MarkdownRendererProps {
-	/** Markdown 原始内容 */
 	content: string;
-	/** 自定义 className */
 	className?: string;
-	/** 是否包含需要客户端执行的脚本 */
 	hasScript?: boolean;
-} // 可选：用于外部链接图标
+}
 
+// 辅助函数：检测是否为纯文本内容
 const isTextOnlyContent = (node: ReactNode): boolean => {
 	if (node === null || node === undefined || typeof node === "boolean")
 		return true;
@@ -39,41 +39,7 @@ const isTextOnlyContent = (node: ReactNode): boolean => {
 		return true;
 	if (Array.isArray(node))
 		return node.every(child => isTextOnlyContent(child));
-	if (isValidElement(node))
-		return false;
 	return true;
-};
-
-const flattenNodeToArray = (node: ReactNode): ReactNode[] => {
-	if (node === null || node === undefined || typeof node === "boolean")
-		return [];
-	if (Array.isArray(node))
-		return node.reduce<ReactNode[]>((acc, child) => acc.concat(flattenNodeToArray(child)), []);
-	return [node];
-};
-
-const getStandaloneImageProps = (
-	node: ReactNode,
-): { src: string; alt?: string } | null => {
-	const nodes = flattenNodeToArray(node).filter((child) => {
-		if (child === null || child === undefined || typeof child === "boolean")
-			return false;
-		if (typeof child === "string")
-			return child.trim().length > 0;
-		return true;
-	});
-
-	if (nodes.length !== 1)
-		return null;
-
-	const onlyChild = nodes[0];
-	if (isValidElement(onlyChild) && onlyChild.type === "img") {
-		const { src, alt } = (onlyChild.props ?? {}) as { src?: string; alt?: string };
-		if (typeof src === "string" && src.length > 0) {
-			return { src, alt };
-		}
-	}
-	return null;
 };
 
 const components: Components = {
@@ -90,7 +56,7 @@ const components: Components = {
 		<EnhancedHeading
 			id={id}
 			level={2}
-			className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 dark:border-primary-800/50 wrap-break-word"
+			className="scroll-mt-24 text-2xl md:text-3xl font-bold tracking-tight text-primary-900 mt-12 mb-5 pb-2 border-b border-primary-200/50 wrap-break-word"
 		>
 			{children}
 		</EnhancedHeading>
@@ -114,22 +80,6 @@ const components: Components = {
 		</EnhancedHeading>
 	),
 
-	// 正文：增加 break-words 防止长文本溢出
-	p: ({ children }) => {
-		const standaloneImage = getStandaloneImageProps(children);
-		if (standaloneImage) {
-			return <ImageFigure src={standaloneImage.src} alt={standaloneImage.alt} />;
-		}
-
-		const isTextOnly = isTextOnlyContent(children);
-
-		return (
-			<p className="text-base md:text-lg leading-relaxed text-primary-700 mb-6 last:mb-0 wrap-break-word">
-				{isTextOnly ? <AbbreviationText>{children}</AbbreviationText> : children}
-			</p>
-		);
-	},
-
 	a: ({ href, children }) => {
 		const isInternal = href?.startsWith("/") || href?.startsWith("#");
 		return (
@@ -144,42 +94,43 @@ const components: Components = {
 		);
 	},
 
-	// 列表
 	ul: ({ children }) => (
 		<ul className="list-disc list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500/70">
 			{children}
 		</ul>
 	),
+
 	ol: ({ children }) => (
 		<ol className="list-decimal list-outside ml-6 mb-6 space-y-2 text-primary-700 marker:text-accent-500 font-medium">
 			{children}
 		</ol>
 	),
-	li: ({ children }) => (
-		<li className="leading-relaxed pl-1 wrap-break-word">{children}</li>
-	),
 
-	// 引用块
+	li: ({ children }) => <li className="leading-relaxed pl-1 wrap-break-word">{children}</li>,
+
 	blockquote: ({ children }) => (
 		<blockquote className="relative my-8 pl-6 py-4 pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word">
 			{children}
 		</blockquote>
 	),
 
-	// 行内代码：优化样式，增加背景色和边框，使其更像"胶囊"
 	code: ({ className, children }) => {
 		const isInline = !className;
 		if (isInline) {
 			return (
-				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-[0.9em] font-mono align-middle bg-primary-200/40 border border-primary-200/60 text-accent-700 dark:text-accent-400 break-all">
+				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-[0.9em] font-mono align-middle bg-primary-200/40 border border-primary-200/60 text-accent-700 break-all">
 					{children}
 				</code>
 			);
 		}
-		return <code className={className}>{children}</code>;
+		return (
+			<code className={className} suppressHydrationWarning>
+				{children}
+			</code>
+		);
 	},
 
-	pre: ({ children, className: preClassName }) => {
+	pre: ({ children, className: preClassName, ...props }) => {
 		let language: string | undefined;
 
 		if (children && typeof children === "object" && "props" in children) {
@@ -196,97 +147,158 @@ const components: Components = {
 			}
 		}
 
+		// 提取纯文本内容作为 fallback
+		const extractText = (node: any): string => {
+			if (typeof node === "string")
+				return node;
+			if (Array.isArray(node))
+				return node.map(extractText).join("");
+			if (node?.props?.children)
+				return extractText(node.props.children);
+			return "";
+		};
+
+		const textContent = extractText(children);
+
 		return (
-			<CodeBlock className={preClassName} language={language}>
+			<CodeBlock className={preClassName} language={language} fallbackText={textContent} {...props}>
 				{children}
 			</CodeBlock>
 		);
 	},
 
-	// 图片：改为 object-contain 以完整显示内容，并居中
-	img: ({ src, alt }) => (
-		<img
-			src={src}
-			alt={alt}
-			className="rounded-2xl border border-primary-200 shadow-md w-full h-auto max-h-200 object-contain mx-auto bg-primary-50 my-4"
-			loading="lazy"
-		/>
-	),
+	img: ({ src, alt }) => {
+		const validSrc = typeof src === "string" ? src : "";
+		return (
+			<ImageFigure
+				src={validSrc}
+				alt={alt}
+				isBlock={false}
+			/>
+		);
+	},
 
-	// 表格
 	table: ({ children }) => (
 		<div className="my-8 w-full overflow-x-auto rounded-xl border border-primary-200 shadow-sm scrollbar-thin">
-			<table className="min-w-full divide-y divide-primary-200 text-left text-sm">
-				{children}
-			</table>
+			<table className="min-w-full divide-y divide-primary-200 text-left text-sm">{children}</table>
 		</div>
 	),
+
 	thead: ({ children }) => (
-		<thead className="bg-primary-50 font-semibold text-primary-900 dark:text-primary-100">
-			{children}
-		</thead>
+		<thead className="bg-primary-50 font-semibold text-primary-900">{children}</thead>
 	),
+
 	tbody: ({ children }) => (
-		<tbody className="divide-y divide-primary-200 bg-transparent">
-			{children}
-		</tbody>
+		<tbody className="divide-y divide-primary-200 bg-transparent">{children}</tbody>
 	),
+
 	tr: ({ children }) => (
 		<tr className="transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-800/30">
 			{children}
 		</tr>
 	),
+
 	th: ({ children }) => (
-		<th className="px-4 py-3 text-left font-medium tracking-wider whitespace-nowrap">
-			{children}
-		</th>
+		<th className="px-4 py-3 text-left font-medium tracking-wider whitespace-nowrap">{children}</th>
 	),
+
 	td: ({ children }) => (
 		<td className="px-4 py-3 text-primary-700 align-top whitespace-normal leading-relaxed min-w-30">
 			{children}
 		</td>
 	),
 
-	hr: () => (
-		<hr className="my-12 border-dashed border-primary-200 w-1/2 mx-auto" />
-	),
+	hr: () => <hr className="my-12 border-dashed border-primary-200 w-1/2 mx-auto" />,
 
 	div: ({ children, ...props }) => {
-		const mermaidChart = (props as { "data-mermaid-chart"?: string })["data-mermaid-chart"];
+		const containerType = (props as any)["data-container-type"];
+		const containerParams = (props as any)["data-container-params"];
+		const mermaidChart = (props as any)["data-mermaid-chart"];
+
+		if (containerType) {
+			// 提取原始文本内容用于图片解析
+			const extractText = (node: any): string => {
+				if (typeof node === "string")
+					return node;
+				if (Array.isArray(node))
+					return node.map(extractText).join("\n");
+				if (node?.props?.children)
+					return extractText(node.props.children);
+				return "";
+			};
+
+			const rawContent = extractText(children);
+
+			return (
+				<ContainerBlock type={containerType} params={containerParams} rawContent={rawContent}>
+					{children}
+				</ContainerBlock>
+			);
+		}
+
 		if (mermaidChart) {
 			return <MermaidDiagram chart={decodeURIComponent(mermaidChart)} />;
 		}
+
 		return <div {...props}>{children}</div>;
 	},
 
 	span: ({ className, children, ...props }) => {
+		const { node: _node, ...rest } = props as any;
+
 		if (className === "spoiler") {
 			return <Spoiler>{children}</Spoiler>;
 		}
-		if (props.id) {
-			return <ClientOnlySpan {...props}>{children}</ClientOnlySpan>;
-		}
-		return <span {...props}>{children}</span>;
+
+		const { id: _id, ...restWithoutId } = rest;
+
+		return (
+			<span className={className} {...restWithoutId} suppressHydrationWarning>
+				{children}
+			</span>
+		);
 	},
+
 	script: ({ children, ...props }) => {
 		return <ClientOnlyScript {...props}>{children}</ClientOnlyScript>;
 	},
+
+	p: ({ children }) => {
+		const standaloneImage = getStandaloneImageProps(children);
+
+		if (standaloneImage) {
+			return (
+				<ImageFigure
+					src={standaloneImage.src}
+					alt={standaloneImage.alt}
+					isBlock={true}
+				/>
+			);
+		}
+
+		const isTextOnly = isTextOnlyContent(children);
+
+		return (
+			<p className="text-base md:text-lg leading-relaxed text-primary-700 mb-6 last:mb-0 wrap-break-word">
+				{isTextOnly ? <AbbreviationText>{children}</AbbreviationText> : children}
+			</p>
+		);
+	},
+
 };
 
-/**
- * SSR Markdown 渲染组件
- */
 export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
-	// 1. 预扫描：提取 Markdown 中用到的所有代码块语言
 	const usedLanguages = new Set<string>();
-	// 正则匹配 ```lang 格式
-	const codeBlockRegex = /```(\w+)/g;
+
+	const codeBlockRegex = /(?:^|\n)(?:```|~~~)\s*([\w-]+)/g;
+
 	let match = codeBlockRegex.exec(content);
 	while (match !== null) {
 		if (match[1])
 			usedLanguages.add(match[1].toLowerCase());
 		match = codeBlockRegex.exec(content);
 	}
+
 	const highlighter = await getHighlighter(Array.from(usedLanguages));
 	const rehypePlugins: any[] = [
 		rehypeRaw,
@@ -303,10 +315,11 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
 			},
 		],
 	];
+
 	return (
 		<div className={`markdown-body ${className}`}>
 			<ReactMarkdown
-				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler, remarkMermaid]}
+				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler, remarkMermaid, remarkContainer]}
 				rehypePlugins={rehypePlugins}
 				components={components}
 			>

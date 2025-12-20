@@ -5,6 +5,8 @@ import { bundledLanguages } from "shiki/langs"; // 包含所有语言定义的�
 import darkPlus from "shiki/themes/dark-plus.mjs"; // 暗色主题
 import lightPlus from "shiki/themes/light-plus.mjs"; // 明亮主题
 
+import "server-only";
+
 // 定义实例类型
 export type Highlighter = HighlighterCore;
 

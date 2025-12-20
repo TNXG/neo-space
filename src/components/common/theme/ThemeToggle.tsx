@@ -2,28 +2,20 @@
 
 import { Icon } from "@iconify/react/offline";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHasMounted } from "@/hook/use-has-mounted";
 
 /**
  * Theme toggle button component
  * Cycles between light, dark, and system mode
  */
 export function ThemeToggle() {
-	const [mounted, setMounted] = useState(false);
+	const mounted = useHasMounted();
 	const { theme, setTheme } = useTheme();
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setMounted(true);
-		}, 0);
-
-		return () => clearTimeout(timer);
-	}, []);
 
 	if (!mounted) {
 		return (
