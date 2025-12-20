@@ -60,6 +60,41 @@ export async function getNoteByNid(nid: number): Promise<ApiResponse<Note>> {
 }
 
 /**
+ * Adjacent Notes API
+ */
+export interface AdjacentNote {
+	nid: number;
+	title: string;
+}
+
+export interface AdjacentNotes {
+	prev: AdjacentNote | null;
+	next: AdjacentNote | null;
+}
+
+export async function getAdjacentNotes(nid: number): Promise<ApiResponse<AdjacentNotes>> {
+	return apiClient<ApiResponse<AdjacentNotes>>(`/notes/nid/${nid}/adjacent`);
+}
+
+/**
+ * Adjacent Posts API
+ */
+export interface AdjacentPost {
+	slug: string;
+	title: string;
+	categorySlug: string;
+}
+
+export interface AdjacentPosts {
+	prev: AdjacentPost | null;
+	next: AdjacentPost | null;
+}
+
+export async function getAdjacentPosts(slug: string): Promise<ApiResponse<AdjacentPosts>> {
+	return apiClient<ApiResponse<AdjacentPosts>>(`/posts/slug/${slug}/adjacent`);
+}
+
+/**
  * Categories API
  */
 export async function getCategories(): Promise<ApiResponse<Category[]>> {

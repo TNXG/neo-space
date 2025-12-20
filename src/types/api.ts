@@ -70,6 +70,7 @@ export interface Note {
 	isPublished: boolean;
 	bookmark: boolean;
 	images: NoteImage[];
+	aiSummary?: string;
 }
 
 export interface NoteImage {
