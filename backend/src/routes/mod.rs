@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod auth;
 pub mod categories;
 pub mod comments;
 pub mod config;
