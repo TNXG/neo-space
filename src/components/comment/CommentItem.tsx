@@ -41,18 +41,39 @@ export function CommentItem({
 		if (!element)
 			return;
 
+		let clearTimer: NodeJS.Timeout | null = null;
+
 		const observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (mutation.type === "attributes" && mutation.attributeName === "data-highlight-trigger") {
-					// 通过改变 key 来触发重新动画
-					setHighlightKey(prev => prev + 1);
+					const triggerValue = element.getAttribute("data-highlight-trigger");
+					// 只有当属性值存在时才触发高亮
+					if (triggerValue) {
+						// 通过改变 key 来触发重新动画
+						setHighlightKey(prev => prev + 1);
+
+						// 清除之前的定时器
+						if (clearTimer) {
+							clearTimeout(clearTimer);
+						}
+
+						// 3秒后清除触发标记，避免重复触发
+						clearTimer = setTimeout(() => {
+							element.removeAttribute("data-highlight-trigger");
+						}, 3000);
+					}
 				}
 			});
 		});
 
 		observer.observe(element, { attributes: true });
 
-		return () => observer.disconnect();
+		return () => {
+			observer.disconnect();
+			if (clearTimer) {
+				clearTimeout(clearTimer);
+			}
+		};
 	}, []);
 
 	// 处理点击 @ 回复对象，高亮父评论
@@ -83,21 +104,23 @@ export function CommentItem({
 				showLine && "before:absolute before:content-[''] before:top-12 before:left-4 before:h-[calc(100%-2rem)] before:w-[2px] before:bg-linear-to-b before:from-border before:to-transparent",
 			)}
 		>
-			{/* 高亮层 */}
-			{highlightKey > 0 && (
-				<motion.div
-					key={highlightKey}
-					initial={{ opacity: 0 }}
-					animate={{ opacity: [0, 1, 1, 0] }}
-					transition={{
-						duration: 3,
-						times: [0, 0.05, 0.4, 1],
-						ease: "easeInOut",
-					}}
-					className="absolute inset-0 rounded-lg pointer-events-none bg-primary/20 shadow-[0_0_0_4px_rgba(45,212,191,0.25)]"
-				/>
-			)}
-			<dl className="flex flex-col gap-2 mt-6">
+			{/* 评论内容区域（仅此区域高亮） */}
+			<dl className="relative flex flex-col gap-2 mt-6">
+				{/* 高亮层 - 仅覆盖当前评论内容 */}
+				{highlightKey > 0 && (
+					<motion.div
+						key={highlightKey}
+						initial={{ opacity: 0 }}
+						animate={{ opacity: [0, 1, 1, 0] }}
+						transition={{
+							duration: 3,
+							times: [0, 0.05, 0.4, 1],
+							ease: "easeInOut",
+						}}
+						className="absolute -inset-2 rounded-lg pointer-events-none bg-primary/20 shadow-[0_0_0_4px_rgba(45,212,191,0.25)]"
+					/>
+				)}
+
 				{/* Header: 头像 + 信息 */}
 				<div className="flex items-center gap-2 relative z-10">
 					<img
@@ -147,7 +170,7 @@ export function CommentItem({
 						</motion.button>
 					)}
 
-					<div className="prose prose-sm prose-stone dark:prose-invert max-w-none text-foreground/90 leading-relaxed">
+					<div className="prose prose-sm prose-stone max-w-none text-foreground/90 leading-relaxed">
 						<CommentMarkdown content={comment.text} />
 					</div>
 
@@ -169,6 +192,7 @@ export function CommentItem({
 					</dd>
 				</blockquote>
 			</dl>
+			{/* 高亮层结束 */}
 
 			<div className={cn("flex flex-col", "ml-7")}>
 				{/* Reply Form with Animation */}

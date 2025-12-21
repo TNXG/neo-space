@@ -45,10 +45,10 @@ export function CommentSection({
 		<section className="mt-16 sm:mt-24 max-w-3xl mx-auto px-4 sm:px-0">
 			{/* 头部区域 */}
 			<div className="flex items-center justify-between mb-8">
-				<h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-					<Icon icon="lucide:message-square" className="w-6 h-6 text-teal-500" />
+				<h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-primary-900">
+					<Icon icon="lucide:message-square" className="w-6 h-6 text-accent-500" />
 					<span>评论</span>
-					<span className="text-base font-normal text-zinc-400 ml-1">
+					<span className="text-base font-normal text-primary-400 ml-1">
 						(
 						{displayCount}
 						)
@@ -56,14 +56,14 @@ export function CommentSection({
 				</h2>
 
 				{/* 排序切换 */}
-				<div className="flex items-center gap-1 p-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/50">
+				<div className="flex items-center gap-1 p-1 rounded-lg bg-primary-100">
 					<button
 						type="button"
 						onClick={() => setSortBy("newest")}
 						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
 							sortBy === "newest"
-								? "bg-white text-zinc-900 shadow-xs"
-								: "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+								? "bg-background text-primary-900 shadow-xs"
+								: "text-primary-500 hover:text-primary-900"
 						}`}
 					>
 						最新
@@ -73,8 +73,8 @@ export function CommentSection({
 						onClick={() => setSortBy("oldest")}
 						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
 							sortBy === "oldest"
-								? "bg-white text-zinc-900 shadow-xs"
-								: "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+								? "bg-background text-primary-900 shadow-xs"
+								: "text-primary-500 hover:text-primary-900"
 						}`}
 					>
 						最早
@@ -103,8 +103,8 @@ export function CommentSection({
 				{/* Loading 遮罩 */}
 				{isLoading && displayComments.length > 0 && (
 					<div className="absolute inset-0 flex items-start justify-center pt-20 z-10">
-						<div className="p-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700">
-							<Icon icon="lucide:loader-2" className="w-5 h-5 animate-spin text-teal-500" />
+						<div className="p-3 bg-background/80 backdrop-blur-md rounded-full shadow-lg border border-primary-200">
+							<Icon icon="lucide:loader-2" className="w-5 h-5 animate-spin text-accent-500" />
 						</div>
 					</div>
 				)}
