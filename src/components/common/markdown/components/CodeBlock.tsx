@@ -42,7 +42,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
 
 	return (
 		<div className="group relative my-5 md:my-6 overflow-hidden rounded-xl border border-zinc-200 bg-white/50 shadow-sm transition-all hover:shadow-md backdrop-blur-sm">
-			<div className="flex h-10 md:h-11 items-center justify-between border-b border-zinc-200/60 bg-zinc-50/50 px-3 md:px-4 dark:bg-zinc-900/50">
+			<div className="flex h-10 md:h-11 items-center justify-between border-b border-zinc-200/60 bg-zinc-50/50 px-3 md:px-4">
 				<div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1 overflow-hidden">
 					<div className="hidden sm:flex items-center gap-1.5 opacity-70 transition-opacity group-hover:opacity-100 shrink-0">
 						<div className="h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-inset ring-black/10" />
@@ -63,7 +63,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
 					className={cn(
 						"relative flex h-6 md:h-7 items-center justify-center rounded-md px-1.5 md:px-2 transition-all duration-200 cursor-pointer shrink-0",
 						"text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900",
-						"dark:hover:text-zinc-100",
+						"",
 						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400",
 					)}
 					aria-label="Copy code"

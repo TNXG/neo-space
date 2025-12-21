@@ -1,24 +1,46 @@
 "use client";
 
-import { motion } from "motion/react";
 import { useState } from "react";
+import styles from "./Spoiler.module.css";
 
+/**
+ * Spoiler 组件
+ * 使用 ||text|| 语法渲染为 <del> 元素
+ * 默认状态：背景色与文字颜色相同，内容不可见（删除线也被遮住）
+ * 悬停状态：背景变为透明，内容显示，并在鼠标位置显示简洁提示
+ * 打印时：显示删除线效果
+ */
 export const Spoiler = ({ children }: { children: React.ReactNode }) => {
-	const [revealed, setRevealed] = useState(false);
+	const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
+	const handleMouseMove = (e: React.MouseEvent) => {
+		setTooltip({ x: e.clientX, y: e.clientY });
+	};
+
+	const handleMouseLeave = () => {
+		setTooltip(null);
+	};
 
 	return (
-		<motion.span
-			className="inline-block cursor-pointer rounded px-1 py-0.5"
-			onClick={() => setRevealed(!revealed)}
-			initial={false}
-			animate={{
-				backgroundColor: revealed ? "transparent" : "var(--primary-400)",
-				color: revealed ? "inherit" : "transparent",
-			}}
-			whileHover={!revealed ? { scale: 1.02 } : undefined}
-			transition={{ duration: 0.3, ease: "easeOut" }}
-		>
-			{children}
-		</motion.span>
+		<>
+			<del
+				className={styles.spoiler}
+				onMouseMove={handleMouseMove}
+				onMouseLeave={handleMouseLeave}
+			>
+				{children}
+			</del>
+			{tooltip && (
+				<div
+					className={styles.tooltip}
+					style={{
+						left: `${tooltip.x}px`,
+						top: `${tooltip.y - 40}px`,
+					}}
+				>
+					你知道的太多了
+				</div>
+			)}
+		</>
 	);
 };

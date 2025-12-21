@@ -193,7 +193,7 @@ const components: Components = {
 	),
 
 	tr: ({ children }) => (
-		<tr className="transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-800/30">
+		<tr className="transition-colors hover:bg-primary-50/50">
 			{children}
 		</tr>
 	),

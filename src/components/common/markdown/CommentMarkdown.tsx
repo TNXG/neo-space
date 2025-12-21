@@ -6,6 +6,9 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+import { Spoiler } from "./components/Spoiler";
+import { remarkSpoiler } from "./plugins/spoiler";
+
 /**
  * 检查是否为 owo 表情包链接
  * owo 表情包通常来自特定的 CDN 域名
@@ -48,7 +51,7 @@ const commentComponents: Components = {
 
 	strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
 	em: ({ children }) => <em>{children}</em>,
-	del: ({ children }) => <del className="line-through text-zinc-500">{children}</del>,
+	del: ({ children }) => <del className="line-through text-primary-500">{children}</del>,
 
 	code: ({ className, children }) => {
 		const isInline = !className;
@@ -135,6 +138,22 @@ const commentComponents: Components = {
 	td: ({ children }) => <td className="px-3 py-2">{children}</td>,
 
 	hr: () => <hr className="my-4 border-dashed border-primary-200 w-1/2 mx-auto" />,
+
+	span: ({ className, children, ...props }) => {
+		const { node: _node, ...rest } = props as any;
+
+		if (className === "spoiler") {
+			return <Spoiler>{children}</Spoiler>;
+		}
+
+		const { id: _id, ...restWithoutId } = rest;
+
+		return (
+			<span className={className} {...restWithoutId}>
+				{children}
+			</span>
+		);
+	},
 };
 
 interface CommentMarkdownProps {
@@ -150,7 +169,7 @@ export function CommentMarkdown({ content, className = "" }: CommentMarkdownProp
 	return (
 		<div className={`comment-markdown ${className}`}>
 			<ReactMarkdown
-				remarkPlugins={[remarkGfm, remarkBreaks]}
+				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
 				rehypePlugins={[rehypeSanitize]}
 				components={commentComponents}
 			>

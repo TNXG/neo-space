@@ -1,0 +1,90 @@
+/**
+ * Spoiler 组件样式
+ * 使用 ||text|| 语法渲染为 <del> 元素
+ */
+
+.spoiler {
+	position: relative;
+	transition: background 0.5s;
+	text-decoration: line-through;
+	text-decoration-color: transparent;
+	border-radius: 3px;
+	background-color: currentColor;
+	color: rgb(68 64 60); /* stone-700 */
+	cursor: help;
+	padding: 0 2px;
+}
+
+/* 用伪元素遮住删除线 */
+.spoiler::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	height: 2px;
+	background-color: currentColor;
+	transform: translateY(-50%);
+	transition: opacity 0.5s;
+	pointer-events: none;
+}
+
+.spoiler:hover {
+	background: transparent;
+	text-decoration-color: currentColor;
+}
+
+.spoiler:hover::after {
+	opacity: 0;
+}
+
+/* 隐藏内部所有元素的样式（包括 nbnhhsh 的下划线） */
+.spoiler:not(:hover) * {
+	color: inherit !important;
+	border-color: transparent !important;
+	text-decoration-color: transparent !important;
+}
+
+/* 跟随鼠标的简洁提示 */
+.tooltip {
+	position: fixed;
+	padding: 4px 10px;
+	background-color: rgba(0, 0, 0, 0.3);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	color: white;
+	font-size: 12px;
+	border-radius: 6px;
+	pointer-events: none;
+	z-index: 9999;
+	white-space: nowrap;
+	transform: translateX(-50%);
+	font-weight: 300;
+	letter-spacing: 0.025em;
+}
+
+/* 暗色模式 */
+:global(.dark) .spoiler {
+	color: rgb(115 115 115); /* neutral-500 */
+}
+
+:global(.dark) .tooltip {
+	background-color: rgba(255, 255, 255, 0.3);
+	color: black;
+}
+
+/* 打印样式 */
+@media print {
+	.spoiler {
+		background-color: transparent !important;
+		text-decoration-color: currentColor !important;
+	}
+
+	.spoiler::after {
+		display: none;
+	}
+
+	.tooltip {
+		display: none;
+	}
+}

@@ -137,7 +137,7 @@ export function VerticalSlider({
           track,
           checked 
             ? "bg-primary/50" 
-            : "bg-zinc-300 dark:bg-zinc-600"
+            : "bg-zinc-300"
         )}
       />
 
@@ -146,10 +146,10 @@ export function VerticalSlider({
         className={cn(
           "absolute z-10 flex items-center justify-center shadow-sm border",
           thumb,
-          "bg-white dark:bg-zinc-100",
+          "bg-white",
           checked 
             ? "border-primary bg-primary text-primary-foreground shadow-md" 
-            : "border-zinc-300 dark:border-zinc-500",
+            : "border-zinc-300",
           !disabled && "cursor-pointer",
         )}
         
