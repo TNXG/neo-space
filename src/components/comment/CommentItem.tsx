@@ -3,10 +3,11 @@
 import type { Comment } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react"; // 移除了 useEffect
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { SmartDate } from "@/components/common/smart-date";
 import { cn } from "@/lib/utils";
+import { useCommentHighlight } from "./CommentContext";
 import { CommentForm } from "./CommentForm";
 
 interface CommentItemProps {
@@ -31,71 +32,27 @@ export function CommentItem({
 	parentId,
 }: CommentItemProps) {
 	const [replyView, setReplyView] = useState(false);
-	const [highlightKey, setHighlightKey] = useState(0);
 	const itemRef = useRef<HTMLDivElement>(null);
 	const showLine = depth < MAX_DEPTH;
 
-	// 监听高亮触发
-	useEffect(() => {
-		const element = itemRef.current;
-		if (!element)
-			return;
+	// 【关键修改】：使用 Context 获取全局高亮状态
+	const { highlightedId, triggerHighlight } = useCommentHighlight();
 
-		let clearTimer: NodeJS.Timeout | null = null;
+	// 判断当前组件是否应该高亮
+	const isHighlighting = highlightedId === comment._id;
 
-		const observer = new MutationObserver((mutations) => {
-			mutations.forEach((mutation) => {
-				if (mutation.type === "attributes" && mutation.attributeName === "data-highlight-trigger") {
-					const triggerValue = element.getAttribute("data-highlight-trigger");
-					// 只有当属性值存在时才触发高亮
-					if (triggerValue) {
-						// 通过改变 key 来触发重新动画
-						setHighlightKey(prev => prev + 1);
-
-						// 清除之前的定时器
-						if (clearTimer) {
-							clearTimeout(clearTimer);
-						}
-
-						// 3秒后清除触发标记，避免重复触发
-						clearTimer = setTimeout(() => {
-							element.removeAttribute("data-highlight-trigger");
-						}, 3000);
-					}
-				}
-			});
-		});
-
-		observer.observe(element, { attributes: true });
-
-		return () => {
-			observer.disconnect();
-			if (clearTimer) {
-				clearTimeout(clearTimer);
-			}
-		};
-	}, []);
-
-	// 处理点击 @ 回复对象，高亮父评论
+	// 处理点击 @ 回复对象
 	const handleReplyClick = () => {
 		if (!parentId)
 			return;
-
-		const parentElement = document.getElementById(parentId);
-		if (parentElement) {
-			// 滚动到父评论
-			parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-
-			// 直接设置属性触发高亮
-			parentElement.setAttribute("data-highlight-trigger", Date.now().toString());
-		}
+		// 直接调用 Context 方法，不操作 DOM 属性
+		triggerHighlight(parentId);
 	};
 
 	return (
 		<motion.div
 			ref={itemRef}
 			id={comment._id}
-			data-comment-highlight
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
@@ -104,22 +61,25 @@ export function CommentItem({
 				showLine && "before:absolute before:content-[''] before:top-12 before:left-4 before:h-[calc(100%-2rem)] before:w-[2px] before:bg-linear-to-b before:from-border before:to-transparent",
 			)}
 		>
-			{/* 评论内容区域（仅此区域高亮） */}
+			{/* 评论内容区域 */}
 			<dl className="relative flex flex-col gap-2 mt-6">
-				{/* 高亮层 - 仅覆盖当前评论内容 */}
-				{highlightKey > 0 && (
-					<motion.div
-						key={highlightKey}
-						initial={{ opacity: 0 }}
-						animate={{ opacity: [0, 1, 1, 0] }}
-						transition={{
-							duration: 3,
-							times: [0, 0.05, 0.4, 1],
-							ease: "easeInOut",
-						}}
-						className="absolute -inset-2 rounded-lg pointer-events-none bg-primary/20 shadow-[0_0_0_4px_rgba(45,212,191,0.25)]"
-					/>
-				)}
+				{/* 高亮层 - 完全由 isHighlighting 状态控制 */}
+				<AnimatePresence>
+					{isHighlighting && (
+						<motion.div
+							key="highlight-overlay"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: [0, 1, 1, 0] }}
+							exit={{ opacity: 0 }}
+							transition={{
+								duration: 3,
+								times: [0, 0.05, 0.4, 1],
+								ease: "easeInOut",
+							}}
+							className="absolute -inset-2 rounded-lg pointer-events-none bg-primary/20 shadow-[0_0_0_4px_rgba(45,212,191,0.25)]"
+						/>
+					)}
+				</AnimatePresence>
 
 				{/* Header: 头像 + 信息 */}
 				<div className="flex items-center gap-2 relative z-10">
@@ -134,25 +94,19 @@ export function CommentItem({
 							<b className={cn(comment.isAdmin ? "text-primary" : "text-foreground")}>
 								{comment.author}
 							</b>
-
-							{/* 楼层号 */}
 							<span className="text-[10px] bg-muted text-muted-foreground px-1 rounded font-mono">
 								{comment.key}
 							</span>
-
-							{/* 徽章 */}
 							{comment.isAdmin && <Icon icon="mingcute:safe-flash-fill" className="text-primary w-3 h-3" />}
 							{comment.pin && <Icon icon="mingcute:pin-fill" className="text-red-500 w-3 h-3" />}
-
 							<span className="text-muted-foreground">·</span>
 							<SmartDate date={comment.created} className="text-xs text-muted-foreground" />
 						</div>
 					</dt>
 				</div>
 
-				{/* Content: 对应 Svelte 的 blockquote class="ms-11" */}
+				{/* Content */}
 				<blockquote className="ml-11">
-					{/* 回复引用 (Flat Mode 逻辑保留) */}
 					{parentAuthor && parentId && depth >= 1 && (
 						<motion.button
 							type="button"
@@ -174,7 +128,6 @@ export function CommentItem({
 						<CommentMarkdown content={comment.text} />
 					</div>
 
-					{/* Actions: 对应 Svelte 的 dd class="flex items-center gap-4 mt-2" */}
 					<dd className="flex items-center gap-4 mt-2">
 						<motion.button
 							type="button"
@@ -192,10 +145,8 @@ export function CommentItem({
 					</dd>
 				</blockquote>
 			</dl>
-			{/* 高亮层结束 */}
 
 			<div className={cn("flex flex-col", "ml-7")}>
-				{/* Reply Form with Animation */}
 				<AnimatePresence mode="wait">
 					{replyView && (
 						<motion.div
@@ -220,7 +171,6 @@ export function CommentItem({
 					)}
 				</AnimatePresence>
 
-				{/* Recursive Children */}
 				{comment.children && comment.children.map(child => (
 					<CommentItem
 						key={child._id}
