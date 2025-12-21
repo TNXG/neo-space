@@ -1,17 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, use, useCallback, useState } from "react";
+import { createContext, use, useCallback, useMemo, useState } from "react";
 
 interface CommentContextType {
 	highlightedId: string | null;
 	triggerHighlight: (id: string) => void;
+	refreshComments: (() => void) | null;
+	setRefreshComments: (fn: () => void) => void;
 }
 
 const CommentContext = createContext<CommentContextType | null>(null);
 
 export function CommentProvider({ children }: { children: ReactNode }) {
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
+	const [refreshComments, setRefreshComments] = useState<(() => void) | null>(null);
 
 	const triggerHighlight = useCallback((id: string) => {
 		// 1. 设置当前高亮ID
@@ -29,8 +32,19 @@ export function CommentProvider({ children }: { children: ReactNode }) {
 		}, 3000);
 	}, []);
 
+	const handleSetRefreshComments = useCallback((fn: () => void) => {
+		setRefreshComments(() => fn);
+	}, []);
+
+	const contextValue = useMemo(() => ({
+		highlightedId,
+		triggerHighlight,
+		refreshComments,
+		setRefreshComments: handleSetRefreshComments,
+	}), [highlightedId, triggerHighlight, refreshComments, handleSetRefreshComments]);
+
 	return (
-		<CommentContext value={{ highlightedId, triggerHighlight }}>
+		<CommentContext value={contextValue}>
 			{children}
 		</CommentContext>
 	);
@@ -42,4 +56,15 @@ export function useCommentHighlight() {
 		throw new Error("useCommentHighlight must be used within a CommentProvider");
 	}
 	return context;
+}
+
+export function useCommentRefresh() {
+	const context = use(CommentContext);
+	if (!context) {
+		throw new Error("useCommentRefresh must be used within a CommentProvider");
+	}
+	return {
+		refreshComments: context.refreshComments,
+		setRefreshComments: context.setRefreshComments,
+	};
 }

@@ -150,10 +150,10 @@ export interface Reader {
 	name: string;
 	handle: string;
 	image: string;
-	is_owner: boolean;
-	email_verified?: boolean;
-	created_at: string;
-	updated_at: string;
+	isOwner: boolean;
+	emailVerified?: boolean;
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface Page {

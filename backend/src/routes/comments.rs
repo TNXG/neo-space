@@ -9,6 +9,8 @@ use crate::models::{
     ApiResponse, Comment, CommentListResponse, CommentTree, CreateCommentRequest,
     ResponseStatus, UpdateCommentRequest,
 };
+use crate::guards::OptionalAuthGuard;
+use crate::services::ReaderRepository;
 
 /**
  * 根据邮箱生成 Gravatar/Cravatar 头像 URL
@@ -17,6 +19,34 @@ fn generate_avatar_url(email: &str) -> String {
     let trimmed = email.trim().to_lowercase();
     let hash = format!("{:x}", md5::compute(trimmed.as_bytes()));
     format!("https://cravatar.cn/avatar/{}", hash)
+}
+
+/**
+ * 创建空评论对象（用于错误响应）
+ */
+fn empty_comment() -> Comment {
+    Comment {
+        id: None,
+        r#ref: ObjectId::new(),
+        ref_type: String::new(),
+        author: String::new(),
+        mail: String::new(),
+        text: String::new(),
+        state: 0,
+        children: None,
+        comments_index: 0,
+        key: String::new(),
+        ip: None,
+        agent: None,
+        pin: false,
+        is_whispers: false,
+        source: None,
+        avatar: None,
+        created: DateTime::now(),
+        location: None,
+        url: None,
+        parent: None,
+    }
 }
 
 /**
@@ -30,6 +60,7 @@ pub async fn list_comments(
     ref_type: String,
 ) -> Result<Json<ApiResponse<CommentListResponse>>, Status> {
     let collection = db.collection::<Comment>("comments");
+    let reader_repo = ReaderRepository::new(db.inner());
 
     // 解析 ObjectId
     let ref_oid = match ObjectId::from_str(&ref_id) {
@@ -73,8 +104,31 @@ pub async fn list_comments(
 
     let count = all_comments.len() as i64;
 
-    // 构建树形结构
-    let tree = build_comment_tree(&all_comments);
+    // 收集所有唯一的邮箱，用于批量查询 Reader
+    let emails: Vec<String> = all_comments
+        .iter()
+        .map(|c| c.mail.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    // 批量查询所有 Reader，构建邮箱到头像的映射
+    let mut email_to_avatar = std::collections::HashMap::new();
+    
+    for email in emails {
+        // 通过邮箱查找 Reader（假设邮箱是唯一的）
+        if let Ok(readers) = reader_repo.get_all().await {
+            for reader in readers {
+                if reader.email == email && !reader.image.is_empty() {
+                    email_to_avatar.insert(email.clone(), reader.image.clone());
+                    break;
+                }
+            }
+        }
+    }
+
+    // 构建树形结构，传入头像映射
+    let tree = build_comment_tree(&all_comments, &email_to_avatar);
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -90,42 +144,96 @@ pub async fn list_comments(
 /**
  * POST /api/comments
  * 创建新评论
+ * 
+ * 支持两种模式：
+ * 1. 匿名评论：必须提供 author 和 mail
+ * 2. 登录评论：通过 JWT 获取用户信息，author 和 mail 可选
  */
 #[post("/comments", data = "<request>")]
 pub async fn create_comment(
     db: &State<Database>,
+    auth: OptionalAuthGuard,
     request: Json<CreateCommentRequest>,
 ) -> Result<Json<ApiResponse<Comment>>, Status> {
     let collection = db.collection::<Comment>("comments");
+    let reader_repo = ReaderRepository::new(db.inner());
+
+    // 确定作者信息和头像
+    let (author, mail, avatar_url, source, _reader_id) = if let Some(user_id) = auth.user_id {
+        // 已登录用户：从 Reader 获取信息
+        match reader_repo.find_by_id(user_id).await {
+            Ok(Some(reader)) => {
+                let author = request.author.clone().unwrap_or(reader.name.clone());
+                let mail = request.mail.clone().unwrap_or(reader.email.clone());
+                // 优先使用 Reader 的头像，否则根据邮箱生成
+                let avatar = if !reader.image.is_empty() {
+                    reader.image.clone()
+                } else {
+                    generate_avatar_url(&mail)
+                };
+                // 标记来源为 OAuth 登录
+                let source = Some("oauth".to_string());
+                (author, mail, avatar, source, Some(user_id))
+            }
+            Ok(None) => {
+                log::warn!("用户 {} 不存在", user_id);
+                return Ok(Json(ApiResponse {
+                    code: 401,
+                    status: ResponseStatus::Failed,
+                    message: "用户不存在".to_string(),
+                    data: empty_comment(),
+                }));
+            }
+            Err(e) => {
+                log::error!("查询用户失败: {}", e);
+                return Err(Status::InternalServerError);
+            }
+        }
+    } else {
+        // 未登录用户：必须提供 author 和 mail，并创建/查找 Reader
+        let author = match &request.author {
+            Some(a) if !a.trim().is_empty() => a.clone(),
+            _ => {
+                return Ok(Json(ApiResponse {
+                    code: 400,
+                    status: ResponseStatus::Failed,
+                    message: "未登录用户必须提供昵称".to_string(),
+                    data: empty_comment(),
+                }));
+            }
+        };
+        let mail = match &request.mail {
+            Some(m) if !m.trim().is_empty() => m.clone(),
+            _ => {
+                return Ok(Json(ApiResponse {
+                    code: 400,
+                    status: ResponseStatus::Failed,
+                    message: "未登录用户必须提供邮箱".to_string(),
+                    data: empty_comment(),
+                }));
+            }
+        };
+        
+        // 查找或创建匿名 Reader
+        let reader_id = match reader_repo.find_or_create_anonymous(&author, &mail).await {
+            Ok(id) => id,
+            Err(e) => {
+                log::error!("创建匿名 Reader 失败: {}", e);
+                return Err(Status::InternalServerError);
+            }
+        };
+        
+        let avatar = generate_avatar_url(&mail);
+        (author, mail, avatar, None, Some(reader_id))
+    };
 
     // 验证必填字段
     if request.text.trim().is_empty() {
         return Ok(Json(ApiResponse {
             code: 400,
             status: ResponseStatus::Failed,
-            message: "Comment text cannot be empty".to_string(),
-            data: Comment {
-                id: None,
-                r#ref: ObjectId::new(),
-                ref_type: String::new(),
-                author: String::new(),
-                mail: String::new(),
-                text: String::new(),
-                state: 0,
-                children: None,
-                comments_index: 0,
-                key: String::new(),
-                ip: None,
-                agent: None,
-                pin: false,
-                is_whispers: false,
-                source: None,
-                avatar: None,
-                created: DateTime::now(),
-                location: None,
-                url: None,
-                parent: None,
-            },
+            message: "评论内容不能为空".to_string(),
+            data: empty_comment(),
         }));
     }
 
@@ -137,28 +245,7 @@ pub async fn create_comment(
                 code: 400,
                 status: ResponseStatus::Failed,
                 message: "Invalid ref id".to_string(),
-                data: Comment {
-                    id: None,
-                    r#ref: ObjectId::new(),
-                    ref_type: String::new(),
-                    author: String::new(),
-                    mail: String::new(),
-                    text: String::new(),
-                    state: 0,
-                    children: None,
-                    comments_index: 0,
-                    key: String::new(),
-                    ip: None,
-                    agent: None,
-                    pin: false,
-                    is_whispers: false,
-                    source: None,
-                    avatar: None,
-                    created: DateTime::now(),
-                    location: None,
-                    url: None,
-                    parent: None,
-                },
+                data: empty_comment(),
             }));
         }
     };
@@ -213,16 +300,13 @@ pub async fn create_comment(
         .await
         .unwrap_or(0);
 
-    // 生成头像 URL
-    let avatar_url = generate_avatar_url(&request.mail);
-
     // 创建评论
     let comment = Comment {
         id: None,
         r#ref: ref_oid,
         ref_type: request.ref_type.clone(),
-        author: request.author.clone(),
-        mail: request.mail.clone(),
+        author,
+        mail,
         text: request.text.clone(),
         state: 1, // 默认审核通过
         children: Some(vec![]),
@@ -232,7 +316,7 @@ pub async fn create_comment(
         agent: None,
         pin: false,
         is_whispers: false,
-        source: None,
+        source,
         avatar: Some(avatar_url),
         created: DateTime::now(),
         location: None,
@@ -344,8 +428,14 @@ pub async fn delete_comment(
 
 /**
  * 构建评论树形结构
+ * 
+ * @param comments 所有评论
+ * @param email_to_avatar 邮箱到最新头像的映射
  */
-fn build_comment_tree(comments: &[Comment]) -> Vec<CommentTree> {
+fn build_comment_tree(
+    comments: &[Comment],
+    email_to_avatar: &std::collections::HashMap<String, String>,
+) -> Vec<CommentTree> {
     use std::collections::HashMap;
 
     // 创建 ID 到评论的映射
@@ -356,10 +446,12 @@ fn build_comment_tree(comments: &[Comment]) -> Vec<CommentTree> {
     for comment in comments {
         let id_str = comment.id.as_ref().unwrap().to_hex();
         
-        // 如果没有头像，根据邮箱生成
-        let avatar_url = comment.avatar.clone().unwrap_or_else(|| {
-            generate_avatar_url(&comment.mail)
-        });
+        // 优先使用 Reader 的最新头像，否则使用评论保存的头像，最后根据邮箱生成
+        let avatar_url = email_to_avatar
+            .get(&comment.mail)
+            .cloned()
+            .or_else(|| comment.avatar.clone())
+            .unwrap_or_else(|| generate_avatar_url(&comment.mail));
         
         let tree_node = CommentTree {
             id: id_str.clone(),

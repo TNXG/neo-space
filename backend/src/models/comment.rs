@@ -74,12 +74,14 @@ pub struct CommentTree {
 pub struct CreateCommentRequest {
     pub r#ref: String,
     pub ref_type: String,
-    pub author: String,
-    pub mail: String,
+    #[serde(default)]
+    pub author: Option<String>,
+    #[serde(default)]
+    pub mail: Option<String>,
     pub text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub parent: Option<String>,
 }
 

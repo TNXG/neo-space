@@ -3,9 +3,12 @@
 import type { Comment } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react"; // 移除了 useEffect
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { SmartDate } from "@/components/common/smart-date";
+import { deleteAuthComment } from "@/lib/api-client";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { useCommentHighlight } from "./CommentContext";
 import { CommentForm } from "./CommentForm";
@@ -20,7 +23,7 @@ interface CommentItemProps {
 	parentId?: string;
 }
 
-const MAX_DEPTH = 4;
+const MAX_DEPTH = 2; // 最多显示3层（0, 1, 2）
 
 export function CommentItem({
 	comment,
@@ -32,11 +35,44 @@ export function CommentItem({
 	parentId,
 }: CommentItemProps) {
 	const [replyView, setReplyView] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const itemRef = useRef<HTMLDivElement>(null);
-	const showLine = depth < MAX_DEPTH;
+
+	// 是否还能继续嵌套（depth < MAX_DEPTH 时可以嵌套）
+	const canNest = depth < MAX_DEPTH;
+	const showLine = canNest;
+
+	// 认证状态
+	const { user: authUser, isAuthenticated, token } = useAuthStore();
+
+	// 判断是否为当前用户的评论（通过邮箱匹配）
+	const isOwnComment = isAuthenticated && authUser && comment.author === authUser.name;
 
 	// 【关键修改】：使用 Context 获取全局高亮状态
 	const { highlightedId, triggerHighlight } = useCommentHighlight();
+
+	// 处理删除评论
+	const handleDelete = async () => {
+		if (!confirm("确定要删除这条评论吗？") || !token) {
+			return;
+		}
+
+		setIsDeleting(true);
+		try {
+			const result = await deleteAuthComment(comment._id, token);
+			if (result.code === 200) {
+				toast.success("评论删除成功");
+				onRefresh();
+			} else {
+				toast.error(result.message || "删除失败");
+			}
+		} catch (error) {
+			console.error("Failed to delete comment:", error);
+			toast.error("删除失败，请稍后重试");
+		} finally {
+			setIsDeleting(false);
+		}
+	};
 
 	// 判断当前组件是否应该高亮
 	const isHighlighting = highlightedId === comment._id;
@@ -99,6 +135,17 @@ export function CommentItem({
 							</span>
 							{comment.isAdmin && <Icon icon="mingcute:safe-flash-fill" className="text-primary w-3 h-3" />}
 							{comment.pin && <Icon icon="mingcute:pin-fill" className="text-red-500 w-3 h-3" />}
+							{/* OAuth 来源标识 */}
+							{comment.source === "from_oauth_github" && (
+								<span className="flex items-center gap-1 text-[10px] bg-[#24292e] text-white px-1.5 py-0.5 rounded" title="通过 GitHub 登录">
+									<Icon icon="mingcute:github-fill" className="w-2.5 h-2.5" />
+								</span>
+							)}
+							{comment.source === "from_oauth_qq" && (
+								<span className="flex items-center gap-1 text-[10px] bg-[#12b7f5] text-white px-1.5 py-0.5 rounded" title="通过 QQ 登录">
+									<Icon icon="mingcute:qq-fill" className="w-2.5 h-2.5" />
+								</span>
+							)}
 							<span className="text-muted-foreground">·</span>
 							<SmartDate date={comment.created} className="text-xs text-muted-foreground" />
 						</div>
@@ -142,11 +189,42 @@ export function CommentItem({
 							<Icon icon="mingcute:reply-line" className="w-4 h-4" />
 							<span>回复</span>
 						</motion.button>
+
+						{/* 当前用户的评论显示删除/编辑按钮 */}
+						{isOwnComment && (
+							<>
+								<motion.button
+									type="button"
+									onClick={() => {
+										// TODO: 实现编辑功能
+										console.log("Edit comment:", comment._id);
+									}}
+									whileHover={{ scale: 1.05 }}
+									whileTap={{ scale: 0.95 }}
+									className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-blue-500 transition-colors cursor-pointer"
+								>
+									<Icon icon="mingcute:edit-line" className="w-4 h-4" />
+									<span>编辑</span>
+								</motion.button>
+
+								<motion.button
+									type="button"
+									onClick={handleDelete}
+									disabled={isDeleting}
+									whileHover={{ scale: 1.05 }}
+									whileTap={{ scale: 0.95 }}
+									className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+								>
+									<Icon icon={isDeleting ? "svg-spinners:ring-resize" : "mingcute:delete-line"} className="w-4 h-4" />
+									<span>{isDeleting ? "删除中..." : "删除"}</span>
+								</motion.button>
+							</>
+						)}
 					</dd>
 				</blockquote>
 			</dl>
 
-			<div className={cn("flex flex-col", "ml-7")}>
+			<div className={cn("flex flex-col", canNest && "ml-7")}>
 				<AnimatePresence mode="wait">
 					{replyView && (
 						<motion.div
@@ -178,7 +256,7 @@ export function CommentItem({
 						refId={refId}
 						refType={refType}
 						onRefresh={onRefresh}
-						depth={depth + 1}
+						depth={canNest ? depth + 1 : depth}
 						parentAuthor={comment.author}
 						parentId={comment._id}
 					/>
