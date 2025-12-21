@@ -432,32 +432,6 @@
 .dark ::selection {
 	background-color: var(--accent-300);
 }
-/* Spoiler styles */
-.spoiler {
-	background-color: var(--primary-800);
-	color: var(--primary-800);
-	border-radius: 4px;
-	padding: 2px 4px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	user-select: none;
-}
-
-.spoiler:hover {
-	background-color: var(--primary-700);
-	color: var(--primary-100);
-}
-
-.dark .spoiler {
-	background-color: var(--primary-200);
-	color: var(--primary-200);
-}
-
-.dark .spoiler:hover {
-	background-color: var(--primary-300);
-	color: var(--primary-900);
-}
-
 html.dark .shiki,
 html.dark .shiki span {
 	color: var(--shiki-dark) !important;

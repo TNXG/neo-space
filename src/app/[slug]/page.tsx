@@ -48,7 +48,7 @@ export default async function PageDetail({ params }: PageProps) {
 					<h1 className="text-4xl font-bold bg-linear-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
 						{page.title}
 					</h1>
-					<div className="flex flex-wrap gap-4 text-sm text-zinc-500 dark:text-zinc-400">
+					<div className="flex flex-wrap gap-4 text-sm text-zinc-500">
 						<span>
 							更新于
 							{" "}
