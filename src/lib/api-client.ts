@@ -1,7 +1,7 @@
 import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 import process from "node:process";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /**
  * Generic API client with error handling
@@ -219,4 +219,168 @@ export async function deleteComment(id: string): Promise<ApiResponse<void>> {
 	return apiClient<ApiResponse<void>>(`/comments/${id}`, {
 		method: "DELETE",
 	});
+}
+
+/**
+ * Auth API - OAuth 认证相关
+ */
+
+export interface AccountInfo {
+	_id: string;
+	provider: string;
+	accountId: string;
+	createdAt: string;
+	oauth_avatar?: string;
+	oauth_name?: string;
+}
+
+/**
+ * 获取当前用户信息（需要 JWT token）
+ */
+export async function getCurrentUser(token: string): Promise<ApiResponse<Reader>> {
+	return apiClient<ApiResponse<Reader>>("/auth/me", {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 获取用户的所有关联账号
+ */
+export async function getUserAccounts(token: string): Promise<ApiResponse<AccountInfo[]>> {
+	return apiClient<ApiResponse<AccountInfo[]>>("/auth/accounts", {
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 绑定匿名身份
+ */
+export async function bindAnonymousIdentity(
+	data: { name?: string; email?: string },
+	token: string,
+): Promise<ApiResponse<Reader>> {
+	return apiClient<ApiResponse<Reader>>("/auth/bind-anonymous", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify(data),
+	});
+}
+
+/**
+ * 跳过绑定 - 为新 OAuth 用户创建 Reader
+ */
+export async function skipBind(token: string): Promise<ApiResponse<Reader>> {
+	return apiClient<ApiResponse<Reader>>("/auth/skip-bind", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 关联新的 OAuth 账号
+ */
+export async function linkAccount(
+	provider: string,
+	code: string,
+	token: string,
+): Promise<ApiResponse<void>> {
+	return apiClient<ApiResponse<void>>(`/auth/link/${provider}`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ code }),
+	});
+}
+
+/**
+ * 创建评论（OAuth 用户，需要 JWT token）
+ */
+export async function createAuthComment(
+	request: Omit<CreateCommentRequest, "author" | "mail">,
+	token: string,
+): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>("/comments", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify(request),
+	});
+}
+
+/**
+ * 更新评论（OAuth 用户，需要 JWT token）
+ */
+export async function updateAuthComment(
+	id: string,
+	request: UpdateCommentRequest,
+	token: string,
+): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}`, {
+		method: "PUT",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify(request),
+	});
+}
+
+/**
+ * 删除评论（OAuth 用户，需要 JWT token）
+ */
+export async function deleteAuthComment(id: string, token: string): Promise<ApiResponse<void>> {
+	return apiClient<ApiResponse<void>>(`/comments/${id}`, {
+		method: "DELETE",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 更新用户头像
+ *
+ * @param provider - 头像来源：'github' | 'qq' | 'gravatar'
+ */
+export interface UpdateAvatarRequest {
+	provider: "github" | "qq" | "gravatar";
+}
+
+export async function updateAvatar(
+	request: UpdateAvatarRequest,
+	token: string,
+): Promise<ApiResponse<Reader>> {
+	return apiClient<ApiResponse<Reader>>("/auth/avatar", {
+		method: "PUT",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify(request),
+	});
+}
+
+/**
+ * 生成 OAuth 登录 URL
+ */
+export function getOAuthUrl(provider: "github" | "qq"): string {
+	return `${API_BASE_URL}/auth/oauth/${provider}`;
+}
+
+/**
+ * 重定向到 OAuth 登录页面
+ */
+export function redirectToOAuth(provider: "github" | "qq"): void {
+	if (typeof window !== "undefined") {
+		localStorage.setItem("oauth_redirect_url", window.location.href);
+	}
+	window.location.href = getOAuthUrl(provider);
 }

@@ -2,4 +2,4 @@
 
 pub mod settings;
 
-pub use settings::MongoConfig;
+pub use settings::{OAuthConfig, ConfigError};

@@ -6,6 +6,8 @@ mod models;
 mod routes;
 mod services;
 mod utils;
+mod guards;
+mod error;
 
 use rocket::http::Method;
 use rocket::serde::json::Json;
@@ -37,8 +39,24 @@ fn internal_error(_req: &Request) -> Json<ApiResponse<()>> {
 
 #[launch]
 async fn rocket() -> _ {
+    // 加载 .env 文件（必须在所有环境变量读取之前）
+    dotenv::dotenv().ok();
+    
+    // 初始化日志系统（设置默认日志级别为 info）
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
+    env_logger::init();
+    log::info!("启动 Rocket 服务器...");
+
+    // 加载 OAuth 配置（仅作为后备配置，实际使用时从数据库读取）
+    let oauth_config = config::OAuthConfig::from_env()
+        .expect("Failed to load OAuth configuration from environment variables");
+    log::info!("OAuth 后备配置从环境变量加载成功");
+
     // Initialize database connection
     let database = services::init_db().await.expect("Failed to connect to MongoDB");
+    log::info!("MongoDB 连接成功");
 
     // Configure CORS for frontend communication
     let cors = CorsOptions::default()
@@ -49,15 +67,23 @@ async fn rocket() -> _ {
                 .map(From::from)
                 .collect(),
         )
+        .allowed_headers(rocket_cors::AllowedHeaders::some(&[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+        ]))
         .allow_credentials(true)
         .to_cors()
         .expect("Failed to create CORS");
+    log::info!("CORS 配置完成");
 
     // Build and launch Rocket with modular route registration
     rocket::build()
         .manage(database)
+        .manage(oauth_config)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
+        .mount("/api/auth", routes::auth::routes())
         .mount("/api", routes![
             // Posts routes
             routes::posts::list_posts,
