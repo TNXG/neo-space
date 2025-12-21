@@ -50,11 +50,11 @@ export function ArticleHeader({
 
 			{/* 摘要 */}
 			{displaySummary && (
-				<div className="my-6 pl-4 border-l-4 border-accent-400 dark:border-accent-600">
+				<div className="my-6 pl-4 border-l-4 border-accent-400">
 					{isAiSummary && (
 						<div className="flex items-center gap-1.5 mb-2">
 							<Icon icon="mingcute:sparkles-line" className="w-4 h-4 text-accent-500" />
-							<span className="text-xs font-medium text-accent-600 dark:text-accent-400">
+							<span className="text-xs font-medium text-accent-600">
 								AI 摘要
 							</span>
 						</div>
@@ -100,7 +100,7 @@ export function ArticleHeader({
 					{tags.map(tag => (
 						<span
 							key={tag}
-							className="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700 dark:text-primary-300"
+							className="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700"
 						>
 							#
 							{tag}

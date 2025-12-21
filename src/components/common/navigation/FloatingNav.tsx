@@ -178,7 +178,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 									/>
 								)
 							: (
-									<div className="relative z-10 text-neutral-600 text-xs font-bold rounded-full flex h-7 w-7 md:h-8 md:w-8 items-center justify-center from-stone-200 to-stone-300 bg-linear-to-tr dark:to-stone-600">
+									<div className="relative z-10 text-neutral-600 text-xs font-bold rounded-full flex h-7 w-7 md:h-8 md:w-8 items-center justify-center from-stone-200 to-stone-300 bg-linear-to-tr">
 										{user.name.charAt(0).toUpperCase()}
 									</div>
 								)}

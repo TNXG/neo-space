@@ -171,16 +171,16 @@ export function OutdatedAlert({
 						<div className="flex-1 space-y-2">
 							{/* 标签 */}
 							<div className="flex flex-wrap items-center gap-2">
-								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-primary-200 text-primary-700 border border-primary-300 dark:border-primary-400">
+								<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-primary-200 text-primary-700 border border-primary-300">
 									Time Capsule
 								</span>
 								{sensitivityLabel && (
 									<span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
 										capsule?.sensitivity === "high"
-											? "bg-amber-100 text-amber-700 dark:text-amber-400"
+											? "bg-amber-100 text-amber-700"
 											: capsule?.sensitivity === "low"
-												? "bg-green-100 text-green-700 dark:text-green-400"
-												: "bg-blue-100 text-blue-700 dark:text-blue-400"
+												? "bg-green-100 text-green-700"
+												: "bg-blue-100 text-blue-700"
 									}`}
 									>
 										{sensitivityLabel}
@@ -194,7 +194,7 @@ export function OutdatedAlert({
 										<h4 className="text-base font-bold text-foreground">
 											本文最后更新于
 											{" "}
-											<span className="text-accent-600 border-b-2 border-accent-300 dark:border-accent-600">
+											<span className="text-accent-600 border-b-2 border-accent-300">
 												{timeDesc}
 											</span>
 											{" "}
@@ -229,7 +229,7 @@ export function OutdatedAlert({
 									{capsule.markers.map(marker => (
 										<span
 											key={marker}
-											className="px-2 py-0.5 rounded text-xs bg-primary-200/80 text-primary-700 dark:text-primary-800"
+											className="px-2 py-0.5 rounded text-xs bg-primary-200/80 text-primary-700"
 										>
 											{marker}
 										</span>

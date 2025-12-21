@@ -133,7 +133,7 @@ export function CopyrightCard({
                 shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer
                 ${copied
 			? "bg-accent-600 border-accent-600 text-white"
-			: "bg-surface-100 border-primary-300 text-primary-600 hover:border-accent-400 hover:text-accent-700 dark:hover:border-accent-400"
+			: "bg-surface-100 border-primary-300 text-primary-600 hover:border-accent-400 hover:text-accent-700"
 		}
               `}
 						>
@@ -163,7 +163,7 @@ export function CopyrightCard({
                       relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 cursor-help
                       ${isActive
 										? "bg-accent-100 text-accent-700 scale-110 shadow-sm z-20"
-										: "text-primary-400 hover:text-primary-700 dark:hover:text-primary-200"
+										: "text-primary-400 hover:text-primary-700"
 									}
                     `}
 									>
@@ -192,7 +192,7 @@ export function CopyrightCard({
 									}`}
 								>
 									<div className="flex items-center gap-2">
-										<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-accent-100 text-accent-800 border border-accent-200 dark:border-accent-800/50">
+										<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-accent-100 text-accent-800 border border-accent-200">
 											{ATOM_DATA[atom].label}
 										</span>
 										<span className="text-primary-600 font-medium">

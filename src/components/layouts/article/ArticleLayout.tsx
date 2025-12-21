@@ -41,26 +41,30 @@ export function ArticleLayout({
 	return (
 		<main className="min-h-screen bg-background text-foreground">
 			<div className="max-w-7xl mx-auto pt-16 md:pt-24 pb-12 md:pb-16 px-4 lg:px-8 relative">
-				{/* 正文区 - 居中显示 */}
-				<article className="max-w-3xl mx-auto min-w-0">
-					{header}
-					<div className="prose-container">
-						<ArticleContent items={toc}>
-							{content}
-						</ArticleContent>
-					</div>
-					{footer && (
-						<div className="mt-16 pt-8 border-t border-border/50">
-							{footer}
+				{/* 正文区 - 居中显示，TOC 跟随此区域 */}
+				<div className="relative" data-toc-boundary>
+					<article className="max-w-3xl mx-auto min-w-0">
+						{header}
+						<div className="prose-container">
+							<ArticleContent items={toc}>
+								{content}
+							</ArticleContent>
 						</div>
-					)}
-				</article>
+					</article>
 
-				{/* 右侧 TOC 区 - 使用智能定位包装器 */}
-				<ArticleTOCWrapper>
-					<ArticleTOC />
-					{navigation && <ArticleNavButtons {...navigation} />}
-				</ArticleTOCWrapper>
+					{/* 右侧 TOC 区 - 使用智能定位包装器 */}
+					<ArticleTOCWrapper>
+						<ArticleTOC />
+						{navigation && <ArticleNavButtons {...navigation} />}
+					</ArticleTOCWrapper>
+				</div>
+
+				{/* Footer 区域（评论等）- 独立于 TOC 边界 */}
+				{footer && (
+					<div className="max-w-3xl mx-auto mt-16 pt-8 border-t border-border/50">
+						{footer}
+					</div>
+				)}
 			</div>
 		</main>
 	);

@@ -11,34 +11,36 @@ interface ArticleTOCWrapperProps {
 /**
  * TOC 智能定位包装器
  * - 正常滚动时：fixed 定位，固定在视口右侧
- * - 滚动超出文章区域时：切换为 absolute 定位，跟随页面滚动
- * - 添加缓冲区和防抖，避免频繁切换导致闪烁
+ * - 滚动超出文章区域时：隐藏 TOC（opacity: 0 + pointer-events: none）
+ * - 使用 opacity 过渡避免布局抖动
  */
 export function ArticleTOCWrapper({ children }: ArticleTOCWrapperProps) {
 	const wrapperRef = useRef<HTMLDivElement>(null);
 	const { setAutoScrollEnabled } = useTOCStore();
-	const [isFixed, setIsFixed] = useState(true);
+	const [isVisible, setIsVisible] = useState(true);
 	const rafRef = useRef<number | null>(null);
+	const prevAutoScrollRef = useRef(true);
 
 	const checkPosition = useCallback(() => {
 		const wrapper = wrapperRef.current;
 		if (!wrapper)
 			return null;
 
-		const parent = wrapper.parentElement;
-		if (!parent)
+		// 查找 data-toc-boundary 容器
+		const boundary = wrapper.closest("[data-toc-boundary]");
+		if (!boundary)
 			return null;
 
-		const parentRect = parent.getBoundingClientRect();
+		const boundaryRect = boundary.getBoundingClientRect();
 		const wrapperHeight = wrapper.offsetHeight;
 		const topOffset = 96; // top-24 = 6rem = 96px
 
-		// 计算 TOC 底部相对于父容器底部的位置
+		// 计算 TOC 底部相对于边界容器底部的位置
 		const tocBottomInViewport = topOffset + wrapperHeight;
-		const parentBottomInViewport = parentRect.bottom;
+		const boundaryBottomInViewport = boundaryRect.bottom;
 
 		// 使用缓冲区避免频繁切换
-		const distance = parentBottomInViewport - tocBottomInViewport;
+		const distance = boundaryBottomInViewport - tocBottomInViewport;
 
 		return distance;
 	}, []);
@@ -57,23 +59,18 @@ export function ArticleTOCWrapper({ children }: ArticleTOCWrapperProps) {
 					return;
 
 				// 使用缓冲区逻辑避免临界点闪烁
-				setIsFixed((prevFixed) => {
-					let shouldBeFixed: boolean;
+				setIsVisible((prevVisible) => {
+					let shouldBeVisible: boolean;
 
-					if (prevFixed) {
-						// 当前是 fixed，需要明显超出才切换为 absolute
-						shouldBeFixed = distance >= -50;
+					if (prevVisible) {
+						// 当前可见，需要明显超出才隐藏
+						shouldBeVisible = distance >= -100;
 					} else {
-						// 当前是 absolute，需要明显回到范围内才切换为 fixed
-						shouldBeFixed = distance >= 50;
+						// 当前隐藏，需要明显回到范围内才显示
+						shouldBeVisible = distance >= 100;
 					}
 
-					// 只在状态改变时通知 store
-					if (prevFixed !== shouldBeFixed) {
-						setAutoScrollEnabled(shouldBeFixed);
-					}
-
-					return shouldBeFixed;
+					return shouldBeVisible;
 				});
 			});
 		};
@@ -91,17 +88,25 @@ export function ArticleTOCWrapper({ children }: ArticleTOCWrapperProps) {
 				cancelAnimationFrame(rafRef.current);
 			}
 		};
-	}, [checkPosition, setAutoScrollEnabled]);
+	}, [checkPosition]);
+
+	// 单独的 effect 处理 store 更新，避免渲染期间调用
+	useEffect(() => {
+		if (prevAutoScrollRef.current !== isVisible) {
+			setAutoScrollEnabled(isVisible);
+			prevAutoScrollRef.current = isVisible;
+		}
+	}, [isVisible, setAutoScrollEnabled]);
 
 	return (
 		<aside
 			ref={wrapperRef}
-			className={`hidden xl:block w-56 ${isFixed ? "fixed top-24" : "absolute bottom-16 right-0"}`}
-			style={
-				isFixed
-					? { left: "calc(50% + 400px + 2rem)" }
-					: undefined
-			}
+			className="hidden xl:block w-56 fixed top-24 transition-opacity duration-300"
+			style={{
+				left: "calc(50% + 400px + 2rem)",
+				opacity: isVisible ? 1 : 0,
+				pointerEvents: isVisible ? "auto" : "none",
+			}}
 		>
 			{children}
 		</aside>

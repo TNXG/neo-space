@@ -14,7 +14,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 	return (
 		<header className="animate-fade-in space-y-5 md:space-y-6">
 			<div className="flex gap-4 md:gap-5 items-center">
-				<div className="group rounded-2xl bg-stone-200 h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden dark:bg-stone-700">
+				<div className="group rounded-2xl bg-stone-200 h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden">
 					{profile.avatar
 						? (
 								<img
