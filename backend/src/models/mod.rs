@@ -14,6 +14,7 @@ pub mod ai_summary;
 pub mod time_capsule;
 pub mod account;
 pub mod jwt;
+pub mod conversions;
 
 // Re-export commonly used types
 pub use response::{ApiResponse, ResponseStatus, Pagination, PaginatedData, PaginatedResponse};

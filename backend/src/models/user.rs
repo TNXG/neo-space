@@ -185,6 +185,21 @@ impl Reader {
             .trim_matches(|c| c == '-' || c == '_')
             .to_string()
     }
+
+    /// Create a new anonymous Reader
+    pub fn new_anonymous(name: String, email: String) -> Self {
+        Self {
+            id: ObjectId::new(),
+            email,
+            name: name.clone(),
+            handle: Self::generate_handle(&name),
+            image: String::new(),
+            is_owner: false,
+            email_verified: Some(false),
+            created_at: bson::DateTime::now(),
+            updated_at: bson::DateTime::now(),
+        }
+    }
 }
 
 impl Default for Reader {

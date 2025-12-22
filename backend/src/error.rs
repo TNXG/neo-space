@@ -5,7 +5,7 @@ use rocket::http::Status;
 use rocket::response::{self, Responder};
 use rocket::Request;
 
-use crate::models::{ApiResponse, ResponseStatus};
+use crate::models::{ApiResponse};
 
 /// 认证错误类型
 #[derive(Debug)]
@@ -73,12 +73,7 @@ impl<'r> Responder<'r, 'static> for AuthError {
 
         log::error!("认证错误: {} (HTTP {})", message, code);
 
-        let response = ApiResponse {
-            code,
-            status: ResponseStatus::Failed,
-            message,
-            data: (),
-        };
+        let response = ApiResponse::<()>::error(code, message);
 
         response::status::Custom(status, Json(response)).respond_to(req)
     }

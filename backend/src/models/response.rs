@@ -1,5 +1,6 @@
 //! API response structures
 
+use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 
 /// Standard API response wrapper
@@ -19,6 +20,7 @@ pub enum ResponseStatus {
 }
 
 impl<T> ApiResponse<T> {
+    /// Create a successful response with data
     pub fn success(data: T) -> Self {
         Self {
             code: 200,
@@ -28,7 +30,17 @@ impl<T> ApiResponse<T> {
         }
     }
 
-    #[allow(unused)]
+    /// Create a successful response with custom message
+    pub fn success_with_message(data: T, message: String) -> Self {
+        Self {
+            code: 200,
+            status: ResponseStatus::Success,
+            message,
+            data,
+        }
+    }
+
+    /// Create an error response with empty data
     pub fn error(code: u16, message: String) -> ApiResponse<()> {
         ApiResponse {
             code,
@@ -36,6 +48,57 @@ impl<T> ApiResponse<T> {
             message,
             data: (),
         }
+    }
+
+    /// Create an error response with custom data type
+    pub fn error_with_data<U>(code: u16, message: String, data: U) -> ApiResponse<U> {
+        ApiResponse {
+            code,
+            status: ResponseStatus::Failed,
+            message,
+            data,
+        }
+    }
+}
+
+/// Auth-specific response helpers
+impl<T> ApiResponse<T> {
+    /// Create a JSON success response
+    pub fn json_success(data: T) -> Json<Self> {
+        Json(Self::success(data))
+    }
+
+    /// Create a JSON success response with custom message
+    pub fn json_success_with_message(data: T, message: String) -> Json<Self> {
+        Json(Self::success_with_message(data, message))
+    }
+}
+
+impl ApiResponse<()> {
+    /// Create a JSON error response
+    pub fn json_error(code: u16, message: String) -> Json<Self> {
+        Json(Self::error(code, message))
+    }
+
+    /// Common auth error responses
+    pub fn unauthorized(message: String) -> Json<Self> {
+        Json(Self::error(401, message))
+    }
+
+    pub fn forbidden(message: String) -> Json<Self> {
+        Json(Self::error(403, message))
+    }
+
+    pub fn not_found(message: String) -> Json<Self> {
+        Json(Self::error(404, message))
+    }
+
+    pub fn bad_request(message: String) -> Json<Self> {
+        Json(Self::error(400, message))
+    }
+
+    pub fn internal_error(message: String) -> Json<Self> {
+        Json(Self::error(500, message))
     }
 }
 

@@ -112,23 +112,27 @@ pub async fn list_comments(
         .into_iter()
         .collect();
 
-    // 批量查询所有 Reader，构建邮箱到头像的映射
+    // 批量查询所有 Reader，构建邮箱到头像和站长身份的映射
     let mut email_to_avatar = std::collections::HashMap::new();
+    let mut email_to_is_owner = std::collections::HashMap::new();
     
     for email in emails {
         // 通过邮箱查找 Reader（假设邮箱是唯一的）
         if let Ok(readers) = reader_repo.get_all().await {
             for reader in readers {
-                if reader.email == email && !reader.image.is_empty() {
-                    email_to_avatar.insert(email.clone(), reader.image.clone());
+                if reader.email == email {
+                    if !reader.image.is_empty() {
+                        email_to_avatar.insert(email.clone(), reader.image.clone());
+                    }
+                    email_to_is_owner.insert(email.clone(), reader.is_owner);
                     break;
                 }
             }
         }
     }
 
-    // 构建树形结构，传入头像映射
-    let tree = build_comment_tree(&all_comments, &email_to_avatar);
+    // 构建树形结构，传入头像和站长身份映射
+    let tree = build_comment_tree(&all_comments, &email_to_avatar, &email_to_is_owner);
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -431,10 +435,12 @@ pub async fn delete_comment(
  * 
  * @param comments 所有评论
  * @param email_to_avatar 邮箱到最新头像的映射
+ * @param email_to_is_owner 邮箱到站长身份的映射
  */
 fn build_comment_tree(
     comments: &[Comment],
     email_to_avatar: &std::collections::HashMap<String, String>,
+    email_to_is_owner: &std::collections::HashMap<String, bool>,
 ) -> Vec<CommentTree> {
     use std::collections::HashMap;
 
@@ -453,6 +459,12 @@ fn build_comment_tree(
             .or_else(|| comment.avatar.clone())
             .unwrap_or_else(|| generate_avatar_url(&comment.mail));
         
+        // 判断是否为站长
+        let is_admin = email_to_is_owner
+            .get(&comment.mail)
+            .copied()
+            .filter(|&is_owner| is_owner);
+        
         let tree_node = CommentTree {
             id: id_str.clone(),
             r#ref: comment.r#ref.to_hex(),
@@ -465,6 +477,7 @@ fn build_comment_tree(
             key: comment.key.clone(),
             pin: comment.pin,
             is_whispers: comment.is_whispers,
+            is_admin,
             source: comment.source.clone(),
             avatar: Some(avatar_url),
             created: comment.created.to_chrono().to_rfc3339(),

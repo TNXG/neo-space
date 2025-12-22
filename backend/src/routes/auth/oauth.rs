@@ -1,20 +1,18 @@
-//! 认证路由 - OAuth 登录、用户信息、账号管理
+//! 认证路由 - OAuth 登录实现
 
-use rocket::serde::json::Json;
-use rocket::{State, response::Redirect};
-use rocket::http::{Cookie, CookieJar, SameSite};
 use mongodb::Database;
+use rocket::http::{Cookie, CookieJar, SameSite};
+use rocket::serde::json::Json;
+use rocket::{response::Redirect, State};
 
 use crate::config::OAuthConfig;
-use crate::models::{ApiResponse, ResponseStatus, Account, };
-use crate::services::{
-    ReaderRepository, AccountRepository, 
-    GitHubOAuthService, QQOAuthService
-};
-use crate::utils::jwt::generate_jwt;
-use bson::oid::ObjectId;
+use crate::models::ApiResponse;
+use crate::services::auth::identity::{IdentityService, OAuthUserPayload};
+use crate::services::{GitHubOAuthService, OptionsRepository, QQOAuthService};
 
-
+/// OAuth 重定向端点
+///
+/// 路由: GET /api/auth/oauth/<provider>
 #[get("/oauth/<provider>")]
 pub async fn oauth_redirect(
     provider: String,
@@ -23,71 +21,51 @@ pub async fn oauth_redirect(
 ) -> Result<Redirect, Json<ApiResponse<()>>> {
     log::info!("OAuth 重定向请求: provider={}", provider);
 
-    // 从数据库读取最新的 OAuth 配置
-    let options_repo = crate::services::OptionsRepository::new(db);
+    // 1. 获取最新的 OAuth 配置（数据库优先）
+    let options_repo = OptionsRepository::new(db);
     let db_oauth_options = options_repo.get_oauth_config().await.map_err(|e| {
-        log::error!("从数据库读取 OAuth 配置失败: {}", e);
-        Json(ApiResponse {
-            code: 500,
-            status: ResponseStatus::Failed,
-            message: "读取 OAuth 配置失败".to_string(),
-            data: (),
-        })
+        log::error!("读取数据库配置失败: {}", e);
+        ApiResponse::internal_error("读取配置失败".to_string())
     })?;
 
-    // 使用数据库配置，如果为空则使用环境变量配置
-    let github_client_id = db_oauth_options.github_client_id
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| config.github_client_id.clone());
-    
     let redirect_url = match provider.as_str() {
         "github" => {
-            if github_client_id.is_empty() {
-                log::error!("GitHub OAuth 未配置");
-                return Err(Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: "GitHub OAuth 未配置".to_string(),
-                    data: (),
-                }));
+            let client_id = db_oauth_options
+                .github_client_id
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| config.github_client_id.clone());
+
+            if client_id.is_empty() {
+                return Err(ApiResponse::internal_error(
+                    "GitHub OAuth 未配置".to_string(),
+                ));
             }
-            // GitHub OAuth 授权 URL
+
             format!(
                 "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=user:email",
-                github_client_id,
+                client_id,
                 urlencoding::encode(&config.github_redirect_uri())
             )
         }
         "qq" => {
-            // QQ OAuth 使用第三方接口（xc.null.red），不需要配置密钥
-            let qq_service = QQOAuthService::new(
-                config.qq_redirect_uri(),
-            );
+            // QQ OAuth 通常使用统一的第三方或预设回调
+            let qq_service = QQOAuthService::new(config.qq_redirect_uri());
             qq_service.get_authorize_url()
         }
         _ => {
-            log::warn!("不支持的 OAuth 提供商: {}", provider);
-            return Err(Json(ApiResponse {
-                code: 400,
-                status: ResponseStatus::Failed,
-                message: format!("不支持的 OAuth 提供商: {}", provider),
-                data: (),
-            }));
+            return Err(ApiResponse::bad_request(format!(
+                "不支持的提供商: {}",
+                provider
+            )))
         }
     };
 
-    log::debug!("重定向到: {}", redirect_url);
     Ok(Redirect::to(redirect_url))
 }
 
-/// OAuth 回调端点 - 处理 OAuth 提供商的回调
-/// 
-/// # 路由
-/// GET /api/auth/oauth/<provider>/callback?code=xxx
-/// 
-/// # 参数
-/// * `provider` - OAuth 提供商（"github" 或 "qq"）
-/// * `code` - OAuth 授权码
+/// OAuth 回调端点
+///
+/// 路由: GET /api/auth/oauth/<provider>/callback?code=xxx
 #[get("/oauth/<provider>/callback?<code>")]
 pub async fn oauth_callback(
     provider: String,
@@ -96,394 +74,127 @@ pub async fn oauth_callback(
     db: &State<Database>,
     cookies: &CookieJar<'_>,
 ) -> Result<Redirect, Json<ApiResponse<()>>> {
-    log::info!("OAuth 回调: provider={}", provider);
+    log::info!("OAuth 回调处理开始: provider={}", provider);
 
-    // 根据提供商处理 OAuth 流程
-    let result = match provider.as_str() {
-        "github" => handle_github_oauth(code, config, db).await?,
-        "qq" => handle_qq_oauth(code, config, db).await?,
-        _ => {
-            return Err(Json(ApiResponse {
-                code: 400,
-                status: ResponseStatus::Failed,
-                message: format!("不支持的 OAuth 提供商: {}", provider),
-                data: (),
-            }));
+    // 1. 获取第三方用户信息并转换为标准 Payload
+    let payload_result = match provider.as_str() {
+        "github" => handle_github_logic(&code, config, db).await,
+        "qq" => handle_qq_logic(&code, config, db).await,
+        _ => Err(ApiResponse::bad_request("不支持的提供商".to_string())),
+    };
+
+    // 如果获取第三方信息失败，重定向到前端并带上错误参数
+    let payload = match payload_result {
+        Ok(p) => p,
+        Err(e) => {
+            let err_msg = e.0.message;
+            return Ok(Redirect::to(format!(
+                "{}/auth/callback?error={}",
+                config.frontend_url,
+                urlencoding::encode(&err_msg)
+            )));
         }
     };
 
-    log::info!(
-        "OAuth 登录成功: provider={}, jwt_user_id={}, is_owner={}, is_new_user={}",
-        provider,
-        result.jwt_user_id,
-        result.is_owner,
-        result.is_new_user
-    );
+    // 2. 使用 IdentityService 处理复杂的业务逻辑 (自动关联、临时账户等)
+    let id_service = IdentityService::new(db, config.jwt_secret.clone());
+    let (user_id, is_owner, is_new_user) = match id_service.process_oauth_login(payload).await {
+        Ok(res) => res,
+        Err(e) => {
+            return Ok(Redirect::to(format!(
+                "{}/auth/callback?error={}",
+                config.frontend_url,
+                urlencoding::encode(&e)
+            )));
+        }
+    };
 
-    // 设置 HttpOnly Cookie（7天过期）- 用于后续 API 请求
-    let mut cookie = Cookie::new("auth_token", result.jwt_token.clone());
+    // 3. 颁发 JWT 令牌
+    let token = id_service
+        .issue_token(user_id, is_owner)
+        .map_err(|e| ApiResponse::internal_error(e))?;
+
+    // 4. 设置 HttpOnly Cookie（用于后端 API 鉴权）
+    let mut cookie = Cookie::new("auth_token", token.clone());
     cookie.set_http_only(true);
-    cookie.set_secure(true); // 生产环境必须使用 HTTPS
+    cookie.set_secure(true); // 建议生产环境强制 HTTPS
     cookie.set_same_site(SameSite::Lax);
     cookie.set_path("/");
     cookie.set_max_age(rocket::time::Duration::days(7));
-    
     cookies.add(cookie);
 
-    // 重定向到前端回调页面，携带 token 和 is_new_user 标记
-    // 弹窗会通过 postMessage 将信息传递给父窗口，然后关闭
+    // 5. 重定向回前端页面
+    // 前端会解析 URL 中的 token 和 new_user 标记来决定是进入仪表盘还是进入“绑定/跳过”页面
     let callback_url = format!(
         "{}/auth/callback?token={}&new_user={}",
-        config.frontend_url,
-        result.jwt_token,
-        result.is_new_user
+        config.frontend_url, token, is_new_user
     );
+
     Ok(Redirect::to(callback_url))
 }
 
-/// OAuth 登录结果（新用户时不创建 Reader）
-struct OAuthLoginResult {
-    /// 用于 JWT 的 ID（老用户是 Reader ID，新用户是 Account ID）
-    jwt_user_id: ObjectId,
-    /// 是否是 Owner
-    is_owner: bool,
-    /// Account 记录
-    account: Account,
-    /// JWT token
-    jwt_token: String,
-    /// 是否是新用户
-    is_new_user: bool,
-}
+// --- 内部逻辑封装：负责与各平台 API 交互 ---
 
-/// 处理 GitHub OAuth 流程
-/// 
-/// 新流程：
-/// - 老用户：直接返回 Reader 信息
-/// - 新用户：只创建 Account，不创建 Reader（等用户选择绑定或跳过后再创建）
-async fn handle_github_oauth(
-    code: String,
-    config: &State<OAuthConfig>,
-    db: &State<Database>,
-) -> Result<OAuthLoginResult, Json<ApiResponse<()>>> {
-    // 从数据库读取最新的 OAuth 配置
-    let options_repo = crate::services::OptionsRepository::new(db);
-    let db_oauth_options = options_repo.get_oauth_config().await.map_err(|e| {
-        log::error!("从数据库读取 OAuth 配置失败: {}", e);
-        Json(ApiResponse {
-            code: 500,
-            status: ResponseStatus::Failed,
-            message: "读取 OAuth 配置失败".to_string(),
-            data: (),
-        })
-    })?;
+/// 处理 GitHub 的 OAuth 交换逻辑
+async fn handle_github_logic(
+    code: &str,
+    config: &OAuthConfig,
+    db: &Database,
+) -> Result<OAuthUserPayload, Json<ApiResponse<()>>> {
+    let options_repo = OptionsRepository::new(db);
+    let db_oauth = options_repo.get_oauth_config().await.unwrap_or_default();
 
-    // 使用数据库配置，如果为空则使用环境变量配置
-    let github_client_id = db_oauth_options.github_client_id
+    let client_id = db_oauth
+        .github_client_id
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| config.github_client_id.clone());
-    
-    let github_client_secret = db_oauth_options.github_client_secret
+    let client_secret = db_oauth
+        .github_client_secret
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| config.github_client_secret.clone());
 
-    if github_client_id.is_empty() || github_client_secret.is_empty() {
-        log::error!("GitHub OAuth 未配置");
-        return Err(Json(ApiResponse {
-            code: 500,
-            status: ResponseStatus::Failed,
-            message: "GitHub OAuth 未配置".to_string(),
-            data: (),
-        }));
+    if client_id.is_empty() || client_secret.is_empty() {
+        return Err(ApiResponse::internal_error("GitHub 配置缺失".into()));
     }
 
-    // 1. 创建 GitHub OAuth 服务
-    let github_service = GitHubOAuthService::new(
-        github_client_id,
-        github_client_secret,
-    );
-
-    // 2. 执行 OAuth 流程
-    let (github_user, access_token, scope) = github_service
-        .oauth_flow(&code)
+    let github_service = GitHubOAuthService::new(client_id, client_secret);
+    let (user, access_token, scope) = github_service
+        .oauth_flow(code)
         .await
-        .map_err(|e| {
-            log::error!("GitHub OAuth 流程失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: format!("GitHub OAuth 失败: {}", e),
-                data: (),
-            })
-        })?;
+        .map_err(|e| ApiResponse::internal_error(format!("GitHub API 调用失败: {}", e)))?;
 
-    // 3. 检查账号是否已存在
-    let reader_repo = ReaderRepository::new(db);
-    let account_repo = AccountRepository::new(db);
-
-    let existing_account = account_repo
-        .find_by_provider_and_account_id("github", &github_user.id.to_string())
-        .await
-        .map_err(|e| {
-            log::error!("查询 GitHub 账号失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "数据库查询失败".to_string(),
-                data: (),
-            })
-        })?;
-
-    if let Some(existing_account) = existing_account {
-        // 老用户：账号已存在，获取对应的 Reader
-        let reader = reader_repo
-            .find_by_id(existing_account.user_id)
-            .await
-            .map_err(|e| {
-                log::error!("查询 Reader 失败: {}", e);
-                Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: "数据库查询失败".to_string(),
-                    data: (),
-                })
-            })?
-            .ok_or_else(|| {
-                log::error!("Reader 不存在: user_id={}", existing_account.user_id);
-                Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: "用户数据不一致".to_string(),
-                    data: (),
-                })
-            })?;
-        
-        // 生成 JWT token
-        let jwt_token = generate_jwt(reader.id, reader.is_owner, &config.jwt_secret).map_err(|e| {
-            log::error!("生成 JWT 失败: {:?}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "生成令牌失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        Ok(OAuthLoginResult {
-            jwt_user_id: reader.id,
-            is_owner: reader.is_owner,
-            account: existing_account,
-            jwt_token,
-            is_new_user: false,
-        })
-    } else {
-        // 新用户：只创建 Account，不创建 Reader
-        // 使用 Account 的 ID 作为临时 userId（后续绑定或跳过时会更新）
-        let account_id = ObjectId::new();
-        
-        // 检查是否是第一个用户（自动设为 Owner）
-        let is_first_user = reader_repo.is_empty().await.map_err(|e| {
-            log::error!("检查 readers 集合失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "数据库查询失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        // 创建 Account（userId 暂时设为 account_id，后续会更新）
-        // 保存 OAuth 用户信息，以便跳过绑定时创建 Reader
-        let mut new_account = Account::new_github_with_info(
-            account_id, // 临时 userId，后续会更新
-            github_user.id,
-            access_token,
-            Some(scope),
-            github_user.name.clone().unwrap_or_else(|| github_user.login.clone()),
-            github_user.email.clone(),
-            github_user.avatar_url.clone(),
-            github_user.login.clone(),
-        );
-        new_account.id = account_id;
-
-        account_repo.create_account(&new_account).await.map_err(|e| {
-            log::error!("创建 Account 失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "创建账号关联失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        log::info!("新用户 OAuth 登录: account_id={}, 等待用户选择绑定或跳过", account_id);
-
-        // 生成 JWT token（使用 account_id 作为临时 user_id）
-        let jwt_token = generate_jwt(account_id, is_first_user, &config.jwt_secret).map_err(|e| {
-            log::error!("生成 JWT 失败: {:?}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "生成令牌失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        Ok(OAuthLoginResult {
-            jwt_user_id: account_id,
-            is_owner: is_first_user,
-            account: new_account,
-            jwt_token,
-            is_new_user: true,
-        })
-    }
+    Ok(OAuthUserPayload {
+        provider: "github".to_string(),
+        provider_id: user.id.to_string(), // 这里保持 String，Service 内部会 parse 为 u64
+        name: user.name.unwrap_or_else(|| user.login.clone()),
+        email: user.email,
+        avatar: Some(user.avatar_url),
+        handle: Some(user.login),
+        access_token,
+        scope: Some(scope),
+    })
 }
 
-/// 处理 QQ OAuth 流程
-/// 
-/// 新流程：
-/// - 老用户：直接返回 Reader 信息
-/// - 新用户：只创建 Account，不创建 Reader（等用户选择绑定或跳过后再创建）
-async fn handle_qq_oauth(
-    code: String,
-    config: &State<OAuthConfig>,
-    db: &State<Database>,
-) -> Result<OAuthLoginResult, Json<ApiResponse<()>>> {
-    // QQ OAuth 使用第三方接口，不需要配置密钥
-
-    // 1. 创建 QQ OAuth 服务
-    let qq_service = QQOAuthService::new(
-        config.qq_redirect_uri(),
-    );
-
-    // 2. 执行 OAuth 流程
-    let (qq_user, openid, access_token) = qq_service
-        .oauth_flow(&code)
+/// 处理 QQ 的 OAuth 交换逻辑
+async fn handle_qq_logic(
+    code: &str,
+    config: &OAuthConfig,
+    _db: &Database,
+) -> Result<OAuthUserPayload, Json<ApiResponse<()>>> {
+    let qq_service = QQOAuthService::new(config.qq_redirect_uri());
+    let (user, openid, access_token) = qq_service
+        .oauth_flow(code)
         .await
-        .map_err(|e| {
-            log::error!("QQ OAuth 流程失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: format!("QQ OAuth 失败: {}", e),
-                data: (),
-            })
-        })?;
+        .map_err(|e| ApiResponse::internal_error(format!("QQ API 调用失败: {}", e)))?;
 
-    // 3. 检查账号是否已存在
-    let reader_repo = ReaderRepository::new(db);
-    let account_repo = AccountRepository::new(db);
-
-    let existing_account = account_repo
-        .find_by_provider_and_account_id("qq", &openid)
-        .await
-        .map_err(|e| {
-            log::error!("查询 QQ 账号失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "数据库查询失败".to_string(),
-                data: (),
-            })
-        })?;
-
-    if let Some(existing_account) = existing_account {
-        // 老用户：账号已存在，获取对应的 Reader
-        let reader = reader_repo
-            .find_by_id(existing_account.user_id)
-            .await
-            .map_err(|e| {
-                log::error!("查询 Reader 失败: {}", e);
-                Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: "数据库查询失败".to_string(),
-                    data: (),
-                })
-            })?
-            .ok_or_else(|| {
-                log::error!("Reader 不存在: user_id={}", existing_account.user_id);
-                Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: "用户数据不一致".to_string(),
-                    data: (),
-                })
-            })?;
-        
-        // 生成 JWT token
-        let jwt_token = generate_jwt(reader.id, reader.is_owner, &config.jwt_secret).map_err(|e| {
-            log::error!("生成 JWT 失败: {:?}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "生成令牌失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        Ok(OAuthLoginResult {
-            jwt_user_id: reader.id,
-            is_owner: reader.is_owner,
-            account: existing_account,
-            jwt_token,
-            is_new_user: false,
-        })
-    } else {
-        // 新用户：只创建 Account，不创建 Reader
-        // 使用 Account 的 ID 作为临时 userId（后续绑定或跳过时会更新）
-        let account_id = ObjectId::new();
-        
-        // 检查是否是第一个用户（自动设为 Owner）
-        let is_first_user = reader_repo.is_empty().await.map_err(|e| {
-            log::error!("检查 readers 集合失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "数据库查询失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        // 创建 Account（userId 暂时设为 account_id，后续会更新）
-        // 保存 OAuth 用户信息，以便跳过绑定时创建 Reader
-        let mut new_account = Account::new_qq_with_info(
-            account_id,
-            openid,
-            access_token,
-            qq_user.nickname.clone(),
-            qq_user.figureurl_qq_2.clone().unwrap_or(qq_user.figureurl_qq_1.clone()),
-        );
-        new_account.id = account_id;
-
-        account_repo.create_account(&new_account).await.map_err(|e| {
-            log::error!("创建 Account 失败: {}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "创建账号关联失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        log::info!("新用户 QQ OAuth 登录: account_id={}, 等待用户选择绑定或跳过", account_id);
-
-        // 生成 JWT token（使用 account_id 作为临时 user_id）
-        let jwt_token = generate_jwt(account_id, is_first_user, &config.jwt_secret).map_err(|e| {
-            log::error!("生成 JWT 失败: {:?}", e);
-            Json(ApiResponse {
-                code: 500,
-                status: ResponseStatus::Failed,
-                message: "生成令牌失败".to_string(),
-                data: (),
-            })
-        })?;
-
-        Ok(OAuthLoginResult {
-            jwt_user_id: account_id,
-            is_owner: is_first_user,
-            account: new_account,
-            jwt_token,
-            is_new_user: true,
-        })
-    }
+    Ok(OAuthUserPayload {
+        provider: "qq".to_string(),
+        provider_id: openid,
+        name: user.nickname,
+        email: None,
+        avatar: Some(user.figureurl_qq_2.unwrap_or(user.figureurl_qq_1)),
+        handle: None,
+        access_token,
+        scope: None,
+    })
 }

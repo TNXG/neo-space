@@ -56,6 +56,8 @@ pub struct CommentTree {
     pub pin: bool,
     #[serde(rename = "isWhispers")]
     pub is_whispers: bool,
+    #[serde(rename = "isAdmin", skip_serializing_if = "Option::is_none")]
+    pub is_admin: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
