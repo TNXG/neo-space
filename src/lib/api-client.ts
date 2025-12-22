@@ -260,7 +260,7 @@ export async function getUserAccounts(token: string): Promise<ApiResponse<Accoun
  * 绑定匿名身份
  */
 export async function bindAnonymousIdentity(
-	data: { name?: string; email?: string },
+	data: { name: string; email: string },
 	token: string,
 ): Promise<ApiResponse<Reader>> {
 	return apiClient<ApiResponse<Reader>>("/auth/bind-anonymous", {

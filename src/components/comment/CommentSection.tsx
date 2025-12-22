@@ -1,13 +1,14 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import { useEffect, useState } from "react";
 import { useComments } from "@/hook/use-comments";
 // 引入刚才创建的 Provider
-import { CommentProvider, useCommentRefresh } from "./CommentContext";
+import { CommentProvider } from "./CommentContext";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
+import { useCommentRefresh } from "./hooks";
 
 interface CommentSectionProps {
 	refId: string;
@@ -43,23 +44,23 @@ function CommentSectionContent({
 	});
 
 	return (
-		<section className="mt-16 sm:mt-24 max-w-3xl mx-auto px-4 sm:px-0">
-			<div className="flex items-center justify-between mb-8">
-				<h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-primary-900">
-					<Icon icon="lucide:message-square" className="w-6 h-6 text-accent-500" />
+		<section className="mt-12 sm:mt-24 max-w-3xl mx-auto px-3 sm:px-4 md:px-0">
+			<div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
+				<h2 className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold tracking-tight text-primary-900">
+					<Icon icon="mingcute:message-3-line" className="w-5 h-5 sm:w-6 sm:h-6 text-accent-500 shrink-0" />
 					<span>评论</span>
-					<span className="text-base font-normal text-primary-400 ml-1">
+					<span className="text-sm sm:text-base font-normal text-primary-400 ml-0.5 sm:ml-1">
 						(
 						{displayCount}
 						)
 					</span>
 				</h2>
 
-				<div className="flex items-center gap-1 p-1 rounded-lg bg-primary-100">
+				<div className="flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 rounded-lg bg-primary-100 shrink-0">
 					<button
 						type="button"
 						onClick={() => setSortBy("newest")}
-						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
+						className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-all cursor-pointer ${
 							sortBy === "newest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
 						}`}
 					>
@@ -68,7 +69,7 @@ function CommentSectionContent({
 					<button
 						type="button"
 						onClick={() => setSortBy("oldest")}
-						className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
+						className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-all cursor-pointer ${
 							sortBy === "oldest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
 						}`}
 					>
@@ -77,7 +78,7 @@ function CommentSectionContent({
 				</div>
 			</div>
 
-			<div className="mb-12">
+			<div className="mb-8 sm:mb-12">
 				<CommentForm refId={refId} refType={refType} onSuccess={refresh} />
 			</div>
 
@@ -91,7 +92,7 @@ function CommentSectionContent({
 				{isLoading && displayComments.length > 0 && (
 					<div className="absolute inset-0 flex items-start justify-center pt-20 z-10">
 						<div className="p-3 bg-background/80 backdrop-blur-md rounded-full shadow-lg border border-primary-200">
-							<Icon icon="lucide:loader-2" className="w-5 h-5 animate-spin text-accent-500" />
+							<Icon icon="mingcute:loading-line" className="w-5 h-5 animate-spin text-accent-500" />
 						</div>
 					</div>
 				)}

@@ -1,16 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, use, useCallback, useMemo, useState } from "react";
-
-interface CommentContextType {
-	highlightedId: string | null;
-	triggerHighlight: (id: string) => void;
-	refreshComments: (() => void) | null;
-	setRefreshComments: (fn: () => void) => void;
-}
-
-const CommentContext = createContext<CommentContextType | null>(null);
+import { useCallback, useMemo, useState } from "react";
+import { CommentContext } from "./context";
 
 export function CommentProvider({ children }: { children: ReactNode }) {
 	const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -27,9 +19,11 @@ export function CommentProvider({ children }: { children: ReactNode }) {
 		}
 
 		// 3. 3秒后自动清除状态
-		setTimeout(() => {
+		const timer = setTimeout(() => {
 			setHighlightedId(current => (current === id ? null : current));
 		}, 3000);
+
+		return () => clearTimeout(timer);
 	}, []);
 
 	const handleSetRefreshComments = useCallback((fn: () => void) => {
@@ -48,23 +42,4 @@ export function CommentProvider({ children }: { children: ReactNode }) {
 			{children}
 		</CommentContext>
 	);
-}
-
-export function useCommentHighlight() {
-	const context = use(CommentContext);
-	if (!context) {
-		throw new Error("useCommentHighlight must be used within a CommentProvider");
-	}
-	return context;
-}
-
-export function useCommentRefresh() {
-	const context = use(CommentContext);
-	if (!context) {
-		throw new Error("useCommentRefresh must be used within a CommentProvider");
-	}
-	return {
-		refreshComments: context.refreshComments,
-		setRefreshComments: context.setRefreshComments,
-	};
 }
