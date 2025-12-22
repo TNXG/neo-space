@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import ExifReader from "exifreader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

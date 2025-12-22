@@ -202,11 +202,11 @@
 - **语义化变量约束**：必须且唯一地使用语义化颜色变量，其定义如下：
   ```css
   @theme {
-  	/* 使用 OKLCH（v4 推荐） */
-  	--color-bg-primary: oklch(98% 0.02 240); /* 主背景色 */
-  	--color-bg-glass: oklch(95% 0.01 240 / 0.8); /* 磨砂容器背景色 */
-  	--color-text-primary: oklch(20% 0.02 240); /* 正文主色 */
-  	--color-accent: oklch(65% 0.2 180); /* 品牌强调色（teal/青色） */
+    /* 使用 OKLCH（v4 推荐） */
+    --color-bg-primary: oklch(98% 0.02 240); /* 主背景色 */
+    --color-bg-glass: oklch(95% 0.01 240 / 0.8); /* 磨砂容器背景色 */
+    --color-text-primary: oklch(20% 0.02 240); /* 正文主色 */
+    --color-accent: oklch(65% 0.2 180); /* 品牌强调色（teal/青色） */
   }
   ```
 
