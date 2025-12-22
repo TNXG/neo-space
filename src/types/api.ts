@@ -261,6 +261,7 @@ export interface Comment {
 	commentsIndex: number;
 	key: string;
 	pin: boolean;
+	/** 是否为私密评论（仅评论者和管理员可见） */
 	isWhispers: boolean;
 	isAdmin?: boolean;
 	source?: string;

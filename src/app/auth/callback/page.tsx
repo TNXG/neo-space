@@ -20,8 +20,8 @@ const variants = {
 function Background() {
 	return (
 		<div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-			<div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-200/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-overlay opacity-50 animate-pulse-ring" />
-			<div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-300/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-overlay opacity-50 animate-pulse-ring-delayed" />
+			<div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-200/20 rounded-full blur-[100px] mix-blend-multiply opacity-50 animate-pulse-ring" />
+			<div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-300/20 rounded-full blur-[100px] mix-blend-multiply opacity-50 animate-pulse-ring-delayed" />
 			<div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
 		</div>
 	);

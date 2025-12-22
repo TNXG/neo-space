@@ -129,12 +129,12 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
 					type="button"
 					onClick={handleGitHubLogin}
 					disabled={isLoading}
-					className="flex cursor-pointer items-center gap-2 rounded-full bg-[#24292e] px-4 py-2 text-sm text-white transition-colors hover:bg-[#1b1f23] disabled:cursor-not-allowed disabled:opacity-50"
+					className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-800 px-4 py-2 text-sm text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
 					aria-label="使用 GitHub 登录"
 				>
 					{isLoading
 						? (
-								<div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+								<div className="size-4 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
 							)
 						: (
 								<svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
@@ -148,7 +148,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
 					type="button"
 					onClick={handleQQLogin}
 					disabled={isLoading}
-					className="flex cursor-pointer items-center gap-2 rounded-full bg-[#12b7f5] px-4 py-2 text-sm text-white transition-colors hover:bg-[#0ea8e0] disabled:cursor-not-allowed disabled:opacity-50"
+					className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
 					aria-label="使用 QQ 登录"
 				>
 					{isLoading
@@ -173,12 +173,12 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
 				type="button"
 				onClick={handleGitHubLogin}
 				disabled={isLoading}
-				className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl bg-[#24292e] px-6 py-3 text-white transition-colors hover:bg-[#1b1f23] disabled:cursor-not-allowed disabled:opacity-50"
+				className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary-800 px-6 py-3 text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
 				aria-label="使用 GitHub 登录"
 			>
 				{isLoading
 					? (
-							<div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+							<div className="size-5 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
 						)
 					: (
 							<svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
@@ -194,7 +194,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
 				type="button"
 				onClick={handleQQLogin}
 				disabled={isLoading}
-				className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl bg-[#12b7f5] px-6 py-3 text-white transition-colors hover:bg-[#0ea8e0] disabled:cursor-not-allowed disabled:opacity-50"
+				className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-accent-600 px-6 py-3 text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
 				aria-label="使用 QQ 登录"
 			>
 				{isLoading

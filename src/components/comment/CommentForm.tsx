@@ -8,6 +8,7 @@ import { createCommentAction } from "@/actions/comment";
 import { OAuthButtons } from "@/components/comment/auth/OAuthButtons";
 import { ProfilePopover } from "@/components/comment/auth/ProfilePopover";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
+import { KbdShortcut } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { useHasMounted } from "@/hook/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
@@ -258,7 +259,7 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 				<div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0">
 					{preview
 						? (
-								<div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone dark:prose-invert max-w-none animate-fade-in">
+								<div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone max-w-none animate-fade-in">
 									{content.trim() ? <CommentMarkdown content={content} /> : <span className="text-muted-foreground/40 italic">预览中...</span>}
 								</div>
 							)
@@ -347,9 +348,21 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 								<span className="text-[11px] sm:text-xs text-muted-foreground select-none">预览</span>
 							</div>
 
-							<span className="text-[11px] sm:text-xs text-muted-foreground/60 hidden md:inline">
-								Ctrl+Enter 发送
+							<span className="hidden md:inline">
+								<KbdShortcut keys={["Ctrl", "Enter"]} />
 							</span>
+
+							{/* 字数统计 */}
+							{content.length > 0 && (
+								<span className={cn(
+									"text-[10px] sm:text-xs font-mono tabular-nums",
+									content.length > 1000 ? "text-red-500 font-semibold" : "text-muted-foreground",
+								)}
+								>
+									{content.length}
+									/1000
+								</span>
+							)}
 						</div>
 
 						<div className="grow hidden sm:block" />
@@ -372,8 +385,8 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 													className={cn(
 														"flex items-center gap-1.5 sm:gap-2 pl-0.5 sm:pl-1 pr-2 sm:pr-3 py-0.5 sm:py-1 rounded-full border transition-all cursor-pointer",
 														activePopover === "profile"
-															? "bg-accent-50 border-accent-200 ring-1 ring-accent-100 dark:bg-accent-900/20 dark:border-accent-700"
-															: "bg-transparent border-transparent hover:bg-primary-50 hover:border-primary-200 dark:hover:bg-primary-800",
+															? "bg-accent-50 border-accent-200 ring-1 ring-accent-100"
+															: "bg-transparent border-transparent hover:bg-primary-50 hover:border-primary-200",
 													)}
 												>
 													<img src={authUser.image} alt={authUser.name} className="size-5 sm:size-6 rounded-full" />
@@ -478,24 +491,12 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 
 																				<div className="border-t border-dashed border-border/50 my-3 sm:my-4" />
 
-																				{/*
-																					OAuth 按钮容器 - 每个按钮独立响应 hover
-																				*/}
+																				{/* OAuth 按钮 - 保持品牌色 */}
 																				<div
 																					className="flex flex-col gap-2 sm:gap-2.5"
 																					onClick={handleOAuthClick}
 																				>
-																					<div className="
-																		[&_button]:w-full [&_button]:flex [&_button]:items-center [&_button]:justify-center [&_button]:gap-2 [&_button]:py-1.5 sm:[&_button]:py-2 [&_button]:rounded-md
-																		[&_button]:border [&_button]:border-border [&_button]:bg-background
-																		[&_button]:text-[11px] sm:[&_button]:text-xs [&_button]:font-medium [&_button]:text-foreground
-																		[&_button]:transition-all [&_button]:cursor-pointer
-																		[&_button:hover]:bg-accent-50 [&_button:hover]:border-accent-200 [&_button:hover]:text-accent-700
-																		dark:[&_button:hover]:bg-accent-900/30 dark:[&_button:hover]:border-accent-700 dark:[&_button:hover]:text-accent-300
-																	"
-																					>
-																						<OAuthButtons />
-																					</div>
+																					<OAuthButtons variant="compact" className="flex-col" />
 																				</div>
 
 																				<button

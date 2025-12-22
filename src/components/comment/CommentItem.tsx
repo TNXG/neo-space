@@ -7,8 +7,9 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { SmartDate } from "@/components/common/smart-date";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
-import { deleteAuthComment, updateAuthComment } from "@/lib/api-client";
+import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment, updateAuthComment } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { CommentForm } from "./CommentForm";
@@ -70,6 +71,9 @@ export function CommentItem({
 
 	// 判断是否为当前用户的评论（通过邮箱匹配）
 	const isOwnComment = isAuthenticated && authUser && comment.author === authUser.name;
+
+	// 判断当前用户是否为管理员
+	const isCurrentUserAdmin = isAuthenticated && authUser?.isOwner;
 
 	// 【关键修改】：使用 Context 获取全局高亮状态
 	const { highlightedId, triggerHighlight } = useCommentHighlight();
@@ -195,6 +199,74 @@ export function CommentItem({
 		}
 	};
 
+	// 处理隐藏/显示评论（管理员功能）
+	const handleToggleHidden = async () => {
+		if (!token || !isCurrentUserAdmin)
+			return;
+
+		const action = comment.isWhispers ? "显示" : "隐藏";
+		toast(`确定要${action}这条评论吗？`, {
+			action: {
+				label: `确认${action}`,
+				onClick: async () => {
+					try {
+						const result = comment.isWhispers
+							? await showComment(comment._id, token)
+							: await hideComment(comment._id, token);
+
+						if (result.code === 200) {
+							toast.success(`评论${action}成功`);
+							onRefresh();
+						} else {
+							toast.error(result.message || `${action}失败`);
+						}
+					} catch (error) {
+						console.error(`Failed to ${action} comment:`, error);
+						toast.error(`${action}失败，请稍后重试`);
+					}
+				},
+			},
+			cancel: {
+				label: "取消",
+				onClick: () => {},
+			},
+		});
+	};
+
+	// 处理置顶/取消置顶评论（管理员功能）
+	const handleTogglePin = async () => {
+		if (!token || !isCurrentUserAdmin)
+			return;
+
+		const action = comment.pin ? "取消置顶" : "置顶";
+		toast(`确定要${action}这条评论吗？`, {
+			action: {
+				label: `确认${action}`,
+				onClick: async () => {
+					try {
+						const result = comment.pin
+							? await unpinComment(comment._id, token)
+							: await pinComment(comment._id, token);
+
+						if (result.code === 200) {
+							toast.success(`评论${action}成功`);
+							onRefresh();
+						} else {
+							toast.error(result.message || `${action}失败`);
+						}
+					} catch (error) {
+						console.error(`Failed to ${action} comment:`, error);
+						toast.error(`${action}失败，请稍后重试`);
+					}
+				},
+			},
+			cancel: {
+				label: "取消",
+				onClick: () => {},
+			},
+		});
+	};
+
 	// 判断当前组件是否应该高亮
 	const isHighlighting = highlightedId === comment._id;
 
@@ -245,25 +317,31 @@ export function CommentItem({
 						alt={comment.author}
 						className={cn(
 							"w-7 h-7 sm:w-9 sm:h-9 border rounded-full bg-background object-cover shrink-0",
-							comment.isAdmin ? "border-primary ring-2 ring-primary/20" : "border-border",
+							comment.isAdmin ? "border-green-500 ring-2 ring-green-500/20" : "border-border",
 						)}
 					/>
 
 					<dt className="flex flex-col gap-0.5 min-w-0 flex-1">
 						<div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-							<b className={cn("truncate max-w-[100px] sm:max-w-none", comment.isAdmin ? "text-primary" : "text-foreground")}>
+							<b className={cn("truncate max-w-[100px] sm:max-w-none", comment.isAdmin ? "text-green-700" : "text-foreground")}>
 								{comment.author}
 							</b>
 							{comment.isAdmin && (
-								<span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="站长">
-									<Icon icon="mingcute:safe-flash-fill" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-									<span className="hidden sm:inline">站长</span>
+								<span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-green-50 text-green-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="笔者">
+									<Icon icon="mingcute:check-circle-fill" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+									<span className="hidden sm:inline">笔者</span>
 								</span>
 							)}
 							<span className="text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-mono shrink-0">
 								{comment.key}
 							</span>
 							{comment.pin && <Icon icon="mingcute:pin-fill" className="text-red-500 w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />}
+							{comment.isWhispers && (
+								<span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-orange-50 text-orange-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="仅作者和管理员可见">
+									<Icon icon="mingcute:eye-close-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+									<span className="hidden sm:inline">私密</span>
+								</span>
+							)}
 							{/* OAuth 来源标识 */}
 							{comment.source === "from_oauth_github" && (
 								<span className="flex items-center gap-1 text-[9px] sm:text-[10px] bg-[#24292e] text-white px-1 sm:px-1.5 py-0.5 rounded shrink-0" title="通过 GitHub 登录">
@@ -315,7 +393,7 @@ export function CommentItem({
 										<div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0">
 											{editPreview
 												? (
-														<div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone dark:prose-invert max-w-none animate-fade-in">
+														<div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone max-w-none animate-fade-in">
 															{editContent.trim() ? <CommentMarkdown content={editContent} /> : <span className="text-muted-foreground/40 italic">预览中...</span>}
 														</div>
 													)
@@ -402,9 +480,14 @@ export function CommentItem({
 
 											{/* 右侧功能区：快捷键提示 + 字符计数 + 按钮 */}
 											<div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
-												<span className="text-[10px] sm:text-xs text-muted-foreground/60 hidden md:inline">
-													Ctrl+Enter 保存，Esc 取消
-												</span>
+												<KbdGroup className="hidden md:inline-flex">
+													<Kbd>Ctrl</Kbd>
+													<span className="text-primary-400 text-[10px]">+</span>
+													<Kbd>Enter</Kbd>
+													<span className="text-muted-foreground/60 text-[10px] sm:text-xs mx-1">保存</span>
+													<Kbd>Esc</Kbd>
+													<span className="text-muted-foreground/60 text-[10px] sm:text-xs ml-1">取消</span>
+												</KbdGroup>
 
 												<span className={cn(
 													"text-[10px] sm:text-xs font-mono",
@@ -517,6 +600,49 @@ export function CommentItem({
 								>
 									<Icon icon={isDeleting ? "mingcute:loading-line" : "mingcute:delete-line"} className={`w-3.5 h-3.5 sm:w-4 sm:h-4${isDeleting ? " animate-spin" : ""}`} />
 									<span>{isDeleting ? "删除中..." : "删除"}</span>
+								</motion.button>
+							</>
+						)}
+
+						{/* 管理员操作按钮 */}
+						{isCurrentUserAdmin && (
+							<>
+								<motion.button
+									type="button"
+									onClick={handleToggleHidden}
+									disabled={editView}
+									whileHover={{ scale: editView ? 1 : 1.05 }}
+									whileTap={{ scale: editView ? 1 : 0.95 }}
+									className={cn(
+										"flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+										editView
+											? "text-muted-foreground/50 cursor-not-allowed"
+											: comment.isWhispers
+												? "text-orange-500 hover:text-orange-600"
+												: "text-muted-foreground hover:text-orange-500",
+									)}
+								>
+									<Icon icon={comment.isWhispers ? "mingcute:eye-line" : "mingcute:eye-close-line"} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+									<span>{comment.isWhispers ? "显示" : "隐藏"}</span>
+								</motion.button>
+
+								<motion.button
+									type="button"
+									onClick={handleTogglePin}
+									disabled={editView}
+									whileHover={{ scale: editView ? 1 : 1.05 }}
+									whileTap={{ scale: editView ? 1 : 0.95 }}
+									className={cn(
+										"flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+										editView
+											? "text-muted-foreground/50 cursor-not-allowed"
+											: comment.pin
+												? "text-red-500 hover:text-red-600"
+												: "text-muted-foreground hover:text-red-500",
+									)}
+								>
+									<Icon icon={comment.pin ? "mingcute:pin-fill" : "mingcute:pin-line"} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+									<span>{comment.pin ? "取消置顶" : "置顶"}</span>
 								</motion.button>
 							</>
 						)}

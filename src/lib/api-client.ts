@@ -190,9 +190,16 @@ export async function analyzeTimeCapsule(
 export async function getComments(
 	refId: string,
 	refType: string,
+	token?: string,
 ): Promise<ApiResponse<CommentListResponse>> {
+	const headers: Record<string, string> = {};
+	if (token) {
+		headers.Authorization = `Bearer ${token}`;
+	}
+	
 	return apiClient<ApiResponse<CommentListResponse>>(
 		`/comments?ref_id=${refId}&ref_type=${refType}`,
+		{ headers },
 	);
 }
 
@@ -339,6 +346,54 @@ export async function updateAuthComment(
  */
 export async function deleteAuthComment(id: string, token: string): Promise<ApiResponse<void>> {
 	return apiClient<ApiResponse<void>>(`/comments/${id}`, {
+		method: "DELETE",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 管理员：隐藏评论（仅评论者可见）
+ */
+export async function hideComment(id: string, token: string): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}/hide`, {
+		method: "PATCH",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 管理员：显示评论（取消隐藏）
+ */
+export async function showComment(id: string, token: string): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}/hide`, {
+		method: "DELETE",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 管理员：置顶评论
+ */
+export async function pinComment(id: string, token: string): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}/pin`, {
+		method: "PATCH",
+		headers: {
+			Authorization: `Bearer ${token}`,
+		},
+	});
+}
+
+/**
+ * 管理员：取消置顶评论
+ */
+export async function unpinComment(id: string, token: string): Promise<ApiResponse<Comment>> {
+	return apiClient<ApiResponse<Comment>>(`/comments/${id}/pin`, {
 		method: "DELETE",
 		headers: {
 			Authorization: `Bearer ${token}`,
