@@ -10,6 +10,8 @@ pub mod qq_oauth;
 pub mod options_repository;
 pub mod auth;
 pub mod comment;
+pub mod turnstile;
+pub mod spam_detector;
 
 pub use db_service::*;
 pub use options_service::*;
@@ -20,3 +22,5 @@ pub use github_oauth::GitHubOAuthService;
 pub use qq_oauth::QQOAuthService;
 pub use options_repository::OptionsRepository;
 pub use comment::service::CommentService;
+pub use turnstile::verify_turnstile;
+pub use spam_detector::SpamDetector;

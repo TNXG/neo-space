@@ -10,6 +10,7 @@ pub struct OAuthConfig {
     pub github_client_secret: String,
     pub frontend_url: String,
     pub backend_url: String,
+    pub turnstile_secret: String,
 }
 
 impl OAuthConfig {
@@ -34,12 +35,16 @@ impl OAuthConfig {
         let backend_url = env::var("BACKEND_URL")
             .unwrap_or_else(|_| "http://localhost:8000".to_string());
 
+        let turnstile_secret = env::var("TURNSTILE_SECRET")
+            .unwrap_or_else(|_| "THISISTURNSTILEKEY".to_string());
+
         Ok(Self {
             jwt_secret,
             github_client_id,
             github_client_secret,
             frontend_url,
             backend_url,
+            turnstile_secret,
         })
     }
 
