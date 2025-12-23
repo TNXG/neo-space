@@ -22,20 +22,23 @@ export async function createCommentAction(request: CreateCommentRequest) {
 			}
 
 			return {
-				success: true,
+				code: 201,
+				status: "success" as const,
 				data: result.data,
-				message: "评论发布成功",
+				message: result.message || "评论发布成功",
 			};
 		}
 
 		return {
-			success: false,
+			code: result.code || 400,
+			status: "failed" as const,
 			message: result.message || "评论发布失败",
 		};
 	} catch (error) {
 		console.error("Failed to create comment:", error);
 		return {
-			success: false,
+			code: 500,
+			status: "failed" as const,
 			message: "评论发布失败，请稍后重试",
 		};
 	}

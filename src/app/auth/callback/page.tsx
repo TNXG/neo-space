@@ -20,8 +20,8 @@ const variants = {
 function Background() {
 	return (
 		<div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-			<div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-200/20 rounded-full blur-[100px] mix-blend-multiply opacity-50 animate-pulse-ring" />
-			<div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-300/20 rounded-full blur-[100px] mix-blend-multiply opacity-50 animate-pulse-ring-delayed" />
+			<div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-400/20 rounded-full blur-[100px] opacity-50 animate-pulse-ring" />
+			<div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-300/20 rounded-full blur-[100px] opacity-50 animate-pulse-ring-delayed" />
 			<div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
 		</div>
 	);
@@ -193,8 +193,7 @@ function AuthCallbackContent() {
 					"bg-card text-card-foreground border-border/50",
 				)}
 			>
-				{/* 顶部装饰条 */}
-				<div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-accent-300 via-accent-500 to-accent-300 opacity-50" />
+				<div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-accent-400 via-accent-500 to-accent-400 opacity-60" />
 
 				<div className="p-8 md:p-10">
 					<AnimatePresence mode="wait" initial={false}>
@@ -234,7 +233,7 @@ function AuthCallbackContent() {
 							>
 								{/* ... 表单内容保持不变 ... */}
 								<div className="text-center mb-8">
-									<div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-accent-50 text-accent-600 mb-4 ring-1 ring-accent-100">
+									<div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-accent-100 text-accent-600 mb-4 ring-1 ring-accent-200">
 										<Icon icon="mingcute:user-add-2-line" className="w-6 h-6" />
 									</div>
 									<h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
@@ -279,7 +278,7 @@ function AuthCallbackContent() {
 									</div>
 
 									<div className="py-2">
-										<div className="flex gap-3 text-xs text-amber-600/90 bg-amber-50/50 px-3 py-2.5 rounded-lg border border-amber-100/50">
+										<div className="flex gap-3 text-xs text-amber-600 bg-amber-50/50 px-3 py-2.5 rounded-lg border border-amber-200/50">
 											<Icon icon="mingcute:information-line" className="w-4 h-4 shrink-0 mt-0.5" />
 											<span>必须与之前的匿名评论完全一致才能绑定成功。</span>
 										</div>
@@ -362,17 +361,17 @@ function AuthCallbackContent() {
 								transition={transition}
 								className="flex flex-col items-center justify-center py-4"
 							>
-								<div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-6">
+								<div className="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-6">
 									<Icon icon="mingcute:close-line" className="w-8 h-8" />
 								</div>
-								<h2 className="text-lg font-bold text-destructive">认证失败</h2>
+								<h2 className="text-lg font-bold text-red-600">认证失败</h2>
 								<p className="mt-2 text-sm text-muted-foreground text-center max-w-[280px]">
 									{message}
 								</p>
 								<button
 									type="button"
 									onClick={() => window.close()}
-									className="mt-8 px-6 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+									className="mt-8 px-6 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors cursor-pointer"
 								>
 									关闭窗口
 								</button>

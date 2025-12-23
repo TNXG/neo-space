@@ -15,6 +15,7 @@ import { createAuthComment } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { useCommentRefresh } from "./hooks";
+import { TurnstileWidget } from "./TurnstileWidget";
 
 // --- Types ---
 interface OwOItem { text: string; icon: string }
@@ -64,25 +65,53 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 
 	const [preview, setPreview] = useState(false);
 
+	// Turnstile 验证状态（仅非登录用户需要）
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	const [turnstileStatus, setTurnstileStatus] = useState<"loading" | "verifying" | "verified" | "error">("loading");
+	const [turnstileResetTrigger, setTurnstileResetTrigger] = useState(0);
+
+	// 重置 Turnstile 验证
+	const resetTurnstile = useCallback(() => {
+		setTurnstileToken(null);
+		setTurnstileStatus("verifying");
+		setTurnstileResetTrigger(prev => prev + 1);
+	}, []);
+
 	// OwO State
 	const [owoData, setOwoData] = useState<OwOResponse | null>(null);
 	const [activePkg, setActivePkg] = useState<string>("");
 
-	// Guest User Info
-	const [user, setUser] = useState(() => {
-		if (typeof window === "undefined")
-			return { name: "", email: "", url: "" };
-		try {
-			const saved = localStorage.getItem(STORAGE_KEY_USER);
-			return saved ? JSON.parse(saved) : { name: "", email: "", url: "" };
-		} catch { return { name: "", email: "", url: "" }; }
-	});
+	// Guest User Info - 初始化为空，客户端挂载后从 localStorage 读取
+	const [user, setUser] = useState({ name: "", email: "", url: "" });
 
-	const [content, setContent] = useState(() => {
-		if (typeof window === "undefined")
-			return "";
-		return localStorage.getItem(draftKey) || "";
-	});
+	// 评论内容 - 初始化为空，客户端挂载后从 localStorage 读取
+	const [content, setContent] = useState("");
+
+	// 标记是否已从 localStorage 恢复数据
+	const isRestoredRef = useRef(false);
+
+	// 客户端挂载后从 localStorage 恢复数据（只执行一次）
+	useEffect(() => {
+		if (!hasMounted || isRestoredRef.current)
+			return;
+		isRestoredRef.current = true;
+
+		// 使用 requestAnimationFrame 延迟执行，避免 React 警告
+		requestAnimationFrame(() => {
+			try {
+				const savedUser = localStorage.getItem(STORAGE_KEY_USER);
+				if (savedUser) {
+					setUser(JSON.parse(savedUser));
+				}
+				const savedDraft = localStorage.getItem(draftKey);
+				if (savedDraft) {
+					setContent(savedDraft);
+				}
+			} catch {
+				// ignore
+			}
+		});
+	}, [hasMounted, draftKey]);
 
 	// --- Effects ---
 	useEffect(() => {
@@ -195,6 +224,20 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 			return;
 		}
 
+		// 非登录用户必须完成人机验证（非交互式模式会自动完成）
+		if (!isAuthenticated && !turnstileToken) {
+			if (turnstileStatus === "loading") {
+				toast.error("正在加载验证组件，请稍候...");
+			} else if (turnstileStatus === "verifying") {
+				toast.error("正在进行安全验证，请稍候...");
+			} else if (turnstileStatus === "error") {
+				toast.error("安全验证失败，请刷新页面重试");
+			} else {
+				toast.error("请等待安全验证完成");
+			}
+			return;
+		}
+
 		if (!isAuthenticated) {
 			localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
 		}
@@ -216,16 +259,30 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 						refType,
 						parent: parentId,
 						text: content,
-						author: finalName,
-						mail: finalEmail,
+						author: finalName || "",
+						mail: finalEmail || "",
 						url: finalUrl,
+						turnstileToken: turnstileToken || undefined,
 					});
 				}
 
 				// 统一检查 code 属性（ApiResponse 类型有 code）
 				if (result && "code" in result && (result.code === 200 || result.code === 201)) {
-					toast.success("评论发布成功");
+					// 根据返回的消息判断是否需要审核
+					const message = (result && "message" in result ? result.message : undefined) || "评论发布成功";
+					const isPending = message.includes("审核");
+
+					if (isPending) {
+						toast.success("评论已提交，正在审核中", {
+							description: "审核通过后将自动显示",
+							duration: 4000,
+						});
+					} else {
+						toast.success("评论发布成功");
+					}
+
 					setContent("");
+					resetTurnstile(); // 重置验证码
 					localStorage.removeItem(draftKey);
 					setIsFocused(false);
 					onSuccess?.();
@@ -234,12 +291,15 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 				}
 			} catch (e: any) {
 				toast.error(e.message || "发布失败");
+				// 提交失败后重置验证码
+				resetTurnstile();
 			}
 		});
 	};
 
 	const canSubmit = !isPending && content.trim().length > 0;
-	const showToolbar = isFocused || content.length > 0;
+	// 确保 showToolbar 在客户端挂载前为 false，避免 hydration 不匹配
+	const showToolbar = hasMounted && (isFocused || content.length > 0);
 
 	return (
 		<div className="relative mt-4 w-full overflow-visible">
@@ -282,6 +342,25 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 								/>
 							)}
 				</div>
+
+				{/* Turnstile 人机验证 - 非交互式模式（隐藏在后台） */}
+				{!isAuthenticated && (
+					<TurnstileWidget
+						onVerify={token => setTurnstileToken(token)}
+						onError={() => {
+							toast.error("人机验证失败，请刷新重试");
+							setTurnstileToken(null);
+							setTurnstileStatus("error");
+						}}
+						onExpire={() => {
+							toast.warning("验证已过期，请重新验证");
+							setTurnstileToken(null);
+							setTurnstileStatus("error");
+						}}
+						onStatusChange={status => setTurnstileStatus(status)}
+						resetTrigger={turnstileResetTrigger}
+					/>
+				)}
 
 				{/* 工具栏 */}
 				<motion.div
@@ -362,6 +441,36 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 									{content.length}
 									/1000
 								</span>
+							)}
+
+							{/* 验证状态显示（仅非登录用户，客户端渲染） */}
+							{hasMounted && !isAuthenticated && showToolbar && (
+								<div className="flex items-center gap-1.5">
+									{turnstileStatus === "loading" && (
+										<>
+											<Icon icon="mingcute:loading-line" className="w-3 h-3 text-muted-foreground animate-spin" />
+											<span className="text-[10px] sm:text-xs text-muted-foreground">加载验证...</span>
+										</>
+									)}
+									{turnstileStatus === "verifying" && (
+										<>
+											<Icon icon="mingcute:loading-line" className="w-3 h-3 text-blue-500 animate-spin" />
+											<span className="text-[10px] sm:text-xs text-blue-600">安全验证中...</span>
+										</>
+									)}
+									{turnstileStatus === "verified" && (
+										<>
+											<Icon icon="mingcute:check-circle-fill" className="w-3 h-3 text-green-500" />
+											<span className="text-[10px] sm:text-xs text-green-600">验证通过</span>
+										</>
+									)}
+									{turnstileStatus === "error" && (
+										<>
+											<Icon icon="mingcute:close-circle-fill" className="w-3 h-3 text-red-500" />
+											<span className="text-[10px] sm:text-xs text-red-600">验证失败</span>
+										</>
+									)}
+								</div>
 							)}
 						</div>
 
@@ -485,7 +594,7 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 																					</li>
 																					<li className="flex items-center gap-2 sm:gap-3">
 																						<Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
-																						<span>接收回复的桌面通知</span>
+																						<span>我喜欢你</span>
 																					</li>
 																				</ul>
 

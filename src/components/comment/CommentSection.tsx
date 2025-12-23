@@ -4,7 +4,6 @@ import type { Comment } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { useEffect, useState } from "react";
 import { useComments } from "@/hook/use-comments";
-// 引入刚才创建的 Provider
 import { CommentProvider } from "./CommentContext";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";

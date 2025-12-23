@@ -250,18 +250,35 @@ export interface SiteConfig {
  * Comment Types
  */
 
+/**
+ * 评论状态常量
+ * - 0: 未读 + 正常
+ * - 1: 已读 + 正常
+ * - 2: 垃圾评论
+ * - 3: 待审核
+ */
+export const CommentState = {
+	UNREAD: 0,
+	READ: 1,
+	SPAM: 2,
+	PENDING: 3,
+} as const;
+
+export type CommentStateType = typeof CommentState[keyof typeof CommentState];
+
 export interface Comment {
 	_id: string;
 	ref: string;
 	refType: "posts" | "pages" | "notes";
 	author: string;
 	text: string;
-	state: number;
+	/** 评论状态: 0=未读+正常, 1=已读+正常, 2=垃圾, 3=待审核 */
+	state: CommentStateType;
 	children: Comment[];
 	commentsIndex: number;
 	key: string;
 	pin: boolean;
-	/** 是否为私密评论（仅评论者和管理员可见） */
+	/** 悄悄说功能（仅评论者和管理员可见） */
 	isWhispers: boolean;
 	isAdmin?: boolean;
 	source?: string;
@@ -285,6 +302,8 @@ export interface CreateCommentRequest {
 	text: string;
 	url?: string;
 	parent?: string;
+	/** Cloudflare Turnstile token (仅非登录用户需要) */
+	turnstileToken?: string;
 }
 
 export interface UpdateCommentRequest {
