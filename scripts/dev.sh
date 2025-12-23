@@ -131,7 +131,7 @@ start_services() {
     
     # 启动前端服务
     echo -e "${BLUE}启动前端服务...${NC}"
-    pnpm run dev -H :: &
+    pnpm run dev -H :: & # maybe use --experimental-https
     FRONTEND_PID=$!
     echo "$FRONTEND_PID" > "$FRONTEND_PID_FILE"
     echo -e "${GREEN}前端服务已启动 (PID: $FRONTEND_PID)${NC}"

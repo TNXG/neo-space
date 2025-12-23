@@ -2056,6 +2056,7 @@ dependencies = [
  "md5",
  "mongodb 3.4.1",
  "rand 0.9.2",
+ "regex",
  "reqwest",
  "rocket",
  "rocket_cors",
