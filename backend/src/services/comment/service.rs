@@ -1,12 +1,12 @@
 //! 评论服务 - 封装评论相关的业务逻辑
 
+use md5;
 use mongodb::bson::{doc, oid::ObjectId, DateTime};
 use mongodb::{Collection, Database};
 use std::collections::HashMap;
-use md5;
 
-use crate::models::{Comment, CommentTree};
 use crate::guards::OptionalAuthGuard;
+use crate::models::{Comment, CommentTree};
 use crate::services::ReaderRepository;
 
 /// 评论服务
@@ -64,46 +64,82 @@ impl CommentService {
         ref_type: &str,
         auth: &OptionalAuthGuard,
     ) -> Result<mongodb::bson::Document, String> {
-        // 基础过滤器：只过滤 ref 和 refType，以及审核状态
-        let mut filter = doc! {
-            "ref": ref_oid,
-            "refType": ref_type,
-            "state": 1, // 只返回已审核的评论
-        };
-
         log::debug!(
             "构建评论过滤器: user_id={:?}, is_owner={}",
             auth.user_id,
             auth.is_owner
         );
 
-        // 根据用户身份添加可见性过滤
+        // 根据用户身份构建过滤器
         if auth.is_owner {
-            // 管理员：可以看到所有评论（包括隐藏的）
-            log::debug!("管理员模式：不过滤隐藏评论");
-        } else if let Some(user_id) = auth.user_id {
-            // 普通登录用户：只能看到公开评论 + 自己的私密评论
-            let user_reader = self.reader_repo.find_by_id(user_id).await
-                .map_err(|e| e.to_string())?;
-            
-            if let Some(reader) = user_reader {
-                log::debug!("普通用户模式：显示公开评论 + 用户 {} 的私密评论", reader.email);
-                filter.insert("$or", vec![
-                    doc! { "isWhispers": false }, // 公开评论
-                    doc! { "mail": &reader.email }, // 自己的评论（包括私密的）
-                ]);
-            } else {
-                // 用户不存在，只显示公开评论
-                log::debug!("用户不存在，只显示公开评论");
-                filter.insert("isWhispers", false);
-            }
-        } else {
-            // 匿名用户：只能看到公开评论
-            log::debug!("匿名用户模式：只显示公开评论");
-            filter.insert("isWhispers", false);
+            // 管理员：可以看到所有评论（包括待审核、垃圾评论等）
+            log::debug!("管理员模式：显示所有评论");
+            return Ok(doc! {
+                "ref": ref_oid,
+                "refType": ref_type,
+            });
         }
 
-        Ok(filter)
+        if let Some(user_id) = auth.user_id {
+            // 普通登录用户：可以看到正常评论 + 自己的所有评论（包括待审核的）
+            let user_reader = self
+                .reader_repo
+                .find_by_id(user_id)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if let Some(reader) = user_reader {
+                log::debug!(
+                    "普通用户模式：显示正常评论 + 用户 {} 的所有评论（包括待审核）",
+                    reader.email
+                );
+                
+                // 构建复合过滤器：
+                // 1. 正常状态的公开评论（state = 0 或 1，且非私密）
+                // 2. 自己的所有评论（包括待审核 state = 3，但排除垃圾 state = 2）
+                let filter = doc! {
+                    "ref": ref_oid,
+                    "refType": ref_type,
+                    "$or": [
+                        // 正常状态的公开评论
+                        doc! {
+                            "state": { "$in": [0, 1] },
+                            "isWhispers": false,
+                        },
+                        // 正常状态的自己的私密评论
+                        doc! {
+                            "state": { "$in": [0, 1] },
+                            "mail": &reader.email,
+                        },
+                        // 自己的待审核评论（state = 3）
+                        doc! {
+                            "state": 3,
+                            "mail": &reader.email,
+                        },
+                    ],
+                };
+                
+                return Ok(filter);
+            } else {
+                // 用户不存在，只显示正常状态的公开评论
+                log::debug!("用户不存在，只显示正常状态的公开评论");
+                return Ok(doc! {
+                    "ref": ref_oid,
+                    "refType": ref_type,
+                    "state": { "$in": [0, 1] },
+                    "isWhispers": false,
+                });
+            }
+        }
+
+        // 匿名用户：只能看到正常状态的公开评论
+        log::debug!("匿名用户模式：只显示正常状态的公开评论");
+        Ok(doc! {
+            "ref": ref_oid,
+            "refType": ref_type,
+            "state": { "$in": [0, 1] },
+            "isWhispers": false,
+        })
     }
 
     /// 批量查询 Reader 信息，构建邮箱到头像和站长身份的映射
@@ -113,7 +149,7 @@ impl CommentService {
     ) -> Result<(HashMap<String, String>, HashMap<String, bool>), String> {
         let mut email_to_avatar = HashMap::new();
         let mut email_to_is_owner = HashMap::new();
-        
+
         for email in emails {
             // 通过邮箱查找 Reader（假设邮箱是唯一的）
             if let Ok(readers) = self.reader_repo.get_all().await {
@@ -144,21 +180,27 @@ impl CommentService {
 
         // 第一遍：创建所有评论节点，并记录根评论 ID
         for comment in comments {
-            let id_str = comment.id.as_ref().unwrap().to_hex();
-            
+            let id_str = match comment.id.as_ref() {
+                Some(id) => id.to_hex(),
+                None => {
+                    log::error!("comment missing id: {:?}", comment);
+                    continue;
+                } // 跳过没有 ID 的评论
+            };
+
             // 优先使用 Reader 的最新头像，否则使用评论保存的头像，最后根据邮箱生成
             let avatar_url = email_to_avatar
                 .get(&comment.mail)
                 .cloned()
                 .or_else(|| comment.avatar.clone())
                 .unwrap_or_else(|| Self::generate_avatar_url(&comment.mail));
-            
+
             // 判断是否为站长
             let is_admin = email_to_is_owner
                 .get(&comment.mail)
                 .copied()
                 .filter(|&is_owner| is_owner);
-            
+
             let tree_node = CommentTree {
                 id: id_str.clone(),
                 r#ref: comment.r#ref.to_hex(),
@@ -195,11 +237,18 @@ impl CommentService {
             comments: &[Comment],
         ) -> Vec<CommentTree> {
             let mut children = Vec::new();
-            
+
             for comment in comments {
                 if let Some(parent_oid) = &comment.parent {
                     if parent_oid.to_hex() == parent_id {
-                        let child_id = comment.id.as_ref().unwrap().to_hex();
+                        let child_id = match comment.id.as_ref() {
+                            Some(id) => id.to_hex(),
+                            None => {
+                                log::error!("comment missing id: {:?}", comment);
+                                continue;
+                            }
+                        };
+
                         if let Some(mut child_node) = comment_map.get(&child_id).cloned() {
                             // 递归构建子评论的子评论
                             child_node.children = build_children(&child_id, comment_map, comments);
@@ -208,7 +257,7 @@ impl CommentService {
                     }
                 }
             }
-            
+
             // 按创建时间排序
             children.sort_by(|a, b| a.created.cmp(&b.created));
             children
@@ -238,14 +287,16 @@ impl CommentService {
     ) -> Result<String, String> {
         let key = if let Some(parent_id) = parent_oid {
             // 回复评论：获取父评论的 key，然后追加子评论序号
-            let parent_comment = self.collection
+            let parent_comment = self
+                .collection
                 .find_one(doc! { "_id": parent_id })
                 .await
                 .map_err(|e| e.to_string())?;
 
             if let Some(parent) = parent_comment {
                 // 统计该父评论下已有的直接子评论数量
-                let sibling_count = self.collection
+                let sibling_count = self
+                    .collection
                     .count_documents(doc! { "parent": parent_id })
                     .await
                     .map_err(|e| e.to_string())?;
@@ -253,7 +304,8 @@ impl CommentService {
                 format!("{}#{}", parent.key, sibling_count + 1)
             } else {
                 // 父评论不存在，降级为根评论处理
-                let root_count = self.collection
+                let root_count = self
+                    .collection
                     .count_documents(doc! { "ref": ref_oid, "refType": ref_type, "parent": null })
                     .await
                     .map_err(|e| e.to_string())?;
@@ -261,7 +313,8 @@ impl CommentService {
             }
         } else {
             // 根评论：统计该文章下的根评论数量
-            let root_count = self.collection
+            let root_count = self
+                .collection
                 .count_documents(doc! { "ref": ref_oid, "refType": ref_type, "parent": null })
                 .await
                 .map_err(|e| e.to_string())?;
@@ -277,11 +330,12 @@ impl CommentService {
         ref_oid: ObjectId,
         ref_type: &str,
     ) -> Result<i32, String> {
-        let count = self.collection
+        let count = self
+            .collection
             .count_documents(doc! { "ref": ref_oid, "refType": ref_type })
             .await
             .map_err(|e| e.to_string())?;
-        
+
         Ok((count + 1) as i32)
     }
 
@@ -298,7 +352,7 @@ impl CommentService {
             )
             .await
             .map_err(|e| e.to_string())?;
-        
+
         Ok(())
     }
 }

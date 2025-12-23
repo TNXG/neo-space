@@ -1,8 +1,8 @@
 //! Account model for OAuth provider linking
 
+use crate::utils::serializers::*;
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use crate::utils::serializers::*;
 
 /// Account model - links OAuth providers to Reader
 /// This is used for MongoDB storage - keeps native BSON types
@@ -13,9 +13,9 @@ pub struct Account {
     #[serde(rename = "userId")]
     pub user_id: ObjectId,
     #[serde(default)]
-    pub provider: String,  // "github" or "qq"
+    pub provider: String, // "github" or "qq"
     #[serde(rename = "accountId", default)]
-    pub account_id: String,  // GitHub user ID or QQ openid
+    pub account_id: String, // GitHub user ID or QQ openid
     #[serde(rename = "accessToken", default)]
     pub access_token: String,
     #[serde(default)]
@@ -32,9 +32,17 @@ pub struct Account {
     /// OAuth 用户 handle（用于跳过绑定时创建 Reader）
     #[serde(rename = "oauthHandle", default)]
     pub oauth_handle: Option<String>,
-    #[serde(rename = "createdAt", default = "default_account_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[serde(
+        rename = "createdAt",
+        default = "default_account_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     pub created_at: bson::DateTime,
-    #[serde(rename = "updatedAt", default = "default_account_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[serde(
+        rename = "updatedAt",
+        default = "default_account_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     pub updated_at: bson::DateTime,
 }
 
@@ -79,7 +87,12 @@ impl From<Account> for AccountResponse {
 
 impl Account {
     /// Create a new Account for GitHub OAuth
-    pub fn new_github(user_id: ObjectId, github_id: u64, access_token: String, scope: Option<String>) -> Self {
+    pub fn new_github(
+        user_id: ObjectId,
+        github_id: u64,
+        access_token: String,
+        scope: Option<String>,
+    ) -> Self {
         Self {
             id: ObjectId::new(),
             user_id,
@@ -115,27 +128,9 @@ impl Account {
             access_token,
             scope,
             oauth_name: Some(name),
-            oauth_email: email,
+            oauth_email: email.or_else(|| Some(format!("{}@github.oauth", github_id))),
             oauth_avatar: Some(avatar),
             oauth_handle: Some(handle),
-            created_at: bson::DateTime::now(),
-            updated_at: bson::DateTime::now(),
-        }
-    }
-
-    /// Create a new Account for QQ OAuth
-    pub fn new_qq(user_id: ObjectId, openid: String, access_token: String) -> Self {
-        Self {
-            id: ObjectId::new(),
-            user_id,
-            provider: "qq".to_string(),
-            account_id: openid,
-            access_token,
-            scope: None,  // QQ doesn't use scope
-            oauth_name: None,
-            oauth_email: None,
-            oauth_avatar: None,
-            oauth_handle: None,
             created_at: bson::DateTime::now(),
             updated_at: bson::DateTime::now(),
         }

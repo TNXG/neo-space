@@ -1,6 +1,18 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+/// 评论状态常量
+/// - 0: 未读 + 正常
+/// - 1: 已读 + 正常
+/// - 2: 垃圾评论
+/// - 3: 待审核
+pub mod CommentState {
+    pub const UNREAD: i32 = 0;
+    pub const READ: i32 = 1;
+    pub const SPAM: i32 = 2;
+    pub const PENDING: i32 = 3;
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
@@ -12,6 +24,7 @@ pub struct Comment {
     pub author: String,
     pub mail: String,
     pub text: String,
+    /// 评论状态: 0=未读+正常, 1=已读+正常, 2=垃圾, 3=待审核
     pub state: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub children: Option<Vec<ObjectId>>,
@@ -23,6 +36,7 @@ pub struct Comment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent: Option<String>,
     pub pin: bool,
+    /// 悄悄说功能（仅博主可见）
     #[serde(rename = "isWhispers")]
     pub is_whispers: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,6 +99,9 @@ pub struct CreateCommentRequest {
     pub url: Option<String>,
     #[serde(default)]
     pub parent: Option<String>,
+    /// Cloudflare Turnstile token (仅非登录用户需要)
+    #[serde(default)]
+    pub turnstile_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

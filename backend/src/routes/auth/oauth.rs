@@ -15,7 +15,7 @@ use crate::services::{GitHubOAuthService, OptionsRepository, QQOAuthService};
 /// 路由: GET /api/auth/oauth/<provider>
 #[get("/oauth/<provider>")]
 pub async fn oauth_redirect(
-    provider: String,
+    provider: &str,
     config: &State<OAuthConfig>,
     db: &State<Database>,
 ) -> Result<Redirect, Json<ApiResponse<()>>> {
@@ -28,7 +28,7 @@ pub async fn oauth_redirect(
         ApiResponse::internal_error("读取配置失败".to_string())
     })?;
 
-    let redirect_url = match provider.as_str() {
+    let redirect_url = match provider {
         "github" => {
             let client_id = db_oauth_options
                 .github_client_id
@@ -68,7 +68,7 @@ pub async fn oauth_redirect(
 /// 路由: GET /api/auth/oauth/<provider>/callback?code=xxx
 #[get("/oauth/<provider>/callback?<code>")]
 pub async fn oauth_callback(
-    provider: String,
+    provider: &str,
     code: String,
     config: &State<OAuthConfig>,
     db: &State<Database>,
@@ -77,7 +77,7 @@ pub async fn oauth_callback(
     log::info!("OAuth 回调处理开始: provider={}", provider);
 
     // 1. 获取第三方用户信息并转换为标准 Payload
-    let payload_result = match provider.as_str() {
+    let payload_result = match provider {
         "github" => handle_github_logic(&code, config, db).await,
         "qq" => handle_qq_logic(&code, config, db).await,
         _ => Err(ApiResponse::bad_request("不支持的提供商".to_string())),

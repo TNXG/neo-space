@@ -21,7 +21,7 @@ pub use response::{ApiResponse, ResponseStatus, Pagination, PaginatedData, Pagin
 pub use post::{Post, PostWithCategory};
 pub use note::Note;
 pub use category::Category;
-pub use comment::{Comment, CommentTree, CreateCommentRequest, UpdateCommentRequest, CommentListResponse};
+pub use comment::{Comment, CommentState, CommentTree, CreateCommentRequest, UpdateCommentRequest, CommentListResponse};
 pub use link::Link;
 pub use page::Page;
 pub use recently::Recently;
