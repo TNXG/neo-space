@@ -86,29 +86,6 @@ impl From<Account> for AccountResponse {
 }
 
 impl Account {
-    /// Create a new Account for GitHub OAuth
-    pub fn new_github(
-        user_id: ObjectId,
-        github_id: u64,
-        access_token: String,
-        scope: Option<String>,
-    ) -> Self {
-        Self {
-            id: ObjectId::new(),
-            user_id,
-            provider: "github".to_string(),
-            account_id: github_id.to_string(),
-            access_token,
-            scope,
-            oauth_name: None,
-            oauth_email: None,
-            oauth_avatar: None,
-            oauth_handle: None,
-            created_at: bson::DateTime::now(),
-            updated_at: bson::DateTime::now(),
-        }
-    }
-
     /// Create a new Account for GitHub OAuth with user info
     pub fn new_github_with_info(
         user_id: ObjectId,

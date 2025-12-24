@@ -135,46 +135,6 @@ impl From<Reader> for ReaderResponse {
 }
 
 impl Reader {
-    /// Create a new Reader from GitHub OAuth user data
-    pub fn new_from_github(github_user: GitHubUser) -> Self {
-        let email = github_user.email.unwrap_or_default();
-        let email_verified = if email.is_empty() {
-            None
-        } else {
-            Some(true)
-        };
-
-        Self {
-            id: ObjectId::new(),
-            email,
-            name: github_user.name.unwrap_or_else(|| github_user.login.clone()),
-            handle: github_user.login,
-            image: github_user.avatar_url,
-            is_owner: false,
-            email_verified,
-            created_at: bson::DateTime::now(),
-            updated_at: bson::DateTime::now(),
-        }
-    }
-
-    /// Create a new Reader from QQ OAuth user data
-    pub fn new_from_qq(qq_user: QQUser, openid: String) -> Self {
-        // 生成基于 openid 的假邮箱，用于头像生成等场景
-        let fake_email = format!("{}@qq.oauth", openid);
-        
-        Self {
-            id: ObjectId::new(),
-            email: fake_email,
-            name: qq_user.nickname.clone(),
-            handle: Self::generate_handle(&qq_user.nickname),
-            image: qq_user.figureurl_qq_2.unwrap_or(qq_user.figureurl_qq_1),
-            is_owner: false,
-            email_verified: Some(false), // 假邮箱，标记为未验证
-            created_at: bson::DateTime::now(),
-            updated_at: bson::DateTime::now(),
-        }
-    }
-
     /// Generate a safe handle (slug) from a name
     /// Filters out non-alphanumeric characters except hyphens and underscores
     pub fn generate_handle(name: &str) -> String {

@@ -5,7 +5,7 @@ use rocket::serde::json::Json;
 use rocket::{State, http::Status, put};
 use std::str::FromStr;
 
-use crate::models::{ApiResponse, Comment, UpdateCommentRequest, ResponseStatus};
+use crate::models::{ApiResponse, Comment, UpdateCommentRequest};
 
 /**
  * PUT /api/comments/<id>
@@ -34,12 +34,10 @@ pub async fn update_comment(
         Ok(_) => {
             // 获取更新后的评论
             match collection.find_one(doc! { "_id": oid }).await {
-                Ok(Some(comment)) => Ok(Json(ApiResponse {
-                    code: 200,
-                    status: ResponseStatus::Success,
-                    message: "Comment updated successfully".to_string(),
-                    data: comment,
-                })),
+                Ok(Some(comment)) => Ok(Json(ApiResponse::success_with_message(
+                    comment,
+                    "Comment updated successfully".to_string(),
+                ))),
                 _ => Err(Status::InternalServerError),
             }
         }

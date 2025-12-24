@@ -68,6 +68,34 @@ pub struct Comment {
     pub ua: Option<UAInfo>,
 }
 
+impl Default for Comment {
+    fn default() -> Self {
+        Self {
+            id: None,
+            r#ref: ObjectId::new(),
+            ref_type: String::new(),
+            author: String::new(),
+            mail: String::new(),
+            text: String::new(),
+            state: 0,
+            children: None,
+            comments_index: 0,
+            key: String::new(),
+            ip: None,
+            agent: None,
+            pin: false,
+            is_whispers: false,
+            source: None,
+            avatar: None,
+            created: mongodb::bson::DateTime::now(),
+            location: None,
+            url: None,
+            parent: None,
+            ua: None,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentTree {
@@ -135,4 +163,13 @@ pub struct UpdateCommentRequest {
 pub struct CommentListResponse {
     pub comments: Vec<CommentTree>,
     pub count: i64,
+}
+
+impl Default for CommentListResponse {
+    fn default() -> Self {
+        Self {
+            comments: vec![],
+            count: 0,
+        }
+    }
 }

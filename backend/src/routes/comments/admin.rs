@@ -5,7 +5,7 @@ use rocket::serde::json::Json;
 use rocket::{State, http::Status, patch, delete};
 use std::str::FromStr;
 
-use crate::models::{ApiResponse, Comment, ResponseStatus};
+use crate::models::{ApiResponse, Comment};
 use crate::guards::OwnerGuard;
 
 /**
@@ -32,12 +32,10 @@ pub async fn hide_comment(
     };
 
     match collection.update_one(doc! { "_id": oid }, update).await {
-        Ok(_) => Ok(Json(ApiResponse {
-            code: 200,
-            status: ResponseStatus::Success,
-            message: "Comment hidden successfully".to_string(),
-            data: (),
-        })),
+        Ok(_) => Ok(Json(ApiResponse::success_with_message(
+            (),
+            "Comment hidden successfully".to_string(),
+        ))),
         Err(e) => {
             eprintln!("Failed to hide comment: {}", e);
             Err(Status::InternalServerError)
@@ -69,12 +67,10 @@ pub async fn unhide_comment(
     };
 
     match collection.update_one(doc! { "_id": oid }, update).await {
-        Ok(_) => Ok(Json(ApiResponse {
-            code: 200,
-            status: ResponseStatus::Success,
-            message: "Comment unhidden successfully".to_string(),
-            data: (),
-        })),
+        Ok(_) => Ok(Json(ApiResponse::success_with_message(
+            (),
+            "Comment unhidden successfully".to_string(),
+        ))),
         Err(e) => {
             eprintln!("Failed to unhide comment: {}", e);
             Err(Status::InternalServerError)
@@ -106,12 +102,10 @@ pub async fn pin_comment(
     };
 
     match collection.update_one(doc! { "_id": oid }, update).await {
-        Ok(_) => Ok(Json(ApiResponse {
-            code: 200,
-            status: ResponseStatus::Success,
-            message: "Comment pinned successfully".to_string(),
-            data: (),
-        })),
+        Ok(_) => Ok(Json(ApiResponse::success_with_message(
+            (),
+            "Comment pinned successfully".to_string(),
+        ))),
         Err(e) => {
             eprintln!("Failed to pin comment: {}", e);
             Err(Status::InternalServerError)
@@ -143,12 +137,10 @@ pub async fn unpin_comment(
     };
 
     match collection.update_one(doc! { "_id": oid }, update).await {
-        Ok(_) => Ok(Json(ApiResponse {
-            code: 200,
-            status: ResponseStatus::Success,
-            message: "Comment unpinned successfully".to_string(),
-            data: (),
-        })),
+        Ok(_) => Ok(Json(ApiResponse::success_with_message(
+            (),
+            "Comment unpinned successfully".to_string(),
+        ))),
         Err(e) => {
             eprintln!("Failed to unpin comment: {}", e);
             Err(Status::InternalServerError)

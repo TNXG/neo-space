@@ -5,7 +5,7 @@ use rocket::serde::json::Json;
 use rocket::{State, http::Status, delete};
 use std::str::FromStr;
 
-use crate::models::{ApiResponse, Comment, ResponseStatus};
+use crate::models::{ApiResponse, Comment};
 
 /**
  * DELETE /api/comments/<id>
@@ -24,12 +24,10 @@ pub async fn delete_comment(
     };
 
     match collection.delete_one(doc! { "_id": oid }).await {
-        Ok(_) => Ok(Json(ApiResponse {
-            code: 200,
-            status: ResponseStatus::Success,
-            message: "Comment deleted successfully".to_string(),
-            data: (),
-        })),
+        Ok(_) => Ok(Json(ApiResponse::success_with_message(
+            (),
+            "Comment deleted successfully".to_string(),
+        ))),
         Err(e) => {
             eprintln!("Failed to delete comment: {}", e);
             Err(Status::InternalServerError)

@@ -49,16 +49,6 @@ impl<T> ApiResponse<T> {
             data: (),
         }
     }
-
-    /// Create an error response with custom data type
-    pub fn error_with_data<U>(code: u16, message: String, data: U) -> ApiResponse<U> {
-        ApiResponse {
-            code,
-            status: ResponseStatus::Failed,
-            message,
-            data,
-        }
-    }
 }
 
 /// Auth-specific response helpers
@@ -72,19 +62,35 @@ impl<T> ApiResponse<T> {
     pub fn json_success_with_message(data: T, message: String) -> Json<Self> {
         Json(Self::success_with_message(data, message))
     }
+
+    /// Create a JSON error response with default data
+    pub fn json_error_with_default(code: u16, message: String) -> Json<Self>
+    where
+        T: Default,
+    {
+        Json(ApiResponse {
+            code,
+            status: ResponseStatus::Failed,
+            message,
+            data: T::default(),
+        })
+    }
 }
 
 impl ApiResponse<()> {
     /// Create a JSON error response
+    #[allow(unused)]
     pub fn json_error(code: u16, message: String) -> Json<Self> {
         Json(Self::error(code, message))
     }
 
     /// Common auth error responses
+    #[allow(unused)]
     pub fn unauthorized(message: String) -> Json<Self> {
         Json(Self::error(401, message))
     }
 
+    #[allow(unused)]
     pub fn forbidden(message: String) -> Json<Self> {
         Json(Self::error(403, message))
     }

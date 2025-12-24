@@ -13,28 +13,18 @@ use rocket::http::Method;
 use rocket::serde::json::Json;
 use rocket::Request;
 use rocket_cors::{AllowedOrigins, CorsOptions};
-use models::{ApiResponse, ResponseStatus};
+use models::ApiResponse;
 
 /// 404 Not Found error catcher - returns JSON
 #[catch(404)]
 fn not_found(_req: &Request) -> Json<ApiResponse<()>> {
-    Json(ApiResponse {
-        code: 404,
-        status: ResponseStatus::Failed,
-        message: "Resource not found".to_string(),
-        data: (),
-    })
+    ApiResponse::not_found("Resource not found".to_string())
 }
 
 /// 500 Internal Server Error catcher - returns JSON
 #[catch(500)]
 fn internal_error(_req: &Request) -> Json<ApiResponse<()>> {
-    Json(ApiResponse {
-        code: 500,
-        status: ResponseStatus::Failed,
-        message: "Internal server error".to_string(),
-        data: (),
-    })
+    ApiResponse::internal_error("Internal server error".to_string())
 }
 
 #[launch]

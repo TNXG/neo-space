@@ -6,7 +6,7 @@ use rocket::{State, http::Status, get};
 use std::str::FromStr;
 use futures::stream::TryStreamExt;
 
-use crate::models::{ApiResponse, CommentListResponse, ResponseStatus};
+use crate::models::{ApiResponse, CommentListResponse};
 use crate::guards::OptionalAuthGuard;
 use crate::services::CommentService;
 
@@ -31,15 +31,7 @@ pub async fn list_comments(
     let ref_oid = match ObjectId::from_str(&ref_id) {
         Ok(oid) => oid,
         Err(_) => {
-            return Ok(Json(ApiResponse {
-                code: 400,
-                status: ResponseStatus::Failed,
-                message: "Invalid ref_id".to_string(),
-                data: CommentListResponse {
-                    comments: vec![],
-                    count: 0,
-                },
-            }));
+            return Ok(ApiResponse::json_error_with_default(400, "Invalid ref_id".to_string()));
         }
     };
 
@@ -92,13 +84,11 @@ pub async fn list_comments(
     // 构建树形结构
     let tree = CommentService::build_comment_tree(&all_comments, &email_to_avatar, &email_to_is_owner);
 
-    Ok(Json(ApiResponse {
-        code: 200,
-        status: ResponseStatus::Success,
-        message: "Comments fetched successfully".to_string(),
-        data: CommentListResponse {
+    Ok(Json(ApiResponse::success_with_message(
+        CommentListResponse {
             comments: tree,
             count,
         },
-    }))
+        "Comments fetched successfully".to_string(),
+    )))
 }

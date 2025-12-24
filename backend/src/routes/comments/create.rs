@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use crate::config::OAuthConfig;
 use crate::guards::{OptionalAuthGuard, ClientIp};
-use crate::models::{ApiResponse, Comment, CommentState, CreateCommentRequest, ResponseStatus};
+use crate::models::{ApiResponse, Comment, CommentState, CreateCommentRequest};
 use crate::services::{verify_turnstile, AccountRepository, CommentService, IpService, ReaderRepository, SpamDetector};
 
 /**
@@ -80,12 +80,7 @@ pub async fn create_comment(
             }
             Ok(None) => {
                 log::warn!("用户 {} 不存在", user_id);
-                return Ok(Json(ApiResponse {
-                    code: 401,
-                    status: ResponseStatus::Failed,
-                    message: "用户不存在".to_string(),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(401, "用户不存在".to_string()));
             }
             Err(e) => {
                 log::error!("查询用户失败: {}", e);
@@ -97,23 +92,13 @@ pub async fn create_comment(
         let author = match &request.author {
             Some(a) if !a.trim().is_empty() => a.clone(),
             _ => {
-                return Ok(Json(ApiResponse {
-                    code: 400,
-                    status: ResponseStatus::Failed,
-                    message: "未登录用户必须提供昵称".to_string(),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(400, "未登录用户必须提供昵称".to_string()));
             }
         };
         let mail = match &request.mail {
             Some(m) if !m.trim().is_empty() => m.clone(),
             _ => {
-                return Ok(Json(ApiResponse {
-                    code: 400,
-                    status: ResponseStatus::Failed,
-                    message: "未登录用户必须提供邮箱".to_string(),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(400, "未登录用户必须提供邮箱".to_string()));
             }
         };
 
@@ -121,12 +106,7 @@ pub async fn create_comment(
         let turnstile_token = match &request.turnstile_token {
             Some(token) if !token.trim().is_empty() => token,
             _ => {
-                return Ok(Json(ApiResponse {
-                    code: 400,
-                    status: ResponseStatus::Failed,
-                    message: "请完成人机验证".to_string(),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(400, "请完成人机验证".to_string()));
             }
         };
 
@@ -135,21 +115,11 @@ pub async fn create_comment(
                 log::info!("Turnstile 验证通过");
             }
             Ok(false) => {
-                return Ok(Json(ApiResponse {
-                    code: 400,
-                    status: ResponseStatus::Failed,
-                    message: "人机验证失败，请重试".to_string(),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(400, "人机验证失败，请重试".to_string()));
             }
             Err(e) => {
                 log::error!("Turnstile 验证错误: {}", e);
-                return Ok(Json(ApiResponse {
-                    code: 500,
-                    status: ResponseStatus::Failed,
-                    message: format!("验证服务异常: {}", e),
-                    data: CommentService::empty_comment(),
-                }));
+                return Ok(ApiResponse::json_error_with_default(500, format!("验证服务异常: {}", e)));
             }
         }
 
@@ -168,24 +138,14 @@ pub async fn create_comment(
 
     // 验证必填字段
     if request.text.trim().is_empty() {
-        return Ok(Json(ApiResponse {
-            code: 400,
-            status: ResponseStatus::Failed,
-            message: "评论内容不能为空".to_string(),
-            data: CommentService::empty_comment(),
-        }));
+        return Ok(ApiResponse::json_error_with_default(400, "评论内容不能为空".to_string()));
     }
 
     // 解析 ref ObjectId
     let ref_oid = match ObjectId::from_str(&request.r#ref) {
         Ok(oid) => oid,
         Err(_) => {
-            return Ok(Json(ApiResponse {
-                code: 400,
-                status: ResponseStatus::Failed,
-                message: "Invalid ref id".to_string(),
-                data: CommentService::empty_comment(),
-            }));
+            return Ok(ApiResponse::json_error_with_default(400, "Invalid ref id".to_string()));
         }
     };
 
@@ -297,16 +257,14 @@ pub async fn create_comment(
                 log::info!("评论 {} 已创建，异步审核任务已启动", comment_id);
             }
 
-            Ok(Json(ApiResponse {
-                code: 201,
-                status: ResponseStatus::Success,
-                message: if ai_review_enabled {
+            Ok(Json(ApiResponse::success_with_message(
+                created_comment,
+                if ai_review_enabled {
                     "评论已提交，正在审核中".to_string()
                 } else {
                     "评论发布成功".to_string()
                 },
-                data: created_comment,
-            }))
+            )))
         }
         Err(e) => {
             eprintln!("Failed to create comment: {}", e);
