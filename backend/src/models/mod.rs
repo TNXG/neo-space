@@ -17,7 +17,7 @@ pub mod jwt;
 pub mod conversions;
 
 // Re-export commonly used types
-pub use response::{ApiResponse, ResponseStatus, Pagination, PaginatedData, PaginatedResponse};
+pub use response::{ApiResponse, Pagination, PaginatedData, PaginatedResponse};
 pub use post::{Post, PostWithCategory};
 pub use note::Note;
 pub use category::Category;

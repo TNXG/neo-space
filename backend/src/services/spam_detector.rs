@@ -390,7 +390,7 @@ impl SpamDetector {
             let mut escape_next = false;
             
             // 使用字符迭代器而不是字节索引
-            let mut char_indices: Vec<(usize, char)> = cleaned.char_indices().collect();
+            let char_indices: Vec<(usize, char)> = cleaned.char_indices().collect();
             
             for (byte_idx, ch) in char_indices.iter().skip_while(|(idx, _)| *idx < start) {
                 if escape_next {

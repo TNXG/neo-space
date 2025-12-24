@@ -1,7 +1,7 @@
 //! 评论服务 - 封装评论相关的业务逻辑
 
 use md5;
-use mongodb::bson::{doc, oid::ObjectId, DateTime};
+use mongodb::bson::{doc, oid::ObjectId};
 use mongodb::{Collection, Database};
 use std::collections::HashMap;
 
@@ -29,33 +29,6 @@ impl CommentService {
         let trimmed = email.trim().to_lowercase();
         let hash = format!("{:x}", md5::compute(trimmed.as_bytes()));
         format!("https://cravatar.cn/avatar/{}", hash)
-    }
-
-    /// 创建空评论对象（用于错误响应）
-    pub fn empty_comment() -> Comment {
-        Comment {
-            id: None,
-            r#ref: ObjectId::new(),
-            ref_type: String::new(),
-            author: String::new(),
-            mail: String::new(),
-            text: String::new(),
-            state: 0,
-            children: None,
-            comments_index: 0,
-            key: String::new(),
-            ip: None,
-            agent: None,
-            pin: false,
-            is_whispers: false,
-            source: None,
-            avatar: None,
-            created: DateTime::now(),
-            location: None,
-            url: None,
-            parent: None,
-            ua: None,
-        }
     }
 
     /// 构建评论查询过滤器，根据用户权限过滤可见评论
