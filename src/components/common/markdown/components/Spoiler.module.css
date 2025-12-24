@@ -45,32 +45,9 @@
 	text-decoration-color: transparent !important;
 }
 
-/* 跟随鼠标的简洁提示 */
-.tooltip {
-	position: fixed;
-	padding: 4px 10px;
-	background-color: rgba(0, 0, 0, 0.3);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	color: white;
-	font-size: 12px;
-	border-radius: 6px;
-	pointer-events: none;
-	z-index: 9999;
-	white-space: nowrap;
-	transform: translateX(-50%);
-	font-weight: 300;
-	letter-spacing: 0.025em;
-}
-
 /* 暗色模式 */
 :global(.dark) .spoiler {
 	color: rgb(115 115 115); /* neutral-500 */
-}
-
-:global(.dark) .tooltip {
-	background-color: rgba(255, 255, 255, 0.3);
-	color: black;
 }
 
 /* 打印样式 */
@@ -81,10 +58,6 @@
 	}
 
 	.spoiler::after {
-		display: none;
-	}
-
-	.tooltip {
 		display: none;
 	}
 }
