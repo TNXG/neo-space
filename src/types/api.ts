@@ -266,6 +266,17 @@ export const CommentState = {
 
 export type CommentStateType = typeof CommentState[keyof typeof CommentState];
 
+/**
+ * 用户代理信息（浏览器/系统）
+ */
+export interface UAInfo {
+	browser: string;
+	browserVersion: string;
+	os: string;
+	osVersion: string;
+	device: "mobile" | "desktop";
+}
+
 export interface Comment {
 	_id: string;
 	ref: string;
@@ -287,6 +298,8 @@ export interface Comment {
 	location?: string;
 	url?: string;
 	parent?: string;
+	/** 用户代理信息（浏览器/系统） */
+	ua?: UAInfo;
 }
 
 export interface CommentListResponse {
@@ -304,6 +317,8 @@ export interface CreateCommentRequest {
 	parent?: string;
 	/** Cloudflare Turnstile token (仅非登录用户需要) */
 	turnstileToken?: string;
+	/** 用户代理信息（浏览器/系统） */
+	ua?: UAInfo;
 }
 
 export interface UpdateCommentRequest {

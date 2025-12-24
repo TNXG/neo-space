@@ -12,6 +12,7 @@ import { KbdShortcut } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { useHasMounted } from "@/hook/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
+import { getUAInfo } from "@/lib/parse";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { useCommentRefresh } from "./hooks";
@@ -244,6 +245,9 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 
 		startTransition(async () => {
 			try {
+				// 获取 UA 信息
+				const uaInfo = await getUAInfo();
+
 				let result;
 				if (isAuthenticated && token) {
 					result = await createAuthComment({
@@ -252,6 +256,7 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 						parent: parentId,
 						text: content,
 						url: finalUrl,
+						ua: uaInfo,
 					}, token);
 				} else {
 					result = await createCommentAction({
@@ -263,6 +268,7 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 						mail: finalEmail || "",
 						url: finalUrl,
 						turnstileToken: turnstileToken || undefined,
+						ua: uaInfo,
 					});
 				}
 
@@ -593,7 +599,7 @@ export function CommentForm({ refId, refType, parentId, onSuccess, onCancel: _on
 																						<span>编辑和删除自己的想法</span>
 																					</li>
 																					<li className="flex items-center gap-2 sm:gap-3">
-																						<Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
+																						<Icon icon="mingcute:heart-fill" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
 																						<span>我喜欢你</span>
 																					</li>
 																				</ul>

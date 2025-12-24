@@ -11,6 +11,42 @@ interface CommentHeaderProps {
 }
 
 /**
+ * 获取浏览器图标
+ */
+function getBrowserIcon(browser: string): string {
+	const name = browser.toLowerCase();
+	if (name.includes("edge"))
+		return "mingcute:edge-fill";
+	if (name.includes("firefox"))
+		return "mingcute:firefox-fill";
+	if (name.includes("safari"))
+		return "mingcute:safari-fill";
+	if (name.includes("opera"))
+		return "mingcute:opera-fill";
+	if (name.includes("chrome") || name.includes("chromium"))
+		return "mingcute:chrome-fill";
+	if (name.includes("ie") || name.includes("internet explorer"))
+		return "mingcute:ie-fill";
+	return "mingcute:globe-line";
+}
+
+/**
+ * 获取操作系统图标
+ */
+function getOSIcon(os: string): string {
+	const name = os.toLowerCase();
+	if (name.includes("windows"))
+		return "mingcute:windows-fill";
+	if (name.includes("mac") || name.includes("ios"))
+		return "mingcute:apple-fill";
+	if (name.includes("android"))
+		return "mingcute:android-fill";
+	if (name.includes("linux"))
+		return "mingcute:linux-fill";
+	return "mingcute:computer-line";
+}
+
+/**
  * 评论头部组件 - 显示头像、用户名、标签和时间
  */
 export function CommentHeader({ comment }: CommentHeaderProps) {
@@ -83,8 +119,34 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1.5 flex-wrap">
 					<SmartDate date={comment.created} className="text-[10px] sm:text-xs text-muted-foreground" />
+
+					{/* UA 信息显示 */}
+					{comment.ua && comment.ua.os !== "unknown" && (
+						<span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`${comment.ua.os} ${comment.ua.osVersion} · ${comment.ua.browser} ${comment.ua.browserVersion}`}>
+							<Icon icon={getOSIcon(comment.ua.os)} className="w-3 h-3" />
+							<span className="hidden sm:inline">
+								{comment.ua.os}
+								{" "}
+								{comment.ua.osVersion !== "unknown" && comment.ua.osVersion}
+							</span>
+							<Icon icon={getBrowserIcon(comment.ua.browser)} className="w-3 h-3" />
+							<span className="hidden sm:inline">
+								{comment.ua.browser}
+								{" "}
+								{comment.ua.browserVersion !== "unknown" && comment.ua.browserVersion}
+							</span>
+						</span>
+					)}
+
+					{/* 地理位置信息 */}
+					{comment.location && (
+						<span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`来自 ${comment.location}`}>
+							<Icon icon="mingcute:location-line" className="w-3 h-3" />
+							<span className="hidden sm:inline">{comment.location}</span>
+						</span>
+					)}
 				</div>
 			</dt>
 		</div>
