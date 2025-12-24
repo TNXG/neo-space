@@ -12,6 +12,7 @@ pub mod auth;
 pub mod comment;
 pub mod turnstile;
 pub mod spam_detector;
+pub mod ip_service;
 
 pub use db_service::*;
 pub use options_service::*;
@@ -24,3 +25,4 @@ pub use options_repository::OptionsRepository;
 pub use comment::service::CommentService;
 pub use turnstile::verify_turnstile;
 pub use spam_detector::SpamDetector;
+pub use ip_service::IpService;

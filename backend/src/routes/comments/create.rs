@@ -6,9 +6,9 @@ use rocket::{http::Status, post, State};
 use std::str::FromStr;
 
 use crate::config::OAuthConfig;
-use crate::guards::OptionalAuthGuard;
+use crate::guards::{OptionalAuthGuard, ClientIp};
 use crate::models::{ApiResponse, Comment, CommentState, CreateCommentRequest, ResponseStatus};
-use crate::services::{verify_turnstile, AccountRepository, CommentService, ReaderRepository, SpamDetector};
+use crate::services::{verify_turnstile, AccountRepository, CommentService, IpService, ReaderRepository, SpamDetector};
 
 /**
  * POST /api/comments
@@ -26,12 +26,20 @@ use crate::services::{verify_turnstile, AccountRepository, CommentService, Reade
 pub async fn create_comment(
     db: &State<mongodb::Database>,
     oauth_config: &State<OAuthConfig>,
+    ip_service: &State<Option<IpService>>,
     auth: OptionalAuthGuard,
+    client_ip: ClientIp,
     request: Json<CreateCommentRequest>,
 ) -> Result<Json<ApiResponse<Comment>>, Status> {
     let comment_service = CommentService::new(db.inner());
     let reader_repo = ReaderRepository::new(db.inner());
     let collection = db.collection::<Comment>("comments");
+
+    // 获取客户端 IP 和地理位置
+    let ip_address = client_ip.0;
+    let location = ip_service.as_ref().and_then(|service| service.search_simple(&ip_address));
+    
+    log::info!("收到评论请求 - IP: {}, 位置: {:?}", ip_address, location);
 
     // 确定作者信息和头像
     let (author, mail, avatar_url, source, _reader_id) = if let Some(user_id) = auth.user_id {
@@ -235,16 +243,17 @@ pub async fn create_comment(
         children: Some(vec![]),
         comments_index,
         key,
-        ip: None,
+        ip: Some(ip_address.clone()),
         agent: None,
         pin: false,
         is_whispers: false,
         source,
         avatar: Some(avatar_url),
         created: DateTime::now(),
-        location: None,
+        location,
         url: request.url.clone(),
         parent: parent_oid,
+        ua: request.ua.clone(),
     };
 
     match collection.insert_one(&comment).await {

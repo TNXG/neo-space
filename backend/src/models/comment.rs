@@ -6,11 +6,24 @@ use serde::{Deserialize, Serialize};
 /// - 1: 已读 + 正常
 /// - 2: 垃圾评论
 /// - 3: 待审核
+#[allow(non_snake_case)]
 pub mod CommentState {
     pub const UNREAD: i32 = 0;
+    #[allow(dead_code)]
     pub const READ: i32 = 1;
     pub const SPAM: i32 = 2;
     pub const PENDING: i32 = 3;
+}
+
+/// 用户代理信息（浏览器/系统）
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UAInfo {
+    pub browser: String,
+    pub browser_version: String,
+    pub os: String,
+    pub os_version: String,
+    pub device: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -50,6 +63,9 @@ pub struct Comment {
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<ObjectId>,
+    /// 用户代理信息（浏览器/系统）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ua: Option<UAInfo>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -83,6 +99,9 @@ pub struct CommentTree {
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
+    /// 用户代理信息（浏览器/系统）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ua: Option<UAInfo>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -102,6 +121,9 @@ pub struct CreateCommentRequest {
     /// Cloudflare Turnstile token (仅非登录用户需要)
     #[serde(default)]
     pub turnstile_token: Option<String>,
+    /// 用户代理信息（浏览器/系统）
+    #[serde(default)]
+    pub ua: Option<UAInfo>,
 }
 
 #[derive(Debug, Deserialize)]

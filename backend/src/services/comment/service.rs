@@ -54,6 +54,7 @@ impl CommentService {
             location: None,
             url: None,
             parent: None,
+            ua: None,
         }
     }
 
@@ -220,6 +221,7 @@ impl CommentService {
                 location: comment.location.clone(),
                 url: comment.url.clone(),
                 parent: comment.parent.as_ref().map(|p| p.to_hex()),
+                ua: comment.ua.clone(),
             };
 
             // 记录根评论 ID

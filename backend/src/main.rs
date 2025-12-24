@@ -58,6 +58,44 @@ async fn rocket() -> _ {
     let database = services::init_db().await.expect("Failed to connect to MongoDB");
     log::info!("MongoDB 连接成功");
 
+    // Initialize IP service
+    // 获取当前工作目录的绝对路径
+    let current_dir = std::env::current_dir()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+    
+    let ipv4_db_path = std::env::var("IP2REGION_V4_DB")
+        .unwrap_or_else(|_| {
+            current_dir.join("data/ip2region_v4.xdb")
+                .to_string_lossy()
+                .to_string()
+        });
+    let ipv6_db_path = std::env::var("IP2REGION_V6_DB")
+        .unwrap_or_else(|_| {
+            current_dir.join("data/ip2region_v6.xdb")
+                .to_string_lossy()
+                .to_string()
+        });
+    
+    let ip_service = match services::IpService::new(ipv4_db_path.clone(), ipv6_db_path.clone()) {
+        Ok(service) => {
+            log::info!("IP2Region 服务初始化成功");
+            log::info!("  - IPv4 数据库: {}", ipv4_db_path);
+            log::info!("  - IPv6 数据库: {}", ipv6_db_path);
+            Some(service)
+        }
+        Err(e) => {
+            log::warn!("IP2Region 服务初始化失败: {}", e);
+            log::warn!("IP 地理位置查询功能将不可用");
+            log::warn!("当前工作目录: {}", current_dir.display());
+            log::warn!("请下载数据库文件到以下位置:");
+            log::warn!("  - {}", current_dir.join("data/ip2region_v4.xdb").display());
+            log::warn!("  - {}", current_dir.join("data/ip2region_v6.xdb").display());
+            log::warn!("下载地址: https://github.com/lionsoul2014/ip2region/tree/master/data");
+            log::warn!("或运行脚本: bash scripts/download-ip2region.sh");
+            None
+        }
+    };
+
     // Configure CORS for frontend communication
     let cors = CorsOptions::default()
         .allowed_origins(AllowedOrigins::all())
@@ -81,6 +119,7 @@ async fn rocket() -> _ {
     rocket::build()
         .manage(database)
         .manage(oauth_config)
+        .manage(ip_service)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
         .mount("/api/auth", routes::auth::routes())

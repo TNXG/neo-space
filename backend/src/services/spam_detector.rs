@@ -229,7 +229,7 @@ impl SpamDetector {
             },
         ];
 
-        match ai_service.chat(messages, Some(0.3), Some(500)).await {
+        match ai_service.chat(messages, Some(0.3), None).await {
             Ok(response) => {
                 log::debug!("AI 二分法响应: {}", response);
                 Self::parse_binary_response(&response)
@@ -293,7 +293,7 @@ impl SpamDetector {
             },
         ];
 
-        match ai_service.chat(messages, Some(0.3), Some(500)).await {
+        match ai_service.chat(messages, Some(0.3), None).await {
             Ok(response) => {
                 log::debug!("AI 评分法响应: {}", response);
                 Self::parse_score_response(&response, threshold)
@@ -386,11 +386,13 @@ impl SpamDetector {
             // 找到匹配的结束括号
             let mut depth = 0;
             let mut end_pos = None;
-            let chars: Vec<char> = cleaned.chars().collect();
             let mut in_string = false;
             let mut escape_next = false;
             
-            for (i, &ch) in chars.iter().enumerate().skip(start) {
+            // 使用字符迭代器而不是字节索引
+            let mut char_indices: Vec<(usize, char)> = cleaned.char_indices().collect();
+            
+            for (byte_idx, ch) in char_indices.iter().skip_while(|(idx, _)| *idx < start) {
                 if escape_next {
                     escape_next = false;
                     continue;
@@ -403,7 +405,7 @@ impl SpamDetector {
                     '}' if !in_string => {
                         depth -= 1;
                         if depth == 0 {
-                            end_pos = Some(i);
+                            end_pos = Some(*byte_idx);
                             break;
                         }
                     }
@@ -412,6 +414,7 @@ impl SpamDetector {
             }
             
             if let Some(end) = end_pos {
+                // 使用字节索引安全地切片
                 return cleaned[start..=end].to_string();
             }
             

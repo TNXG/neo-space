@@ -29,6 +29,7 @@ rand = "0.9.2"
 log = "0.4"
 env_logger = "0.11.8"
 regex = "1.11"
+ip2region = { git = "https://github.com/lionsoul2014/ip2region.git", branch = "master" }
 
 [dependencies.rocket_db_pools]
 version = "0.2.0"
