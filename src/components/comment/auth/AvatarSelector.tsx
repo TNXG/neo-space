@@ -27,18 +27,22 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
 
 	// 检测当前头像来源
 	const detectCurrentProvider = (): AvatarProvider => {
-		if (currentAvatar.includes("gravatar.com"))
+		// Gravatar 头像
+		if (currentAvatar.includes("gravatar.com") || currentAvatar.includes("seccdn.libravatar.org")) {
 			return "gravatar";
+		}
 
-		// 简单判断：如果有 GitHub 账号且不是 gravatar，假设是 GitHub
-		const hasGithub = accounts.some(acc => acc.provider === "github");
-		const hasQQ = accounts.some(acc => acc.provider === "qq");
-
-		if (hasGithub && !currentAvatar.includes("qq"))
+		// GitHub 头像 (avatars.githubusercontent.com)
+		if (currentAvatar.includes("githubusercontent.com") || currentAvatar.includes("github.com")) {
 			return "github";
-		if (hasQQ)
-			return "qq";
+		}
 
+		// QQ 头像 (q.qlogo.cn 或 thirdqq.qlogo.cn)
+		if (currentAvatar.includes("qlogo.cn") || currentAvatar.includes("qq.com")) {
+			return "qq";
+		}
+
+		// 默认返回 gravatar
 		return "gravatar";
 	};
 
