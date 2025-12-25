@@ -1,0 +1,66 @@
+.linkWrapper {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2em;
+	vertical-align: baseline;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 0.9em;
+	height: 0.9em;
+	flex-shrink: 0;
+
+	svg {
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.link {
+	position: relative;
+	color: inherit;
+	text-decoration: none;
+	line-height: 1.4;
+
+	// 灰色下划线（底层，始终显示）
+	&::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: 1px;
+		width: 100%;
+		height: 2px;
+		background-color: var(--primary-300);
+	}
+
+	// 主题色下划线（上层，hover 时从左到右展开）
+	&::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: 1px;
+		width: 0;
+		height: 2px;
+		background-color: var(--accent-600);
+		transition: width 0.3s ease-out;
+	}
+
+	&:hover::after {
+		width: 100%;
+	}
+}
+
+.popoverContent {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	max-width: 300px;
+	word-break: break-all;
+}
+
+.popoverUrl {
+	color: oklch(50% 0.01 240);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

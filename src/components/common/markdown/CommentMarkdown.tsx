@@ -6,7 +6,8 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
-import { Spoiler } from "./components/Spoiler";
+import { AnimatedLink } from "../content/AnimatedLink";
+import { Spoiler } from "../content/Spoiler";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 /**
@@ -39,14 +40,14 @@ const commentComponents: Components = {
 	),
 
 	a: ({ href, children }) => (
-		<a
-			href={href}
-			className="inline-flex flex-wrap items-center gap-0.5 font-medium text-accent-600 decoration-accent-300/50 underline-offset-4 hover:underline hover:text-accent-700 transition-colors cursor-pointer wrap-anywhere"
+		<AnimatedLink
+			href={href || "#"}
+			className="inline-flex flex-wrap items-center gap-0.5 font-medium text-accent-600 hover:text-accent-700 transition-colors cursor-pointer wrap-anywhere"
 			target="_blank"
 			rel="noopener noreferrer"
 		>
 			{children}
-		</a>
+		</AnimatedLink>
 	),
 
 	strong: ({ children }) => <strong className="font-semibold">{children}</strong>,

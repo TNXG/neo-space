@@ -1,4 +1,4 @@
-export { CodeBlock } from "./components/CodeBlock";
+export { CodeBlock } from "../content/CodeBlock";
 export { getHighlighter } from "./highlighter";
 export { MarkdownPreview } from "./MarkdownPreview";
 export { MarkdownRenderer } from "./MarkdownRenderer";

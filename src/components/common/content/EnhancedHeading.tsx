@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useHasMounted } from "@/hook/use-has-mounted";
 import { useTOCStore } from "@/lib/stores/toc-store";
 
 interface EnhancedHeadingProps {
@@ -27,7 +28,8 @@ const levelLabels = {
  */
 export function EnhancedHeading({ id, level, children, className }: EnhancedHeadingProps) {
 	const { activeId, scrollToCenter } = useTOCStore();
-	const isActive = activeId === id;
+	const mounted = useHasMounted();
+	const isActive = mounted && activeId === id;
 	const Tag = `h${level}` as const;
 
 	if (!id) {

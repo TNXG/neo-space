@@ -1,4 +1,4 @@
-import styles from "./Spoiler.module.css";
+import styles from "./Spoiler.module.scss";
 
 /**
  * Spoiler 组件

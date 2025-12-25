@@ -108,6 +108,11 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 					{ children?: ReactNode } & Record<string, unknown>
 				>;
 
+				// 跳过代码元素（code、pre）的处理，直接返回原节点
+				if (element.type === "code" || element.type === "pre") {
+					return node;
+				}
+
 				const { children: nodeChildren, ...restProps } = element.props;
 
 				// 只有当存在 children 时才需要克隆和递归

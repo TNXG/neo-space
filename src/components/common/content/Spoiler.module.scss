@@ -1,0 +1,64 @@
+// 定义颜色和配置，方便后期统一修改
+$spoiler-bg-light: rgb(68 64 60); // stone-700
+$spoiler-bg-dark: rgb(115 115 115); // neutral-500
+$transition-speed: 0.5s;
+
+.spoiler {
+	position: relative;
+	padding: 0 2px;
+	cursor: help;
+	border-radius: 3px;
+
+	// 基础样式：默认状态（遮盖效果）
+	color: $spoiler-bg-light;
+	background-color: currentColor;
+	text-decoration: line-through;
+	text-decoration-color: transparent;
+	transition: background $transition-speed;
+
+	// 使用 &::after 嵌套伪元素
+	&::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 50%;
+		height: 2px;
+		background-color: currentColor;
+		transform: translateY(-50%);
+		transition: opacity $transition-speed;
+		pointer-events: none;
+	}
+
+	// 悬浮状态
+	&:hover {
+		background: transparent;
+		text-decoration-color: currentColor;
+
+		&::after {
+			opacity: 0;
+		}
+	}
+
+	// 非悬浮状态下的内部元素遮蔽
+	&:not(:hover) * {
+		color: inherit !important;
+		border-color: transparent !important;
+		text-decoration-color: transparent !important;
+	}
+
+	// 暗色模式：利用 & 嵌套全局类
+	:global(.dark) & {
+		color: $spoiler-bg-dark;
+	}
+
+	// 打印样式
+	@media print {
+		background-color: transparent !important;
+		text-decoration-color: currentColor !important;
+
+		&::after {
+			display: none;
+		}
+	}
+}

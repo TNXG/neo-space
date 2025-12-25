@@ -2,27 +2,32 @@ import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
-
+import remarkMath from "remark-math";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 
-import { ClientOnlyScript } from "./components/ClientOnlyScript";
-import { CodeBlock } from "./components/CodeBlock";
-import { ContainerBlock } from "./components/ContainerBlock";
-import { EnhancedHeading } from "./components/EnhancedHeading";
-import { ImageFigure } from "./components/ImageFigure";
-import { MermaidDiagram } from "./components/MermaidDiagram";
+import { AnimatedLink } from "../content/AnimatedLink";
 
-import { Spoiler } from "./components/Spoiler";
+import { ClientOnlyScript } from "../content/ClientOnlyScript";
+import { CodeBlock } from "../content/CodeBlock";
+import { ContainerBlock } from "../content/ContainerBlock";
+import { EnhancedHeading } from "../content/EnhancedHeading";
+import { ImageFigure } from "../content/ImageFigure";
+import { KatexStyles } from "../content/KatexStyles";
+import { MermaidDiagram } from "../content/MermaidDiagram";
 
+import { Spoiler } from "../content/Spoiler";
 import { getHighlighter } from "./highlighter";
-import { remarkContainer } from "./plugins/container";
-import { remarkMermaid } from "./plugins/mermaid";
 
+import { remarkContainer } from "./plugins/container";
+import { remarkMathDelimiters } from "./plugins/math";
+import { remarkMermaid } from "./plugins/mermaid";
 import { remarkSpoiler } from "./plugins/spoiler";
+
 import { getStandaloneImageProps } from "./utils";
 
 interface MarkdownRendererProps {
@@ -83,14 +88,14 @@ const components: Components = {
 	a: ({ href, children }) => {
 		const isInternal = href?.startsWith("/") || href?.startsWith("#");
 		return (
-			<a
-				href={href}
-				className="inline-flex flex-wrap items-center gap-0.5 font-medium text-accent-600 decoration-accent-300/50 underline-offset-4 hover:underline hover:text-accent-700 transition-colors cursor-pointer wrap-anywhere"
+			<AnimatedLink
+				href={href || "#"}
+				className="inline-flex flex-wrap items-center gap-0.5 font-medium text-accent-600 hover:text-accent-700 transition-colors cursor-pointer wrap-anywhere"
 				target={isInternal ? "_self" : "_blank"}
 				rel={isInternal ? undefined : "noopener noreferrer"}
 			>
 				{children}
-			</a>
+			</AnimatedLink>
 		);
 	},
 
@@ -118,7 +123,7 @@ const components: Components = {
 		const isInline = !className;
 		if (isInline) {
 			return (
-				<code className="px-1.5 py-0.5 mx-0.5 rounded-md text-[0.9em] font-mono align-middle bg-primary-200/40 border border-primary-200/60 text-accent-700 break-all">
+				<code className="px-1.5 py-0.5 mx-0.5 rounded text-[0.85em] font-mono align-middle bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
 					{children}
 				</code>
 			);
@@ -288,6 +293,9 @@ const components: Components = {
 };
 
 export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+	// Check if content contains math formulas
+	const hasMath = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^$\n]+\$|\\\([^)]+?\\\)/.test(content);
+
 	const usedLanguages = new Set<string>();
 
 	const codeBlockRegex = /(?:^|\n)(?:```|~~~)\s*([\w-]+)/g;
@@ -316,15 +324,52 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
 		],
 	];
 
+	// Only add KaTeX plugin if math is detected
+	if (hasMath) {
+		rehypePlugins.push([
+			rehypeKatex,
+			{
+				trust: true,
+				strict: false,
+				output: "html",
+				macros: {
+					// 启用物理包的常用宏
+					"\\bra": "\\langle #1|",
+					"\\ket": "|#1\\rangle",
+					"\\braket": "\\langle #1 \\rangle",
+					"\\dd": "\\mathrm{d}",
+					"\\dv": "\\frac{\\mathrm{d} #1}{\\mathrm{d} #2}",
+					"\\pdv": "\\frac{\\partial #1}{\\partial #2}",
+					"\\abs": "\\left| #1 \\right|",
+					"\\norm": "\\left\\| #1 \\right\\|",
+					"\\eval": "\\left. #1 \\right|_{#2}",
+					"\\order": "\\mathcal{O}\\left( #1 \\right)",
+					"\\comm": "\\left[ #1, #2 \\right]",
+					"\\acomm": "\\left\\{ #1, #2 \\right\\}",
+					"\\vb": "\\mathbf{#1}",
+					"\\vdot": "\\cdot",
+					"\\cross": "\\times",
+					"\\grad": "\\nabla",
+					"\\div": "\\nabla \\cdot",
+					"\\curl": "\\nabla \\times",
+					"\\laplacian": "\\nabla^2",
+				},
+			},
+		]);
+	}
+
 	return (
-		<div className={`markdown-body ${className}`}>
-			<ReactMarkdown
-				remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler, remarkMermaid, remarkContainer]}
-				rehypePlugins={rehypePlugins}
-				components={components}
-			>
-				{content}
-			</ReactMarkdown>
-		</div>
+		<>
+			{hasMath && <KatexStyles />}
+			<div className={`markdown-body ${className}`}>
+				<ReactMarkdown
+					remarkPlugins={[remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkSpoiler, remarkMermaid, remarkContainer]}
+					rehypePlugins={rehypePlugins}
+					components={components}
+				>
+					{content}
+				</ReactMarkdown>
+			</div>
+		</>
 	);
 }

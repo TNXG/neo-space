@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { extractImagesFromMarkdown, parseContainerParams } from "../plugins/container";
+import { extractImagesFromMarkdown, parseContainerParams } from "../markdown/plugins/container";
 import { Banner } from "./Banner";
 import { Gallery } from "./Gallery";
 import { GridImages } from "./GridImages";

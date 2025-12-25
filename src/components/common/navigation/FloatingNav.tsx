@@ -46,14 +46,14 @@ interface FloatingNavProps {
  * - Right: Back to top and theme toggle
  */
 export function FloatingNav({ user }: FloatingNavProps) {
-	const [isExpanded, setIsExpanded] = useState(false);
+	const pathname = usePathname();
+	const isHomePage = pathname === "/";
+	const [isExpanded, setIsExpanded] = useState(isHomePage);
 	const [isSpinning, setIsSpinning] = useState(false);
 	const [readingProgress, setReadingProgress] = useState(0);
 	const [animationProgress, setAnimationProgress] = useState(0);
 	const isMobile = useIsMobile();
-	const pathname = usePathname();
 	const router = useRouter();
-	const isHomePage = pathname === "/";
 
 	const scrollToTop = useCallback(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
@@ -115,6 +115,13 @@ export function FloatingNav({ user }: FloatingNavProps) {
 		setShowBackToTop(scrollY > 300);
 		setReadingProgress(Math.min(progress, 100));
 
+		// 首页滚动时自动收起导航
+		if (isHomePage && scrollY > 100) {
+			setIsExpanded(false);
+		} else if (isHomePage && scrollY <= 100) {
+			setIsExpanded(true);
+		}
+
 		// 如果正在执行返回顶部动画，更新动画进度
 		if (isSpinning) {
 			setAnimationProgress(Math.min(progress, 100));
@@ -123,7 +130,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 				setAnimationProgress(0);
 			}
 		}
-	}, [isSpinning]);
+	}, [isSpinning, isHomePage]);
 
 	useEffect(() => {
 		window.addEventListener("scroll", handleScroll);
@@ -155,8 +162,8 @@ export function FloatingNav({ user }: FloatingNavProps) {
 					stiffness: 400,
 					damping: 35,
 				}}
-				onMouseEnter={() => !isMobile && setIsExpanded(true)}
-				onMouseLeave={() => !isMobile && setIsExpanded(false)}
+				onMouseEnter={() => !isMobile && !isHomePage && setIsExpanded(true)}
+				onMouseLeave={() => !isMobile && !isHomePage && setIsExpanded(false)}
 				onClick={() => isMobile && setIsExpanded(!isExpanded)}
 			>
 				<div className="px-2 md:px-3 flex gap-2 md:gap-3 items-center">

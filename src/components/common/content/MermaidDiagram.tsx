@@ -2,6 +2,7 @@
 
 import mermaid from "mermaid";
 import { useEffect, useRef, useState } from "react";
+import { ZoomableContainer } from "./ZoomableContainer";
 
 interface MermaidDiagramProps {
 	/** Mermaid 图表代码 */
@@ -12,6 +13,7 @@ interface MermaidDiagramProps {
 
 /**
  * Mermaid 图表渲染组件（客户端）
+ * 支持缩放和拖拽功能
  */
 export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -24,7 +26,8 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
 			startOnLoad: false,
 			theme: "default",
 			securityLevel: "loose",
-			fontFamily: "ui-sans-serif, system-ui, sans-serif",
+			// 使用与全站一致的字体栈
+			fontFamily: "var(--font-noto-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
 		});
 
 		const renderDiagram = async () => {
@@ -55,12 +58,14 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
 	}
 
 	return (
-		<div
-			ref={containerRef}
-			className={`my-8 flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm overflow-x-auto ${className}`}
-			// 可信内容
-			// eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
-			dangerouslySetInnerHTML={{ __html: svg }}
-		/>
+		<ZoomableContainer className={`my-8 ${className}`}>
+			<div
+				ref={containerRef}
+				className="flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm"
+				// 可信内容
+				// eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
+				dangerouslySetInnerHTML={{ __html: svg }}
+			/>
+		</ZoomableContainer>
 	);
 }
