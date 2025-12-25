@@ -57,6 +57,56 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 		return { activeParentIndex: parentIndex, activeSectionEndIndex: endIndex };
 	}, [activeIndex, items]);
 
+	// 3. 预计算所有项的已读状态
+	// 规则：一个标题只有在用户离开其所属的顶级区块后才算已读
+	// 即：找到该标题所属的最顶层父级（H2），只有当 activeIndex 超过该父级区块的结束位置时才算已读
+	const readStates = useMemo(() => {
+		if (activeIndex === -1)
+			return Array.from({ length: items.length }).fill(false) as boolean[];
+
+		// 首先计算每个 H2 区块的范围
+		const h2Sections: Array<{ start: number; end: number }> = [];
+		for (let i = 0; i < items.length; i++) {
+			if (items[i].depth === 2) {
+				let end = items.length;
+				for (let j = i + 1; j < items.length; j++) {
+					if (items[j].depth === 2) {
+						end = j;
+						break;
+					}
+				}
+				h2Sections.push({ start: i, end });
+			}
+		}
+
+		// 找到当前激活项所属的 H2 区块
+		const currentH2Section = h2Sections.find(
+			s => activeIndex >= s.start && activeIndex < s.end,
+		);
+
+		// 计算每个项的已读状态
+		return items.map((item, index) => {
+			// 找到该项所属的 H2 区块
+			const itemH2Section = h2Sections.find(
+				s => index >= s.start && index < s.end,
+			);
+
+			if (!itemH2Section) {
+				// 如果没有找到所属的 H2 区块（比如在第一个 H2 之前的内容）
+				// 则只有当 activeIndex 超过该项自身时才算已读
+				return activeIndex > index;
+			}
+
+			if (!currentH2Section) {
+				// 如果当前激活项不在任何 H2 区块内，则该 H2 区块之前的所有内容都算已读
+				return itemH2Section.end <= activeIndex;
+			}
+
+			// 只有当该项所属的 H2 区块完全在当前激活项所属的 H2 区块之前时，才算已读
+			return itemH2Section.end <= currentH2Section.start;
+		});
+	}, [activeIndex, items]);
+
 	// 滚动逻辑保持不变，但依赖更稳定的 activeId
 	const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,6 +177,9 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 									&& index > activeParentIndex
 									&& index < activeSectionEndIndex;
 
+							// 判断是否已读（使用层级区块逻辑）
+							const isRead = readStates[index] ?? false;
+
 							return (
 								<li key={item.id}>
 									<motion.a
@@ -138,21 +191,18 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
                       ${isH2 ? "font-medium text-xs" : "pl-5 text-[11px]"}
                       ${
 								isActive
-									? "text-foreground font-semibold"
+									? "text-foreground font-semibold bg-accent/40"
 									: isActiveParent
 										? "text-foreground font-medium"
 										: inActiveSection
-											? "text-foreground/90 font-medium"
-											: "text-muted-foreground/70 hover:text-foreground hover:bg-accent/20"
+											? "text-foreground/90 font-medium bg-accent/8"
+											: isRead
+												? "text-muted-foreground/50 hover:text-foreground hover:bg-accent/20"
+												: "text-muted-foreground/70 hover:text-foreground hover:bg-accent/20"
 								}
                     `}
-										// 使用 animate 属性直接控制样式，比 AnimatePresence 更稳定
+										// 使用 animate 属性直接控制样式
 										animate={{
-											backgroundColor: isActive
-												? "rgba(var(--accent-rgb), 0.4)"
-												: inActiveSection
-													? "rgba(var(--accent-rgb), 0.08)"
-													: "rgba(0, 0, 0, 0)",
 											scale: isH2
 												? isActive || isActiveParent
 													? 1.05
@@ -162,16 +212,15 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
 													: inActiveSection
 														? 1.02
 														: 1,
-											opacity: !isActive && !isActiveParent && !inActiveSection ? 0.6 : 1,
+											opacity: isRead && !isActive ? 0.5 : (!isActive && !isActiveParent && !inActiveSection ? 0.6 : 1),
 										}}
 										transition={{ duration: 0.15, ease: "easeOut" }}
 									>
-										{/*
-                       3. 彻底消除闪烁的关键：
-                       移除 AnimatePresence，让指示器始终存在，
-                       只通过 opacity 和 scale 动画来显示/隐藏。
-                       这样 DOM 结构不会变动，不会触发布局重算。
-                    */}
+
+										{/* 左侧已读指示条 */}
+										{isRead && !isActive && (
+											<span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-[60%] bg-muted-foreground/30 rounded-r-full" />
+										)}
 
 										{/* 左侧激活色条 (Active Item) */}
 										<motion.span
