@@ -1,6 +1,6 @@
 import { MarkdownPreview } from "@/components/common/markdown";
 import { HomePage } from "@/components/layouts/HomePage";
-import { getNotes, getPosts, getRecently, getUserProfile } from "@/lib/api-client";
+import { getHomePageNotes, getHomePagePosts, getRecently, getUserProfile } from "@/lib/api-client";
 
 export const revalidate = false;
 
@@ -9,10 +9,10 @@ export const revalidate = false;
  * Fetches data from API and passes to client component
  */
 export default async function Page() {
-	// Fetch data from backend API
+	// Fetch data from backend API（使用首页专用 API，带 home 标签）
 	const [postsResponse, notesResponse, recentlyResponse, profileResponse] = await Promise.all([
-		getPosts(1, 5).catch(() => ({ data: { items: [] } })),
-		getNotes(1, 5).catch(() => ({ data: { items: [] } })),
+		getHomePagePosts(5).catch(() => ({ data: { items: [] } })),
+		getHomePageNotes(5).catch(() => ({ data: { items: [] } })),
 		getRecently(5).catch(() => ({ data: { items: [] } })),
 		getUserProfile().catch(() => ({
 			data: {

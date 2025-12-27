@@ -1,3 +1,4 @@
+#![allow(unused)]
 //! Cache service - Moka-based in-memory cache with TTL
 
 use moka::future::Cache;

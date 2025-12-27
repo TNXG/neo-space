@@ -90,6 +90,7 @@ impl RevalidationService {
     /// 
     /// # 参数
     /// - `path`: 页面路径 (例如: "/posts/my-post")
+    #[allow(unused)]
     pub async fn revalidate_path(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)?

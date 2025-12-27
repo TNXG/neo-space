@@ -43,6 +43,26 @@ export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<P
 	});
 }
 
+/**
+ * 首页专用 - 获取最新文章（带 home 标签）
+ */
+export async function getHomePagePosts(size = 5): Promise<PaginatedResponse<Post>> {
+	return apiClient<PaginatedResponse<Post>>(`/posts?page=1&size=${size}`, {
+		tags: ["posts", "home"],
+		revalidate: false,
+	});
+}
+
+/**
+ * 首页专用 - 获取最新日记（带 home 标签）
+ */
+export async function getHomePageNotes(size = 5): Promise<PaginatedResponse<Note>> {
+	return apiClient<PaginatedResponse<Note>>(`/notes?page=1&size=${size}`, {
+		tags: ["notes", "home"],
+		revalidate: false,
+	});
+}
+
 export async function getPostById(id: string): Promise<ApiResponse<Post>> {
 	return apiClient<ApiResponse<Post>>(`/posts/${id}`, {
 		tags: ["posts", `post-${id}`],

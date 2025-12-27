@@ -125,6 +125,13 @@ impl ChangeStreamService {
 
     /// 处理博文变更
     async fn handle_post_change(&self, event: &ChangeStreamEvent<Document>) {
+        let operation_type = format!("{:?}", event.operation_type);
+        let is_count_change = matches!(
+            event.operation_type,
+            mongodb::change_stream::event::OperationType::Insert
+                | mongodb::change_stream::event::OperationType::Delete
+        );
+
         // 提取文档信息
         let mut post_id: Option<String> = None;
         let mut post_slug: Option<String> = None;
@@ -170,9 +177,25 @@ impl ChangeStreamService {
             }
         }
 
-        // 刷新博文列表（因为列表可能包含这篇文章）
-        if self.revalidation_service.revalidate_tag("posts").await.is_ok() {
-            revalidated_tags.push("posts".to_string());
+        // 仅在数量变化（insert/delete）时刷新列表页、首页和 Moka 缓存
+        if is_count_change {
+            // 刷新博文列表
+            if self.revalidation_service.revalidate_tag("posts").await.is_ok() {
+                revalidated_tags.push("posts".to_string());
+            }
+
+            // 刷新首页
+            if self.revalidation_service.revalidate_tag("home").await.is_ok() {
+                revalidated_tags.push("home".to_string());
+            }
+
+            // 清除 Moka 列表缓存
+            self.cache_service.invalidate_by_prefix("posts").await;
+
+            log::info!(
+                "✓ 博文数量变化 ({}) - 已刷新列表页和首页",
+                operation_type
+            );
         }
 
         log::info!(
@@ -183,6 +206,13 @@ impl ChangeStreamService {
 
     /// 处理手记变更
     async fn handle_note_change(&self, event: &ChangeStreamEvent<Document>) {
+        let operation_type = format!("{:?}", event.operation_type);
+        let is_count_change = matches!(
+            event.operation_type,
+            mongodb::change_stream::event::OperationType::Insert
+                | mongodb::change_stream::event::OperationType::Delete
+        );
+
         // 提取文档信息
         let mut note_id: Option<String> = None;
         let mut note_nid: Option<i32> = None;
@@ -228,9 +258,25 @@ impl ChangeStreamService {
             }
         }
 
-        // 刷新手记列表
-        if self.revalidation_service.revalidate_tag("notes").await.is_ok() {
-            revalidated_tags.push("notes".to_string());
+        // 仅在数量变化（insert/delete）时刷新列表页、首页和 Moka 缓存
+        if is_count_change {
+            // 刷新手记列表
+            if self.revalidation_service.revalidate_tag("notes").await.is_ok() {
+                revalidated_tags.push("notes".to_string());
+            }
+
+            // 刷新首页
+            if self.revalidation_service.revalidate_tag("home").await.is_ok() {
+                revalidated_tags.push("home".to_string());
+            }
+
+            // 清除 Moka 列表缓存
+            self.cache_service.invalidate_by_prefix("notes").await;
+
+            log::info!(
+                "✓ 手记数量变化 ({}) - 已刷新列表页和首页",
+                operation_type
+            );
         }
 
         log::info!(
