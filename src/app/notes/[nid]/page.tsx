@@ -8,9 +8,6 @@ import { extractTOC } from "@/lib/toc";
 
 export const revalidate = 57600;
 export const dynamicParams = true;
-export function generateStaticParams() {
-	return [];
-}
 
 interface PageProps {
 	params: Promise<{

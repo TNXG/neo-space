@@ -1,7 +1,9 @@
-"use client";
-
 import Link from "next/link";
 import { useHasMounted } from "@/hook/use-has-mounted";
+
+export async function generateStaticParams() {
+	return [];
+}
 
 /**
  * 404 页面 - 星海迷航版 (移动端优化)

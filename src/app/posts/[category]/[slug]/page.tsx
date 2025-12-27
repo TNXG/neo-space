@@ -11,10 +11,6 @@ export const revalidate = 57600;
 // 构建时不预渲染，运行时按需生成并缓存
 export const dynamicParams = true;
 
-export function generateStaticParams() {
-	return [];
-}
-
 interface PageProps {
 	params: Promise<{
 		slug: string;
