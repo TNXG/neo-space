@@ -6,8 +6,14 @@ import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/co
 import { getAdjacentPosts, getPostBySlug, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
-// ISR 配置：永不过期，依赖 Change Stream 主动刷新
-export const revalidate = false;
+// ISR 配置：16小时过期，同时依赖 Change Stream 主动刷新
+export const revalidate = 57600;
+// 构建时不预渲染，运行时按需生成并缓存
+export const dynamicParams = true;
+
+export function generateStaticParams() {
+	return [];
+}
 
 interface PageProps {
 	params: Promise<{

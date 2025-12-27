@@ -2,7 +2,8 @@ import { MarkdownPreview } from "@/components/common/markdown";
 import { HomePage } from "@/components/layouts/HomePage";
 import { getHomePageNotes, getHomePagePosts, getRecently, getUserProfile } from "@/lib/api-client";
 
-export const revalidate = false;
+export const revalidate = 57600;
+export const dynamic = "force-dynamic";
 
 /**
  * Homepage - Server Component
