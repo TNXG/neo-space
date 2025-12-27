@@ -48,6 +48,52 @@ async fn rocket() -> _ {
     let database = services::init_db().await.expect("Failed to connect to MongoDB");
     log::info!("MongoDB 连接成功");
 
+    // Initialize cache service
+    let cache_max_capacity = std::env::var("CACHE_MAX_CAPACITY")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10000);
+    let cache_ttl_seconds = std::env::var("CACHE_TTL_SECONDS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3600);
+    
+    let cache_service = services::CacheService::new(cache_max_capacity, cache_ttl_seconds);
+    log::info!("缓存服务初始化成功");
+
+    // Initialize revalidation service (optional - only if configured)
+    let nextjs_url = std::env::var("NEXTJS_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let revalidation_secret = std::env::var("REVALIDATION_SECRET").ok();
+    let revalidation_salt = std::env::var("REVALIDATION_SALT")
+        .unwrap_or_else(|_| "default-salt".to_string());
+    
+    // Only start Change Stream if revalidation is configured
+    if let Some(secret) = revalidation_secret {
+        let revalidation_service = services::RevalidationService::new(
+            nextjs_url,
+            secret,
+            revalidation_salt,
+        );
+        log::info!("Revalidation 服务初始化成功");
+
+        // Initialize and start Change Stream service in background
+        let change_stream_service = services::ChangeStreamService::new(
+            database.clone(),
+            cache_service.clone(),
+            revalidation_service.clone(),
+        );
+        
+        // Spawn Change Stream listener in background task
+        tokio::spawn(async move {
+            change_stream_service.start_watching().await;
+        });
+        log::info!("Change Stream 监听服务已启动（后台任务）");
+    } else {
+        log::warn!("REVALIDATION_SECRET 未配置，Change Stream 监听服务已禁用");
+        log::warn!("如需启用 ISR 缓存自动刷新，请在 .env 中配置 REVALIDATION_SECRET");
+    }
+
     // Initialize IP service
     // 获取当前工作目录的绝对路径
     let current_dir = std::env::current_dir()
@@ -110,6 +156,7 @@ async fn rocket() -> _ {
         .manage(database)
         .manage(oauth_config)
         .manage(ip_service)
+        .manage(cache_service)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
         .mount("/api/auth", routes::auth::routes())

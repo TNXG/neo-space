@@ -13,6 +13,9 @@ pub mod comment;
 pub mod turnstile;
 pub mod spam_detector;
 pub mod ip_service;
+pub mod cache_service;
+pub mod revalidation_service;
+pub mod change_stream_service;
 
 pub use db_service::*;
 pub use options_service::*;
@@ -26,3 +29,6 @@ pub use comment::service::CommentService;
 pub use turnstile::verify_turnstile;
 pub use spam_detector::SpamDetector;
 pub use ip_service::IpService;
+pub use cache_service::CacheService;
+pub use revalidation_service::RevalidationService;
+pub use change_stream_service::ChangeStreamService;
