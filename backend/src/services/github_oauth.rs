@@ -49,6 +49,7 @@ impl GitHubOAuthService {
             .post(token_url)
             .form(&params)
             .header("Accept", "application/json")
+            .header("User-Agent", "Request/Neo-Space-Backend/Love")
             .send()
             .await
             .map_err(|e| format!("GitHub token 请求失败: {}", e))?;
