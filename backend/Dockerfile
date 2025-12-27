@@ -6,9 +6,9 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tzdata wget && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY space-api-rs /app/space-api-rs
+COPY neo-space-backend /app/neo-space-backend
 COPY data/ /app/data/
-RUN chmod +x /app/space-api-rs
+RUN chmod +x /app/neo-space-backend
 
 USER appuser
 
@@ -17,4 +17,4 @@ EXPOSE 8000
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=8000
 
-CMD ["/app/space-api-rs"]
+CMD ["/app/neo-space-backend"]

@@ -12,7 +12,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-backend
-  BINARY_NAME: space-api-rs
+  BINARY_NAME: neo-space-backend
 
 jobs:
   build:
