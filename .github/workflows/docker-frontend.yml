@@ -47,6 +47,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: __NEXT_PUBLIC_API_URL__
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: __NEXT_PUBLIC_TURNSTILE_SITE_KEY__
+          BUILD_STANDALONE: true
 
       - name: Prepare artifacts
         run: |
