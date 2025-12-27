@@ -1,0 +1,25 @@
+# Build outputs
+target/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Misc
+*.md
+!README.md
+.claude/

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+out
+dist
+
+# Development
+.env*.local
+.env
+*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (handled separately)
+backend/
+
+# Misc
+*.md
+!README.md
+certificates/
+scripts/
+
+# Keep entrypoint
+!docker-entrypoint.sh

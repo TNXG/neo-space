@@ -1,0 +1,82 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: neo-space-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-mx-space}
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/mongo-init-rs.sh:/docker-entrypoint-initdb.d/init-rs.sh:ro
+    networks:
+      - neo-space
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "${MONGO_ROOT_USERNAME:-admin}", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "rs.status().ok || rs.initiate().ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    image: ghcr.io/tnxg/neo-space-backend:latest
+    container_name: neo-space-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-mx-space}?authSource=admin
+      - RUST_LOG=${RUST_LOG:-info}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - TURNSTILE_SECRET=${TURNSTILE_SECRET}
+      - NEXTJS_URL=http://frontend:3000
+      - REVALIDATION_SECRET=${REVALIDATION_SECRET}
+      - REVALIDATION_SALT=${REVALIDATION_SALT}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - QQ_APP_ID=${QQ_APP_ID}
+      - QQ_APP_KEY=${QQ_APP_KEY}
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_PORT=8000
+    volumes:
+      - ./data/ip2region:/app/data:ro
+    networks:
+      - neo-space
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: ghcr.io/tnxg/neo-space-frontend:latest
+    container_name: neo-space-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+      - REVALIDATION_SECRET=${REVALIDATION_SECRET}
+      - REVALIDATION_SALT=${REVALIDATION_SALT}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - neo-space
+
+volumes:
+  mongo_data:
+
+networks:
+  neo-space:
+    driver: bridge
