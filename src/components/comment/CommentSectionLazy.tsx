@@ -1,7 +1,7 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 

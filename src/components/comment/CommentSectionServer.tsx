@@ -1,5 +1,5 @@
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { getComments } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
