@@ -1,7 +1,7 @@
 import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, Note, Page, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 import process from "node:process";
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://blog.tnxg.moe/api";
 
 /**
  * Generic API client with error handling and ISR support

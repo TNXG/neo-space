@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
 				}
 
 				try {
-					const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+					const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://blog.tnxg.moe/api";
 					const response = await fetch(`${apiUrl}/auth/me`, {
 						headers: {
 							Authorization: `Bearer ${token}`,
