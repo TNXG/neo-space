@@ -2,12 +2,9 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import { Toaster } from "sonner";
 import { IconProvider } from "@/components/common/IconProvider";
-import { FloatingNav } from "@/components/common/navigation/FloatingNav";
-import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { ThemeProvider } from "@/components/common/theme";
-import { Footer } from "@/components/layouts/Footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { getSiteConfig, getUserProfile } from "@/lib/api-client";
+import { getSiteConfig } from "@/lib/api-client";
 
 import "./globals.css";
 
@@ -39,7 +36,6 @@ export async function generateMetadata(): Promise<Metadata> {
 			keywords: seo.keywords,
 		};
 	} catch {
-		// 降级到默认值
 		return {
 			title: {
 				template: "%s - Blog",
@@ -50,25 +46,14 @@ export async function generateMetadata(): Promise<Metadata> {
 	}
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-	// 获取用户数据用于 Footer
-	const profileResponse = await getUserProfile().catch(() => ({
-		data: {
-			_id: "",
-			username: "guest",
-			name: "访客用户",
-			introduce: "欢迎来到我的博客",
-			avatar: "/default-avatar.png",
-			mail: "",
-			url: "",
-			created: new Date().toISOString(),
-			last_login_time: new Date().toISOString(),
-		},
-	}));
-
+/**
+ * 根布局 - 仅包含全局 Provider 和基础 HTML 结构
+ * 具体页面布局（Footer、FloatingNav、Nbnhhsh）由路由分组布局处理
+ */
+export default function RootLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="zh-CN" suppressHydrationWarning>
-			<body className={`${notoSans.variable}  ${jetbrainsMono.variable} selection:bg-accent-500/30 selection:text-primary-900 font-sans flex flex-col min-h-screen`}>
+			<body className={`${notoSans.variable} ${jetbrainsMono.variable} selection:bg-accent-500/30 selection:text-primary-900 font-sans`}>
 				<IconProvider>
 					<ThemeProvider
 						attribute="class"
@@ -77,17 +62,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 						disableTransitionOnChange={false}
 					>
 						<TooltipProvider>
-							<NbnhhshProvider>
-								<div className="flex flex-col min-h-screen">
-									<main className="flex-1">
-										{children}
-									</main>
-									<Footer user={profileResponse.data} />
-									<FloatingNav user={profileResponse.data} />
-								</div>
-								<NbnhhshPanel />
-								<Toaster richColors position="top-center" />
-							</NbnhhshProvider>
+							{children}
+							<Toaster richColors position="top-center" />
 						</TooltipProvider>
 					</ThemeProvider>
 				</IconProvider>

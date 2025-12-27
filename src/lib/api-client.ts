@@ -11,26 +11,45 @@ async function apiClient<T>(
 	options?: RequestInit & {
 		tags?: string[];
 		revalidate?: number | false;
+		timeout?: number;
 	},
 ): Promise<T> {
-	const { tags, revalidate, ...fetchOptions } = options || {};
+	const { tags, revalidate, timeout, ...fetchOptions } = options || {};
 
-	const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-		headers: {
-			"Content-Type": "application/json",
-		},
-		...fetchOptions,
-		next: {
-			tags,
-			revalidate,
-		},
-	});
+	// 创建 AbortController 用于超时控制
+	const controller = new AbortController();
+	const timeoutId = timeout
+		? setTimeout(() => controller.abort(), timeout)
+		: undefined;
 
-	if (!response.ok) {
-		throw new Error(`API Error: ${response.status} ${response.statusText}`);
+	try {
+		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+			headers: {
+				"Content-Type": "application/json",
+			},
+			...fetchOptions,
+			signal: controller.signal,
+			next: {
+				tags,
+				revalidate,
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`API Error: ${response.status} ${response.statusText}`);
+		}
+
+		return response.json();
+	} catch (error) {
+		if (error instanceof Error && error.name === "AbortError") {
+			throw new Error(`API Timeout: Request to ${endpoint} exceeded ${timeout}ms`);
+		}
+		throw error;
+	} finally {
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+		}
 	}
-
-	return response.json();
 }
 
 /**
@@ -230,6 +249,7 @@ export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
 			tags: ["site-config"],
 			revalidate: 3600, // 1小时重新验证
 		},
+		timeout: 8000, // 8秒超时
 	});
 }
 
