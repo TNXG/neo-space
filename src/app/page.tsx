@@ -2,6 +2,8 @@ import { MarkdownPreview } from "@/components/common/markdown";
 import { HomePage } from "@/components/layouts/HomePage";
 import { getNotes, getPosts, getRecently, getUserProfile } from "@/lib/api-client";
 
+export const revalidate = false;
+
 /**
  * Homepage - Server Component
  * Fetches data from API and passes to client component

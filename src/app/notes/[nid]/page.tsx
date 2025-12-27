@@ -6,7 +6,7 @@ import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/a
 import { getAdjacentNotes, getNoteByNid } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
-export const revalidate = 60;
+export const revalidate = false;
 
 interface PageProps {
 	params: Promise<{
