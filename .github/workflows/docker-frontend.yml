@@ -55,7 +55,7 @@ jobs:
           cp -r .next/standalone/. dist/
           cp -r .next/static dist/.next/static
           cp -r public dist/public
-          cp docker-entrypoint.sh dist/
+          cp scripts/docker-entrypoint.sh dist/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
