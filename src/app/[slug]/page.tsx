@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { CommentSection } from "@/components/comment";
+import { Suspense } from "react";
+import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout } from "@/components/layouts/article";
 import { getPageBySlug } from "@/lib/api-client";
@@ -61,10 +62,12 @@ export default async function PageDetail({ params }: PageProps) {
 			footer={
 				page.allowComment && (
 					<div className="mt-16">
-						<CommentSection
-							refId={page._id}
-							refType="pages"
-						/>
+						<Suspense fallback={<CommentSkeleton />}>
+							<CommentSectionServer
+								refId={page._id}
+								refType="pages"
+							/>
+						</Suspense>
 					</div>
 				)
 			}

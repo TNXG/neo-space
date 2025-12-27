@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
-import { CommentSection } from "@/components/comment";
+import { Suspense } from "react";
+import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
 import { getAdjacentPosts, getPostBySlug, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
-export const revalidate = 60;
+// ISR 配置：永不过期，依赖 Change Stream 主动刷新
+export const revalidate = false;
 
 interface PageProps {
 	params: Promise<{
@@ -105,10 +107,12 @@ export default async function PostPage({ params }: PageProps) {
 						/>
 					)}
 					{post.allowComment && (
-						<CommentSection
-							refId={post._id}
-							refType="posts"
-						/>
+						<Suspense fallback={<CommentSkeleton />}>
+							<CommentSectionServer
+								refId={post._id}
+								refType="posts"
+							/>
+						</Suspense>
 					)}
 				</>
 			)}

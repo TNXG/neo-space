@@ -11,7 +11,8 @@ import { useAuthStore } from "@/lib/stores/auth-store";
  */
 function hasPendingComments(comments: Comment[]): boolean {
 	const checkComment = (comment: Comment): boolean => {
-		if (comment.state === 3) return true; // CommentState.PENDING
+		if (comment.state === 3)
+			return true; // CommentState.PENDING
 		if (comment.children && comment.children.length > 0) {
 			return comment.children.some(checkComment);
 		}
@@ -27,8 +28,18 @@ function hasPendingComments(comments: Comment[]): boolean {
  * 自动刷新策略：
  * - 有待审核评论时，每 5 秒刷新一次
  * - 没有待审核评论时，停止轮询
+ *
+ * @param refId - 关联内容的 ID
+ * @param refType - 关联内容的类型
+ * @param initialData - 服务端传递的初始数据（用于避免 hydration 不匹配）
+ * @param initialData.comments - 初始评论列表
+ * @param initialData.count - 初始评论数量
  */
-export function useComments(refId: string, refType: "posts" | "pages" | "notes") {
+export function useComments(
+	refId: string,
+	refType: "posts" | "pages" | "notes",
+	initialData?: { comments: Comment[]; count: number },
+) {
 	const token = useAuthStore(state => state.token);
 	const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -39,6 +50,7 @@ export function useComments(refId: string, refType: "posts" | "pages" | "notes")
 			return response.data;
 		},
 		{
+			fallbackData: initialData,
 			revalidateOnFocus: false,
 			revalidateOnReconnect: true,
 		},

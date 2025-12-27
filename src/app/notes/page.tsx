@@ -7,7 +7,8 @@ export const metadata: Metadata = {
 	description: "寻找生活中的星之鼓动",
 };
 
-export const dynamic = "force-dynamic";
+// ISR 配置：永不过期，依赖 Change Stream 主动刷新
+export const revalidate = false;
 
 interface PageProps {
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

@@ -4,15 +4,26 @@ import process from "node:process";
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /**
- * Generic API client with error handling
+ * Generic API client with error handling and ISR support
  */
-async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function apiClient<T>(
+	endpoint: string,
+	options?: RequestInit & {
+		tags?: string[];
+		revalidate?: number | false;
+	},
+): Promise<T> {
+	const { tags, revalidate, ...fetchOptions } = options || {};
+
 	const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 		headers: {
 			"Content-Type": "application/json",
 		},
-		cache: "no-store", // Disable caching for real-time data
-		...options,
+		...fetchOptions,
+		next: {
+			tags,
+			revalidate,
+		},
 	});
 
 	if (!response.ok) {
@@ -26,37 +37,58 @@ async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T>
  * Posts API
  */
 export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<Post>> {
-	return apiClient<PaginatedResponse<Post>>(`/posts?page=${page}&size=${size}`);
+	return apiClient<PaginatedResponse<Post>>(`/posts?page=${page}&size=${size}`, {
+		tags: ["posts"],
+		revalidate: false, // 永不过期，依赖 Change Stream 主动刷新
+	});
 }
 
 export async function getPostById(id: string): Promise<ApiResponse<Post>> {
-	return apiClient<ApiResponse<Post>>(`/posts/${id}`);
+	return apiClient<ApiResponse<Post>>(`/posts/${id}`, {
+		tags: ["posts", `post-${id}`],
+		revalidate: false,
+	});
 }
 
 export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
-	return apiClient<ApiResponse<Post>>(`/posts/slug/${slug}`);
+	return apiClient<ApiResponse<Post>>(`/posts/slug/${slug}`, {
+		tags: ["posts", `post-slug-${slug}`],
+		revalidate: false,
+	});
 }
 
 /**
  * Pages API
  */
 export async function getPageBySlug(slug: string): Promise<ApiResponse<Page>> {
-	return apiClient<ApiResponse<Page>>(`/pages/${slug}`);
+	return apiClient<ApiResponse<Page>>(`/pages/${slug}`, {
+		tags: ["pages", `page-${slug}`],
+		revalidate: false,
+	});
 }
 
 /**
  * Notes API
  */
 export async function getNotes(page = 1, size = 10): Promise<PaginatedResponse<Note>> {
-	return apiClient<PaginatedResponse<Note>>(`/notes?page=${page}&size=${size}`);
+	return apiClient<PaginatedResponse<Note>>(`/notes?page=${page}&size=${size}`, {
+		tags: ["notes"],
+		revalidate: false,
+	});
 }
 
 export async function getNoteById(id: string): Promise<ApiResponse<Note>> {
-	return apiClient<ApiResponse<Note>>(`/notes/${id}`);
+	return apiClient<ApiResponse<Note>>(`/notes/${id}`, {
+		tags: ["notes", `note-${id}`],
+		revalidate: false,
+	});
 }
 
 export async function getNoteByNid(nid: number): Promise<ApiResponse<Note>> {
-	return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}`);
+	return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}`, {
+		tags: ["notes", `note-nid-${nid}`],
+		revalidate: false,
+	});
 }
 
 /**
@@ -73,7 +105,10 @@ export interface AdjacentNotes {
 }
 
 export async function getAdjacentNotes(nid: number): Promise<ApiResponse<AdjacentNotes>> {
-	return apiClient<ApiResponse<AdjacentNotes>>(`/notes/nid/${nid}/adjacent`);
+	return apiClient<ApiResponse<AdjacentNotes>>(`/notes/nid/${nid}/adjacent`, {
+		tags: ["notes"],
+		revalidate: false,
+	});
 }
 
 /**
@@ -91,14 +126,20 @@ export interface AdjacentPosts {
 }
 
 export async function getAdjacentPosts(slug: string): Promise<ApiResponse<AdjacentPosts>> {
-	return apiClient<ApiResponse<AdjacentPosts>>(`/posts/slug/${slug}/adjacent`);
+	return apiClient<ApiResponse<AdjacentPosts>>(`/posts/slug/${slug}/adjacent`, {
+		tags: ["posts"],
+		revalidate: false,
+	});
 }
 
 /**
  * Categories API
  */
 export async function getCategories(): Promise<ApiResponse<Category[]>> {
-	return apiClient<ApiResponse<Category[]>>("/categories");
+	return apiClient<ApiResponse<Category[]>>("/categories", {
+		tags: ["categories"],
+		revalidate: false,
+	});
 }
 
 /**
@@ -196,10 +237,12 @@ export async function getComments(
 	if (token) {
 		headers.Authorization = `Bearer ${token}`;
 	}
-	
+
 	return apiClient<ApiResponse<CommentListResponse>>(
 		`/comments?ref_id=${refId}&ref_type=${refType}`,
-		{ headers },
+		{
+			headers,
+		},
 	);
 }
 

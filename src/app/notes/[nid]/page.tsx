@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { CommentSection } from "@/components/comment";
+import { Suspense } from "react";
+import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
 import { getAdjacentNotes, getNoteByNid } from "@/lib/api-client";
@@ -79,10 +80,12 @@ export default async function NotePage({ params }: PageProps) {
 				</>
 			)}
 			footer={note.allowComment && (
-				<CommentSection
-					refId={note._id}
-					refType="notes"
-				/>
+				<Suspense fallback={<CommentSkeleton />}>
+					<CommentSectionServer
+						refId={note._id}
+						refType="notes"
+					/>
+				</Suspense>
 			)}
 			navigation={{
 				type: "note",
