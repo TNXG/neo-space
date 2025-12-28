@@ -20,6 +20,6 @@ use crate::services;
 pub async fn get_site_config(database: &State<Database>) -> Json<ApiResponse<SiteConfig>> {
     match services::get_site_config(database).await {
         Ok(config) => Json(ApiResponse::success(config)),
-        Err(e) => ApiResponse::json_error_with_default(500, format!("Failed to fetch site config: {}", e)),
+        Err(e) => ApiResponse::json_error_with_default(500, format!("Failed to fetch site config: {e}")),
     }
 }

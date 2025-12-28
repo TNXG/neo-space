@@ -3,7 +3,7 @@
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::*;
+use crate::utils::serializers::{serialize_object_id, serialize_datetime, deserialize_flexible_datetime};
 
 /// User model (non-sensitive data only)
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -56,7 +56,7 @@ impl Default for User {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct UserSocialIds {
-    /// GitHub用户名
+    /// `GitHub用户名`
     pub github: Option<String>,
     /// B站用户ID
     pub bilibili: Option<String>,
@@ -91,7 +91,7 @@ pub struct QQUser {
 }
 
 /// Reader model (non-sensitive data only)
-/// This is used for MongoDB storage - keeps native BSON types
+/// This is used for `MongoDB` storage - keeps native BSON types
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Reader {
     /// 读者唯一标识符

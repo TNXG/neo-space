@@ -29,7 +29,7 @@ pub async fn delete_comment(
             "Comment deleted successfully".to_string(),
         ))),
         Err(e) => {
-            eprintln!("Failed to delete comment: {}", e);
+            eprintln!("Failed to delete comment: {e}");
             Err(Status::InternalServerError)
         }
     }

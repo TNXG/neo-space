@@ -41,20 +41,20 @@ impl std::fmt::Display for AuthError {
             AuthError::MissingAuthHeader => write!(f, "缺少认证信息"),
             AuthError::InsufficientPermissions => write!(f, "权限不足"),
             AuthError::UnsupportedProvider(provider) => {
-                write!(f, "不支持的 OAuth 提供商: {}", provider)
+                write!(f, "不支持的 OAuth 提供商: {provider}")
             }
-            AuthError::OAuthFlowFailed(msg) => write!(f, "OAuth 认证失败: {}", msg),
-            AuthError::DatabaseError(msg) => write!(f, "数据库错误: {}", msg),
+            AuthError::OAuthFlowFailed(msg) => write!(f, "OAuth 认证失败: {msg}"),
+            AuthError::DatabaseError(msg) => write!(f, "数据库错误: {msg}"),
             AuthError::UserNotFound => write!(f, "用户不存在"),
             AuthError::AccountAlreadyLinked => write!(f, "该账号已被其他用户绑定"),
-            AuthError::ConfigError(msg) => write!(f, "配置错误: {}", msg),
+            AuthError::ConfigError(msg) => write!(f, "配置错误: {msg}"),
         }
     }
 }
 
 impl std::error::Error for AuthError {}
 
-/// 将 AuthError 转换为 HTTP 响应
+/// 将 `AuthError` 转换为 HTTP 响应
 impl<'r> Responder<'r, 'static> for AuthError {
     fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
         let (status, code, message) = match &self {
@@ -71,7 +71,7 @@ impl<'r> Responder<'r, 'static> for AuthError {
             }
         };
 
-        log::error!("认证错误: {} (HTTP {})", message, code);
+        log::error!("认证错误: {message} (HTTP {code})");
 
         let response = ApiResponse::<()>::error(code, message);
 
@@ -79,7 +79,7 @@ impl<'r> Responder<'r, 'static> for AuthError {
     }
 }
 
-/// 从 JWT 错误转换为 AuthError
+/// 从 JWT 错误转换为 `AuthError`
 impl From<crate::utils::jwt::JwtError> for AuthError {
     fn from(err: crate::utils::jwt::JwtError) -> Self {
         match err {
@@ -91,14 +91,14 @@ impl From<crate::utils::jwt::JwtError> for AuthError {
     }
 }
 
-/// 从配置错误转换为 AuthError
+/// 从配置错误转换为 `AuthError`
 impl From<crate::config::ConfigError> for AuthError {
     fn from(err: crate::config::ConfigError) -> Self {
         AuthError::ConfigError(err.to_string())
     }
 }
 
-/// 从 MongoDB 错误转换为 AuthError
+/// 从 `MongoDB` 错误转换为 `AuthError`
 impl From<mongodb::error::Error> for AuthError {
     fn from(err: mongodb::error::Error) -> Self {
         AuthError::DatabaseError(err.to_string())

@@ -19,12 +19,12 @@ pub async fn oauth_redirect(
     config: &State<OAuthConfig>,
     db: &State<Database>,
 ) -> Result<Redirect, Json<ApiResponse<()>>> {
-    log::info!("OAuth 重定向请求: provider={}", provider);
+    log::info!("OAuth 重定向请求: provider={provider}");
 
     // 1. 获取最新的 OAuth 配置（数据库优先）
     let options_repo = OptionsRepository::new(db);
     let db_oauth_options = options_repo.get_oauth_config().await.map_err(|e| {
-        log::error!("读取数据库配置失败: {}", e);
+        log::error!("读取数据库配置失败: {e}");
         ApiResponse::internal_error("读取配置失败".to_string())
     })?;
 
@@ -54,8 +54,7 @@ pub async fn oauth_redirect(
         }
         _ => {
             return Err(ApiResponse::bad_request(format!(
-                "不支持的提供商: {}",
-                provider
+                "不支持的提供商: {provider}"
             )))
         }
     };
@@ -74,7 +73,7 @@ pub async fn oauth_callback(
     db: &State<Database>,
     cookies: &CookieJar<'_>,
 ) -> Result<Redirect, Json<ApiResponse<()>>> {
-    log::info!("OAuth 回调处理开始: provider={}", provider);
+    log::info!("OAuth 回调处理开始: provider={provider}");
 
     // 1. 获取第三方用户信息并转换为标准 Payload
     let payload_result = match provider {
@@ -112,7 +111,7 @@ pub async fn oauth_callback(
     // 3. 颁发 JWT 令牌
     let token = id_service
         .issue_token(user_id, is_owner)
-        .map_err(|e| ApiResponse::internal_error(e))?;
+        .map_err(ApiResponse::internal_error)?;
 
     // 4. 设置 HttpOnly Cookie（用于后端 API 鉴权）
     let mut cookie = Cookie::new("auth_token", token.clone());
@@ -161,7 +160,7 @@ async fn handle_github_logic(
     let (user, access_token, scope) = github_service
         .oauth_flow(code)
         .await
-        .map_err(|e| ApiResponse::internal_error(format!("GitHub API 调用失败: {}", e)))?;
+        .map_err(|e| ApiResponse::internal_error(format!("GitHub API 调用失败: {e}")))?;
 
     Ok(OAuthUserPayload {
         provider: "github".to_string(),
@@ -185,7 +184,7 @@ async fn handle_qq_logic(
     let (user, openid, access_token) = qq_service
         .oauth_flow(code)
         .await
-        .map_err(|e| ApiResponse::internal_error(format!("QQ API 调用失败: {}", e)))?;
+        .map_err(|e| ApiResponse::internal_error(format!("QQ API 调用失败: {e}")))?;
 
     Ok(OAuthUserPayload {
         provider: "qq".to_string(),

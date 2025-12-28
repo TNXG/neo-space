@@ -1,6 +1,6 @@
 //! Options service - Site configuration queries
 //!
-//! IMPORTANT: This service handles the `options` collection from MongoDB.
+//! IMPORTANT: This service handles the `options` collection from `MongoDB`.
 //! Only specific, safe fields are extracted and exposed via API endpoints.
 //! Sensitive data (API keys, passwords, secrets) are NEVER exposed.
 

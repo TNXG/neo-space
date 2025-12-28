@@ -118,12 +118,12 @@ async fn rocket() -> _ {
     let ip_service = match services::IpService::new(ipv4_db_path.clone(), ipv6_db_path.clone()) {
         Ok(service) => {
             log::info!("IP2Region 服务初始化成功");
-            log::info!("  - IPv4 数据库: {}", ipv4_db_path);
-            log::info!("  - IPv6 数据库: {}", ipv6_db_path);
+            log::info!("  - IPv4 数据库: {ipv4_db_path}");
+            log::info!("  - IPv6 数据库: {ipv6_db_path}");
             Some(service)
         }
         Err(e) => {
-            log::warn!("IP2Region 服务初始化失败: {}", e);
+            log::warn!("IP2Region 服务初始化失败: {e}");
             log::warn!("IP 地理位置查询功能将不可用");
             log::warn!("当前工作目录: {}", current_dir.display());
             log::warn!("请下载数据库文件到以下位置:");
@@ -155,6 +155,10 @@ async fn rocket() -> _ {
     );
     log::info!("友链健康检查服务初始化成功");
 
+    // Initialize verification service
+    let verification_service = services::VerificationService::new();
+    log::info!("验证码服务初始化成功");
+
     // 启动时异步检查所有友链（后台任务）
     {
         let service = link_health_service.clone();
@@ -174,7 +178,7 @@ async fn rocket() -> _ {
         let service = link_health_service.clone();
         let db = database.clone();
         service.start_periodic_check(db, link_health_check_interval);
-        log::info!("友链定期健康检查任务已启动（间隔: {}小时）", link_health_check_interval);
+        log::info!("友链定期健康检查任务已启动（间隔: {link_health_check_interval}小时）");
     }
 
     // Configure CORS for frontend communication
@@ -203,6 +207,7 @@ async fn rocket() -> _ {
         .manage(ip_service)
         .manage(cache_service)
         .manage(link_health_service)
+        .manage(verification_service)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
         .mount(
@@ -229,6 +234,7 @@ async fn rocket() -> _ {
             routes::links::list_links,
             routes::links::get_link,
             routes::links::apply_link,
+            routes::links::send_verification_code,
             // Recentlies (Moments) routes
             routes::recentlies::list_recentlies,
             // Users routes

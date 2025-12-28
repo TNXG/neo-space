@@ -1,4 +1,4 @@
-//! OpenAPI documentation configuration
+//! `OpenAPI` documentation configuration
 
 use utoipa::OpenApi;
 use crate::models::{

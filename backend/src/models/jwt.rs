@@ -4,7 +4,7 @@ use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 /// JWT Claims structure
-/// Only contains user_id (as sub) and is_owner flag
+/// Only contains `user_id` (as sub) and `is_owner` flag
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JwtClaims {
     pub sub: String,  // user_id (ObjectId as hex string)
@@ -31,7 +31,7 @@ impl JwtClaims {
         self.exp < now
     }
 
-    /// Get user_id as ObjectId
+    /// Get `user_id` as `ObjectId`
     pub fn user_id(&self) -> Result<ObjectId, bson::oid::Error> {
         ObjectId::parse_str(&self.sub)
     }

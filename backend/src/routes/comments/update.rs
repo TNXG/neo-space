@@ -42,7 +42,7 @@ pub async fn update_comment(
             }
         }
         Err(e) => {
-            eprintln!("Failed to update comment: {}", e);
+            eprintln!("Failed to update comment: {e}");
             Err(Status::InternalServerError)
         }
     }

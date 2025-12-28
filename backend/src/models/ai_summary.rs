@@ -2,7 +2,7 @@
 
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use crate::utils::serializers::*;
+use crate::utils::serializers::{serialize_object_id, serialize_datetime};
 
 /// AI Summary model
 #[derive(Debug, Serialize, Deserialize, Clone)]

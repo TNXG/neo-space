@@ -1,11 +1,11 @@
 //! Account model for OAuth provider linking
 
-use crate::utils::serializers::*;
+use crate::utils::serializers::{deserialize_flexible_datetime, serialize_object_id, serialize_datetime};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 /// Account model - links OAuth providers to Reader
-/// This is used for MongoDB storage - keeps native BSON types
+/// This is used for `MongoDB` storage - keeps native BSON types
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Account {
     #[serde(rename = "_id")]
@@ -105,7 +105,7 @@ impl Account {
             access_token,
             scope,
             oauth_name: Some(name),
-            oauth_email: email.or_else(|| Some(format!("{}@github.oauth", github_id))),
+            oauth_email: email.or_else(|| Some(format!("{github_id}@github.oauth"))),
             oauth_avatar: Some(avatar),
             oauth_handle: Some(handle),
             created_at: bson::DateTime::now(),
@@ -129,7 +129,7 @@ impl Account {
             access_token,
             scope: None,
             oauth_name: Some(name.clone()),
-            oauth_email: Some(format!("{}@qq.oauth", openid)),
+            oauth_email: Some(format!("{openid}@qq.oauth")),
             oauth_avatar: Some(avatar),
             oauth_handle: Some(crate::models::Reader::generate_handle(&name)),
             created_at: bson::DateTime::now(),

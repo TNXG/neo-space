@@ -4,7 +4,7 @@ use bson::oid::ObjectId;
 use serde::{Serializer, Deserializer, Deserialize};
 use chrono::{DateTime, Utc};
 
-/// Serialize ObjectId as a string
+/// Serialize `ObjectId` as a string
 pub fn serialize_object_id<S>(oid: &ObjectId, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -26,7 +26,7 @@ where
     }
 }
 
-/// Serialize bson::DateTime as ISO 8601 string
+/// Serialize `bson::DateTime` as ISO 8601 string
 pub fn serialize_datetime<S>(dt: &bson::DateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -48,7 +48,7 @@ where
     }
 }
 
-/// Deserialize DateTime flexibly - handles both BSON DateTime and JavaScript Date formats
+/// Deserialize `DateTime` flexibly - handles both BSON `DateTime` and JavaScript Date formats
 /// This is needed because the database may contain dates in different formats
 pub fn deserialize_flexible_datetime<'de, D>(deserializer: D) -> Result<bson::DateTime, D::Error>
 where
@@ -66,7 +66,7 @@ where
         // If it's a string (ISO 8601), parse it
         bson::Bson::String(s) => {
             let chrono_dt = DateTime::parse_from_rfc3339(&s)
-                .map_err(|e| Error::custom(format!("Failed to parse datetime string: {}", e)))?;
+                .map_err(|e| Error::custom(format!("Failed to parse datetime string: {e}")))?;
             Ok(bson::DateTime::from_chrono(chrono_dt.with_timezone(&Utc)))
         }
         
@@ -79,11 +79,11 @@ where
         
         // If it's a 32-bit timestamp (seconds since epoch)
         bson::Bson::Int32(ts) => {
-            let chrono_dt = DateTime::from_timestamp(ts as i64, 0)
+            let chrono_dt = DateTime::from_timestamp(i64::from(ts), 0)
                 .ok_or_else(|| Error::custom("Invalid timestamp"))?;
             Ok(bson::DateTime::from_chrono(chrono_dt))
         }
         
-        _ => Err(Error::custom(format!("Unexpected BSON type for datetime: {:?}", value))),
+        _ => Err(Error::custom(format!("Unexpected BSON type for datetime: {value:?}"))),
     }
 }

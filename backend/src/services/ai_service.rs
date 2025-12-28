@@ -1,6 +1,6 @@
 //! AI Service - 从数据库获取 AI 配置并提供文本生成能力
 //!
-//! 使用 OpenAI 兼容 SDK，支持任意 OpenAI 兼容的 API 端点
+//! 使用 `OpenAI` 兼容 SDK，支持任意 `OpenAI` 兼容的 API 端点
 
 use async_openai::{
     config::OpenAIConfig,
@@ -65,7 +65,7 @@ pub async fn get_ai_config(database: &Database) -> Result<AiConfig, String> {
     let option = collection
         .find_one(doc! { "name": "ai" })
         .await
-        .map_err(|e| format!("Database error: {}", e))?
+        .map_err(|e| format!("Database error: {e}"))?
         .ok_or_else(|| "AI configuration not found".to_string())?;
 
     let doc = option
@@ -73,7 +73,7 @@ pub async fn get_ai_config(database: &Database) -> Result<AiConfig, String> {
         .as_document()
         .ok_or_else(|| "AI options is not a document".to_string())?;
     let ai_options: AiOptionsValue =
-        bson::from_document(doc.clone()).map_err(|e| format!("Failed to parse AI options: {}", e))?;
+        bson::from_document(doc.clone()).map_err(|e| format!("Failed to parse AI options: {e}"))?;
 
     Ok(AiConfig {
         enabled: ai_options.enable_summary,
@@ -138,7 +138,7 @@ impl AiService {
         // 转换消息格式
         let openai_messages: Vec<ChatCompletionRequestMessage> = messages
             .into_iter()
-            .map(|msg| Self::convert_message(msg))
+            .map(Self::convert_message)
             .collect::<Result<Vec<_>, _>>()?;
 
         let mut request_builder = CreateChatCompletionRequestArgs::default();
@@ -155,14 +155,14 @@ impl AiService {
 
         let request = request_builder
             .build()
-            .map_err(|e| format!("Failed to build request: {}", e))?;
+            .map_err(|e| format!("Failed to build request: {e}"))?;
 
         let response = self
             .client
             .chat()
             .create(request)
             .await
-            .map_err(|e| format!("API request failed: {}", e))?;
+            .map_err(|e| format!("API request failed: {e}"))?;
 
         response
             .choices
@@ -178,21 +178,21 @@ impl AiService {
                 let message = ChatCompletionRequestSystemMessageArgs::default()
                     .content(msg.content)
                     .build()
-                    .map_err(|e| format!("Failed to build system message: {}", e))?;
+                    .map_err(|e| format!("Failed to build system message: {e}"))?;
                 Ok(ChatCompletionRequestMessage::System(message))
             }
             ChatRole::User => {
                 let message = ChatCompletionRequestUserMessageArgs::default()
                     .content(msg.content)
                     .build()
-                    .map_err(|e| format!("Failed to build user message: {}", e))?;
+                    .map_err(|e| format!("Failed to build user message: {e}"))?;
                 Ok(ChatCompletionRequestMessage::User(message))
             }
             ChatRole::Assistant => {
                 let message = ChatCompletionRequestAssistantMessageArgs::default()
                     .content(msg.content)
                     .build()
-                    .map_err(|e| format!("Failed to build assistant message: {}", e))?;
+                    .map_err(|e| format!("Failed to build assistant message: {e}"))?;
                 Ok(ChatCompletionRequestMessage::Assistant(message))
             }
         }

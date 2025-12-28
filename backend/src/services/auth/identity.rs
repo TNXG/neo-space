@@ -106,6 +106,6 @@ impl IdentityService {
     }
 
     pub fn issue_token(&self, user_id: ObjectId, is_owner: bool) -> Result<String, String> {
-        generate_jwt(user_id, is_owner, &self.jwt_secret).map_err(|e| format!("{:?}", e))
+        generate_jwt(user_id, is_owner, &self.jwt_secret).map_err(|e| format!("{e:?}"))
     }
 }

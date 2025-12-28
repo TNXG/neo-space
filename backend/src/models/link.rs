@@ -90,6 +90,7 @@ pub struct Link {
     "avatar": "https://example.com/avatar.jpg",
     "description": "这是一个示例博客",
     "email": "example@example.com",
+    "code": "123456",
     "rssurl": "https://example.com/feed.xml",
     "techstack": ["React", "Node.js"]
 }))]
@@ -104,6 +105,8 @@ pub struct LinkApplyRequest {
     pub description: String,
     /// 联系邮箱
     pub email: String,
+    /// 验证码
+    pub code: String,
     /// RSS订阅地址
     pub rssurl: Option<String>,
     /// 技术栈

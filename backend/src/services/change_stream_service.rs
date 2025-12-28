@@ -1,4 +1,4 @@
-//! Change Stream service - MongoDB Change Stream listener with auto-reconnect
+//! Change Stream service - `MongoDB` Change Stream listener with auto-reconnect
 
 use mongodb::{
     bson::{doc, Document},
@@ -40,11 +40,11 @@ impl ChangeStreamService {
 
         loop {
             match self.watch_collections().await {
-                Ok(_) => {
+                Ok(()) => {
                     log::warn!("Change Stream 正常结束，准备重新连接...");
                 }
                 Err(e) => {
-                    log::error!("Change Stream 错误: {:?}", e);
+                    log::error!("Change Stream 错误: {e:?}");
                     log::info!("5秒后尝试重新连接...");
                 }
             }
@@ -98,9 +98,7 @@ impl ChangeStreamService {
             .unwrap_or("unknown");
 
         log::info!(
-            "检测到数据变更 - 集合: {}, 操作: {}",
-            collection_name,
-            operation_type
+            "检测到数据变更 - 集合: {collection_name}, 操作: {operation_type}"
         );
 
         // 根据集合类型处理缓存失效
@@ -118,7 +116,7 @@ impl ChangeStreamService {
                 self.handle_category_change().await;
             }
             _ => {
-                log::debug!("忽略集合: {}", collection_name);
+                log::debug!("忽略集合: {collection_name}");
             }
         }
     }
@@ -155,7 +153,7 @@ impl ChangeStreamService {
             self.cache_service
                 .invalidate(&CacheKey::Post(id.clone()))
                 .await;
-            log::info!("已清除博文本地缓存: {}", id);
+            log::info!("已清除博文本地缓存: {id}");
         }
 
         // 2. 通知 Next.js 重新验证（细粒度刷新）
@@ -163,7 +161,7 @@ impl ChangeStreamService {
 
         // 刷新具体文章（按 ID）
         if let Some(ref id) = post_id {
-            let tag = format!("post-{}", id);
+            let tag = format!("post-{id}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
@@ -171,7 +169,7 @@ impl ChangeStreamService {
 
         // 刷新具体文章（按 slug）
         if let Some(ref slug) = post_slug {
-            let tag = format!("post-slug-{}", slug);
+            let tag = format!("post-slug-{slug}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
@@ -193,14 +191,12 @@ impl ChangeStreamService {
             self.cache_service.invalidate_by_prefix("posts").await;
 
             log::info!(
-                "✓ 博文数量变化 ({}) - 已刷新列表页和首页",
-                operation_type
+                "✓ 博文数量变化 ({operation_type}) - 已刷新列表页和首页"
             );
         }
 
         log::info!(
-            "✓ 博文缓存已刷新 - id: {:?}, slug: {:?}, tags: {:?}",
-            post_id, post_slug, revalidated_tags
+            "✓ 博文缓存已刷新 - id: {post_id:?}, slug: {post_slug:?}, tags: {revalidated_tags:?}"
         );
     }
 
@@ -236,7 +232,7 @@ impl ChangeStreamService {
             self.cache_service
                 .invalidate(&CacheKey::Note(id.clone()))
                 .await;
-            log::info!("已清除手记本地缓存: {}", id);
+            log::info!("已清除手记本地缓存: {id}");
         }
 
         // 2. 通知 Next.js 重新验证（细粒度刷新）
@@ -244,7 +240,7 @@ impl ChangeStreamService {
 
         // 刷新具体手记（按 ID）
         if let Some(ref id) = note_id {
-            let tag = format!("note-{}", id);
+            let tag = format!("note-{id}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
@@ -252,7 +248,7 @@ impl ChangeStreamService {
 
         // 刷新具体手记（按 nid）
         if let Some(nid) = note_nid {
-            let tag = format!("note-nid-{}", nid);
+            let tag = format!("note-nid-{nid}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
@@ -274,14 +270,12 @@ impl ChangeStreamService {
             self.cache_service.invalidate_by_prefix("notes").await;
 
             log::info!(
-                "✓ 手记数量变化 ({}) - 已刷新列表页和首页",
-                operation_type
+                "✓ 手记数量变化 ({operation_type}) - 已刷新列表页和首页"
             );
         }
 
         log::info!(
-            "✓ 手记缓存已刷新 - id: {:?}, nid: {:?}, tags: {:?}",
-            note_id, note_nid, revalidated_tags
+            "✓ 手记缓存已刷新 - id: {note_id:?}, nid: {note_nid:?}, tags: {revalidated_tags:?}"
         );
     }
 
@@ -292,29 +286,28 @@ impl ChangeStreamService {
             .full_document
             .as_ref()
             .and_then(|doc| doc.get_str("slug").ok())
-            .map(|s| s.to_string());
+            .map(std::string::ToString::to_string);
 
         // 1. 清除本地缓存（仅清除具体页面）
         if let Some(ref slug) = page_slug {
             self.cache_service
                 .invalidate(&CacheKey::Page(slug.clone()))
                 .await;
-            log::info!("已清除页面本地缓存: {}", slug);
+            log::info!("已清除页面本地缓存: {slug}");
         }
 
         // 2. 通知 Next.js 重新验证（仅刷新具体页面，不刷新整个 pages 标签）
         let mut revalidated_tags = Vec::new();
 
         if let Some(ref slug) = page_slug {
-            let tag = format!("page-{}", slug);
+            let tag = format!("page-{slug}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
         }
 
         log::info!(
-            "✓ 页面缓存已刷新 - slug: {:?}, tags: {:?}",
-            page_slug, revalidated_tags
+            "✓ 页面缓存已刷新 - slug: {page_slug:?}, tags: {revalidated_tags:?}"
         );
     }
 
@@ -336,7 +329,7 @@ impl ChangeStreamService {
             .revalidate_tag("categories")
             .await
         {
-            log::error!("通知 Next.js 重新验证失败: {:?}", e);
+            log::error!("通知 Next.js 重新验证失败: {e:?}");
         } else {
             log::info!("✓ 已通知 Next.js 重新验证分类页面");
         }

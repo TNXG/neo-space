@@ -10,7 +10,7 @@ use crate::guards::OwnerGuard;
 
 /**
  * PATCH /api/comments/<id>/hide
- * 隐藏评论（仅管理员）- 使用 is_whispers 字段
+ * 隐藏评论（仅管理员）- 使用 `is_whispers` 字段
  */
 #[patch("/<id>/hide")]
 pub async fn hide_comment(
@@ -37,7 +37,7 @@ pub async fn hide_comment(
             "Comment hidden successfully".to_string(),
         ))),
         Err(e) => {
-            eprintln!("Failed to hide comment: {}", e);
+            eprintln!("Failed to hide comment: {e}");
             Err(Status::InternalServerError)
         }
     }
@@ -45,7 +45,7 @@ pub async fn hide_comment(
 
 /**
  * DELETE /api/comments/<id>/hide
- * 取消隐藏评论（仅管理员）- 使用 is_whispers 字段
+ * 取消隐藏评论（仅管理员）- 使用 `is_whispers` 字段
  */
 #[delete("/<id>/hide")]
 pub async fn unhide_comment(
@@ -72,7 +72,7 @@ pub async fn unhide_comment(
             "Comment unhidden successfully".to_string(),
         ))),
         Err(e) => {
-            eprintln!("Failed to unhide comment: {}", e);
+            eprintln!("Failed to unhide comment: {e}");
             Err(Status::InternalServerError)
         }
     }
@@ -107,7 +107,7 @@ pub async fn pin_comment(
             "Comment pinned successfully".to_string(),
         ))),
         Err(e) => {
-            eprintln!("Failed to pin comment: {}", e);
+            eprintln!("Failed to pin comment: {e}");
             Err(Status::InternalServerError)
         }
     }
@@ -142,7 +142,7 @@ pub async fn unpin_comment(
             "Comment unpinned successfully".to_string(),
         ))),
         Err(e) => {
-            eprintln!("Failed to unpin comment: {}", e);
+            eprintln!("Failed to unpin comment: {e}");
             Err(Status::InternalServerError)
         }
     }

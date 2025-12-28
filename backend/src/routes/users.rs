@@ -42,11 +42,11 @@ pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<Us
         Ok(Some(doc)) => {
             match mongodb::bson::from_document::<User>(doc) {
                 Ok(user) => Json(ApiResponse::success(user)),
-                Err(e) => ApiResponse::json_error_with_default(500, format!("解析用户数据失败: {}", e)),
+                Err(e) => ApiResponse::json_error_with_default(500, format!("解析用户数据失败: {e}")),
             }
         }
         Ok(None) => ApiResponse::json_error_with_default(404, "未找到用户".to_string()),
-        Err(e) => ApiResponse::json_error_with_default(500, format!("获取用户资料失败: {}", e)),
+        Err(e) => ApiResponse::json_error_with_default(500, format!("获取用户资料失败: {e}")),
     }
 }
 
@@ -66,7 +66,7 @@ pub async fn list_readers(database: &State<Database>) -> Json<ApiResponse<Vec<Re
     
     match repo.get_all().await {
         Ok(readers) => Json(ApiResponse::success(readers)),
-        Err(e) => ApiResponse::json_error_with_default(500, format!("获取 readers 失败: {}", e)),
+        Err(e) => ApiResponse::json_error_with_default(500, format!("获取 readers 失败: {e}")),
     }
 }
 
@@ -99,6 +99,6 @@ pub async fn get_reader_by_id(id: String, database: &State<Database>) -> Json<Ap
     match repo.find_by_id(object_id).await {
         Ok(Some(reader)) => Json(ApiResponse::success(reader)),
         Ok(None) => ApiResponse::json_error_with_default(404, "未找到 Reader".to_string()),
-        Err(e) => ApiResponse::json_error_with_default(500, format!("获取 reader 失败: {}", e)),
+        Err(e) => ApiResponse::json_error_with_default(500, format!("获取 reader 失败: {e}")),
     }
 }

@@ -21,35 +21,29 @@ impl<'r> FromRequest<'r> for AuthGuard {
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         // 1. 从 Authorization header 获取 JWT token
-        let token = match req.headers().get_one("Authorization") {
-            Some(auth) => {
-                if auth.starts_with("Bearer ") {
-                    &auth[7..]
-                } else {
-                    log::warn!("Authorization header 格式错误，缺少 Bearer 前缀");
-                    return Outcome::Error((Status::Unauthorized, ()));
-                }
-            }
-            None => {
-                log::warn!("缺少 Authorization header");
+        let token = if let Some(auth) = req.headers().get_one("Authorization") {
+            if auth.starts_with("Bearer ") {
+                &auth[7..]
+            } else {
+                log::warn!("Authorization header 格式错误，缺少 Bearer 前缀");
                 return Outcome::Error((Status::Unauthorized, ()));
             }
+        } else {
+            log::warn!("缺少 Authorization header");
+            return Outcome::Error((Status::Unauthorized, ()));
         };
 
         // 2. 获取配置
-        let config = match req.guard::<&State<OAuthConfig>>().await {
-            Outcome::Success(config) => config,
-            _ => {
-                log::error!("无法获取 OAuthConfig");
-                return Outcome::Error((Status::InternalServerError, ()));
-            }
+        let config = if let Outcome::Success(config) = req.guard::<&State<OAuthConfig>>().await { config } else {
+            log::error!("无法获取 OAuthConfig");
+            return Outcome::Error((Status::InternalServerError, ()));
         };
 
         // 3. 验证 JWT token
         let claims = match verify_jwt(token, &config.jwt_secret) {
             Ok(claims) => claims,
             Err(e) => {
-                log::warn!("JWT 验证失败: {:?}", e);
+                log::warn!("JWT 验证失败: {e:?}");
                 return Outcome::Error((Status::Unauthorized, ()));
             }
         };
@@ -64,7 +58,7 @@ impl<'r> FromRequest<'r> for AuthGuard {
         let user_id = match claims.user_id() {
             Ok(id) => id,
             Err(e) => {
-                log::error!("解析 user_id 失败: {:?}", e);
+                log::error!("解析 user_id 失败: {e:?}");
                 return Outcome::Error((Status::Unauthorized, ()));
             }
         };
@@ -145,10 +139,7 @@ impl<'r> FromRequest<'r> for OptionalAuthGuard {
         }
 
         // 5. 解析 user_id
-        let user_id = match claims.user_id() {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        };
+        let user_id = claims.user_id().ok();
 
         Outcome::Success(OptionalAuthGuard {
             user_id,

@@ -98,7 +98,7 @@ impl SpamDetector {
         author: &str,
         email: &str,
     ) {
-        log::info!("开始异步审核评论: {}", comment_id);
+        log::info!("开始异步审核评论: {comment_id}");
         
         // 执行垃圾检测
         let result = Self::check(db, text, author, email).await;
@@ -113,7 +113,7 @@ impl SpamDetector {
             );
             CommentState::SPAM
         } else {
-            log::info!("异步审核: 评论 {} 审核通过", comment_id);
+            log::info!("异步审核: 评论 {comment_id} 审核通过");
             CommentState::UNREAD
         };
         
@@ -126,7 +126,7 @@ impl SpamDetector {
             )
             .await
         {
-            log::error!("更新评论状态失败: {} - {}", comment_id, e);
+            log::error!("更新评论状态失败: {comment_id} - {e}");
         }
     }
 
@@ -150,7 +150,7 @@ impl SpamDetector {
         let comment_options = match Self::get_comment_options(db).await {
             Ok(opts) => opts,
             Err(e) => {
-                log::error!("获取评论配置失败: {}", e);
+                log::error!("获取评论配置失败: {e}");
                 return Self::pass_result();
             }
         };
@@ -165,7 +165,7 @@ impl SpamDetector {
         let ai_service = match AiService::from_database(db).await {
             Ok(service) => service,
             Err(e) => {
-                log::error!("创建 AI 服务失败: {}", e);
+                log::error!("创建 AI 服务失败: {e}");
                 return Self::pass_result();
             }
         };
@@ -214,8 +214,7 @@ impl SpamDetector {
 只返回 JSON，不要有其他内容。"#;
 
         let user_prompt = format!(
-            "请检测以下评论是否为垃圾内容：\n\n作者：{}\n邮箱：{}\n内容：{}",
-            author, email, text
+            "请检测以下评论是否为垃圾内容：\n\n作者：{author}\n邮箱：{email}\n内容：{text}"
         );
 
         let messages = vec![
@@ -231,11 +230,11 @@ impl SpamDetector {
 
         match ai_service.chat(messages, Some(0.3), None).await {
             Ok(response) => {
-                log::debug!("AI 二分法响应: {}", response);
+                log::debug!("AI 二分法响应: {response}");
                 Self::parse_binary_response(&response)
             }
             Err(e) => {
-                log::error!("AI 检测失败: {}", e);
+                log::error!("AI 检测失败: {e}");
                 Self::pass_result()
             }
         }
@@ -273,13 +272,11 @@ impl SpamDetector {
   "reason": "评分理由"
 }}
 
-只返回 JSON，不要有其他内容。当前阈值为 {}，评分 >= {} 将被拦截。"#,
-            threshold, threshold
+只返回 JSON，不要有其他内容。当前阈值为 {threshold}，评分 >= {threshold} 将被拦截。"#
         );
 
         let user_prompt = format!(
-            "请对以下评论进行垃圾程度评分（0-10）：\n\n作者：{}\n邮箱：{}\n内容：{}",
-            author, email, text
+            "请对以下评论进行垃圾程度评分（0-10）：\n\n作者：{author}\n邮箱：{email}\n内容：{text}"
         );
 
         let messages = vec![
@@ -295,11 +292,11 @@ impl SpamDetector {
 
         match ai_service.chat(messages, Some(0.3), None).await {
             Ok(response) => {
-                log::debug!("AI 评分法响应: {}", response);
+                log::debug!("AI 评分法响应: {response}");
                 Self::parse_score_response(&response, threshold)
             }
             Err(e) => {
-                log::error!("AI 检测失败: {}", e);
+                log::error!("AI 检测失败: {e}");
                 Self::pass_result()
             }
         }
@@ -310,7 +307,7 @@ impl SpamDetector {
         // 尝试提取 JSON
         let json_str = Self::extract_json(response);
         
-        log::debug!("提取的 JSON: {}", json_str);
+        log::debug!("提取的 JSON: {json_str}");
         
         match serde_json::from_str::<BinaryResponse>(&json_str) {
             Ok(result) => SpamCheckResult {
@@ -319,7 +316,7 @@ impl SpamDetector {
                 reason: Some(result.reason),
             },
             Err(e) => {
-                log::error!("解析 AI 响应失败: {}，原始响应: {}，提取的 JSON: {}", e, response, json_str);
+                log::error!("解析 AI 响应失败: {e}，原始响应: {response}，提取的 JSON: {json_str}");
                 Self::pass_result()
             }
         }
@@ -334,7 +331,7 @@ impl SpamDetector {
             Ok(result) => {
                 let score = result.score.min(10); // 确保不超过 10
                 let is_spam = score >= threshold;
-                let confidence = score as f32 / 10.0;
+                let confidence = f32::from(score) / 10.0;
                 
                 SpamCheckResult {
                     is_spam,
@@ -343,7 +340,7 @@ impl SpamDetector {
                 }
             }
             Err(e) => {
-                log::error!("解析 AI 响应失败: {}，原始响应: {}", e, response);
+                log::error!("解析 AI 响应失败: {e}，原始响应: {response}");
                 Self::pass_result()
             }
         }
@@ -364,8 +361,7 @@ impl SpamDetector {
             // 找到第一个换行符后的内容
             let after_first_line = response
                 .find('\n')
-                .map(|i| &response[i + 1..])
-                .unwrap_or(response);
+                .map_or(response, |i| &response[i + 1..]);
             
             // 移除结尾的 ```
             let without_end = if after_first_line.ends_with("```") {
@@ -457,7 +453,7 @@ impl SpamDetector {
         let option = collection
             .find_one(doc! { "name": "commentOptions" })
             .await
-            .map_err(|e| format!("数据库错误: {}", e))?
+            .map_err(|e| format!("数据库错误: {e}"))?
             .ok_or_else(|| "评论配置不存在".to_string())?;
 
         let doc = option
@@ -466,7 +462,7 @@ impl SpamDetector {
             .ok_or_else(|| "评论配置不是文档类型".to_string())?;
 
         let comment_options: CommentOptions = bson::from_document(doc.clone())
-            .map_err(|e| format!("解析评论配置失败: {}", e))?;
+            .map_err(|e| format!("解析评论配置失败: {e}"))?;
 
         Ok(comment_options)
     }

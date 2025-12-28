@@ -26,11 +26,11 @@ impl CacheKey {
     /// 转换为字符串键
     pub fn to_string(&self) -> String {
         match self {
-            CacheKey::Post(id) => format!("post:{}", id),
-            CacheKey::PostList { page, size } => format!("posts:page:{}:size:{}", page, size),
-            CacheKey::Note(id) => format!("note:{}", id),
-            CacheKey::NoteList { page, size } => format!("notes:page:{}:size:{}", page, size),
-            CacheKey::Page(slug) => format!("page:{}", slug),
+            CacheKey::Post(id) => format!("post:{id}"),
+            CacheKey::PostList { page, size } => format!("posts:page:{page}:size:{size}"),
+            CacheKey::Note(id) => format!("note:{id}"),
+            CacheKey::NoteList { page, size } => format!("notes:page:{page}:size:{size}"),
+            CacheKey::Page(slug) => format!("page:{slug}"),
             CacheKey::Categories => "categories".to_string(),
         }
     }
@@ -55,9 +55,7 @@ impl CacheService {
             .build();
 
         log::info!(
-            "缓存服务初始化完成 - 容量: {}, TTL: {}秒",
-            max_capacity,
-            ttl_seconds
+            "缓存服务初始化完成 - 容量: {max_capacity}, TTL: {ttl_seconds}秒"
         );
 
         Self {
@@ -71,9 +69,9 @@ impl CacheService {
         let value = self.cache.get(&key_str).await;
         
         if value.is_some() {
-            log::info!("[Cache] ✓ 命中缓存: {}", key_str);
+            log::info!("[Cache] ✓ 命中缓存: {key_str}");
         } else {
-            log::debug!("[Cache] 未命中: {}", key_str);
+            log::debug!("[Cache] 未命中: {key_str}");
         }
         
         value
@@ -84,19 +82,19 @@ impl CacheService {
         let key_str = key.to_string();
         let size = value.len();
         self.cache.insert(key_str.clone(), value).await;
-        log::info!("[Cache] 写入缓存: {} ({} bytes)", key_str, size);
+        log::info!("[Cache] 写入缓存: {key_str} ({size} bytes)");
     }
 
     /// 删除单个缓存键
     pub async fn invalidate(&self, key: &CacheKey) {
         let key_str = key.to_string();
-        log::info!("清除缓存: {}", key_str);
+        log::info!("清除缓存: {key_str}");
         self.cache.invalidate(&key_str).await;
     }
 
     /// 批量删除缓存（通过前缀匹配）
     pub async fn invalidate_by_prefix(&self, prefix: &str) {
-        log::info!("批量清除缓存 (前缀: {})", prefix);
+        log::info!("批量清除缓存 (前缀: {prefix})");
         
         // 遍历所有键并删除匹配的
         self.cache.run_pending_tasks().await;
@@ -106,7 +104,7 @@ impl CacheService {
         // 在生产环境中，建议维护一个键的索引来实现精确的前缀删除
         if prefix == "posts" || prefix == "notes" || prefix == "pages" {
             self.cache.invalidate_all();
-            log::warn!("执行全局缓存清除 (前缀: {})", prefix);
+            log::warn!("执行全局缓存清除 (前缀: {prefix})");
         }
     }
 

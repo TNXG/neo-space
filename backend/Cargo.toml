@@ -10,6 +10,21 @@ codegen-units = 1
 panic = "abort"
 strip = true
 
+[lints.clippy]
+# 1. 基础与启发式建议
+all = "warn"
+pedantic = "warn"
+perf = "warn"
+
+# 禁止显式 panic!
+panic = "forbid"
+# 禁止使用 .unwrap()，强制处理 Result/Option
+unwrap_used = "forbid"
+# 禁止使用 .expect()
+expect_used = "forbid"
+# 禁止使用 arr[i] 这种索引访问，强制使用 .get(i) 以防越界崩溃
+indexing_slicing = "forbid"
+
 [dependencies]
 # Rocket: 仅保留 JSON 功能
 rocket = { version = "0.5.1", default-features = false, features = [ "json" ] }
@@ -93,4 +108,12 @@ utoipa = { version = "5.2.0", features = [
 utoipa-swagger-ui = { version = "9.0.2", features = [
   "rocket",
   "vendored"
+] }
+
+# Email
+lettre = { version = "0.11", default-features = false, features = [
+  "tokio1-rustls-tls",
+  "smtp-transport",
+  "builder",
+  "hostname"
 ] }

@@ -39,7 +39,7 @@ pub async fn create_comment(
     let ip_address = client_ip.0;
     let location = ip_service.as_ref().and_then(|service| service.search_simple(&ip_address));
     
-    log::info!("收到评论请求 - IP: {}, 位置: {:?}", ip_address, location);
+    log::info!("收到评论请求 - IP: {ip_address}, 位置: {location:?}");
 
     // 确定作者信息和头像
     let (author, mail, avatar_url, source, _reader_id) = if let Some(user_id) = auth.user_id {
@@ -49,10 +49,10 @@ pub async fn create_comment(
                 let author = request.author.clone().unwrap_or(reader.name.clone());
                 let mail = request.mail.clone().unwrap_or(reader.email.clone());
                 // 优先使用 Reader 的头像，否则根据邮箱生成
-                let avatar = if !reader.image.is_empty() {
-                    reader.image.clone()
-                } else {
+                let avatar = if reader.image.is_empty() {
                     CommentService::generate_avatar_url(&mail)
+                } else {
+                    reader.image.clone()
                 };
                 
                 // 查询用户绑定的 OAuth 提供商，确定 source
@@ -71,7 +71,7 @@ pub async fn create_comment(
                         }
                     }
                     Err(e) => {
-                        log::warn!("查询用户 OAuth 账号失败: {}", e);
+                        log::warn!("查询用户 OAuth 账号失败: {e}");
                         Some("oauth".to_string())
                     }
                 };
@@ -79,11 +79,11 @@ pub async fn create_comment(
                 (author, mail, avatar, source, Some(user_id))
             }
             Ok(None) => {
-                log::warn!("用户 {} 不存在", user_id);
+                log::warn!("用户 {user_id} 不存在");
                 return Ok(ApiResponse::json_error_with_default(401, "用户不存在".to_string()));
             }
             Err(e) => {
-                log::error!("查询用户失败: {}", e);
+                log::error!("查询用户失败: {e}");
                 return Err(Status::InternalServerError);
             }
         }
@@ -118,8 +118,8 @@ pub async fn create_comment(
                 return Ok(ApiResponse::json_error_with_default(400, "人机验证失败，请重试".to_string()));
             }
             Err(e) => {
-                log::error!("Turnstile 验证错误: {}", e);
-                return Ok(ApiResponse::json_error_with_default(500, format!("验证服务异常: {}", e)));
+                log::error!("Turnstile 验证错误: {e}");
+                return Ok(ApiResponse::json_error_with_default(500, format!("验证服务异常: {e}")));
             }
         }
 
@@ -127,7 +127,7 @@ pub async fn create_comment(
         let reader_id = match reader_repo.find_or_create_anonymous(&author, &mail).await {
             Ok(id) => id,
             Err(e) => {
-                log::error!("创建匿名 Reader 失败: {}", e);
+                log::error!("创建匿名 Reader 失败: {e}");
                 return Err(Status::InternalServerError);
             }
         };
@@ -151,10 +151,7 @@ pub async fn create_comment(
 
     // 解析 parent ObjectId（如果有）
     let parent_oid = if let Some(parent_str) = &request.parent {
-        match ObjectId::from_str(parent_str) {
-            Ok(oid) => Some(oid),
-            Err(_) => None,
-        }
+        ObjectId::from_str(parent_str).ok()
     } else {
         None
     };
@@ -166,7 +163,7 @@ pub async fn create_comment(
     {
         Ok(key) => key,
         Err(e) => {
-            eprintln!("Failed to generate comment key: {}", e);
+            eprintln!("Failed to generate comment key: {e}");
             return Err(Status::InternalServerError);
         }
     };
@@ -178,7 +175,7 @@ pub async fn create_comment(
     {
         Ok(index) => index,
         Err(e) => {
-            eprintln!("Failed to get comment index: {}", e);
+            eprintln!("Failed to get comment index: {e}");
             return Err(Status::InternalServerError);
         }
     };
@@ -219,12 +216,9 @@ pub async fn create_comment(
     match collection.insert_one(&comment).await {
         Ok(result) => {
             let mut created_comment = comment.clone();
-            let comment_id = match result.inserted_id.as_object_id() {
-                Some(id) => id,
-                None => {
-                    log::error!("Failed to get ObjectId from insert result");
-                    return Err(Status::InternalServerError);
-                }
+            let comment_id = if let Some(id) = result.inserted_id.as_object_id() { id } else {
+                log::error!("Failed to get ObjectId from insert result");
+                return Err(Status::InternalServerError);
             };
             created_comment.id = Some(comment_id);
 
@@ -254,7 +248,7 @@ pub async fn create_comment(
                     .await;
                 });
 
-                log::info!("评论 {} 已创建，异步审核任务已启动", comment_id);
+                log::info!("评论 {comment_id} 已创建，异步审核任务已启动");
             }
 
             Ok(Json(ApiResponse::success_with_message(
@@ -267,7 +261,7 @@ pub async fn create_comment(
             )))
         }
         Err(e) => {
-            eprintln!("Failed to create comment: {}", e);
+            eprintln!("Failed to create comment: {e}");
             Err(Status::InternalServerError)
         }
     }

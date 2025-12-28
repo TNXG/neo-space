@@ -65,7 +65,7 @@ pub struct OptionsRepository {
 }
 
 impl OptionsRepository {
-    /// 创建新的 OptionsRepository
+    /// 创建新的 `OptionsRepository`
     pub fn new(db: &Database) -> Self {
         Self { db: db.clone() }
     }

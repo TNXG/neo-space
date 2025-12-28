@@ -17,8 +17,8 @@ pub enum JwtError {
 impl std::fmt::Display for JwtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            JwtError::TokenGenerationFailed(msg) => write!(f, "Token generation failed: {}", msg),
-            JwtError::TokenVerificationFailed(msg) => write!(f, "Token verification failed: {}", msg),
+            JwtError::TokenGenerationFailed(msg) => write!(f, "Token generation failed: {msg}"),
+            JwtError::TokenVerificationFailed(msg) => write!(f, "Token verification failed: {msg}"),
             JwtError::InvalidToken => write!(f, "Invalid token"),
             JwtError::TokenExpired => write!(f, "Token expired"),
         }
@@ -30,7 +30,7 @@ impl std::error::Error for JwtError {}
 /// Generate a JWT token for a user
 /// 
 /// # Arguments
-/// * `user_id` - The user's ObjectId
+/// * `user_id` - The user's `ObjectId`
 /// * `is_owner` - Whether the user is an owner
 /// * `secret` - The JWT secret key
 /// 

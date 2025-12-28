@@ -5,8 +5,16 @@ use futures::stream::TryStreamExt;
 use log::error;
 
 use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, Pagination};
-use crate::services::LinkHealthService;
+use crate::services::{LinkHealthService, VerificationService};
 use crate::services::link_health_service::LinkWithHealth;
+use crate::services::email_service;
+
+/// 发送验证码请求
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+pub struct SendCodeRequest {
+    /// 邮箱地址
+    pub email: String,
+}
 
 /// List approved friend links with pagination (含健康状态)
 #[utoipa::path(
@@ -50,19 +58,19 @@ pub async fn list_links(
 
     let total = collection.count_documents(filter.clone()).await
         .map_err(|e| {
-            error!("Failed to count links: {:?}", e);
+            error!("Failed to count links: {e:?}");
             Status::InternalServerError
         })?;
 
     let mut cursor = collection.find(filter).with_options(find_options).await
         .map_err(|e| {
-            error!("Failed to find links: {:?}", e);
+            error!("Failed to find links: {e:?}");
             Status::InternalServerError
         })?;
 
     let mut links = Vec::new();
     while let Some(link) = cursor.try_next().await.map_err(|e| {
-        error!("Failed to deserialize link: {:?}", e);
+        error!("Failed to deserialize link: {e:?}");
         Status::InternalServerError
     })? {
         links.push(link);
@@ -126,6 +134,7 @@ pub async fn get_link(
     request_body = LinkApplyRequest,
     responses(
         (status = 200, description = "友链申请成功", body = ApiResponse<Link>),
+        (status = 400, description = "验证码错误或已过期"),
         (status = 409, description = "URL已存在"),
         (status = 500, description = "服务器内部错误")
     ),
@@ -134,11 +143,24 @@ pub async fn get_link(
 #[post("/links/apply", data = "<request>")]
 pub async fn apply_link(
     db: &State<Database>,
+    verification_service: &State<VerificationService>,
     request: Json<LinkApplyRequest>,
 ) -> Result<Json<ApiResponse<Link>>, Status> {
+    // 1. 验证验证码
+    match verification_service
+        .verify_code(&request.email, &request.code)
+        .await
+    {
+        Ok(()) => {}
+        Err(e) => {
+            log::warn!("验证码验证失败: {e}");
+            return Err(Status::BadRequest);
+        }
+    }
+
     let collection = db.collection::<Link>("links");
 
-    // 检查 URL 是否已存在
+    // 2. 检查 URL 是否已存在
     let existing = collection
         .find_one(doc! { "url": &request.url })
         .await
@@ -148,6 +170,7 @@ pub async fn apply_link(
         return Err(Status::Conflict);
     }
 
+    // 3. 创建友链
     let new_link = Link {
         id: ObjectId::new(),
         name: request.name.clone(),
@@ -175,4 +198,55 @@ pub async fn apply_link(
 pub struct LinkWithHealthResponse {
     pub items: Vec<LinkWithHealth>,
     pub pagination: Pagination,
+}
+
+/// Send verification code to email
+#[utoipa::path(
+    post,
+    path = "/api/links/send-code",
+    request_body = SendCodeRequest,
+    responses(
+        (status = 200, description = "验证码发送成功", body = ApiResponse<String>),
+        (status = 429, description = "发送过于频繁，请稍后再试"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "友链管理"
+)]
+#[post("/links/send-code", data = "<request>")]
+pub async fn send_verification_code(
+    db: &State<Database>,
+    verification_service: &State<VerificationService>,
+    request: Json<SendCodeRequest>,
+) -> Result<Json<ApiResponse<String>>, Status> {
+    // 检查是否已有验证码（防止频繁发送）
+    if verification_service.has_code(&request.email).await {
+        return Err(Status::TooManyRequests);
+    }
+
+    // 生成验证码
+    let code = verification_service.send_code(&request.email).await;
+
+    // 获取站点名称
+    let site_name = match crate::services::options_service::get_site_config(db).await {
+        Ok(config) => {
+            if config.seo.title.is_empty() {
+                "Neo Space".to_string()
+            } else {
+                config.seo.title
+            }
+        }
+        Err(_) => "Neo Space".to_string(),
+    };
+
+    // 发送邮件
+    match email_service::send_verification_email(db, &request.email, &code, &site_name).await {
+        Ok(()) => {
+            log::info!("验证码已发送到: {}", request.email);
+            Ok(Json(ApiResponse::success("验证码已发送".to_string())))
+        }
+        Err(e) => {
+            log::error!("发送验证码失败: {e:?}");
+            Err(Status::InternalServerError)
+        }
+    }
 }

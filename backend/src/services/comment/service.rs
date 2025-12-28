@@ -28,7 +28,7 @@ impl CommentService {
     pub fn generate_avatar_url(email: &str) -> String {
         let trimmed = email.trim().to_lowercase();
         let hash = format!("{:x}", md5::compute(trimmed.as_bytes()));
-        format!("https://cravatar.cn/avatar/{}", hash)
+        format!("https://cravatar.cn/avatar/{hash}")
     }
 
     /// 构建评论查询过滤器，根据用户权限过滤可见评论
@@ -94,16 +94,15 @@ impl CommentService {
                 };
                 
                 return Ok(filter);
-            } else {
-                // 用户不存在，只显示正常状态的公开评论
-                log::debug!("用户不存在，只显示正常状态的公开评论");
-                return Ok(doc! {
-                    "ref": ref_oid,
-                    "refType": ref_type,
-                    "state": { "$in": [0, 1] },
-                    "isWhispers": false,
-                });
             }
+            // 用户不存在，只显示正常状态的公开评论
+            log::debug!("用户不存在，只显示正常状态的公开评论");
+            return Ok(doc! {
+                "ref": ref_oid,
+                "refType": ref_type,
+                "state": { "$in": [0, 1] },
+                "isWhispers": false,
+            });
         }
 
         // 匿名用户：只能看到正常状态的公开评论
@@ -157,7 +156,7 @@ impl CommentService {
             let id_str = match comment.id.as_ref() {
                 Some(id) => id.to_hex(),
                 None => {
-                    log::error!("comment missing id: {:?}", comment);
+                    log::error!("comment missing id: {comment:?}");
                     continue;
                 } // 跳过没有 ID 的评论
             };
@@ -216,12 +215,9 @@ impl CommentService {
             for comment in comments {
                 if let Some(parent_oid) = &comment.parent {
                     if parent_oid.to_hex() == parent_id {
-                        let child_id = match comment.id.as_ref() {
-                            Some(id) => id.to_hex(),
-                            None => {
-                                log::error!("comment missing id: {:?}", comment);
-                                continue;
-                            }
+                        let child_id = if let Some(id) = comment.id.as_ref() { id.to_hex() } else {
+                            log::error!("comment missing id: {comment:?}");
+                            continue;
                         };
 
                         if let Some(mut child_node) = comment_map.get(&child_id).cloned() {

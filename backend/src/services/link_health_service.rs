@@ -23,6 +23,7 @@ use crate::models::{Link, LinkState};
 /// 部署服务商类型
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum HostingProvider {
     Vercel,
     Cloudflare,
@@ -40,14 +41,10 @@ pub enum HostingProvider {
     Nginx,
     Caddy,
     Apache,
+    #[default]
     Unknown,
 }
 
-impl Default for HostingProvider {
-    fn default() -> Self {
-        Self::Unknown
-    }
-}
 
 /// 友链健康状态
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -137,7 +134,7 @@ pub struct BatchHealthCheckResult {
 pub struct LinkHealthService {
     /// HTTP 客户端
     client: Client,
-    /// 健康状态缓存 (link_id -> CachedHealthStatus)
+    /// 健康状态缓存 (`link_id` -> `CachedHealthStatus`)
     cache: Arc<Cache<String, CachedHealthStatus>>,
     /// 正在刷新的友链 ID 集合（防止重复刷新）
     refreshing: Arc<Mutex<HashSet<String>>>,
@@ -163,9 +160,7 @@ impl LinkHealthService {
         let cache = Cache::builder().max_capacity(1000).build();
 
         log::info!(
-            "友链健康检查服务初始化 - 过期时间: {}小时, 超时: {}秒",
-            stale_time_hours,
-            timeout_seconds
+            "友链健康检查服务初始化 - 过期时间: {stale_time_hours}小时, 超时: {timeout_seconds}秒"
         );
 
         Self {
@@ -187,11 +182,7 @@ impl LinkHealthService {
 
         // 检查缓存
         if let Some(cached) = self.cache.get(&link_id).await {
-            if !cached.is_expired(self.stale_time_hours) {
-                // 缓存未过期，直接返回
-                log::debug!("[LinkHealth] 缓存命中（新鲜）: {}", link.url);
-                return cached.status;
-            } else {
+            if cached.is_expired(self.stale_time_hours) {
                 // 缓存已过期，返回过期数据并异步刷新
                 log::debug!("[LinkHealth] 缓存命中（过期）: {}", link.url);
 
@@ -227,6 +218,9 @@ impl LinkHealthService {
                 // 返回过期数据（标记为 stale）
                 return cached.to_stale_status();
             }
+            // 缓存未过期，直接返回
+            log::debug!("[LinkHealth] 缓存命中（新鲜）: {}", link.url);
+            return cached.status;
         }
 
         // 缓存不存在，同步检查
@@ -244,7 +238,7 @@ impl LinkHealthService {
         let link_id = link.id.to_hex();
         let url = &link.url;
 
-        log::debug!("[LinkHealth] 检查: {}", url);
+        log::debug!("[LinkHealth] 检查: {url}");
 
         match self.client.get(url).send().await {
             Ok(response) => {
@@ -256,11 +250,7 @@ impl LinkHealthService {
                 let hosting_provider = self.detect_hosting_provider(&response);
 
                 log::info!(
-                    "[LinkHealth] {} - 状态: {}, 延迟: {}ms, 服务商: {:?}",
-                    url,
-                    status_code,
-                    latency,
-                    hosting_provider
+                    "[LinkHealth] {url} - 状态: {status_code}, 延迟: {latency}ms, 服务商: {hosting_provider:?}"
                 );
 
                 LinkHealthStatus {
@@ -282,10 +272,10 @@ impl LinkHealthService {
                 } else if e.is_connect() {
                     "连接失败".to_string()
                 } else {
-                    format!("请求失败: {}", e)
+                    format!("请求失败: {e}")
                 };
 
-                log::warn!("[LinkHealth] {} - 失败: {}", url, error_msg);
+                log::warn!("[LinkHealth] {url} - 失败: {error_msg}");
 
                 LinkHealthStatus {
                     link_id,
@@ -310,8 +300,7 @@ impl LinkHealthService {
         if headers.contains_key("x-vercel-id")
             || headers
                 .get("server")
-                .map(|v| v.to_str().unwrap_or("").contains("Vercel"))
-                .unwrap_or(false)
+                .is_some_and(|v| v.to_str().unwrap_or("").contains("Vercel"))
         {
             return HostingProvider::Vercel;
         }
@@ -325,8 +314,7 @@ impl LinkHealthService {
         if headers.contains_key("x-nf-request-id")
             || headers
                 .get("server")
-                .map(|v| v.to_str().unwrap_or("").contains("Netlify"))
-                .unwrap_or(false)
+                .is_some_and(|v| v.to_str().unwrap_or("").contains("Netlify"))
         {
             return HostingProvider::Netlify;
         }
@@ -334,8 +322,7 @@ impl LinkHealthService {
         // GitHub Pages
         if headers
             .get("server")
-            .map(|v| v.to_str().unwrap_or("").contains("GitHub"))
-            .unwrap_or(false)
+            .is_some_and(|v| v.to_str().unwrap_or("").contains("GitHub"))
         {
             return HostingProvider::GitHub;
         }
@@ -348,8 +335,7 @@ impl LinkHealthService {
         // Railway
         if headers
             .get("server")
-            .map(|v| v.to_str().unwrap_or("").to_lowercase().contains("railway"))
-            .unwrap_or(false)
+            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("railway"))
         {
             return HostingProvider::Railway;
         }
@@ -392,8 +378,7 @@ impl LinkHealthService {
         // Nginx
         if headers
             .get("server")
-            .map(|v| v.to_str().unwrap_or("").to_lowercase().contains("nginx"))
-            .unwrap_or(false)
+            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("nginx"))
         {
             return HostingProvider::Nginx;
         }
@@ -401,8 +386,7 @@ impl LinkHealthService {
         // Caddy
         if headers
             .get("server")
-            .map(|v| v.to_str().unwrap_or("").to_lowercase().contains("caddy"))
-            .unwrap_or(false)
+            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("caddy"))
         {
             return HostingProvider::Caddy;
         }
@@ -410,8 +394,7 @@ impl LinkHealthService {
         // Apache
         if headers
             .get("server")
-            .map(|v| v.to_str().unwrap_or("").to_lowercase().contains("apache"))
-            .unwrap_or(false)
+            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("apache"))
         {
             return HostingProvider::Apache;
         }
@@ -435,7 +418,7 @@ impl LinkHealthService {
         let mut cursor = match collection.find(filter).await {
             Ok(c) => c,
             Err(e) => {
-                log::error!("[LinkHealth] 查询友链失败: {:?}", e);
+                log::error!("[LinkHealth] 查询友链失败: {e:?}");
                 return BatchHealthCheckResult {
                     total: 0,
                     alive_count: 0,
@@ -452,7 +435,7 @@ impl LinkHealthService {
         }
 
         let total = links.len();
-        log::info!("[LinkHealth] 开始批量检查 {} 个友链", total);
+        log::info!("[LinkHealth] 开始批量检查 {total} 个友链");
 
         // 并发检查所有友链（限制并发数）
         let results = self.check_links_concurrent(links).await;
@@ -462,11 +445,7 @@ impl LinkHealthService {
         let duration_ms = start.elapsed().as_millis() as u64;
 
         log::info!(
-            "[LinkHealth] 批量检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
-            total,
-            alive_count,
-            failed_count,
-            duration_ms
+            "[LinkHealth] 批量检查完成 - 总数: {total}, 存活: {alive_count}, 失败: {failed_count}, 耗时: {duration_ms}ms"
         );
 
         BatchHealthCheckResult {
@@ -485,7 +464,7 @@ impl LinkHealthService {
         // 根据友链数量动态调整并发数
         let concurrency_limit = std::cmp::min(20, std::cmp::max(5, links.len() / 2));
 
-        log::info!("[LinkHealth] 使用并发数: {}", concurrency_limit);
+        log::info!("[LinkHealth] 使用并发数: {concurrency_limit}");
 
         stream::iter(links)
             .map(|link| {

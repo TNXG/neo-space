@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 // Raw Option Document (Internal Use Only)
 // ============================================================================
 
-/// Raw option document from MongoDB
+/// Raw option document from `MongoDB`
 #[derive(Debug, Deserialize)]
 pub struct RawOption {
     pub name: String,
@@ -79,9 +79,9 @@ pub struct CommentOptionsPublic {
 /// OAuth public configuration (safe to expose)
 #[derive(Debug, Serialize, Deserialize, Clone, Default, ToSchema)]
 pub struct OAuthPublicOptions {
-    /// OAuth提供商列表
+    /// `OAuth提供商列表`
     pub providers: Vec<OAuthProvider>,
-    /// GitHub客户端ID
+    /// `GitHub客户端ID`
     pub github_client_id: Option<String>,
 }
 
@@ -99,7 +99,7 @@ pub struct OAuthProvider {
 pub struct AlgoliaPublicOptions {
     /// 是否启用Algolia搜索
     pub enable: bool,
-    /// Algolia应用ID
+    /// `Algolia应用ID`
     #[serde(rename = "appId")]
     pub app_id: Option<String>,
     /// 索引名称
@@ -133,7 +133,7 @@ pub struct SiteConfig {
     pub friend_link: FriendLinkOptions,
     /// 评论配置
     pub comment: CommentOptionsPublic,
-    /// OAuth配置
+    /// `OAuth配置`
     pub oauth: OAuthPublicOptions,
     /// Algolia搜索配置
     pub algolia: AlgoliaPublicOptions,

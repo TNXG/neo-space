@@ -39,7 +39,7 @@ pub async fn list_comments(
     let filter = match comment_service.build_visibility_filter(ref_oid, &ref_type, &auth).await {
         Ok(filter) => filter,
         Err(e) => {
-            eprintln!("Failed to build visibility filter: {}", e);
+            eprintln!("Failed to build visibility filter: {e}");
             return Err(Status::InternalServerError);
         }
     };
@@ -49,14 +49,14 @@ pub async fn list_comments(
     let mut cursor = match collection.find(filter).await {
         Ok(cursor) => cursor,
         Err(e) => {
-            eprintln!("Failed to query comments: {}", e);
+            eprintln!("Failed to query comments: {e}");
             return Err(Status::InternalServerError);
         }
     };
 
     let mut all_comments = Vec::new();
     while let Some(comment) = cursor.try_next().await.map_err(|e| {
-        eprintln!("Error reading comment: {}", e);
+        eprintln!("Error reading comment: {e}");
         Status::InternalServerError
     })? {
         all_comments.push(comment);
@@ -76,7 +76,7 @@ pub async fn list_comments(
     let (email_to_avatar, email_to_is_owner) = match comment_service.build_reader_mappings(emails).await {
         Ok(mappings) => mappings,
         Err(e) => {
-            eprintln!("Failed to build reader mappings: {}", e);
+            eprintln!("Failed to build reader mappings: {e}");
             return Err(Status::InternalServerError);
         }
     };

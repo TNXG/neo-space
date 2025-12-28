@@ -17,6 +17,8 @@ pub mod cache_service;
 pub mod revalidation_service;
 pub mod change_stream_service;
 pub mod link_health_service;
+pub mod email_service;
+pub mod verification_service;
 
 pub use db_service::*;
 pub use options_service::*;
@@ -34,3 +36,4 @@ pub use cache_service::CacheService;
 pub use revalidation_service::RevalidationService;
 pub use change_stream_service::ChangeStreamService;
 pub use link_health_service::LinkHealthService;
+pub use verification_service::VerificationService;

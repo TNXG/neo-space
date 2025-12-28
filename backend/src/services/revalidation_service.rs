@@ -18,11 +18,11 @@ impl RevalidationService {
     /// 创建新的 Revalidation 服务实例
     /// 
     /// # 参数
-    /// - `nextjs_url`: Next.js 应用的 URL (例如: http://localhost:3000)
+    /// - `nextjs_url`: Next.js 应用的 URL (例如: <http://localhost:3000>)
     /// - `secret`: HMAC 签名密钥
     /// - `salt`: 额外的盐值
     pub fn new(nextjs_url: String, secret: String, salt: String) -> Self {
-        log::info!("Revalidation 服务初始化 - Next.js URL: {}", nextjs_url);
+        log::info!("Revalidation 服务初始化 - Next.js URL: {nextjs_url}");
         Self {
             nextjs_url,
             secret,
@@ -72,17 +72,15 @@ impl RevalidationService {
             .await?;
 
         if response.status().is_success() {
-            log::info!("✓ Revalidation 成功 - Tag: {}", tag);
+            log::info!("✓ Revalidation 成功 - Tag: {tag}");
             Ok(())
         } else {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
             log::error!(
-                "Revalidation 失败 - Status: {}, Error: {}",
-                status,
-                error_text
+                "Revalidation 失败 - Status: {status}, Error: {error_text}"
             );
-            Err(format!("Revalidation failed with status: {}", status).into())
+            Err(format!("Revalidation failed with status: {status}").into())
         }
     }
 
@@ -129,17 +127,15 @@ impl RevalidationService {
             .await?;
 
         if response.status().is_success() {
-            log::info!("✓ Revalidation 成功 - Path: {}", path);
+            log::info!("✓ Revalidation 成功 - Path: {path}");
             Ok(())
         } else {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
             log::error!(
-                "Revalidation 失败 - Status: {}, Error: {}",
-                status,
-                error_text
+                "Revalidation 失败 - Status: {status}, Error: {error_text}"
             );
-            Err(format!("Revalidation failed with status: {}", status).into())
+            Err(format!("Revalidation failed with status: {status}").into())
         }
     }
 

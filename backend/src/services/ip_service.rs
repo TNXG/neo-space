@@ -23,10 +23,10 @@ impl IpService {
     pub fn new(ipv4_db_path: String, ipv6_db_path: String) -> Result<Self, String> {
         // 使用 VectorIndex 缓存策略，平衡内存和性能
         let ipv4_searcher = Searcher::new(ipv4_db_path, CachePolicy::VectorIndex)
-            .map_err(|e| format!("Failed to load IPv4 database: {}", e))?;
+            .map_err(|e| format!("Failed to load IPv4 database: {e}"))?;
 
         let ipv6_searcher = Searcher::new(ipv6_db_path, CachePolicy::VectorIndex)
-            .map_err(|e| format!("Failed to load IPv6 database: {}", e))?;
+            .map_err(|e| format!("Failed to load IPv6 database: {e}"))?;
 
         Ok(Self {
             ipv4_searcher: Arc::new(ipv4_searcher),
@@ -55,7 +55,7 @@ impl IpService {
             Ok(result) => {
                 // ip2region 返回格式：国家|区域|省份|城市|ISP
                 // 例如：中国|0|北京|北京市|电信
-                let location = result.to_string();
+                let location = result.clone();
                 
                 // 过滤掉无效信息（0 或空）
                 let parts: Vec<&str> = location
@@ -70,7 +70,7 @@ impl IpService {
                 }
             }
             Err(e) => {
-                log::warn!("Failed to search IP {}: {}", ip, e);
+                log::warn!("Failed to search IP {ip}: {e}");
                 None
             }
         }
@@ -96,7 +96,7 @@ impl IpService {
                 
                 // 过滤掉一些无意义的值
                 if province == "0" || province.is_empty() {
-                    if parts.len() >= 1 && parts[0] != "0" {
+                    if !parts.is_empty() && parts[0] != "0" {
                         return parts[0].to_string();
                     }
                     return "未知".to_string();

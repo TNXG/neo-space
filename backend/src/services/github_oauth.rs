@@ -19,7 +19,7 @@ pub struct GitHubOAuthService {
 }
 
 impl GitHubOAuthService {
-    /// 创建新的 GitHubOAuthService
+    /// 创建新的 `GitHubOAuthService`
     pub fn new(client_id: String, client_secret: String) -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -28,13 +28,13 @@ impl GitHubOAuthService {
         }
     }
 
-    /// 交换授权码获取 access_token
+    /// 交换授权码获取 `access_token`
     /// 
     /// # 参数
     /// * `code` - GitHub 返回的授权码
     /// 
     /// # 返回
-    /// * `Ok(String)` - access_token
+    /// * `Ok(String)` - `access_token`
     /// * `Err(String)` - 错误信息
     pub async fn exchange_code(&self, code: &str) -> Result<String, String> {
         let token_url = "https://github.com/login/oauth/access_token";
@@ -52,18 +52,18 @@ impl GitHubOAuthService {
             .header("User-Agent", "Request/Neo-Space-Backend/Love")
             .send()
             .await
-            .map_err(|e| format!("GitHub token 请求失败: {}", e))?;
+            .map_err(|e| format!("GitHub token 请求失败: {e}"))?;
 
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
-            return Err(format!("GitHub token 请求失败 ({}): {}", status, text));
+            return Err(format!("GitHub token 请求失败 ({status}): {text}"));
         }
 
         let token_data: GitHubTokenResponse = response
             .json()
             .await
-            .map_err(|e| format!("解析 GitHub token 响应失败: {}", e))?;
+            .map_err(|e| format!("解析 GitHub token 响应失败: {e}"))?;
 
         Ok(token_data.access_token)
     }
@@ -81,22 +81,22 @@ impl GitHubOAuthService {
 
         let response = self.client
             .get(user_url)
-            .header("Authorization", format!("Bearer {}", access_token))
+            .header("Authorization", format!("Bearer {access_token}"))
             .header("User-Agent", "Neo-Space-Backend")
             .send()
             .await
-            .map_err(|e| format!("GitHub 用户信息请求失败: {}", e))?;
+            .map_err(|e| format!("GitHub 用户信息请求失败: {e}"))?;
 
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
-            return Err(format!("GitHub 用户信息请求失败 ({}): {}", status, text));
+            return Err(format!("GitHub 用户信息请求失败 ({status}): {text}"));
         }
 
         let user: GitHubUser = response
             .json()
             .await
-            .map_err(|e| format!("解析 GitHub 用户信息失败: {}", e))?;
+            .map_err(|e| format!("解析 GitHub 用户信息失败: {e}"))?;
 
         // 验证邮箱（GitHub 可能返回空邮箱）
         // 注意：根据需求，如果邮箱为空，我们将其设为空字符串（与 QQ 相同处理）
@@ -111,7 +111,7 @@ impl GitHubOAuthService {
     /// * `code` - GitHub 返回的授权码
     /// 
     /// # 返回
-    /// * `Ok((GitHubUser, String, String))` - (用户信息, access_token, scope)
+    /// * `Ok((GitHubUser, String, String))` - (用户信息, `access_token`, scope)
     /// * `Err(String)` - 错误信息
     pub async fn oauth_flow(&self, code: &str) -> Result<(GitHubUser, String, String), String> {
         // 1. 交换授权码获取 access_token

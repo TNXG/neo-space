@@ -50,9 +50,7 @@ fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
 只返回 JSON，不要其他内容。"#;
 
     let user_prompt = format!(
-        "请分析以下文章的时效性：\n\n标题：{}\n\n内容：\n{}",
-        title,
-        content
+        "请分析以下文章的时效性：\n\n标题：{title}\n\n内容：\n{content}"
     );
 
     vec![
@@ -63,7 +61,7 @@ fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
 
 /// 解析 AI 返回的 JSON
 fn parse_ai_response(response: &str) -> Result<(TimeSensitivity, String, Vec<String>), String> {
-    eprintln!("AI raw response: {}", response);
+    eprintln!("AI raw response: {response}");
 
     // 尝试提取 JSON 部分
     let json_str = response
@@ -81,7 +79,7 @@ fn parse_ai_response(response: &str) -> Result<(TimeSensitivity, String, Vec<Str
     };
 
     let parsed: serde_json::Value = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse AI response: {}", e))?;
+        .map_err(|e| format!("Failed to parse AI response: {e}"))?;
 
     let sensitivity = match parsed["sensitivity"].as_str().unwrap_or("medium") {
         "high" => TimeSensitivity::High,
@@ -162,7 +160,7 @@ pub async fn analyze_time_capsule(
     };
 
     // 2. 计算当前内容的 SHA1
-    let content_hash = compute_sha1(&format!("{}{}", title, content));
+    let content_hash = compute_sha1(&format!("{title}{content}"));
     let capsules_collection = db.collection::<TimeCapsule>("time_capsules");
 
     // 3. 检查数据库是否有匹配的记录（按创建时间倒序取最新）
@@ -195,7 +193,7 @@ pub async fn analyze_time_capsule(
             eprintln!("No existing record found");
         }
         Err(e) => {
-            eprintln!("Database query error: {:?}", e);
+            eprintln!("Database query error: {e:?}");
         }
     }
 
@@ -203,7 +201,7 @@ pub async fn analyze_time_capsule(
     let ai_service = AiService::from_database(db.inner())
         .await
         .map_err(|e| {
-            eprintln!("Failed to init AI service: {}", e);
+            eprintln!("Failed to init AI service: {e}");
             Status::InternalServerError
         })?;
 
@@ -216,13 +214,13 @@ pub async fn analyze_time_capsule(
         .chat(messages, Some(0.3), None)
         .await
         .map_err(|e| {
-            eprintln!("AI request failed: {}", e);
+            eprintln!("AI request failed: {e}");
             Status::InternalServerError
         })?;
 
     let (sensitivity, reason, markers) = parse_ai_response(&ai_response)
         .map_err(|e| {
-            eprintln!("Failed to parse AI response: {}", e);
+            eprintln!("Failed to parse AI response: {e}");
             Status::InternalServerError
         })?;
 
@@ -242,7 +240,7 @@ pub async fn analyze_time_capsule(
         .insert_one(&new_capsule)
         .await
         .map_err(|e| {
-            eprintln!("Failed to save time capsule: {}", e);
+            eprintln!("Failed to save time capsule: {e}");
             Status::InternalServerError
         })?;
 

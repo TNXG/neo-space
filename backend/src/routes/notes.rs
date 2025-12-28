@@ -73,20 +73,20 @@ pub async fn list_notes(
     // Get total count
     let total = collection.count_documents(filter.clone()).await
         .map_err(|e| {
-            eprintln!("Error counting documents: {:?}", e);
+            eprintln!("Error counting documents: {e:?}");
             Status::InternalServerError
         })?;
 
     // Fetch notes
     let mut cursor = collection.find(filter).with_options(find_options).await
         .map_err(|e| {
-            eprintln!("Error finding documents: {:?}", e);
+            eprintln!("Error finding documents: {e:?}");
             Status::InternalServerError
         })?;
 
     let mut items = Vec::new();
     while let Some(mut note) = cursor.try_next().await.map_err(|e| {
-        eprintln!("Error deserializing note: {:?}", e);
+        eprintln!("Error deserializing note: {e:?}");
         Status::InternalServerError
     })? {
         // Fetch AI summary (default to Chinese)
@@ -229,7 +229,7 @@ pub async fn get_adjacent_notes(
         .with_options(prev_options)
         .await
         .map_err(|e| {
-            eprintln!("Error finding previous note: {:?}", e);
+            eprintln!("Error finding previous note: {e:?}");
             Status::InternalServerError
         })?;
     
@@ -246,7 +246,7 @@ pub async fn get_adjacent_notes(
         .with_options(next_options)
         .await
         .map_err(|e| {
-            eprintln!("Error finding next note: {:?}", e);
+            eprintln!("Error finding next note: {e:?}");
             Status::InternalServerError
         })?;
     

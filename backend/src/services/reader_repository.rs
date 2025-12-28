@@ -11,7 +11,7 @@ pub struct ReaderRepository {
 }
 
 impl ReaderRepository {
-    /// 创建新的 ReaderRepository
+    /// 创建新的 `ReaderRepository`
     pub fn new(database: &Database) -> Self {
         Self {
             collection: database.collection("readers"),
@@ -38,7 +38,7 @@ impl ReaderRepository {
     /// 通过 ID 查找 reader
     /// 
     /// # 参数
-    /// * `id` - Reader 的 ObjectId
+    /// * `id` - Reader 的 `ObjectId`
     /// 
     /// # 返回
     /// * `Ok(Some(Reader))` - 找到 reader
@@ -105,7 +105,7 @@ impl ReaderRepository {
     /// 删除 reader
     /// 
     /// # 参数
-    /// * `id` - Reader 的 ObjectId
+    /// * `id` - Reader 的 `ObjectId`
     /// 
     /// # 返回
     /// * `Ok(())` - 删除成功

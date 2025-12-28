@@ -44,20 +44,20 @@ pub async fn list_posts(
     // Get total count
     let total = posts_collection.count_documents(filter.clone()).await
         .map_err(|e| {
-            eprintln!("Error counting posts: {:?}", e);
+            eprintln!("Error counting posts: {e:?}");
             Status::InternalServerError
         })?;
 
     // Fetch posts
     let mut cursor = posts_collection.find(filter).with_options(find_options).await
         .map_err(|e| {
-            eprintln!("Error finding posts: {:?}", e);
+            eprintln!("Error finding posts: {e:?}");
             Status::InternalServerError
         })?;
 
     let mut items = Vec::new();
     while let Some(post) = cursor.try_next().await.map_err(|e| {
-        eprintln!("Error iterating posts cursor: {:?}", e);
+        eprintln!("Error iterating posts cursor: {e:?}");
         Status::InternalServerError
     })? {
         // Fetch category information
@@ -65,7 +65,7 @@ pub async fn list_posts(
             .find_one(doc! { "_id": post.category_id })
             .await
             .map_err(|e| {
-                eprintln!("Error finding category: {:?}", e);
+                eprintln!("Error finding category: {e:?}");
                 Status::InternalServerError
             })?;
 
@@ -257,7 +257,7 @@ pub async fn get_adjacent_posts(
         .find_one(doc! { "slug": slug, "isPublished": true })
         .await
         .map_err(|e| {
-            eprintln!("Error finding current post: {:?}", e);
+            eprintln!("Error finding current post: {e:?}");
             Status::InternalServerError
         })?
         .ok_or(Status::NotFound)?;
@@ -275,7 +275,7 @@ pub async fn get_adjacent_posts(
         .with_options(prev_options)
         .await
         .map_err(|e| {
-            eprintln!("Error finding previous post: {:?}", e);
+            eprintln!("Error finding previous post: {e:?}");
             Status::InternalServerError
         })?;
     
@@ -292,7 +292,7 @@ pub async fn get_adjacent_posts(
         .with_options(next_options)
         .await
         .map_err(|e| {
-            eprintln!("Error finding next post: {:?}", e);
+            eprintln!("Error finding next post: {e:?}");
             Status::InternalServerError
         })?;
     

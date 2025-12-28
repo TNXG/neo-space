@@ -34,13 +34,13 @@ pub async fn bind_anonymous_identity(
 
     // 迁移所有 Account
     id_service.merge_identities(auth.user_id, anon_reader.id).await
-        .map_err(|e| ApiResponse::bad_request(e))?;
+        .map_err(ApiResponse::bad_request)?;
 
     // 删除临时的 Reader（如果有）
     let _ = reader_repo.delete_reader(auth.user_id).await;
 
     let token = id_service.issue_token(anon_reader.id, anon_reader.is_owner)
-        .map_err(|e| ApiResponse::internal_error(e))?;
+        .map_err(ApiResponse::internal_error)?;
 
     Ok(ApiResponse::json_success_with_message(anon_reader.into(), token))
 }
@@ -74,9 +74,9 @@ pub async fn skip_bind(auth: AuthGuard, db: &State<Database>, config: &State<OAu
     };
 
     let new_id = reader_repo.create_reader(&new_reader).await.map_err(|_| ApiResponse::internal_error("创建失败".to_string()))?;
-    id_service.merge_identities(auth.user_id, new_id).await.map_err(|e| ApiResponse::internal_error(e))?;
+    id_service.merge_identities(auth.user_id, new_id).await.map_err(ApiResponse::internal_error)?;
 
-    let token = id_service.issue_token(new_id, is_first).map_err(|e| ApiResponse::internal_error(e))?;
+    let token = id_service.issue_token(new_id, is_first).map_err(ApiResponse::internal_error)?;
     Ok(ApiResponse::json_success_with_message(new_reader.into(), token))
 }
 

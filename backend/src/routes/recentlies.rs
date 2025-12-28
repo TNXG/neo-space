@@ -40,20 +40,20 @@ pub async fn list_recentlies(
     // Get total count
     let total = collection.count_documents(doc! {}).await
         .map_err(|e| {
-            eprintln!("Error counting recentlies: {:?}", e);
+            eprintln!("Error counting recentlies: {e:?}");
             Status::InternalServerError
         })?;
 
     // Fetch items
     let mut cursor = collection.find(doc! {}).with_options(find_options).await
         .map_err(|e| {
-            eprintln!("Error finding recentlies: {:?}", e);
+            eprintln!("Error finding recentlies: {e:?}");
             Status::InternalServerError
         })?;
 
     let mut items = Vec::new();
     while let Some(result) = cursor.try_next().await.map_err(|e| {
-        eprintln!("Error iterating recentlies cursor: {:?}", e);
+        eprintln!("Error iterating recentlies cursor: {e:?}");
         Status::InternalServerError
     })? {
         items.push(result);

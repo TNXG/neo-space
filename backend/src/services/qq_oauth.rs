@@ -1,5 +1,5 @@
 //! QQ OAuth 服务 - 通过第三方 API 处理 QQ OAuth 认证流程
-//! 使用 https://api-space.tnxg.top 作为 OAuth 代理
+//! 使用 <https://api-space.tnxg.top> 作为 OAuth 代理
 
 use serde::Deserialize;
 use crate::models::QQUser;
@@ -31,7 +31,7 @@ pub struct QQOAuthService {
 }
 
 impl QQOAuthService {
-    /// 创建新的 QQOAuthService
+    /// 创建新的 `QQOAuthService`
     /// 
     /// # 参数
     /// * `redirect_uri` - 回调 URL
@@ -62,24 +62,24 @@ impl QQOAuthService {
     /// * `Ok((QQUser, String))` - (用户信息, openid)
     /// * `Err(String)` - 错误信息
     pub async fn get_user_info_with_code(&self, code: &str) -> Result<(QQUser, String), String> {
-        let user_url = format!("https://api-space.tnxg.top/user/get?code={}", code);
+        let user_url = format!("https://api-space.tnxg.top/user/get?code={code}");
 
         let response = self.client
             .get(&user_url)
             .send()
             .await
-            .map_err(|e| format!("QQ 用户信息请求失败: {}", e))?;
+            .map_err(|e| format!("QQ 用户信息请求失败: {e}"))?;
 
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
-            return Err(format!("QQ 用户信息请求失败 ({}): {}", status, text));
+            return Err(format!("QQ 用户信息请求失败 ({status}): {text}"));
         }
 
         let api_response: ApiResponse = response
             .json()
             .await
-            .map_err(|e| format!("解析 QQ 用户信息响应失败: {}", e))?;
+            .map_err(|e| format!("解析 QQ 用户信息响应失败: {e}"))?;
 
         if api_response.status != "success" {
             let msg = api_response.message.unwrap_or_else(|| "获取用户信息失败".to_string());

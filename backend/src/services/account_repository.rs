@@ -11,7 +11,7 @@ pub struct AccountRepository {
 }
 
 impl AccountRepository {
-    /// 创建新的 AccountRepository
+    /// 创建新的 `AccountRepository`
     pub fn new(database: &Database) -> Self {
         Self {
             collection: database.collection("accounts"),
@@ -61,7 +61,7 @@ impl AccountRepository {
     /// 查找用户的所有 accounts
     /// 
     /// # 参数
-    /// * `user_id` - 用户的 ObjectId
+    /// * `user_id` - 用户的 `ObjectId`
     /// 
     /// # 返回
     /// * `Ok(Vec<Account>)` - 用户的 accounts 列表

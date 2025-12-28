@@ -1,9 +1,9 @@
-//! Database service - MongoDB connection and operations
+//! Database service - `MongoDB` connection and operations
 
 use mongodb::{bson::doc, Client, Database};
 
-/// 初始化 MongoDB 连接
-/// MongoDB 配置从环境变量 MONGODB_URI 读取
+/// 初始化 `MongoDB` 连接
+/// `MongoDB` 配置从环境变量 `MONGODB_URI` 读取
 pub async fn init_db() -> Result<Database, mongodb::error::Error> {
     // 从环境变量读取 MongoDB URI
     let mongodb_uri = std::env::var("MONGODB_URI")
@@ -13,14 +13,14 @@ pub async fn init_db() -> Result<Database, mongodb::error::Error> {
             "mongodb://localhost:27017/mx-space".to_string()
         });
 
-    println!("正在连接 MongoDB: {}...", mongodb_uri);
+    println!("正在连接 MongoDB: {mongodb_uri}...");
 
     let client = Client::with_uri_str(&mongodb_uri).await?;
 
     // 从 URI 中提取数据库名称
     let database_name = mongodb_uri
         .split('/')
-        .last()
+        .next_back()
         .and_then(|s| s.split('?').next())
         .unwrap_or("mx-space");
 
@@ -31,7 +31,7 @@ pub async fn init_db() -> Result<Database, mongodb::error::Error> {
         .run_command(doc! { "ping": 1 })
         .await?;
 
-    println!("✓ 成功连接到 MongoDB 数据库: {}", database_name);
+    println!("✓ 成功连接到 MongoDB 数据库: {database_name}");
 
     Ok(database)
 }

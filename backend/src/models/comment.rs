@@ -160,16 +160,9 @@ pub struct UpdateCommentRequest {
 }
 
 #[derive(Debug, Serialize)]
+#[derive(Default)]
 pub struct CommentListResponse {
     pub comments: Vec<CommentTree>,
     pub count: i64,
 }
 
-impl Default for CommentListResponse {
-    fn default() -> Self {
-        Self {
-            comments: vec![],
-            count: 0,
-        }
-    }
-}
