@@ -71,20 +71,26 @@ async fn rocket() -> _ {
     let revalidation_salt = std::env::var("REVALIDATION_SALT")
         .unwrap_or_else(|_| "default-salt".to_string());
     
-    // Only start Change Stream if revalidation is configured
-    if let Some(secret) = revalidation_secret {
-        let revalidation_service = services::RevalidationService::new(
+    let revalidation_service_opt = if let Some(secret) = revalidation_secret.clone() {
+        let service = std::sync::Arc::new(services::RevalidationService::new(
             nextjs_url,
             secret,
             revalidation_salt,
-        );
+        ));
         log::info!("Revalidation 服务初始化成功");
-
+        Some(service)
+    } else {
+        log::warn!("REVALIDATION_SECRET 未配置，Revalidation 服务已禁用");
+        None
+    };
+    
+    // Only start Change Stream if revalidation is configured
+    if let Some(ref revalidation_service) = revalidation_service_opt {
         // Initialize and start Change Stream service in background
         let change_stream_service = services::ChangeStreamService::new(
             database.clone(),
             cache_service.clone(),
-            revalidation_service.clone(),
+            revalidation_service.as_ref().clone(),
         );
         
         // Spawn Change Stream listener in background task
@@ -93,7 +99,7 @@ async fn rocket() -> _ {
         });
         log::info!("Change Stream 监听服务已启动（后台任务）");
     } else {
-        log::warn!("REVALIDATION_SECRET 未配置，Change Stream 监听服务已禁用");
+        log::warn!("Change Stream 监听服务已禁用");
         log::warn!("如需启用 ISR 缓存自动刷新，请在 .env 中配置 REVALIDATION_SECRET");
     }
 
@@ -149,10 +155,17 @@ async fn rocket() -> _ {
         .and_then(|v| v.parse().ok())
         .unwrap_or(6); // 默认 6 小时检查一次
     
-    let link_health_service = services::LinkHealthService::new(
+    let mut link_health_service = services::LinkHealthService::new(
         link_health_stale_hours,
         link_health_timeout,
     );
+    
+    // 注入 Revalidation 服务（如果已配置）
+    if let Some(ref revalidation_service) = revalidation_service_opt {
+        link_health_service = link_health_service.with_revalidation_service(revalidation_service.clone());
+        log::info!("友链健康检查服务已关联 Revalidation 服务");
+    }
+    
     log::info!("友链健康检查服务初始化成功");
 
     // Initialize verification service

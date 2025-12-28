@@ -2,16 +2,15 @@
 
 import type { LinkApplyFormData } from "@/lib/validations/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
 import { toast } from "sonner";
-import { MagneticHoverEffect } from "@/components/common/magnetic-hover-effect";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { applyLink } from "@/lib/api-client";
+import { applyLink, sendLinkVerificationCode } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { linkApplySchema, linkApplyStepSchemas } from "@/lib/validations/link";
 
@@ -118,9 +117,24 @@ export function LinkApplyForm() {
     if (!isValid)
       return;
 
-    setIsCodeSent(true);
-    setCountdown(60);
-    toast.success("验证码已发送 (模拟)");
+    startTransition(async () => {
+      try {
+        const result = await sendLinkVerificationCode(formData.email);
+        if (result.status === "success") {
+          setIsCodeSent(true);
+          setCountdown(60);
+          toast.success("验证码已发送", { description: "请查收邮件" });
+        } else {
+          throw new Error(result.message || "发送失败");
+        }
+      } catch (e: any) {
+        if (e.message?.includes("429") || e.message?.includes("TooManyRequests")) {
+          toast.error("发送过于频繁", { description: "请稍后再试" });
+        } else {
+          toast.error(e.message || "发送失败，请稍后重试");
+        }
+      }
+    });
   };
 
   const onSubmit = (data: LinkApplyFormData) => {
@@ -132,6 +146,7 @@ export function LinkApplyForm() {
           avatar: data.avatar,
           description: data.description,
           email: data.email,
+          code: data.code,
           rssurl: data.rssurl || undefined,
           techstack: data.techstack?.length ? data.techstack : undefined,
         });
@@ -148,6 +163,8 @@ export function LinkApplyForm() {
       } catch (e: any) {
         if (e.message?.includes("409") || e.message?.includes("Conflict")) {
           toast.error("该站点已存在");
+        } else if (e.message?.includes("400") || e.message?.includes("BadRequest")) {
+          toast.error("验证码错误或已过期", { description: "请重新获取验证码" });
         } else {
           toast.error(e.message || "申请失败，请稍后重试");
         }
@@ -314,15 +331,18 @@ export function LinkApplyForm() {
   return (
     <>
       <div className="mt-12 flex justify-center pb-20">
-        <MagneticHoverEffect as="button" onClick={() => setIsOpen(true)} className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-xl hover:bg-card hover:scale-[1.02] transition-all cursor-pointer">
-          <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-xl hover:bg-card transition-all duration-300 cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-300">
             <Icon icon="mingcute:add-line" className="w-5 h-5" />
           </div>
           <div className="text-left">
             <div className="text-sm font-bold text-foreground">申请加入友链</div>
             <div className="text-xs text-muted-foreground">与我建立连接</div>
           </div>
-        </MagneticHoverEffect>
+        </button>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

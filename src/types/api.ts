@@ -192,6 +192,7 @@ export interface LinkApplyRequest {
   avatar: string;
   description: string;
   email: string;
+  code: string;
   rssurl?: string;
   techstack?: string[];
 }

@@ -140,6 +140,8 @@ pub struct LinkHealthService {
     refreshing: Arc<Mutex<HashSet<String>>>,
     /// 缓存过期时间（小时）
     stale_time_hours: u64,
+    /// Revalidation 服务（可选）
+    revalidation_service: Option<Arc<crate::services::revalidation_service::RevalidationService>>,
 }
 
 impl LinkHealthService {
@@ -168,7 +170,17 @@ impl LinkHealthService {
             cache: Arc::new(cache),
             refreshing: Arc::new(Mutex::new(HashSet::new())),
             stale_time_hours,
+            revalidation_service: None,
         }
+    }
+
+    /// 设置 Revalidation 服务（用于通知 Next.js 刷新缓存）
+    pub fn with_revalidation_service(
+        mut self,
+        service: Arc<crate::services::revalidation_service::RevalidationService>,
+    ) -> Self {
+        self.revalidation_service = Some(service);
+        self
     }
 
     /// 检查单个友链的健康状态 (SWR 策略)
@@ -447,6 +459,16 @@ impl LinkHealthService {
         log::info!(
             "[LinkHealth] 批量检查完成 - 总数: {total}, 存活: {alive_count}, 失败: {failed_count}, 耗时: {duration_ms}ms"
         );
+
+        // 通知 Next.js 刷新友链页面缓存
+        if let Some(ref revalidation_service) = self.revalidation_service {
+            log::info!("[LinkHealth] 通知 Next.js 刷新友链缓存...");
+            if let Err(e) = revalidation_service.revalidate_tag("links").await {
+                log::error!("[LinkHealth] 刷新友链缓存失败: {e:?}");
+            } else {
+                log::info!("[LinkHealth] ✓ 友链缓存已刷新");
+            }
+        }
 
         BatchHealthCheckResult {
             total,

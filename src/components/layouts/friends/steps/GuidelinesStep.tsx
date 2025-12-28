@@ -7,7 +7,6 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
-import { LINK_GUIDELINES } from "@/config/link-guidelines";
 
 interface GuidelinesStepProps {
   register: UseFormRegister<LinkApplyFormData>;
@@ -27,14 +26,8 @@ export function GuidelinesStep({ register, setValue, checked, error }: Guideline
             <p className="text-sm text-accent-800 dark:text-accent-300 leading-relaxed">
               请阅读我们的
               {" "}
-              <Link href={LINK_GUIDELINES.guidelinesUrl} target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
+              <Link href="/about-site#%E5%8F%8B%E9%93%BE%E7%94%B3%E8%AF%B7%E6%9D%A1%E6%AC%BE" target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
                 友链指南
-              </Link>
-              {" "}
-              和
-              {" "}
-              <Link href={LINK_GUIDELINES.termsUrl} target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
-                服务条款
               </Link>
               。
             </p>

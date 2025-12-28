@@ -463,19 +463,17 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5">
-                          <h3
-                            className={cn(
-                              "font-semibold truncate text-sm transition-colors",
-                              selectedId === item._id ? "text-foreground" : "text-foreground/90",
-                            )}
-                          >
-                            {item.name}
-                          </h3>
-                          <span className="text-[10px] text-muted-foreground/60 font-mono truncate max-w-full">
-                            {new URL(item.url).hostname}
-                          </span>
-                        </div>
+                        <h3
+                          className={cn(
+                            "font-semibold truncate text-sm transition-colors",
+                            selectedId === item._id ? "text-foreground" : "text-foreground/90",
+                          )}
+                        >
+                          {item.name}
+                        </h3>
+                        <span className="text-[10px] text-muted-foreground/60 font-mono truncate block">
+                          {new URL(item.url).hostname}
+                        </span>
 
                         {/* Description (Bio) instead of just URL */}
                         <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1 leading-relaxed">

@@ -1,6 +1,6 @@
 import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, LinkApplyRequest, Note, Page, PaginatedData, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
-import process from "node:process";
 
+// eslint-disable-next-line node/prefer-global/process
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
 
 /**
@@ -192,7 +192,7 @@ export async function getLinks(page = 1, size = 50): Promise<ApiResponse<Paginat
   return apiClient<ApiResponse<PaginatedData<Link>>>(`/links?page=${page}&size=${size}`, {
     next: {
       tags: ["links"],
-      revalidate: false, // or false if you want it cached indefinitely
+      revalidate: false,
     },
   });
 }
@@ -214,6 +214,16 @@ export async function applyLink(request: LinkApplyRequest): Promise<ApiResponse<
   return apiClient<ApiResponse<Link>>("/links/apply", {
     method: "POST",
     body: JSON.stringify(request),
+  });
+}
+
+/**
+ * 发送友链申请验证码
+ */
+export async function sendLinkVerificationCode(email: string): Promise<ApiResponse<string>> {
+  return apiClient<ApiResponse<string>>("/links/send-code", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
 
