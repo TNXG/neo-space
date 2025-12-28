@@ -12,9 +12,8 @@ export const metadata: Metadata = {
   description: "星座图谱，连接志同道合的朋友",
 };
 
-// 使用基于标签的 ISR 缓存策略
-// 当后端健康检查更新时，会主动触发 revalidateTag("links")
-export const revalidate = false;
+export const revalidate = 57600;
+export const dynamicParams = true;
 
 /**
  * 加载全部友链（遍历所有分页）
