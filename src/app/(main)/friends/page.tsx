@@ -15,22 +15,32 @@ export const metadata: Metadata = {
 export const revalidate = 57600;
 export const dynamicParams = true;
 
+export async function generateStaticParams() {
+  return [];
+}
+
 /**
  * 加载全部友链（遍历所有分页）
  */
 async function getAllLinks(): Promise<Link[]> {
-  const allItems: Link[] = [];
-  let page = 1;
-  let totalPages = 1;
+  try {
+    const allItems: Link[] = [];
+    let page = 1;
+    let totalPages = 1;
 
-  do {
-    const { data } = await getLinks(page, 50);
-    allItems.push(...data.items);
-    totalPages = data.pagination.total_page || 1;
-    page++;
-  } while (page <= totalPages);
+    do {
+      const { data } = await getLinks(page, 50);
+      allItems.push(...data.items);
+      totalPages = data.pagination.total_page || 1;
+      page++;
+    } while (page <= totalPages);
 
-  return allItems;
+    return allItems;
+  } catch (error) {
+    console.error("Failed to fetch links during build:", error);
+    // 构建时如果 API 不可用，返回空数组
+    return [];
+  }
 }
 
 /**

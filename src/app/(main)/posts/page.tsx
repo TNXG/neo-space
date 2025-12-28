@@ -9,7 +9,11 @@ export const metadata: Metadata = {
 
 // ISR 配置：16小时过期，同时依赖 Change Stream 主动刷新
 export const revalidate = 57600;
-export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

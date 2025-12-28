@@ -3,7 +3,11 @@ import { HomePage } from "@/components/layouts/HomePage";
 import { getHomePageNotes, getHomePagePosts, getRecently, getUserProfile } from "@/lib/api-client";
 
 export const revalidate = 57600;
-export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 /**
  * Homepage - Server Component
