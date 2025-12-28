@@ -8,12 +8,15 @@ mod services;
 mod utils;
 mod guards;
 mod error;
+mod openapi;
 
 use rocket::http::Method;
 use rocket::serde::json::Json;
 use rocket::Request;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use models::ApiResponse;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 /// 404 Not Found error catcher - returns JSON
 #[catch(404)]
@@ -159,6 +162,11 @@ async fn rocket() -> _ {
         .manage(cache_service)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
+        .mount(
+            "/",
+            SwaggerUi::new("/swagger-ui/<_..>")
+                .url("/api-docs/openapi.json", openapi::ApiDoc::openapi()),
+        )
         .mount("/api/auth", routes::auth::routes())
         .mount("/api/comments", routes::comments::routes())
         .mount("/api", routes![
@@ -176,6 +184,8 @@ async fn rocket() -> _ {
             routes::categories::list_categories,
             // Links routes
             routes::links::list_links,
+            routes::links::get_link,
+            routes::links::apply_link,
             // Recentlies (Moments) routes
             routes::recentlies::list_recentlies,
             // Users routes

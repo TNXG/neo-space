@@ -1,4 +1,5 @@
 //! Data models
+#![allow(unused)]
 
 pub mod response;
 pub mod post;
@@ -17,15 +18,15 @@ pub mod jwt;
 pub mod conversions;
 
 // Re-export commonly used types
-pub use response::{ApiResponse, Pagination, PaginatedData, PaginatedResponse};
-pub use post::{Post, PostWithCategory};
-pub use note::Note;
+pub use response::{ApiResponse, Pagination, PaginatedData, PaginatedResponse, ResponseStatus};
+pub use post::{Post, PostWithCategory, PostImage};
+pub use note::{Note, NoteImage, NoteCount};
 pub use category::Category;
 pub use comment::{Comment, CommentState, CommentTree, CreateCommentRequest, UpdateCommentRequest, CommentListResponse};
-pub use link::Link;
+pub use link::{Link, LinkApplyRequest, LinkState, LinkType};
 pub use page::Page;
 pub use recently::Recently;
-pub use user::{User, Reader, ReaderResponse, GitHubUser, QQUser};
+pub use user::{User, UserSocialIds, Reader, ReaderResponse, GitHubUser, QQUser};
 pub use options::*;
 pub use ai_summary::AiSummary;
 pub use time_capsule::{TimeCapsule, TimeCapsuleRequest, TimeCapsuleResponse, TimeSensitivity};

@@ -2,17 +2,28 @@
 
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// Standard API response wrapper
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({
+    "code": 200,
+    "status": "success",
+    "message": "Success",
+    "data": {}
+}))]
 pub struct ApiResponse<T> {
+    /// HTTP状态码
     pub code: u16,
+    /// 响应状态
     pub status: ResponseStatus,
+    /// 响应消息
     pub message: String,
+    /// 响应数据
     pub data: T,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ResponseStatus {
     Success,
@@ -109,20 +120,36 @@ impl ApiResponse<()> {
 }
 
 /// Pagination metadata
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({
+    "total": 100,
+    "current_page": 1,
+    "total_page": 10,
+    "size": 10,
+    "has_next_page": true,
+    "has_prev_page": false
+}))]
 pub struct Pagination {
+    /// 总记录数
     pub total: i64,
+    /// 当前页码
     pub current_page: i64,
+    /// 总页数
     pub total_page: i64,
+    /// 每页大小
     pub size: i64,
+    /// 是否有下一页
     pub has_next_page: bool,
+    /// 是否有上一页
     pub has_prev_page: bool,
 }
 
 /// Paginated response wrapper
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PaginatedData<T> {
+    /// 数据列表
     pub items: Vec<T>,
+    /// 分页信息
     pub pagination: Pagination,
 }
 

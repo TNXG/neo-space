@@ -6,6 +6,16 @@ use crate::models::{ApiResponse, User, Reader};
 use crate::services::ReaderRepository;
 
 /// 获取用户资料（非敏感数据）
+#[utoipa::path(
+    get,
+    path = "/api/user/profile",
+    responses(
+        (status = 200, description = "成功获取用户资料", body = ApiResponse<User>),
+        (status = 404, description = "未找到用户"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "用户管理"
+)]
 #[get("/user/profile")]
 pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<User>> {
     let collection: Collection<mongodb::bson::Document> = database.collection("users");
@@ -41,6 +51,15 @@ pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<Us
 }
 
 /// 获取所有 readers（非敏感数据）
+#[utoipa::path(
+    get,
+    path = "/api/readers",
+    responses(
+        (status = 200, description = "成功获取读者列表", body = ApiResponse<Vec<Reader>>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "用户管理"
+)]
 #[get("/readers")]
 pub async fn list_readers(database: &State<Database>) -> Json<ApiResponse<Vec<Reader>>> {
     let repo = ReaderRepository::new(database);
@@ -52,6 +71,20 @@ pub async fn list_readers(database: &State<Database>) -> Json<ApiResponse<Vec<Re
 }
 
 /// 通过 ID 获取 reader（非敏感数据）
+#[utoipa::path(
+    get,
+    path = "/api/readers/{id}",
+    params(
+        ("id" = String, Path, description = "读者ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取读者详情", body = ApiResponse<Reader>),
+        (status = 400, description = "无效的ID格式"),
+        (status = 404, description = "未找到读者"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "用户管理"
+)]
 #[get("/readers/<id>")]
 pub async fn get_reader_by_id(id: String, database: &State<Database>) -> Json<ApiResponse<Reader>> {
     let repo = ReaderRepository::new(database);

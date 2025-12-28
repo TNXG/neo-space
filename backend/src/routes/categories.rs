@@ -6,6 +6,15 @@ use futures::stream::TryStreamExt;
 use crate::models::{Category, ApiResponse};
 
 /// List all categories
+#[utoipa::path(
+    get,
+    path = "/api/categories",
+    responses(
+        (status = 200, description = "成功获取分类列表", body = ApiResponse<Vec<Category>>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "分类管理"
+)]
 #[get("/categories")]
 pub async fn list_categories(
     db: &State<Database>,

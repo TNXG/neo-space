@@ -2,10 +2,11 @@
 
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use crate::utils::serializers::*;
 
 /// 时效性等级
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum TimeSensitivity {
     /// 高时效性 - 技术版本、API、框架等易过期内容
@@ -41,7 +42,7 @@ pub struct TimeCapsule {
 }
 
 /// 创建 Time Capsule 的请求体
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct TimeCapsuleRequest {
     /// 文章 ID
     #[serde(rename = "refId")]
@@ -56,11 +57,15 @@ fn default_ref_type() -> String {
 }
 
 /// Time Capsule 分析响应
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct TimeCapsuleResponse {
+    /// 时效性等级
     pub sensitivity: TimeSensitivity,
+    /// AI分析理由
     pub reason: String,
+    /// 检测到的易过期元素
     pub markers: Vec<String>,
+    /// 是否为新分析结果
     #[serde(rename = "isNew")]
     pub is_new: bool,
 }

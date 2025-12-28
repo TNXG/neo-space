@@ -2,23 +2,37 @@
 
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use crate::utils::serializers::*;
 
 /// User model (non-sensitive data only)
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct User {
+    /// 用户唯一标识符
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
+    #[schema(value_type = String)]
     pub id: ObjectId,
+    /// 用户名
     pub username: String,
+    /// 显示名称
     pub name: String,
+    /// 个人介绍
     pub introduce: String,
+    /// 头像URL
     pub avatar: String,
+    /// 邮箱
     pub mail: String,
+    /// 个人网站
     pub url: String,
+    /// 创建时间
     #[serde(serialize_with = "serialize_datetime")]
+    #[schema(value_type = String)]
     pub created: bson::DateTime,
+    /// 最后登录时间
     #[serde(rename = "lastLoginTime", serialize_with = "serialize_datetime")]
+    #[schema(value_type = String)]
     pub last_login_time: bson::DateTime,
+    /// 社交账号ID
     #[serde(rename = "socialIds", default)]
     pub social_ids: Option<UserSocialIds>,
 }
@@ -40,14 +54,21 @@ impl Default for User {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct UserSocialIds {
+    /// GitHub用户名
     pub github: Option<String>,
+    /// B站用户ID
     pub bilibili: Option<String>,
+    /// 网易云音乐用户ID
     pub netease: Option<String>,
+    /// Twitter用户名
     pub twitter: Option<String>,
+    /// Telegram用户名
     pub telegram: Option<String>,
+    /// 邮箱
     pub mail: Option<String>,
+    /// RSS订阅地址
     pub rss: Option<String>,
 }
 
@@ -71,25 +92,37 @@ pub struct QQUser {
 
 /// Reader model (non-sensitive data only)
 /// This is used for MongoDB storage - keeps native BSON types
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Reader {
+    /// 读者唯一标识符
     #[serde(rename = "_id")]
+    #[schema(value_type = String)]
     pub id: ObjectId,
+    /// 邮箱
     #[serde(default)]
     pub email: String,
+    /// 姓名
     #[serde(default)]
     pub name: String,
+    /// 用户名
     #[serde(default)]
     pub handle: String,
+    /// 头像URL
     #[serde(default)]
     pub image: String,
+    /// 是否为站长
     #[serde(rename = "isOwner", default)]
     pub is_owner: bool,
+    /// 邮箱是否已验证
     #[serde(rename = "emailVerified", default)]
     pub email_verified: Option<bool>,
+    /// 创建时间
     #[serde(rename = "createdAt", default = "default_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[schema(value_type = String)]
     pub created_at: bson::DateTime,
+    /// 更新时间
     #[serde(rename = "updatedAt", default = "default_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[schema(value_type = String)]
     pub updated_at: bson::DateTime,
 }
 

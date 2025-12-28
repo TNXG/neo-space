@@ -6,6 +6,19 @@ use futures::stream::TryStreamExt;
 use crate::models::{Recently, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
 
 /// List recentlies with pagination
+#[utoipa::path(
+    get,
+    path = "/api/recentlies",
+    params(
+        ("page" = Option<i64>, Query, description = "页码，默认为1"),
+        ("size" = Option<i64>, Query, description = "每页大小，默认为10，最大100")
+    ),
+    responses(
+        (status = 200, description = "成功获取动态列表", body = PaginatedResponse<Recently>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "动态管理"
+)]
 #[get("/recentlies?<page>&<size>")]
 pub async fn list_recentlies(
     db: &State<Database>,

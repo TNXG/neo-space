@@ -107,6 +107,19 @@ fn parse_ai_response(response: &str) -> Result<(TimeSensitivity, String, Vec<Str
 }
 
 /// 分析文章时效性
+#[utoipa::path(
+    post,
+    path = "/api/ai/time-capsule",
+    request_body = TimeCapsuleRequest,
+    responses(
+        (status = 200, description = "成功分析文章时效性", body = ApiResponse<TimeCapsuleResponse>),
+        (status = 400, description = "无效的请求参数"),
+        (status = 404, description = "文章不存在"),
+        (status = 500, description = "服务器内部错误"),
+        (status = 503, description = "AI服务不可用")
+    ),
+    tag = "AI服务"
+)]
 #[post("/ai/time-capsule", data = "<request>")]
 pub async fn analyze_time_capsule(
     db: &State<Database>,
@@ -242,6 +255,19 @@ pub async fn analyze_time_capsule(
 }
 
 /// 获取文章的 Time Capsule 分析结果
+#[utoipa::path(
+    get,
+    path = "/api/ai/time-capsule/{ref_id}",
+    params(
+        ("ref_id" = String, Path, description = "文章ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取分析结果", body = ApiResponse<TimeCapsuleResponse>),
+        (status = 404, description = "分析结果不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "AI服务"
+)]
 #[get("/ai/time-capsule/<ref_id>")]
 pub async fn get_time_capsule(
     db: &State<Database>,

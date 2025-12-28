@@ -7,6 +7,19 @@ use std::str::FromStr;
 use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
 
 /// List published posts with pagination
+#[utoipa::path(
+    get,
+    path = "/api/posts",
+    params(
+        ("page" = Option<i64>, Query, description = "页码，默认为1"),
+        ("size" = Option<i64>, Query, description = "每页大小，默认为10，最大100")
+    ),
+    responses(
+        (status = 200, description = "成功获取文章列表", body = PaginatedResponse<PostWithCategory>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "文章管理"
+)]
 #[get("/posts?<page>&<size>")]
 pub async fn list_posts(
     db: &State<Database>,
@@ -98,6 +111,20 @@ async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<Strin
 }
 
 /// Get post by ID
+#[utoipa::path(
+    get,
+    path = "/api/posts/{id}",
+    params(
+        ("id" = String, Path, description = "文章ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取文章详情", body = ApiResponse<PostWithCategory>),
+        (status = 400, description = "无效的ID格式"),
+        (status = 404, description = "文章不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "文章管理"
+)]
 #[get("/posts/<id>")]
 pub async fn get_post_by_id(
     db: &State<Database>,
@@ -128,6 +155,19 @@ pub async fn get_post_by_id(
 }
 
 /// Get post by slug
+#[utoipa::path(
+    get,
+    path = "/api/posts/slug/{slug}",
+    params(
+        ("slug" = String, Path, description = "文章URL别名")
+    ),
+    responses(
+        (status = 200, description = "成功获取文章详情", body = ApiResponse<PostWithCategory>),
+        (status = 404, description = "文章不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "文章管理"
+)]
 #[get("/posts/slug/<slug>")]
 pub async fn get_post_by_slug(
     db: &State<Database>,
@@ -160,22 +200,26 @@ pub async fn get_post_by_slug(
 
 /// Get adjacent posts (previous and next) by slug
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AdjacentPosts {
+    /// 上一篇文章
     pub prev: Option<AdjacentPost>,
+    /// 下一篇文章
     pub next: Option<AdjacentPost>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AdjacentPost {
+    /// 文章URL别名
     pub slug: String,
+    /// 文章标题
     pub title: String,
+    /// 分类URL别名
     #[serde(rename = "categorySlug")]
     pub category_slug: String,
-}
-
-/// Minimal post structure for projection queries
+}/// Minimal post structure for projection queries
 #[derive(Debug, Serialize, Deserialize)]
 struct MinimalPost {
     #[serde(rename = "_id")]
@@ -187,6 +231,19 @@ struct MinimalPost {
     pub created: bson::DateTime,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/posts/slug/{slug}/adjacent",
+    params(
+        ("slug" = String, Path, description = "文章URL别名")
+    ),
+    responses(
+        (status = 200, description = "成功获取相邻文章", body = ApiResponse<AdjacentPosts>),
+        (status = 404, description = "文章不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "文章管理"
+)]
 #[get("/posts/slug/<slug>/adjacent")]
 pub async fn get_adjacent_posts(
     db: &State<Database>,

@@ -4,6 +4,7 @@ use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::models::{Note, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
 
@@ -36,6 +37,19 @@ async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<Strin
 }
 
 /// List published notes with pagination
+#[utoipa::path(
+    get,
+    path = "/api/notes",
+    params(
+        ("page" = Option<i64>, Query, description = "页码，默认为1"),
+        ("size" = Option<i64>, Query, description = "每页大小，默认为10，最大100")
+    ),
+    responses(
+        (status = 200, description = "成功获取日记列表", body = PaginatedResponse<Note>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "日记管理"
+)]
 #[get("/notes?<page>&<size>")]
 pub async fn list_notes(
     db: &State<Database>,
@@ -95,6 +109,20 @@ pub async fn list_notes(
 }
 
 /// Get note by ID
+#[utoipa::path(
+    get,
+    path = "/api/notes/{id}",
+    params(
+        ("id" = String, Path, description = "日记ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取日记详情", body = ApiResponse<Note>),
+        (status = 400, description = "无效的ID格式"),
+        (status = 404, description = "日记不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "日记管理"
+)]
 #[get("/notes/<id>")]
 pub async fn get_note_by_id(
     db: &State<Database>,
@@ -114,6 +142,19 @@ pub async fn get_note_by_id(
 }
 
 /// Get note by numeric ID (nid)
+#[utoipa::path(
+    get,
+    path = "/api/notes/nid/{nid}",
+    params(
+        ("nid" = i32, Path, description = "日记数字ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取日记详情", body = ApiResponse<Note>),
+        (status = 404, description = "日记不存在"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "日记管理"
+)]
 #[get("/notes/nid/<nid>")]
 pub async fn get_note_by_nid(
     db: &State<Database>,
@@ -131,15 +172,19 @@ pub async fn get_note_by_nid(
 }
 
 /// Get adjacent notes (previous and next) by nid
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AdjacentNotes {
+    /// 上一篇日记
     pub prev: Option<AdjacentNote>,
+    /// 下一篇日记
     pub next: Option<AdjacentNote>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AdjacentNote {
+    /// 日记数字ID
     pub nid: i32,
+    /// 日记标题
     pub title: String,
 }
 
@@ -152,6 +197,18 @@ struct MinimalNote {
     pub title: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/notes/nid/{nid}/adjacent",
+    params(
+        ("nid" = i32, Path, description = "日记数字ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取相邻日记", body = ApiResponse<AdjacentNotes>),
+        (status = 500, description = "服务器内部错误")
+    ),
+    tag = "日记管理"
+)]
 #[get("/notes/nid/<nid>/adjacent")]
 pub async fn get_adjacent_notes(
     db: &State<Database>,
