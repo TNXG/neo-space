@@ -4,9 +4,11 @@ use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use log::error;
 
-use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
+use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, Pagination};
+use crate::services::LinkHealthService;
+use crate::services::link_health_service::LinkWithHealth;
 
-/// List approved friend links with pagination
+/// List approved friend links with pagination (含健康状态)
 #[utoipa::path(
     get,
     path = "/api/links",
@@ -15,7 +17,7 @@ use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, PaginatedRes
         ("size" = Option<i64>, Query, description = "每页大小，默认为50，最大100")
     ),
     responses(
-        (status = 200, description = "成功获取友链列表", body = PaginatedResponse<Link>),
+        (status = 200, description = "成功获取友链列表", body = ApiResponse<LinkWithHealthResponse>),
         (status = 500, description = "服务器内部错误")
     ),
     tag = "友链管理"
@@ -23,9 +25,10 @@ use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, PaginatedRes
 #[get("/links?<page>&<size>")]
 pub async fn list_links(
     db: &State<Database>,
+    health_service: &State<LinkHealthService>,
     page: Option<i64>,
     size: Option<i64>,
-) -> Result<Json<PaginatedResponse<Link>>, Status> {
+) -> Result<Json<ApiResponse<LinkWithHealthResponse>>, Status> {
     let page = page.unwrap_or(1).max(1);
     let size = size.unwrap_or(50).clamp(1, 100);
     let skip = (page - 1) * size;
@@ -57,13 +60,16 @@ pub async fn list_links(
             Status::InternalServerError
         })?;
 
-    let mut items = Vec::new();
+    let mut links = Vec::new();
     while let Some(link) = cursor.try_next().await.map_err(|e| {
         error!("Failed to deserialize link: {:?}", e);
         Status::InternalServerError
     })? {
-        items.push(link);
+        links.push(link);
     }
+
+    // 批量并发检查所有友链的健康状态
+    let items = health_service.check_links_batch(links).await;
 
     let total_page = (total as f64 / size as f64).ceil() as i64;
     let pagination = Pagination {
@@ -75,7 +81,10 @@ pub async fn list_links(
         has_prev_page: page > 1,
     };
 
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(LinkWithHealthResponse {
+        items,
+        pagination,
+    })))
 }
 
 /// Get link by ID
@@ -159,4 +168,11 @@ pub async fn apply_link(
         .map_err(|_| Status::InternalServerError)?;
 
     Ok(Json(ApiResponse::success(new_link)))
+}
+
+/// 友链列表（含健康状态）响应
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+pub struct LinkWithHealthResponse {
+    pub items: Vec<LinkWithHealth>,
+    pub pagination: Pagination,
 }

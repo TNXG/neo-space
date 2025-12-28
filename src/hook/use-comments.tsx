@@ -10,16 +10,16 @@ import { useAuthStore } from "@/lib/stores/auth-store";
  * 检查评论列表中是否有待审核的评论
  */
 function hasPendingComments(comments: Comment[]): boolean {
-	const checkComment = (comment: Comment): boolean => {
-		if (comment.state === 3)
-			return true; // CommentState.PENDING
-		if (comment.children && comment.children.length > 0) {
-			return comment.children.some(checkComment);
-		}
-		return false;
-	};
+  const checkComment = (comment: Comment): boolean => {
+    if (comment.state === 3)
+      return true; // CommentState.PENDING
+    if (comment.children && comment.children.length > 0) {
+      return comment.children.some(checkComment);
+    }
+    return false;
+  };
 
-	return comments.some(checkComment);
+  return comments.some(checkComment);
 }
 
 /**
@@ -36,60 +36,60 @@ function hasPendingComments(comments: Comment[]): boolean {
  * @param initialData.count - 初始评论数量
  */
 export function useComments(
-	refId: string,
-	refType: "posts" | "pages" | "notes",
-	initialData?: { comments: Comment[]; count: number },
+  refId: string,
+  refType: "posts" | "pages" | "notes",
+  initialData?: { comments: Comment[]; count: number },
 ) {
-	const token = useAuthStore(state => state.token);
-	const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const token = useAuthStore(state => state.token);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-	const { data, error, isLoading, mutate } = useSWR(
-		refId ? [`/comments/${refType}/${refId}`, token] : null,
-		async () => {
-			const response = await getComments(refId, refType, token ?? undefined);
-			return response.data;
-		},
-		{
-			fallbackData: initialData,
-			revalidateOnFocus: false,
-			revalidateOnReconnect: true,
-		},
-	);
+  const { data, error, isLoading, mutate } = useSWR(
+    refId ? [`/comments/${refType}/${refId}`, token] : null,
+    async () => {
+      const response = await getComments(refId, refType, token ?? undefined);
+      return response.data;
+    },
+    {
+      fallbackData: initialData,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    },
+  );
 
-	const hasPending = useMemo(() => {
-		return hasPendingComments(data?.comments || []);
-	}, [data?.comments]);
+  const hasPending = useMemo(() => {
+    return hasPendingComments(data?.comments || []);
+  }, [data?.comments]);
 
-	// 手动控制轮询：有待审核评论时启动，没有时停止
-	useEffect(() => {
-		// 清除之前的定时器
-		if (intervalRef.current) {
-			clearInterval(intervalRef.current);
-			intervalRef.current = null;
-		}
+  // 手动控制轮询：有待审核评论时启动，没有时停止
+  useEffect(() => {
+    // 清除之前的定时器
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
-		// 如果有待审核评论，启动轮询
-		if (hasPending) {
-			intervalRef.current = setInterval(() => {
-				mutate();
-			}, 5000);
-		}
+    // 如果有待审核评论，启动轮询
+    if (hasPending) {
+      intervalRef.current = setInterval(() => {
+        mutate();
+      }, 5000);
+    }
 
-		// 清理函数
-		return () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current);
-				intervalRef.current = null;
-			}
-		};
-	}, [hasPending, mutate]);
+    // 清理函数
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [hasPending, mutate]);
 
-	return {
-		comments: (data?.comments || []) as Comment[],
-		count: data?.count || 0,
-		isLoading,
-		isError: error,
-		refresh: mutate,
-		hasPending,
-	};
+  return {
+    comments: (data?.comments || []) as Comment[],
+    count: data?.count || 0,
+    isLoading,
+    isError: error,
+    refresh: mutate,
+    hasPending,
+  };
 }

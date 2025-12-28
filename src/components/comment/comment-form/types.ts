@@ -3,30 +3,30 @@
  */
 
 export interface OwOItem {
-	text: string;
-	icon: string;
+  text: string;
+  icon: string;
 }
 
 export interface OwOPackage {
-	type: string;
-	container: OwOItem[];
+  type: string;
+  container: OwOItem[];
 }
 
 export type OwOResponse = Record<string, OwOPackage>;
 
 export interface CommentFormProps {
-	refId: string;
-	refType: "posts" | "pages" | "notes";
-	parentId?: string;
-	onSuccess?: () => void;
-	onCancel?: () => void;
-	autoFocus?: boolean;
+  refId: string;
+  refType: "posts" | "pages" | "notes";
+  parentId?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  autoFocus?: boolean;
 }
 
 export interface GuestUser {
-	name: string;
-	email: string;
-	url: string;
+  name: string;
+  email: string;
+  url: string;
 }
 
 export type TurnstileStatus = "loading" | "verifying" | "verified" | "error";

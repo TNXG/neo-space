@@ -135,6 +135,48 @@ async fn rocket() -> _ {
         }
     };
 
+    // Initialize link health service
+    let link_health_stale_hours = std::env::var("LINK_HEALTH_STALE_HOURS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(6); // 默认 6 小时
+    let link_health_timeout = std::env::var("LINK_HEALTH_TIMEOUT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10); // 默认 10 秒
+    let link_health_check_interval = std::env::var("LINK_HEALTH_CHECK_INTERVAL")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(6); // 默认 6 小时检查一次
+    
+    let link_health_service = services::LinkHealthService::new(
+        link_health_stale_hours,
+        link_health_timeout,
+    );
+    log::info!("友链健康检查服务初始化成功");
+
+    // 启动时异步检查所有友链（后台任务）
+    {
+        let service = link_health_service.clone();
+        let db = database.clone();
+        tokio::spawn(async move {
+            log::info!("启动友链健康检查后台任务...");
+            let result = service.check_all_links(&db).await;
+            log::info!(
+                "友链健康检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
+                result.total, result.alive_count, result.failed_count, result.duration_ms
+            );
+        });
+    }
+
+    // 启动定期健康检查任务
+    {
+        let service = link_health_service.clone();
+        let db = database.clone();
+        service.start_periodic_check(db, link_health_check_interval);
+        log::info!("友链定期健康检查任务已启动（间隔: {}小时）", link_health_check_interval);
+    }
+
     // Configure CORS for frontend communication
     let cors = CorsOptions::default()
         .allowed_origins(AllowedOrigins::all())
@@ -160,6 +202,7 @@ async fn rocket() -> _ {
         .manage(oauth_config)
         .manage(ip_service)
         .manage(cache_service)
+        .manage(link_health_service)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
         .mount(

@@ -10,15 +10,15 @@ import "katex/dist/katex.min.css";
  * 包含移动端适配样式
  */
 export function KatexStyles() {
-	useEffect(() => {
-		// 检查是否已经注入过样式
-		if (document.getElementById("katex-mobile-styles")) {
-			return;
-		}
+  useEffect(() => {
+    // 检查是否已经注入过样式
+    if (document.getElementById("katex-mobile-styles")) {
+      return;
+    }
 
-		const style = document.createElement("style");
-		style.id = "katex-mobile-styles";
-		style.textContent = `
+    const style = document.createElement("style");
+    style.id = "katex-mobile-styles";
+    style.textContent = `
 			/* KaTeX 移动端适配 */
 			
 			/* 块级公式容器 - 支持横向滚动 */
@@ -89,12 +89,12 @@ export function KatexStyles() {
 				background: var(--surface-200);
 			}
 		`;
-		document.head.appendChild(style);
+    document.head.appendChild(style);
 
-		return () => {
-			// 组件卸载时不移除样式，因为可能有其他公式还在使用
-		};
-	}, []);
+    return () => {
+      // 组件卸载时不移除样式，因为可能有其他公式还在使用
+    };
+  }, []);
 
-	return null;
+  return null;
 }

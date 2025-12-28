@@ -13,11 +13,11 @@ const emptySubscribe = () => () => {};
  * 替代传统的 const [m, setM] = useState(false); useEffect(() => setM(true), []);
  */
 export function useHasMounted() {
-	return useSyncExternalStore(
-		emptySubscribe,
-		// 客户端渲染时返回的值
-		() => true,
-		// 服务端渲染（SSR）或水合（Hydration）初期返回的值
-		() => false,
-	);
+  return useSyncExternalStore(
+    emptySubscribe,
+    // 客户端渲染时返回的值
+    () => true,
+    // 服务端渲染（SSR）或水合（Hydration）初期返回的值
+    () => false,
+  );
 }

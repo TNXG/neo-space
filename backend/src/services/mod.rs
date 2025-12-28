@@ -16,6 +16,7 @@ pub mod ip_service;
 pub mod cache_service;
 pub mod revalidation_service;
 pub mod change_stream_service;
+pub mod link_health_service;
 
 pub use db_service::*;
 pub use options_service::*;
@@ -32,3 +33,4 @@ pub use ip_service::IpService;
 pub use cache_service::CacheService;
 pub use revalidation_service::RevalidationService;
 pub use change_stream_service::ChangeStreamService;
+pub use link_health_service::LinkHealthService;

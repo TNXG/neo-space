@@ -1,0 +1,61 @@
+"use client";
+
+import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
+import type { LinkApplyFormData } from "@/lib/validations/link";
+import { Icon } from "@iconify/react";
+
+import Link from "next/link";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import { LINK_GUIDELINES } from "@/config/link-guidelines";
+
+interface GuidelinesStepProps {
+  register: UseFormRegister<LinkApplyFormData>;
+  setValue: UseFormSetValue<LinkApplyFormData>;
+  checked: boolean;
+  error?: string;
+}
+
+export function GuidelinesStep({ register, setValue, checked, error }: GuidelinesStepProps) {
+  return (
+    <FieldGroup>
+      <div className="p-6 bg-accent-50/50 dark:bg-accent-900/10 border border-accent-100 dark:border-accent-900/30 rounded-2xl">
+        <div className="flex items-start gap-3 mb-4">
+          <Icon icon="mingcute:information-line" className="w-6 h-6 text-accent-600 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-base font-bold text-accent-900 dark:text-accent-100 mb-2">在提交友链之前</h3>
+            <p className="text-sm text-accent-800 dark:text-accent-300 leading-relaxed">
+              请阅读我们的
+              {" "}
+              <Link href={LINK_GUIDELINES.guidelinesUrl} target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
+                友链指南
+              </Link>
+              {" "}
+              和
+              {" "}
+              <Link href={LINK_GUIDELINES.termsUrl} target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
+                服务条款
+              </Link>
+              。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Field>
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="agree-guidelines"
+            {...register("agreedToGuidelines")}
+            checked={checked}
+            onCheckedChange={checked => setValue("agreedToGuidelines", checked === true)}
+          />
+          <label htmlFor="agree-guidelines" className="text-sm leading-relaxed text-foreground">
+            勾选此框，即表示您同意我们的友链指南和服务条款
+          </label>
+        </div>
+        {error && <FieldError>{error}</FieldError>}
+      </Field>
+    </FieldGroup>
+  );
+}

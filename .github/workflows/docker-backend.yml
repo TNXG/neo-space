@@ -2,11 +2,11 @@ name: Build Backend Docker Image
 
 on:
   push:
-    branches: ["master"]
+    branches: [master]
     tags: ["v*"]
     paths:
       - "backend/**"
-      - ".github/workflows/docker-backend.yml"
+      - .github/workflows/docker-backend.yml
   workflow_dispatch:
 
 env:

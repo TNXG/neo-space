@@ -15,28 +15,28 @@ let highlighterInstance: Highlighter | null = null;
  * @param langs - 需要动态加载的语言列表 (例如: ['rust', 'python'])
  */
 export async function getHighlighter(langs: string[] = []): Promise<Highlighter> {
-	// 1. 初始化核心实例（如果尚未存在）
-	if (!highlighterInstance) {
-		highlighterInstance = await createHighlighterCore({
-			themes: [darkPlus, lightPlus], // 同时加载明暗两个主题
-			langs: [], // 初始不加载任何语言，按需加载
-			engine: createOnigurumaEngine(import("shiki/wasm")),
-		});
-	}
+  // 1. 初始化核心实例（如果尚未存在）
+  if (!highlighterInstance) {
+    highlighterInstance = await createHighlighterCore({
+      themes: [darkPlus, lightPlus], // 同时加载明暗两个主题
+      langs: [], // 初始不加载任何语言，按需加载
+      engine: createOnigurumaEngine(import("shiki/wasm")),
+    });
+  }
 
-	// 2. 筛选出 Shiki 支持且尚未加载的语言
-	const loadedLanguages = highlighterInstance.getLoadedLanguages();
-	const languagesToLoad = langs.filter((lang) => {
-		// 检查语言是否在 Shiki 支持列表中，并且未加载
-		return lang in bundledLanguages && !loadedLanguages.includes(lang);
-	});
+  // 2. 筛选出 Shiki 支持且尚未加载的语言
+  const loadedLanguages = highlighterInstance.getLoadedLanguages();
+  const languagesToLoad = langs.filter((lang) => {
+    // 检查语言是否在 Shiki 支持列表中，并且未加载
+    return lang in bundledLanguages && !loadedLanguages.includes(lang);
+  });
 
-	// 3. 并行加载缺失的语言
-	if (languagesToLoad.length > 0) {
-		await highlighterInstance.loadLanguage(
-			...languagesToLoad.map(lang => bundledLanguages[lang as keyof typeof bundledLanguages]),
-		);
-	}
+  // 3. 并行加载缺失的语言
+  if (languagesToLoad.length > 0) {
+    await highlighterInstance.loadLanguage(
+      ...languagesToLoad.map(lang => bundledLanguages[lang as keyof typeof bundledLanguages]),
+    );
+  }
 
-	return highlighterInstance as Highlighter;
+  return highlighterInstance as Highlighter;
 }

@@ -8,9 +8,9 @@ import styles from "./Spoiler.module.scss";
  * 打印时：显示删除线效果
  */
 export const Spoiler = ({ children }: { children: React.ReactNode }) => {
-	return (
-		<del className={styles.spoiler} title="你知道的太多了">
-			{children}
-		</del>
-	);
+  return (
+    <del className={styles.spoiler} title="你知道的太多了">
+      {children}
+    </del>
+  );
 };

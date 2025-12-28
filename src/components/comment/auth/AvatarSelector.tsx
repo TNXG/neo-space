@@ -8,10 +8,10 @@ import { updateAvatar } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 interface AvatarSelectorProps {
-	accounts: AccountInfo[];
-	currentAvatar: string;
-	userEmail: string;
-	onAvatarChange?: () => void;
+  accounts: AccountInfo[];
+  currentAvatar: string;
+  userEmail: string;
+  onAvatarChange?: () => void;
 }
 
 type AvatarProvider = "github" | "qq" | "gravatar";
@@ -22,128 +22,128 @@ type AvatarProvider = "github" | "qq" | "gravatar";
  * 前端只传递 provider，后端负责获取对应的头像 URL
  */
 export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarChange }: AvatarSelectorProps) {
-	const { token, fetchUser } = useAuthStore();
-	const [isUpdating, setIsUpdating] = useState(false);
+  const { token, fetchUser } = useAuthStore();
+  const [isUpdating, setIsUpdating] = useState(false);
 
-	// 检测当前头像来源
-	const detectCurrentProvider = (): AvatarProvider => {
-		// Gravatar 头像
-		if (currentAvatar.includes("gravatar.com") || currentAvatar.includes("seccdn.libravatar.org")) {
-			return "gravatar";
-		}
+  // 检测当前头像来源
+  const detectCurrentProvider = (): AvatarProvider => {
+    // Gravatar 头像
+    if (currentAvatar.includes("gravatar.com") || currentAvatar.includes("seccdn.libravatar.org")) {
+      return "gravatar";
+    }
 
-		// GitHub 头像 (avatars.githubusercontent.com)
-		if (currentAvatar.includes("githubusercontent.com") || currentAvatar.includes("github.com")) {
-			return "github";
-		}
+    // GitHub 头像 (avatars.githubusercontent.com)
+    if (currentAvatar.includes("githubusercontent.com") || currentAvatar.includes("github.com")) {
+      return "github";
+    }
 
-		// QQ 头像 (q.qlogo.cn 或 thirdqq.qlogo.cn)
-		if (currentAvatar.includes("qlogo.cn") || currentAvatar.includes("qq.com")) {
-			return "qq";
-		}
+    // QQ 头像 (q.qlogo.cn 或 thirdqq.qlogo.cn)
+    if (currentAvatar.includes("qlogo.cn") || currentAvatar.includes("qq.com")) {
+      return "qq";
+    }
 
-		// 默认返回 gravatar
-		return "gravatar";
-	};
+    // 默认返回 gravatar
+    return "gravatar";
+  };
 
-	const [selectedProvider, setSelectedProvider] = useState<AvatarProvider>(() => detectCurrentProvider());
+  const [selectedProvider, setSelectedProvider] = useState<AvatarProvider>(() => detectCurrentProvider());
 
-	// 构建选项列表（排除 QQ 的临时邮箱）
-	const options: Array<{ value: AvatarProvider; label: string; icon: string }> = [
-		{
-			value: "gravatar",
-			label: "Gravatar（邮箱头像）",
-			icon: "mingcute:mail-line",
-		},
-	];
+  // 构建选项列表（排除 QQ 的临时邮箱）
+  const options: Array<{ value: AvatarProvider; label: string; icon: string }> = [
+    {
+      value: "gravatar",
+      label: "Gravatar（邮箱头像）",
+      icon: "mingcute:mail-line",
+    },
+  ];
 
-	// 添加已关联的账号
-	if (accounts.some(acc => acc.provider === "github")) {
-		options.push({
-			value: "github",
-			label: "GitHub",
-			icon: "mingcute:github-line",
-		});
-	}
+  // 添加已关联的账号
+  if (accounts.some(acc => acc.provider === "github")) {
+    options.push({
+      value: "github",
+      label: "GitHub",
+      icon: "mingcute:github-line",
+    });
+  }
 
-	// 只有当邮箱不是 QQ 临时邮箱时才添加 QQ 选项
-	const qqAccount = accounts.find(acc => acc.provider === "qq");
-	if (qqAccount && !userEmail.endsWith("@qq.oauth")) {
-		options.push({
-			value: "qq",
-			label: "QQ",
-			icon: "mingcute:qq-line",
-		});
-	}
+  // 只有当邮箱不是 QQ 临时邮箱时才添加 QQ 选项
+  const qqAccount = accounts.find(acc => acc.provider === "qq");
+  if (qqAccount && !userEmail.endsWith("@qq.oauth")) {
+    options.push({
+      value: "qq",
+      label: "QQ",
+      icon: "mingcute:qq-line",
+    });
+  }
 
-	const handleChange = async (provider: AvatarProvider) => {
-		if (!token) {
-			toast.error("未登录");
-			return;
-		}
+  const handleChange = async (provider: AvatarProvider) => {
+    if (!token) {
+      toast.error("未登录");
+      return;
+    }
 
-		if (provider === selectedProvider) {
-			return;
-		}
+    if (provider === selectedProvider) {
+      return;
+    }
 
-		setIsUpdating(true);
-		setSelectedProvider(provider);
+    setIsUpdating(true);
+    setSelectedProvider(provider);
 
-		try {
-			const response = await updateAvatar({ provider }, token);
+    try {
+      const response = await updateAvatar({ provider }, token);
 
-			if (response.code === 200) {
-				toast.success("头像更新成功");
-				await fetchUser();
-				onAvatarChange?.();
-			} else {
-				toast.error(response.message || "更新失败");
-				setSelectedProvider(detectCurrentProvider());
-			}
-		} catch (error) {
-			console.error("Update avatar error:", error);
-			toast.error("更新失败，请稍后重试");
-			setSelectedProvider(detectCurrentProvider());
-		} finally {
-			setIsUpdating(false);
-		}
-	};
+      if (response.code === 200) {
+        toast.success("头像更新成功");
+        await fetchUser();
+        onAvatarChange?.();
+      } else {
+        toast.error(response.message || "更新失败");
+        setSelectedProvider(detectCurrentProvider());
+      }
+    } catch (error) {
+      console.error("Update avatar error:", error);
+      toast.error("更新失败，请稍后重试");
+      setSelectedProvider(detectCurrentProvider());
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-	if (options.length <= 1) {
-		return null; // 只有一个选项时不显示选择器
-	}
+  if (options.length <= 1) {
+    return null; // 只有一个选项时不显示选择器
+  }
 
-	return (
-		<div className="space-y-1.5">
-			<div className="relative">
-				<select
-					value={selectedProvider}
-					onChange={e => handleChange(e.target.value as AvatarProvider)}
-					disabled={isUpdating}
-					className="w-full appearance-none rounded-lg border border-border bg-background px-2.5 py-1.5 pr-8 text-xs text-foreground outline-none transition-colors hover:border-accent-300 focus:border-accent-500 focus:ring-1 focus:ring-accent-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					{options.map(option => (
-						<option key={option.value} value={option.value}>
-							{option.label}
-						</option>
-					))}
-				</select>
+  return (
+    <div className="space-y-1.5">
+      <div className="relative">
+        <select
+          value={selectedProvider}
+          onChange={e => handleChange(e.target.value as AvatarProvider)}
+          disabled={isUpdating}
+          className="w-full appearance-none rounded-lg border border-border bg-background px-2.5 py-1.5 pr-8 text-xs text-foreground outline-none transition-colors hover:border-accent-300 focus:border-accent-500 focus:ring-1 focus:ring-accent-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {options.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
-				{/* 下拉箭头图标 */}
-				<div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
-					{isUpdating
-						? (
-								<Icon icon="mingcute:loading-line" className="size-3.5 text-muted-foreground animate-spin" />
-							)
-						: (
-								<Icon icon="mingcute:down-line" className="size-3.5 text-muted-foreground" />
-							)}
-				</div>
-			</div>
+        {/* 下拉箭头图标 */}
+        <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+          {isUpdating
+            ? (
+                <Icon icon="mingcute:loading-line" className="size-3.5 text-muted-foreground animate-spin" />
+              )
+            : (
+                <Icon icon="mingcute:down-line" className="size-3.5 text-muted-foreground" />
+              )}
+        </div>
+      </div>
 
-			<p className="text-xs text-muted-foreground/80">
-				选择头像来源
-			</p>
-		</div>
-	);
+      <p className="text-xs text-muted-foreground/80">
+        选择头像来源
+      </p>
+    </div>
+  );
 }
