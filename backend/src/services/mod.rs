@@ -17,6 +17,7 @@ pub mod cache_service;
 pub mod revalidation_service;
 pub mod change_stream_service;
 pub mod link_health_service;
+pub mod hosting_detector;
 pub mod email_service;
 pub mod verification_service;
 

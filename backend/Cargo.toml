@@ -92,8 +92,7 @@ rand = { version = "0.9.2", default-features = false, features = [ "std_rng" ] }
 log = "0.4"
 env_logger = { version = "0.11.8", default-features = false }
 
-# IP & Cache
-ip2region = { git = "https://github.com/lionsoul2014/ip2region.git", branch = "master", package = "ip2region", default-features = false }
+# Cache
 moka = { version = "0.12.12", default-features = false, features = [ "future" ] }
 
 # Crypto

@@ -19,32 +19,7 @@ use tokio::sync::Mutex;
 use utoipa::ToSchema;
 
 use crate::models::{Link, LinkState};
-
-/// 部署服务商类型
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
-#[serde(rename_all = "lowercase")]
-#[derive(Default)]
-pub enum HostingProvider {
-    Vercel,
-    Cloudflare,
-    Netlify,
-    GitHub,
-    Render,
-    Railway,
-    Fly,
-    Heroku,
-    AWS,
-    Azure,
-    GCP,
-    Aliyun,
-    Tencent,
-    Nginx,
-    Caddy,
-    Apache,
-    #[default]
-    Unknown,
-}
-
+use crate::services::hosting_detector::{HostingDetector, HostingProvider};
 
 /// 友链健康状态
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -259,7 +234,7 @@ impl LinkHealthService {
                 let is_alive = response.status().is_success() || response.status().is_redirection();
 
                 // 检测部署服务商
-                let hosting_provider = self.detect_hosting_provider(&response);
+                let hosting_provider = HostingDetector::detect(&response);
 
                 log::info!(
                     "[LinkHealth] {url} - 状态: {status_code}, 延迟: {latency}ms, 服务商: {hosting_provider:?}"
@@ -302,116 +277,6 @@ impl LinkHealthService {
                 }
             }
         }
-    }
-
-    /// 通过 HTTP 响应头检测部署服务商
-    fn detect_hosting_provider(&self, response: &reqwest::Response) -> HostingProvider {
-        let headers = response.headers();
-
-        // Vercel
-        if headers.contains_key("x-vercel-id")
-            || headers
-                .get("server")
-                .is_some_and(|v| v.to_str().unwrap_or("").contains("Vercel"))
-        {
-            return HostingProvider::Vercel;
-        }
-
-        // Cloudflare
-        if headers.contains_key("cf-ray") || headers.contains_key("cf-cache-status") {
-            return HostingProvider::Cloudflare;
-        }
-
-        // Netlify
-        if headers.contains_key("x-nf-request-id")
-            || headers
-                .get("server")
-                .is_some_and(|v| v.to_str().unwrap_or("").contains("Netlify"))
-        {
-            return HostingProvider::Netlify;
-        }
-
-        // GitHub Pages
-        if headers
-            .get("server")
-            .is_some_and(|v| v.to_str().unwrap_or("").contains("GitHub"))
-        {
-            return HostingProvider::GitHub;
-        }
-
-        // Render
-        if headers.contains_key("x-render-origin-server") {
-            return HostingProvider::Render;
-        }
-
-        // Railway
-        if headers
-            .get("server")
-            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("railway"))
-        {
-            return HostingProvider::Railway;
-        }
-
-        // Fly.io
-        if headers.contains_key("fly-request-id") {
-            return HostingProvider::Fly;
-        }
-
-        // Heroku
-        if headers.contains_key("x-heroku-queue-depth") {
-            return HostingProvider::Heroku;
-        }
-
-        // AWS (CloudFront / ALB)
-        if headers.contains_key("x-amz-cf-id") || headers.contains_key("x-amzn-requestid") {
-            return HostingProvider::AWS;
-        }
-
-        // Azure
-        if headers.contains_key("x-azure-ref") {
-            return HostingProvider::Azure;
-        }
-
-        // GCP
-        if headers.contains_key("x-cloud-trace-context") {
-            return HostingProvider::GCP;
-        }
-
-        // 阿里云
-        if headers.contains_key("x-swift-savetime") || headers.contains_key("eagleid") {
-            return HostingProvider::Aliyun;
-        }
-
-        // 腾讯云
-        if headers.contains_key("x-nws-log-uuid") {
-            return HostingProvider::Tencent;
-        }
-
-        // Nginx
-        if headers
-            .get("server")
-            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("nginx"))
-        {
-            return HostingProvider::Nginx;
-        }
-
-        // Caddy
-        if headers
-            .get("server")
-            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("caddy"))
-        {
-            return HostingProvider::Caddy;
-        }
-
-        // Apache
-        if headers
-            .get("server")
-            .is_some_and(|v| v.to_str().unwrap_or("").to_lowercase().contains("apache"))
-        {
-            return HostingProvider::Apache;
-        }
-
-        HostingProvider::Unknown
     }
 
     /// 批量检查所有友链（强制刷新）

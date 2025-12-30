@@ -44,8 +44,6 @@ services:
       - QQ_APP_KEY=${QQ_APP_KEY}
       - ROCKET_ADDRESS=0.0.0.0
       - ROCKET_PORT=8000
-    volumes:
-      - ./data/ip2region:/app/data:ro
     networks:
       - neo-space
     depends_on:

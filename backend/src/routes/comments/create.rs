@@ -26,7 +26,7 @@ use crate::services::{verify_turnstile, AccountRepository, CommentService, IpSer
 pub async fn create_comment(
     db: &State<mongodb::Database>,
     oauth_config: &State<OAuthConfig>,
-    ip_service: &State<Option<IpService>>,
+    ip_service: &State<IpService>,
     auth: OptionalAuthGuard,
     client_ip: ClientIp,
     request: Json<CreateCommentRequest>,
@@ -37,7 +37,7 @@ pub async fn create_comment(
 
     // 获取客户端 IP 和地理位置
     let ip_address = client_ip.0;
-    let location = ip_service.as_ref().and_then(|service| service.search_simple(&ip_address));
+    let location = ip_service.get_location(&ip_address).await;
     
     log::info!("收到评论请求 - IP: {ip_address}, 位置: {location:?}");
 
