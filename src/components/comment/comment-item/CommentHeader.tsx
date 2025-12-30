@@ -126,13 +126,13 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
           {comment.ua && comment.ua.os !== "unknown" && (
             <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`${comment.ua.os} ${comment.ua.osVersion} · ${comment.ua.browser} ${comment.ua.browserVersion}`}>
               <Icon icon={getOSIcon(comment.ua.os)} className="w-3 h-3" />
-              <span className="hidden sm:inline">
+              <span>
                 {comment.ua.os}
                 {" "}
                 {comment.ua.osVersion !== "unknown" && comment.ua.osVersion}
               </span>
               <Icon icon={getBrowserIcon(comment.ua.browser)} className="w-3 h-3" />
-              <span className="hidden sm:inline">
+              <span>
                 {comment.ua.browser}
                 {" "}
                 {comment.ua.browserVersion !== "unknown" && comment.ua.browserVersion}
@@ -144,7 +144,7 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
           {comment.location && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`来自 ${comment.location}`}>
               <Icon icon="mingcute:location-line" className="w-3 h-3" />
-              <span className="hidden sm:inline">{comment.location}</span>
+              <span>{comment.location}</span>
             </span>
           )}
         </div>
