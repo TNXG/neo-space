@@ -177,13 +177,23 @@ impl ChangeStreamService {
 
         // 仅在数量变化（insert/delete）时刷新列表页、首页和 Moka 缓存
         if is_count_change {
-            // 刷新博文列表
-            if self.revalidation_service.revalidate_tag("posts").await.is_ok() {
+            // 刷新博文列表（同时刷新 tag 和 ISR 页面）
+            if self
+                .revalidation_service
+                .revalidate_both("posts", "/posts")
+                .await
+                .is_ok()
+            {
                 revalidated_tags.push("posts".to_string());
             }
 
-            // 刷新首页
-            if self.revalidation_service.revalidate_tag("home").await.is_ok() {
+            // 刷新首页（同时刷新 tag 和 ISR 页面）
+            if self
+                .revalidation_service
+                .revalidate_both("home", "/")
+                .await
+                .is_ok()
+            {
                 revalidated_tags.push("home".to_string());
             }
 
@@ -256,13 +266,23 @@ impl ChangeStreamService {
 
         // 仅在数量变化（insert/delete）时刷新列表页、首页和 Moka 缓存
         if is_count_change {
-            // 刷新手记列表
-            if self.revalidation_service.revalidate_tag("notes").await.is_ok() {
+            // 刷新手记列表（同时刷新 tag 和 ISR 页面）
+            if self
+                .revalidation_service
+                .revalidate_both("notes", "/notes")
+                .await
+                .is_ok()
+            {
                 revalidated_tags.push("notes".to_string());
             }
 
-            // 刷新首页
-            if self.revalidation_service.revalidate_tag("home").await.is_ok() {
+            // 刷新首页（同时刷新 tag 和 ISR 页面）
+            if self
+                .revalidation_service
+                .revalidate_both("home", "/")
+                .await
+                .is_ok()
+            {
                 revalidated_tags.push("home".to_string());
             }
 

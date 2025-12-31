@@ -12,11 +12,12 @@ pub struct RevalidationService {
     nextjs_url: String,
     secret: String,
     salt: String,
+    client: reqwest::Client,
 }
 
 impl RevalidationService {
     /// 创建新的 Revalidation 服务实例
-    /// 
+    ///
     /// # 参数
     /// - `nextjs_url`: Next.js 应用的 URL (例如: <http://localhost:3000>)
     /// - `secret`: HMAC 签名密钥
@@ -27,76 +28,90 @@ impl RevalidationService {
             nextjs_url,
             secret,
             salt,
+            client: reqwest::Client::new(),
         }
     }
 
-    /// 通过标签重新验证
-    /// 
+    /// 通过标签重新验证（仅刷新 fetch 数据缓存）
+    ///
     /// # 参数
     /// - `tag`: 缓存标签 (例如: "posts", "notes", "pages")
     pub async fn revalidate_tag(&self, tag: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)?
-            .as_secs();
+        self.revalidate(Some(tag), None).await
+    }
 
-        // 构造签名消息: secret + timestamp + salt + tag
-        let message = format!("{}{}{}{}", self.secret, timestamp, self.salt, tag);
-        
-        // 生成 HMAC-SHA256 签名
-        let signature = self.generate_hmac(&message)?;
+    /// 通过路径重新验证（刷新 ISR 页面缓存）
+    ///
+    /// # 参数
+    /// - `path`: 页面路径 (例如: "/posts", "/notes")
+    #[allow(unused)]
+    pub async fn revalidate_path(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        self.revalidate(None, Some(path)).await
+    }
 
-        // 构造请求 URL
-        let url = format!("{}/api/revalidate", self.nextjs_url);
+    /// 同时刷新标签和路径（推荐：确保数据和页面都刷新）
+    ///
+    /// # 参数
+    /// - `tag`: 缓存标签
+    /// - `path`: 页面路径
+    pub async fn revalidate_both(
+        &self,
+        tag: &str,
+        path: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.revalidate(Some(tag), Some(path)).await
+    }
 
-        // 构造请求体
-        let body = serde_json::json!({
-            "tag": tag,
-            "timestamp": timestamp,
-            "signature": signature,
-        });
+    /// 批量刷新多个标签和路径
+    ///
+    /// # 参数
+    /// - `tags`: 缓存标签列表
+    /// - `paths`: 页面路径列表
+    #[allow(unused)]
+    pub async fn revalidate_batch(
+        &self,
+        tags: &[&str],
+        paths: &[&str],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut errors = Vec::new();
 
-        log::debug!(
-            "发送 Revalidation 请求 - Tag: {}, Timestamp: {}, Signature: {}",
-            tag,
-            timestamp,
-            &signature[..16]
-        );
+        // 刷新所有标签
+        for tag in tags {
+            if let Err(e) = self.revalidate_tag(tag).await {
+                errors.push(format!("Tag '{tag}': {e}"));
+            }
+        }
 
-        // 发送 HTTP POST 请求
-        let client = reqwest::Client::new();
-        let response = client
-            .post(&url)
-            .json(&body)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await?;
+        // 刷新所有路径
+        for path in paths {
+            if let Err(e) = self.revalidate_path(path).await {
+                errors.push(format!("Path '{path}': {e}"));
+            }
+        }
 
-        if response.status().is_success() {
-            log::info!("✓ Revalidation 成功 - Tag: {tag}");
+        if errors.is_empty() {
             Ok(())
         } else {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            log::error!(
-                "Revalidation 失败 - Status: {status}, Error: {error_text}"
-            );
-            Err(format!("Revalidation failed with status: {status}").into())
+            Err(errors.join("; ").into())
         }
     }
 
-    /// 通过路径重新验证
-    /// 
-    /// # 参数
-    /// - `path`: 页面路径 (例如: "/posts/my-post")
-    #[allow(unused)]
-    pub async fn revalidate_path(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)?
-            .as_secs();
+    /// 内部方法：发送 revalidate 请求
+    async fn revalidate(
+        &self,
+        tag: Option<&str>,
+        path: Option<&str>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
-        // 构造签名消息: secret + timestamp + salt + path
-        let message = format!("{}{}{}{}", self.secret, timestamp, self.salt, path);
-        
+        // 构造签名消息: secret + timestamp + salt + tag + path
+        let tag_str = tag.unwrap_or("");
+        let path_str = path.unwrap_or("");
+        let message = format!(
+            "{}{}{}{}{}",
+            self.secret, timestamp, self.salt, tag_str, path_str
+        );
+
         // 生成 HMAC-SHA256 签名
         let signature = self.generate_hmac(&message)?;
 
@@ -104,22 +119,34 @@ impl RevalidationService {
         let url = format!("{}/api/revalidate", self.nextjs_url);
 
         // 构造请求体
-        let body = serde_json::json!({
-            "path": path,
+        let mut body = serde_json::json!({
             "timestamp": timestamp,
             "signature": signature,
         });
 
+        if let Some(t) = tag {
+            body["tag"] = serde_json::Value::String(t.to_string());
+        }
+        if let Some(p) = path {
+            body["path"] = serde_json::Value::String(p.to_string());
+        }
+
+        let target = match (tag, path) {
+            (Some(t), Some(p)) => format!("Tag: {t}, Path: {p}"),
+            (Some(t), None) => format!("Tag: {t}"),
+            (None, Some(p)) => format!("Path: {p}"),
+            (None, None) => "None".to_string(),
+        };
+
         log::debug!(
-            "发送 Revalidation 请求 - Path: {}, Timestamp: {}, Signature: {}",
-            path,
-            timestamp,
-            &signature[..16]
+            "发送 Revalidation 请求 - {}, Timestamp: {}",
+            target,
+            timestamp
         );
 
         // 发送 HTTP POST 请求
-        let client = reqwest::Client::new();
-        let response = client
+        let response = self
+            .client
             .post(&url)
             .json(&body)
             .timeout(std::time::Duration::from_secs(10))
@@ -127,14 +154,12 @@ impl RevalidationService {
             .await?;
 
         if response.status().is_success() {
-            log::info!("✓ Revalidation 成功 - Path: {path}");
+            log::info!("✓ Revalidation 成功 - {target}");
             Ok(())
         } else {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            log::error!(
-                "Revalidation 失败 - Status: {status}, Error: {error_text}"
-            );
+            log::error!("Revalidation 失败 - Status: {status}, Error: {error_text}");
             Err(format!("Revalidation failed with status: {status}").into())
         }
     }
