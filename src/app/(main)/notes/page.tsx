@@ -8,25 +8,16 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 57600;
-export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  return [];
-}
-
-interface PageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function NotesPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const page = Number(params.page) || 1;
+/**
+ * 默认显示第一页
+ * 不携带任何参数，完全静态化
+ */
+export default async function NotesPage() {
+  const page = 1;
   const pageSize = 10;
 
   const { data } = await getNotes(page, pageSize);
-
-  const totalItems = data.pagination.total || 0;
-  const totalPages = data.pagination.total_page || Math.ceil(totalItems / pageSize);
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-6xl">
@@ -66,11 +57,6 @@ export default async function NotesPage({ searchParams }: PageProps) {
 
       <InteractiveList
         items={data.items}
-        pagination={{
-          currentPage: page,
-          totalPages,
-          totalItems,
-        }}
         type="note"
         emptyMessage="选择一篇日记查看详情"
       />

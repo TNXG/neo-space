@@ -59,7 +59,7 @@ const BaseSvg: React.FC<IconProps & { html?: string }> = ({
 }) => {
   // 优先使用 props 中的 fill，其次 color，最后 currentColor
   const fillColor = fill || color || "currentColor";
-  
+
   const commonProps = {
     xmlns: "http://www.w3.org/2000/svg",
     width: size,
@@ -78,6 +78,7 @@ const BaseSvg: React.FC<IconProps & { html?: string }> = ({
   };
 
   if (html) {
+    // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
     return <svg {...commonProps} dangerouslySetInnerHTML={{ __html: html }} />;
   }
 

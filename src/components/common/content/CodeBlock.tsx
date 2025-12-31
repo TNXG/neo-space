@@ -3,7 +3,7 @@
 import { Icon } from "@iconify/react/offline";
 import React, { useRef, useState } from "react";
 import { toast } from "sonner";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { FileIcon } from "@/lib/file-icons";
 import { cn } from "@/lib/utils";
 

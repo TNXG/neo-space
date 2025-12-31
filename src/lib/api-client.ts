@@ -305,6 +305,16 @@ export async function analyzeTimeCapsule(
 }
 
 /**
+ * 获取已有的时间胶囊分析结果（服务端专用）
+ */
+export async function getTimeCapsule(refId: string): Promise<ApiResponse<TimeCapsuleResponse>> {
+  return apiClient<ApiResponse<TimeCapsuleResponse>>(`/ai/time-capsule/${refId}`, {
+    tags: ["time-capsule", `time-capsule-${refId}`],
+    revalidate: false,
+  });
+}
+
+/**
  * Comments API
  */
 export async function getComments(

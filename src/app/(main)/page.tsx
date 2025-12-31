@@ -5,10 +5,6 @@ import { getHomePageNotes, getHomePagePosts, getRecently, getUserProfile } from 
 export const revalidate = 57600;
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  return [];
-}
-
 /**
  * Homepage - Server Component
  * Fetches data from API and passes to client component

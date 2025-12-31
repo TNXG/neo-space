@@ -2,7 +2,7 @@
 
 import type { Comment } from "@/types/api";
 import { useEffect, useState } from "react";
-import { useComments } from "@/hook/use-comments";
+import { useComments } from "@/hooks/use-comments";
 import { CommentProvider } from "./CommentContext";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";

@@ -5,8 +5,8 @@
 
 :root {
   /* =========================================
-	核心色板定义 (Base Palette)
-	========================================= */
+  核心色板定义 (Base Palette)
+  ========================================= */
 
   /* Primary Scale - 石色 (Stone) - 用于背景、文本、边框 */
   --primary-50: #fafaf9;
@@ -45,9 +45,9 @@
   --bg-glass: oklch(95% 0.01 240 / 0.8);
 
   /* =========================================
-	Shadcn UI 语义映射 (Semantic Mapping)
-	这里将 Shadcn 的逻辑变量绑定到你的颜色系统上
-	========================================= */
+  Shadcn UI 语义映射 (Semantic Mapping)
+  这里将 Shadcn 的逻辑变量绑定到你的颜色系统上
+  ========================================= */
 
   /* 基础背景 */
   --background: var(--primary-100); /* 页面背景：暖灰 */
@@ -189,8 +189,8 @@
 
 @theme {
   /*
-	Shadcn UI 语义颜色注册
-	*/
+  Shadcn UI 语义颜色注册
+  */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
@@ -235,8 +235,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /*
-	原始色板 (Stone & Teal)
-	*/
+  原始色板 (Stone & Teal)
+  */
   --color-primary-50: var(--primary-50);
   --color-primary-100: var(--primary-100);
   --color-primary-200: var(--primary-200);
@@ -262,9 +262,9 @@
   --color-accent-950: var(--accent-950);
 
   /*
-	修正点：必须显式展开 Neutral 映射
-	(将 Neutral 映射到 Primary/Stone)
-	*/
+  修正点：必须显式展开 Neutral 映射
+  (将 Neutral 映射到 Primary/Stone)
+  */
   --color-neutral-50: var(--primary-50);
   --color-neutral-100: var(--primary-100);
   --color-neutral-200: var(--primary-200);
@@ -278,8 +278,8 @@
   --color-neutral-950: var(--primary-950);
 
   /*
-	修正点：必须显式展开 Surface 映射
-	*/
+  修正点：必须显式展开 Surface 映射
+  */
   --color-surface-50: var(--surface-50);
   --color-surface-100: var(--surface-100);
   --color-surface-200: var(--surface-200);

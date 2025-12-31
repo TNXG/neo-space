@@ -7,7 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 
 /**
  * Theme toggle button component

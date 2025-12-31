@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 
 interface ClientOnlyScriptProps {
   children: React.ReactNode;

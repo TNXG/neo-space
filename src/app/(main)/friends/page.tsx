@@ -15,10 +15,6 @@ export const metadata: Metadata = {
 export const revalidate = 57600;
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  return [];
-}
-
 /**
  * 加载全部友链（遍历所有分页）
  */
@@ -58,10 +54,10 @@ export default async function FriendsPage() {
       {/* 页面头部 */}
       <header className="mb-12 md:mb-20 md:text-center max-w-2xl mx-auto flex flex-col items-center">
         <div className="mb-4 md:mb-6 flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-linear-to-r from-accent-600 to-primary-700 bg-clip-text text-transparent leading-tight py-2 select-none">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-linear-to-r from-primary-800 to-accent-600 bg-clip-text text-transparent leading-tight py-2 select-none">
             星 座
           </h1>
-          <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-primary-500/60 uppercase mt-1 font-mono">
+          <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-accent-600/60 uppercase mt-1 font-mono">
             Constellation
           </span>
         </div>

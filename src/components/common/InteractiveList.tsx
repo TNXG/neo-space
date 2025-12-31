@@ -1,15 +1,14 @@
 "use client";
 
 import type { Note, Post } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
-import { useIsMobile } from "@/hook/use-is-mobile";
+import { useHasMounted } from "@/hooks/use-has-mounted";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
 import { cn } from "@/lib/utils";
 
@@ -17,11 +16,6 @@ type Item = Post | Note;
 
 interface InteractiveListProps<T extends Item> {
   items: T[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems?: number;
-  };
   type: "post" | "note";
   emptyMessage?: string;
   pageSize?: number;
@@ -30,30 +24,29 @@ interface InteractiveListProps<T extends Item> {
 /**
  * 通用交互式列表组件
  * 支持 Post 和 Note 两种类型
- * 桌面端：分页 + 预览面板
- * 移动端：无限滚动
+ * 桌面端 + 移动端：统一使用无限滚动 + 预览面板
  */
 export function InteractiveList<T extends Item>({
   items: initialItems,
-  pagination,
   type,
   emptyMessage = "选择一项查看详情",
   pageSize = 10,
 }: InteractiveListProps<T>) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const mounted = useHasMounted();
   const isMobile = useIsMobile();
 
-  // SWR Infinite 用于移动端无限滚动
+  // SWR Infinite 用于无限滚动
   const getKey = useCallback((pageIndex: number, previousPageData: Awaited<ReturnType<typeof fetchPosts>> | null) => {
-    // 非移动端不启用
-    if (!isMobile)
+    // 未挂载时不启用
+    if (!mounted)
       return null;
     // 已到达末尾
     if (previousPageData && !previousPageData.data.pagination.has_next_page)
       return null;
     // 返回页码字符串（从 1 开始）
     return `${type}-page-${pageIndex + 1}`;
-  }, [isMobile, type]);
+  }, [type, mounted]);
 
   const fetcher = useCallback(async (key: string) => {
     const page = Number.parseInt(key.split("-").pop() || "1", 10);
@@ -73,22 +66,22 @@ export function InteractiveList<T extends Item>({
     revalidateOnFocus: false,
   });
 
-  // 合并所有页面的数据，移动端使用无限滚动数据，桌面端使用初始数据
-  const items = (isMobile && infiniteData && infiniteData.length > 0
+  // 合并所有页面的数据（客户端挂载后才使用 SWR 数据）
+  const items = mounted && infiniteData && infiniteData.length > 0
     ? infiniteData.flatMap(page => page.data.items as T[])
-    : initialItems);
+    : initialItems;
 
-  // 是否还有更多数据
-  const hasMore = isMobile
-    ? (infiniteData?.[infiniteData.length - 1]?.data.pagination.has_next_page ?? false)
-    : false;
+  // 是否还有更多数据（首次渲染时基于初始数据判断）
+  const hasMore = mounted
+    ? (infiniteData?.[infiniteData.length - 1]?.data.pagination.has_next_page ?? initialItems.length >= pageSize)
+    : initialItems.length >= pageSize;
 
   // 无限滚动触发器 ref
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // 无限滚动 IntersectionObserver
   useEffect(() => {
-    if (!isMobile || !loadMoreRef.current)
+    if (!mounted || !loadMoreRef.current)
       return;
 
     const observer = new IntersectionObserver(
@@ -102,29 +95,25 @@ export function InteractiveList<T extends Item>({
 
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [isMobile, hasMore, isValidating, size, setSize]);
+  }, [mounted, hasMore, isValidating, size, setSize]);
 
-  // 初始化时尝试选中第一个，移动端不选中
-  const [selectedId, setSelectedId] = useState<string | null>(
-    !isMobile && initialItems.length > 0 ? initialItems[0]._id : null,
-  );
+  // 选中状态（默认选中第一项，仅桌面端）
+  const defaultSelectedId = !isMobile && initialItems.length > 0 ? initialItems[0]._id : null;
+  const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
 
   // 用于追踪指示条位置
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const indicatorRef = useRef<HTMLDivElement>(null);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   // 移动端不显示预览，activeItem 为 null
-  const activeItem = isMobile
+  const activeItem = !mounted || isMobile
     ? null
     : hoveredId
       ? items.find(item => item._id === hoveredId)
-      : (selectedId && items.find(item => item._id === selectedId)) // 检查 selectedId 是否在当前列表中
+      : (selectedId && items.find(item => item._id === selectedId))
           ? items.find(item => item._id === selectedId)
-          : items[0]; // 如果没选中或选中项不在当前页（翻页了），默认使用第一项
+          : items[0];
 
   // 当 activeItem 变化时，直接更新 DOM（不触发 re-render）
   useLayoutEffect(() => {
@@ -145,23 +134,13 @@ export function InteractiveList<T extends Item>({
     const listRect = listRef.current.getBoundingClientRect();
     const itemRect = itemEl.getBoundingClientRect();
 
-    // 直接操作 DOM，motion 会自动处理动画
     indicatorRef.current.style.setProperty("--indicator-top", `${itemRect.top - listRect.top}px`);
     indicatorRef.current.style.setProperty("--indicator-height", `${itemRect.height}px`);
     indicatorRef.current.style.opacity = "1";
   }, [activeItem]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", page.toString());
-    router.push(`?${params.toString()}`);
-    // 翻页时清理 hover 状态，防止残留
-    setHoveredId(null);
-  };
-
   const handleMouseEnter = (id: string) => {
-    // 移动端不处理 hover
-    if (isMobile)
+    if (!mounted || isMobile)
       return;
     setHoveredId(id);
     setSelectedId(id);
@@ -178,13 +157,28 @@ export function InteractiveList<T extends Item>({
     return `/notes/${note.nid}`;
   };
 
+  /**
+   * 格式化日期（使用固定格式避免水合错误）
+   */
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hour = String(date.getHours()).padStart(2, "0");
+    const minute = String(date.getMinutes()).padStart(2, "0");
+    return `${year}/${month}/${day} ${hour}:${minute}`;
+  };
+
   // 渲染左侧预览面板
   const renderPreview = () => {
     if (!activeItem) {
       return (
         <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
           <span className="flex items-center gap-2">
-            <Icon icon="mingcute:arrow-left-line" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
             {emptyMessage}
           </span>
         </div>
@@ -205,29 +199,19 @@ export function InteractiveList<T extends Item>({
           {/* Dates */}
           <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
             <div className="flex items-center gap-2" title="发布时间">
-              <Icon icon="mingcute:calendar-2-line" className="w-4 h-4" />
-              <span>
-                {new Date(post.created).toLocaleString("zh-CN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              <span>{formatDate(post.created)}</span>
             </div>
             {post.modified && (
               <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-                <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
-                <span>
-                  {new Date(post.modified).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span>{formatDate(post.modified)}</span>
               </div>
             )}
           </div>
@@ -241,7 +225,9 @@ export function InteractiveList<T extends Item>({
           {post.category && (
             <div className="flex justify-start">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                <Icon icon="mingcute:folder-open-line" />
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
                 {post.category.name}
               </span>
             </div>
@@ -251,10 +237,10 @@ export function InteractiveList<T extends Item>({
           <div className="text-primary-600 text-sm leading-7">
             {post.aiSummary && !post.summary && (
               <div className="flex items-center gap-1.5 mb-2">
-                <Icon icon="mingcute:sparkles-line" className="w-3.5 h-3.5 text-accent-500" />
-                <span className="text-xs font-medium text-accent-600">
-                  AI 摘要
-                </span>
+                <svg className="w-3.5 h-3.5 text-accent-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6z" />
+                </svg>
+                <span className="text-xs font-medium text-accent-600">AI 摘要</span>
               </div>
             )}
             <p className="text-left line-clamp-6">
@@ -269,7 +255,10 @@ export function InteractiveList<T extends Item>({
             <div className="flex flex-wrap justify-start gap-2 pt-2">
               {post.tags.map(tag => (
                 <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
-                  <Icon icon="mingcute:tag-line" />
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
                   {tag}
                 </span>
               ))}
@@ -293,29 +282,19 @@ export function InteractiveList<T extends Item>({
         {/* Dates */}
         <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
           <div className="flex items-center gap-2" title="发布时间">
-            <Icon icon="mingcute:calendar-2-line" className="w-4 h-4" />
-            <span>
-              {new Date(note.created).toLocaleString("zh-CN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            <span>{formatDate(note.created)}</span>
           </div>
           {note.modified && (
             <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-              <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
-              <span>
-                {new Date(note.modified).toLocaleString("zh-CN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              <span>{formatDate(note.modified)}</span>
             </div>
           )}
         </div>
@@ -329,19 +308,27 @@ export function InteractiveList<T extends Item>({
         <div className="flex flex-wrap justify-start gap-2">
           {note.mood && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
-              <Icon icon="mingcute:emoji-line" />
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
+              </svg>
               {note.mood}
             </span>
           )}
           {note.weather && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-              <Icon icon="mingcute:cloud-line" />
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+              </svg>
               {note.weather}
             </span>
           )}
           {note.location && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              <Icon icon="mingcute:location-line" />
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
               {note.location}
             </span>
           )}
@@ -351,10 +338,10 @@ export function InteractiveList<T extends Item>({
         <div className="text-primary-600 text-sm leading-7">
           {note.aiSummary && (
             <div className="flex items-center gap-1.5 mb-2">
-              <Icon icon="mingcute:sparkles-line" className="w-3.5 h-3.5 text-accent-500" />
-              <span className="text-xs font-medium text-accent-600">
-                AI 摘要
-              </span>
+              <svg className="w-3.5 h-3.5 text-accent-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6z" />
+              </svg>
+              <span className="text-xs font-medium text-accent-600">AI 摘要</span>
             </div>
           )}
           <p className="text-left line-clamp-6">
@@ -370,18 +357,18 @@ export function InteractiveList<T extends Item>({
   return (
     <div className="max-w-5xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 md:gap-8 relative items-start">
-        {/* Left Panel - Preview (Desktop Only) */}
-        <aside className="hidden lg:block sticky top-24 h-fit pr-4">
+        {/* Left Panel - Preview (Desktop Only) - sticky 随视口滚动 */}
+        <aside className="hidden lg:block sticky top-24 h-fit pr-4 self-start">
           <AnimatePresence mode="wait">
             {renderPreview()}
           </AnimatePresence>
         </aside>
 
         {/* Right Panel - List */}
-        <div className="flex flex-col gap-4 md:gap-6">
+        <div className="flex flex-col">
           <div
             ref={listRef}
-            className="space-y-0 lg:space-y-1 lg:border-l lg:border-border/50 relative min-h-[400px] md:min-h-[500px]"
+            className="space-y-0 lg:space-y-1 lg:border-l lg:border-border/50 relative"
             onMouseLeave={() => setHoveredId(null)}
           >
             {/* 指示条 - 使用 CSS 变量控制位置 (Desktop Only) */}
@@ -391,12 +378,12 @@ export function InteractiveList<T extends Item>({
               style={{
                 top: "var(--indicator-top, 0)",
                 height: "var(--indicator-height, 0)",
-                opacity: activeItem ? 1 : 0,
+                opacity: 0,
               }}
             />
 
             {items.map((item) => {
-              const isActive = activeItem?._id === item._id;
+              const isActive = mounted && activeItem?._id === item._id;
               const itemUrl = getItemUrl(item);
 
               return (
@@ -446,108 +433,40 @@ export function InteractiveList<T extends Item>({
                 </Link>
               );
             })}
+
+            {/* 无限滚动加载指示器 - 放在列表下方 */}
+            <div ref={loadMoreRef} className="flex justify-center py-6 pl-3 md:pl-6">
+              {mounted && isValidating
+                ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      <span>加载中...</span>
+                    </div>
+                  )
+                : hasMore
+                  ? (
+                      <div className="text-sm text-muted-foreground/50">
+                        向下滚动加载更多
+                      </div>
+                    )
+                  : items.length > 0
+                    ? (
+                        <div className="text-sm text-muted-foreground/50">
+                          已加载全部
+                          {" "}
+                          {items.length}
+                          {" "}
+                          条
+                          {type === "post" ? "文章" : "日记"}
+                        </div>
+                      )
+                    : null}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* 分页组件 - 桌面端显示，移动端隐藏 */}
-      {pagination.totalPages > 1 && (
-        <div className="hidden lg:flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border/40">
-          {/* 分页信息 */}
-          <div className="text-sm text-muted-foreground">
-            <span className="hidden sm:inline">
-              当前页显示
-              {" "}
-              {items.length}
-              {" "}
-              个
-              {type === "post" ? "文章" : "日记"}
-              ，
-            </span>
-            第
-            {" "}
-            {pagination.currentPage}
-            {" "}
-            /
-            {" "}
-            {pagination.totalPages}
-            {" "}
-            页
-            {pagination.totalItems && (
-              <span className="hidden sm:inline">
-                （共
-                {" "}
-                {pagination.totalItems}
-                {" "}
-                项）
-              </span>
-            )}
-          </div>
-
-          {/* 分页按钮 */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={pagination.currentPage <= 1}
-              onClick={() => handlePageChange(pagination.currentPage - 1)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
-              aria-label="上一页"
-            >
-              <Icon icon="mingcute:left-line" className="w-4 h-4" />
-              <span className="hidden sm:inline">上一页</span>
-            </button>
-
-            <div className="flex items-center px-3 py-2 font-mono text-sm text-muted-foreground bg-primary-50 rounded-lg">
-              {pagination.currentPage}
-              {" "}
-              /
-              {pagination.totalPages}
-            </div>
-
-            <button
-              type="button"
-              disabled={pagination.currentPage >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.currentPage + 1)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg hover:bg-primary-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
-              aria-label="下一页"
-            >
-              <span className="hidden sm:inline">下一页</span>
-              <Icon icon="mingcute:right-line" className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 移动端无限滚动加载指示器 */}
-      {isMobile && (
-        <div ref={loadMoreRef} className="flex justify-center py-6">
-          {isValidating
-            ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
-                  <span>加载中...</span>
-                </div>
-              )
-            : hasMore
-              ? (
-                  <div className="text-sm text-muted-foreground/50">
-                    向下滚动加载更多
-                  </div>
-                )
-              : items.length > 0
-                ? (
-                    <div className="text-sm text-muted-foreground/50">
-                      已加载全部
-                      {" "}
-                      {items.length}
-                      {" "}
-                      条
-                      {type === "post" ? "文章" : "日记"}
-                    </div>
-                  )
-                : null}
-        </div>
-      )}
     </div>
   );
 }

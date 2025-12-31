@@ -1,6 +1,6 @@
 "use client";
 
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 
 interface ClientOnlySpanProps {
   id?: string;

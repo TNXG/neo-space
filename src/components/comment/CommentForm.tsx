@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createCommentAction } from "@/actions/comment";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
 import { getUAInfo } from "@/lib/parse";
 import { useAuthStore } from "@/lib/stores/auth-store";

@@ -1,10 +1,6 @@
-"use client";
-
 import type { TimeCapsuleResponse } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
-import { useEffect, useState } from "react";
-import { useHasMounted } from "@/hook/use-has-mounted";
-import { analyzeTimeCapsule } from "@/lib/api-client";
+import { getTimeCapsule } from "@/lib/api-client";
 
 interface OutdatedAlertProps {
   /** 文章 ID */
@@ -22,10 +18,10 @@ interface OutdatedAlertProps {
 }
 
 /**
- * 文章过期提示组件 - Time Capsule 风格
- * 结合时间判断和 AI 分析结果
+ * 文章过期提示组件 - 服务端版本
+ * 在服务端获取 AI 分析结果，避免客户端抖动
  */
-export function OutdatedAlert({
+export async function OutdatedAlert({
   refId,
   refType = "post",
   lastUpdated,
@@ -33,60 +29,33 @@ export function OutdatedAlert({
   threshold = 365,
   className = "",
 }: OutdatedAlertProps) {
-  const [capsule, setCapsule] = useState<TimeCapsuleResponse | null>(null);
-  const [loading, setLoading] = useState(false); // 默认不加载
-  const mounted = useHasMounted();
-
-  // 计算时间差（只计算一次）
+  // 计算时间差
   const now = currentDate ?? new Date();
   const updated = new Date(lastUpdated);
   const diffTime = Math.abs(now.getTime() - updated.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const isOutdated = diffDays > threshold;
 
-  // 判断是否需要 AI 分析
-  const shouldSkipAI = diffDays < 30 || diffDays > 730 || (isOutdated && diffDays > 365);
-  const needsAI = !shouldSkipAI;
-
-  // 获取 AI 分析 - 智能判断是否需要调用 AI
-  useEffect(() => {
-    // Only run if mounted and AI is actually needed
-    if (!mounted || !needsAI)
-      return;
-
-    let cancelled = false;
-
-    async function fetchCapsule() {
-      // Set loading immediately to prevent flash
-      if (!cancelled) {
-        setLoading(true);
-      }
-
-      try {
-        const response = await analyzeTimeCapsule({ refId, refType });
-        if (!cancelled && response.status === "success") {
-          setCapsule(response.data);
-        }
-      } catch {
-        // 静默失败 - AI 服务不可用时不影响页面显示
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+  // 尝试获取已有的 AI 分析结果
+  let capsule: TimeCapsuleResponse | null = null;
+  try {
+    const response = await getTimeCapsule(refId);
+    if (response.status === "success" && response.data) {
+      capsule = response.data;
     }
+  } catch {
+    // 静默失败 - 没有分析结果或服务不可用
+  }
 
-    fetchCapsule();
+  // 判断是否显示：时间过期 或 AI 判断为高时效性内容
+  const shouldShow = isOutdated; // || capsule?.sensitivity === "high";
 
-    return () => {
-      cancelled = true;
-    };
-  }, [refId, refType, mounted, needsAI]);
-
-  // 服务端渲染时不显示，避免 hydration 问题
-  if (!mounted) {
+  if (!shouldShow) {
     return null;
   }
+
+  // 避免使用未使用的变量警告
+  void refType;
 
   // 计算时间描述
   const years = Math.floor(diffDays / 365);
@@ -94,45 +63,6 @@ export function OutdatedAlert({
   const timeDesc = years > 0
     ? `${years} 年${months > 0 ? ` ${months} 个月` : ""}`
     : `${months} 个月`;
-
-  // 加载中显示骨架屏（只有在真正调用 AI 分析时才显示）
-  if (loading) {
-    return (
-      <div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
-        <div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 bg-primary-100/50 backdrop-blur-sm p-1">
-          <div className="relative overflow-hidden rounded-lg bg-white/60 border border-primary-200 p-5 md:p-6">
-            <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center animate-pulse">
-              {/* 图标骨架 */}
-              <div className="shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-primary-200" />
-              </div>
-              {/* 文本骨架 */}
-              <div className="flex-1 space-y-3">
-                <div className="flex gap-2">
-                  <div className="h-4 w-20 rounded bg-primary-200" />
-                  <div className="h-4 w-16 rounded bg-primary-200" />
-                </div>
-                <div className="h-5 w-48 rounded bg-primary-200" />
-                <div className="h-4 w-full max-w-md rounded bg-primary-200" />
-                <div className="flex gap-1.5">
-                  <div className="h-5 w-16 rounded bg-primary-200" />
-                  <div className="h-5 w-20 rounded bg-primary-200" />
-                  <div className="h-5 w-14 rounded bg-primary-200" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 判断是否显示：时间过期 或 AI 判断为高时效性内容
-  const shouldShow = isOutdated || (!loading && capsule?.sensitivity === "high");
-
-  if (!shouldShow) {
-    return null;
-  }
 
   // AI 分析的敏感度标签
   const sensitivityLabel = capsule?.sensitivity === "high"

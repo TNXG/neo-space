@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hook/use-is-mobile";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 interface NavItem {
   id: string;

@@ -34,9 +34,8 @@ function verifySignature(
     return false;
   }
 
-  // 构造消息: secret + timestamp + salt + (tag or path)
-  const target = tag || path || "";
-  const message = `${REVALIDATION_SECRET}${timestamp}${REVALIDATION_SALT}${target}`;
+  // 构造消息: secret + timestamp + salt + tag + path
+  const message = `${REVALIDATION_SECRET}${timestamp}${REVALIDATION_SALT}${tag || ""}${path || ""}`;
 
   // 生成 HMAC-SHA256 签名
   const hmac = createHmac("sha256", REVALIDATION_SECRET);
@@ -134,18 +133,21 @@ export async function POST(request: NextRequest) {
     // 5. 执行重新验证
     const startTime = Date.now();
     if (tag) {
-      revalidateTag(tag, "default");
-      console.warn(`[Revalidate] ✓ Tag "${tag}" 已刷新 (${Date.now() - startTime}ms)`);
-    } else if (path) {
+      revalidateTag(tag, { expire: 0 });
+      console.warn(`[Revalidate] ✓ Tag "${tag}" 数据缓存已刷新 (${Date.now() - startTime}ms)`);
+    }
+
+    if (path) {
       revalidatePath(path, "page");
-      console.warn(`[Revalidate] ✓ Path "${path}" 已刷新 (${Date.now() - startTime}ms)`);
+      console.warn(`[Revalidate] ✓ Path "${path}" ISR 页面已刷新 (${Date.now() - startTime}ms)`);
     }
 
     return NextResponse.json({
       success: true,
-      message: tag
-        ? `标签 "${tag}" 已重新验证`
-        : `路径 "${path}" 已重新验证`,
+      message: [
+        tag ? `标签 "${tag}" 数据缓存已刷新` : null,
+        path ? `路径 "${path}" ISR 页面已刷新` : null,
+      ].filter(Boolean).join("，"),
       revalidated: true,
       timestamp: Math.floor(Date.now() / 1000),
     });

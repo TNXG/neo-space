@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { MagneticHoverEffect, MagneticZone } from "@/components/common/magnetic-hover-effect";
-import { useIsMobile } from "@/hook/use-is-mobile";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { getArchIcon, getHostingIcon } from "@/lib/icon";
 import { cn } from "@/lib/utils";
 

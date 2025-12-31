@@ -2,7 +2,7 @@
 
 import { useTheme as useNextTheme } from "next-themes";
 import { useCallback } from "react";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 
 /**
  * 主题管理 Hook

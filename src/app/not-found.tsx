@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useHasMounted } from "@/hook/use-has-mounted";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 
 /**
  * 404 页面 - 星海迷航版 (移动端优化)

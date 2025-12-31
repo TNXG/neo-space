@@ -1,6 +1,8 @@
 import { Feed } from "feed";
 import { getCategories, getNotes, getPosts, getSiteConfig, getUserProfile } from "@/lib/api-client";
 
+export const revalidate = 57600;
+
 /**
  * RSS Feed 路由
  * 生成包含文章和日记的 RSS 订阅源

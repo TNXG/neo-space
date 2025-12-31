@@ -3,7 +3,7 @@
 import { Icon } from "@iconify/react/offline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
-import { useIsMobile } from "@/hook/use-is-mobile";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { cn } from "@/lib/utils";
 
 interface ZoomableContainerProps {

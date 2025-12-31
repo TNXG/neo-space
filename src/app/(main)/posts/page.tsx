@@ -9,24 +9,15 @@ export const metadata: Metadata = {
 
 // ISR 配置：16小时过期，同时依赖 Change Stream 主动刷新
 export const revalidate = 57600;
-export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  return [];
-}
-
-interface PageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function PostsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const page = Number(params.page) || 1;
+/**
+ * 默认显示第一页
+ * 不携带任何参数，完全静态化
+ */
+export default async function PostsPage() {
+  const page = 1;
   const pageSize = 10;
   const { data } = await getPosts(page, pageSize);
-
-  const totalItems = data.pagination.total || 0;
-  const totalPages = data.pagination.total_page || Math.ceil(totalItems / pageSize);
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-6xl">
@@ -66,11 +57,6 @@ export default async function PostsPage({ searchParams }: PageProps) {
 
       <InteractiveList
         items={data.items}
-        pagination={{
-          currentPage: page,
-          totalPages,
-          totalItems,
-        }}
         type="post"
         emptyMessage="选择一篇文章查看详情"
       />
