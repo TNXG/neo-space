@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { MagneticHoverEffect, MagneticZone } from "@/components/common/magnetic-hover-effect";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { getArchIcon, getHostingIcon } from "@/lib/icon";
+import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icon";
 import { cn } from "@/lib/utils";
 
 interface FriendsListProps {
@@ -129,6 +129,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
 
     const { health } = activeItem;
     const providerName = health?.hosting_provider || "Unknown";
+    const providerDisplayName = getHostingDisplayName(providerName);
     const isAlive = health?.is_alive;
 
     // 获取颜色主题
@@ -293,8 +294,8 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                   <span className="text-[9px] font-bold uppercase text-muted-foreground/60">
                     Hosting
                   </span>
-                  <span className="text-sm font-medium truncate uppercase" title={providerName}>
-                    {providerName === "unknown" ? "N/A" : providerName}
+                  <span className="text-sm font-medium truncate" title={providerDisplayName}>
+                    {providerName === "unknown" ? "N/A" : providerDisplayName}
                   </span>
                 </div>
                 {(() => {

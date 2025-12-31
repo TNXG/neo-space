@@ -34,6 +34,7 @@ import {
   PhpIcon,
   PythonIcon,
   QQIcon,
+  QuicCloudIcon,
   RailwayIcon,
   ReactIcon,
   RenderIcon,
@@ -97,7 +98,7 @@ export function getArchIcon(arch: string): FC<IconProps> | null {
 
 /** 托管服务商图标映射 (对应后端 HostingProvider 枚举) */
 // @keep-sorted
-export const hostingIcons: Record<string, FC<IconProps>> = {
+export const hostingIcons: Record<string, FC<IconProps> | null> = {
   aliyun: AliyunIcon,
   aliyuncdn: AliyunIcon,
   aliyunesa: AliyunIcon,
@@ -114,22 +115,154 @@ export const hostingIcons: Record<string, FC<IconProps>> = {
   netlify: NetlifyIcon,
   nginx: NginxIcon,
   openresty: NginxIcon,
+  quiccloud: QuicCloudIcon,
   railway: RailwayIcon,
   render: RenderIcon,
   tencent: TencentCloudIcon,
   tencentcdn: TencentCloudIcon,
   tencentedgeone: EdgeOneIcon,
   tencentedgeonepages: EdgeOneIcon,
+  unknown: null,
   vercel: VercelIcon,
 };
 
 export type HostingProvider = keyof typeof hostingIcons;
 
+/** 托管服务商友好名称映射 */
+// @keep-sorted
+export const hostingDisplayNames: Record<string, string> = {
+  aliyun: "阿里云",
+  aliyuncdn: "阿里云 CDN",
+  aliyunesa: "阿里云 ESA",
+  apache: "Apache",
+  aws: "AWS",
+  azure: "Azure",
+  caddy: "Caddy",
+  cloudflare: "Cloudflare",
+  fly: "Fly.io",
+  gcp: "Google Cloud",
+  github: "GitHub Pages",
+  heroku: "Heroku",
+  litespeed: "LiteSpeed",
+  netlify: "Netlify",
+  nginx: "Nginx",
+  openresty: "OpenResty",
+  quiccloud: "QUIC.cloud",
+  railway: "Railway",
+  render: "Render",
+  tencent: "腾讯云",
+  tencentcdn: "腾讯云 CDN",
+  tencentedgeone: "EdgeOne",
+  tencentedgeonepages: "EdgeOne Pages",
+  unknown: "未知",
+  vercel: "Vercel",
+};
+
+/**
+ * 获取托管服务商的友好显示名称
+ */
+export function getHostingDisplayName(provider: string): string {
+  const normalizedProvider = provider.toLowerCase();
+
+  // 直接映射
+  if (hostingDisplayNames[normalizedProvider]) {
+    return hostingDisplayNames[normalizedProvider];
+  }
+
+  // 别名映射（处理可能的变体）
+  const aliasMap: Record<string, string> = {
+    // Tencent 相关
+    "tencent-edgeone": "tencentedgeone",
+    "tencent_edgeone": "tencentedgeone",
+    "edgeone": "tencentedgeone",
+    "tencent-edgeone-pages": "tencentedgeonepages",
+    "tencent_edgeone_pages": "tencentedgeonepages",
+    "edgeone-pages": "tencentedgeonepages",
+    "tencent-cdn": "tencentcdn",
+    "tencent_cdn": "tencentcdn",
+
+    // Aliyun 相关
+    "aliyun-esa": "aliyunesa",
+    "aliyun_esa": "aliyunesa",
+    "esa": "aliyunesa",
+    "aliyun-cdn": "aliyuncdn",
+    "aliyun_cdn": "aliyuncdn",
+    "alibaba": "aliyun",
+    "alibabacloud": "aliyun",
+
+    // 其他常见别名
+    "github-pages": "github",
+    "github_pages": "github",
+    "githubpages": "github",
+    "lite-speed": "litespeed",
+    "lite_speed": "litespeed",
+    "open-resty": "openresty",
+    "open_resty": "openresty",
+    "quic-cloud": "quiccloud",
+    "quic_cloud": "quiccloud",
+    "quic.cloud": "quiccloud",
+  };
+
+  const aliasKey = aliasMap[normalizedProvider];
+  if (aliasKey && hostingDisplayNames[aliasKey]) {
+    return hostingDisplayNames[aliasKey];
+  }
+
+  // 如果没有找到映射，返回原始值（首字母大写）
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
 /**
  * 获取托管服务商对应的图标组件
  */
 export function getHostingIcon(provider: string): FC<IconProps> | null {
-  return hostingIcons[provider.toLowerCase()] ?? null;
+  const normalizedProvider = provider.toLowerCase();
+
+  // 直接映射
+  if (hostingIcons[normalizedProvider]) {
+    return hostingIcons[normalizedProvider];
+  }
+
+  // 别名映射（处理可能的变体）
+  const aliasMap: Record<string, string> = {
+    // Tencent 相关
+    "tencent-edgeone": "tencentedgeone",
+    "tencent_edgeone": "tencentedgeone",
+    "edgeone": "tencentedgeone",
+    "tencent-edgeone-pages": "tencentedgeonepages",
+    "tencent_edgeone_pages": "tencentedgeonepages",
+    "edgeone-pages": "tencentedgeonepages",
+    "tencent-cdn": "tencentcdn",
+    "tencent_cdn": "tencentcdn",
+
+    // Aliyun 相关
+    "aliyun-esa": "aliyunesa",
+    "aliyun_esa": "aliyunesa",
+    "esa": "aliyunesa",
+    "aliyun-cdn": "aliyuncdn",
+    "aliyun_cdn": "aliyuncdn",
+    "alibaba": "aliyun",
+    "alibabacloud": "aliyun",
+
+    // 其他常见别名
+    "github-pages": "github",
+    "github_pages": "github",
+    "githubpages": "github",
+    "lite-speed": "litespeed",
+    "lite_speed": "litespeed",
+    "open-resty": "openresty",
+    "open_resty": "openresty",
+    "quic-cloud": "quiccloud",
+    "quic_cloud": "quiccloud",
+    "quic.cloud": "quiccloud",
+  };
+
+  const aliasKey = aliasMap[normalizedProvider];
+  if (aliasKey && hostingIcons[aliasKey]) {
+    return hostingIcons[aliasKey];
+  }
+
+  return null;
 }
 
 /** 主域名图标映射 */
