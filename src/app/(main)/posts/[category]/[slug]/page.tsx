@@ -3,10 +3,24 @@ import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
-import { getAdjacentPosts, getPostBySlug, getUserProfile } from "@/lib/api-client";
+import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
+// ISR 配置：16小时过期
 export const revalidate = 57600;
+
+// 预生成最新的 20 篇文章
+export async function generateStaticParams() {
+  try {
+    const { data } = await getPosts(1, 20);
+    return data.items.map(post => ({
+      category: post.category?.slug || "default",
+      slug: post.slug,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 interface PageProps {
   params: Promise<{

@@ -3,10 +3,23 @@ import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
-import { getAdjacentNotes, getNoteByNid } from "@/lib/api-client";
+import { getAdjacentNotes, getNoteByNid, getNotes } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
+// ISR 配置：16小时过期
 export const revalidate = 57600;
+
+// 预生成最新的 20 篇日记
+export async function generateStaticParams() {
+  try {
+    const { data } = await getNotes(1, 20);
+    return data.items.map(note => ({
+      nid: String(note.nid),
+    }));
+  } catch {
+    return [];
+  }
+}
 
 interface PageProps {
   params: Promise<{

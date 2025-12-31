@@ -2,11 +2,6 @@ import { Feed } from "feed";
 import { getCategories, getNotes, getPosts, getSiteConfig, getUserProfile } from "@/lib/api-client";
 
 export const revalidate = 57600;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  return [];
-}
 
 /**
  * RSS Feed 路由
