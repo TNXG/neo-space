@@ -18,6 +18,8 @@ pub enum CacheKey {
     NoteList { page: i64, size: i64 },
     /// 页面详情: page:{slug}
     Page(String),
+    /// 友链详情: link:{id}
+    Link(String),
     /// 分类列表: categories
     Categories,
 }
@@ -31,6 +33,7 @@ impl CacheKey {
             CacheKey::Note(id) => format!("note:{id}"),
             CacheKey::NoteList { page, size } => format!("notes:page:{page}:size:{size}"),
             CacheKey::Page(slug) => format!("page:{slug}"),
+            CacheKey::Link(id) => format!("link:{id}"),
             CacheKey::Categories => "categories".to_string(),
         }
     }

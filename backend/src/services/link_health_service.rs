@@ -325,13 +325,13 @@ impl LinkHealthService {
             "[LinkHealth] 批量检查完成 - 总数: {total}, 存活: {alive_count}, 失败: {failed_count}, 耗时: {duration_ms}ms"
         );
 
-        // 通知 Next.js 刷新友链页面缓存
+        // 通知 Next.js 刷新友链页面缓存（同时刷新 tag 和 ISR 页面）
         if let Some(ref revalidation_service) = self.revalidation_service {
             log::info!("[LinkHealth] 通知 Next.js 刷新友链缓存...");
-            if let Err(e) = revalidation_service.revalidate_tag("links").await {
+            if let Err(e) = revalidation_service.revalidate_both("links", "/friends").await {
                 log::error!("[LinkHealth] 刷新友链缓存失败: {e:?}");
             } else {
-                log::info!("[LinkHealth] ✓ 友链缓存已刷新");
+                log::info!("[LinkHealth] ✓ 友链缓存已刷新（tag + ISR 页面）");
             }
         }
 
