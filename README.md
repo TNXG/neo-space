@@ -1,108 +1,87 @@
-# Neo Space (Tnxg Blog) - 真实技术实现文档
+# 🚀 Neo-Space
 
-Neo Space 是一个基于 **Next.js 16 (App Router)** 与 **Rust (Rocket)** 的现代化、高性能个人数字花园。本项目在设计上追求极致的 Glassmorphism (磨砂玻璃) 视觉效果，在技术上通过 RSC (React Server Components) 与 Rust 异步后端提供流畅的阅读体验。
+🎯 **Neo-Space** 是一个基于 Next.js 16 和 Rust (Rocket) 构建的现代化全栈博客系统，旨在提供极致的性能与优雅的交互体验。
 
-> [!IMPORTANT]
-> 本文档描述的是项目中**已完成的实际功能**，而非规划中的愿景。
+## 🌟 核心特性
 
-## � 核心技术架构
+1.  **现代化技术栈**：前端采用 Next.js 16 (React 19) + Tailwind CSS 4，后端由 Rust (Rocket) 提供高性能支持
+2.  **极速交互**：利用 Next.js 的服务端渲染 (SSR) 与静态生成 (SSG)，配合 Rust 后端的毫秒级响应
+3.  **多功能集成**：
+    -   📝 支持 Markdown 渲染，内置 KaTeX 数学公式、Mermaid 图表、代码高亮等
+    -   💬 完善的评论系统，支持 OAuth 登录（GitHub/QQ）
+    -   🖼️ 图片画廊与 EXIF 信息展示
+    -   🤖 AI 摘要与自动回复集成
+4.  **优雅 UI**：基于 Motion 的动效与精心设计的暗色模式支持
+5.  **容器化部署**：支持 Docker & Docker Compose 一键部署
 
-### 前端 (Next.js 16 + React 19)
+## 🛠️ 技术栈
 
-- **渲染策略**: 全面采用 App Router 模型。首页、文章页等主要页面均为 **Server Components**，实现高效的服务器端渲染与数据获取。
-- **设计系统**:
-  - **Tailwind CSS v4**: 构建了完整的语义化设计系统，使用 OKLCH 色彩空间定义主题色。
-  - **Glassmorphism**: 深度定制的磨砂玻璃 UI（`backdrop-blur-sm`, `bg-glass`），具有 Z 轴纵深感的视觉层叠效果。
-- **状态管理**: 客户端状态由 **Zustand** 驱动。
-- **动效**: 使用 **Framer Motion** 实现平滑的页面切换与微交互。
+**前端 (Frontend)**
 
-### 后端 (Rust + Rocket v0.5)
+-   **框架**: [Next.js 16](https://nextjs.org/) (App Router)
+-   **UI**: [Tailwind CSS 4](https://tailwindcss.com/), [Motion](https://motion.dev/), [Radix UI](https://www.radix-ui.com/)
+-   **状态管理**: [Zustand](https://github.com/pmndrs/zustand), [SWR](https://swr.vercel.app/)
+-   **编辑器/渲染**: [React Markdown](https://github.com/remarkjs/react-markdown), [Shiki](https://shiki.style/)
 
-- **高性能基础**: 基于 **Rust** 编写，使用 **Rocket** 框架。异步 I/O (Tokio) 确保了请求响应的高并发处理能力。
-- **数据存储**: **MongoDB**。通过 `mongodb` 官方驱动与 Rust 类型系统集成，实现强类型的数据映射。
-- **API 范式**: 标准的 RESTful 架构，所有接口统一使用 JSON 格式。
+**后端 (Backend)**
 
-## 🔌 API 接口与数据模型 (当前已实现)
+-   **语言**: [Rust](https://www.rust-lang.org/)
+-   **框架**: [Rocket 0.5](https://rocket.rs/)
+-   **数据库**: [MongoDB](https://www.mongodb.com/)
+-   **文档**: [Utoipa](https://github.com/juhaku/utoipa) (OpenAPI/Swagger)
 
-后端所有 API 挂载在 `/api` 路径下，采用统一的响应封包：
-`{ "code": 200, "status": "success", "message": "...", "data": T }`
+## 📦 快速开始
 
-### 1. 内容模块 (Posts & Notes)
+### 环境依赖
 
-项目区分了 **博文 (Posts)** 与 **手记 (Notes/Micro-blog)** 两种内容形式。
+-   [Rust](https://www.rust-lang.org/) (开发后端)
+-   [Docker](https://www.docker.com/) & Docker Compose
 
-- **文章接口**:
-  - `GET /api/posts`: 获取博文列表（内置分页支持）。
-  - `GET /api/posts/:id`: 按 ID 获取博文。
-  - `GET /api/posts/slug/:slug`: 按 Slug 获取博文，自动聚合分类详情。
-  - `GET /api/posts/slug/:slug/adjacent`: 获取当前文章的前后篇信息。
-- **手记接口**:
-  - `GET /api/notes`: 获取手记列表。
-  - `GET /api/notes/nid/:nid`: 按数字 ID (nid) 获取手记。
-  - `GET /api/notes/nid/:nid/adjacent`: 获取当前手记的前后篇。
+### 本地开发
 
-### 2. AI 增强功能
+1.  **克隆项目**
+    ```bash
+    git clone https://github.com/tnxg/neo-space.git
+    cd neo-space
+    ```
 
-后端集成了基于 OpenAI 协议的 AI 能力，并实现了结果持久化。
+2.  **启动前端**
+    ```bash
+    bun install
+    bun run dev
+    ```
 
-- **AI 摘要 (AI Summary)**:
-  - 文章与手记详情接口会根据 `refId` 自动从 `ai_summaries` 集合中匹配并注入摘要内容。
-- **时效性分析仪 (Time Capsule)**:
-  - `POST /api/ai/time-capsule`: 动态分析文章内容的时效性风险。
-    - 逻辑：计算标题+内容的 SHA1 哈希值。哈希匹配则返回 MongoDB 缓存结果；否则调用 AI 生成分析报告并持久化。
-  - `GET /api/ai/time-capsule/:ref_id`: 直接获取现有的分析记录。
+3.  **启动后端**
+    ```bash
+    cd backend
+    cargo run
+    ```
 
-### 3. 特色实用工具
+### 生产部署
 
-- **你能不能好好说话 (nbnhhsh)**:
-  - `POST /api/nbnhhsh/guess`: 后端代理请求。用于解析并猜测网络缩写词，提升阅读体验。
-- **站点配置**:
-  - `GET /api/config`: 从 MongoDB `options` 集合中聚合 SEO、友链、评论开关、OAuth 等分项配置。已实现**字段脱敏**，仅暴露前端必要的公开字段。
-
-## 📝 Markdown 渲染规范
-
-前端 `MarkdownRenderer.tsx` 针对多种复杂场景进行了深度适配：
-
-| 特性                   | 实现方式/说明                                                       |
-| :--------------------- | :------------------------------------------------------------------ |
-| **代码高亮**           | 基于 Shiki (Highlighter) 的服务器端组件驱动，支持多语言与暗色模式。 |
-| **Mermaid**            | 通过 `remarkMermaid` 插件支持流程图、时序图渲染。                   |
-| **容器组件**           | 自定义 `::: container` 语法，支持特定的 UI 块布局。                 |
-| **模糊遮盖 (Spoiler)** | 支持 `!!spoiler!!` 语法，点击可见。                                 |
-| **名词解析**           | 集成 `AbbreviationText` 自动匹配并解析 nbnhhsh 缩写。               |
-
-## 📂 项目目录结构 ( As-Is )
+推荐使用 Docker Compose 进行一键部署：
 
 ```bash
-├── src/                    # Next.js 前端源码 (TSX)
-│   ├── app/                # App Router 路由 (Server/Client 分离)
-│   ├── components/         # 组件库
-│   │   ├── business/       # 业务逻辑组件 (PostPreview, NoteItem 等)
-│   │   ├── common/         # Markdown 渲染器、布局基石
-│   │   └── ui/             # 原子级 UI 组件 (Tooltip, Button 等)
-│   ├── lib/                # 前端核心工具 (API 封装)
-│   └── types/              # 严格的 API/业务类型定义
-├── backend/                # Rust 后端源码
-│   ├── src/
-│   │   ├── models/         # Serde 驱动的数据解构 (serde-json / bson)
-│   │   ├── routes/         # 业务路由处理 (Posts, AI, User 等)
-│   │   ├── services/       # 基础设施驱动 (MongoDB、AI Service)
-│   │   └── utils/          # 序列化、哈希等工具函数
-│   └── Cargo.toml          # Rust 依赖声明 (Rocket 0.5, tokio, bson, async-openai)
-├── scripts/                # 构建与开发自动化脚本 (dev.sh)
-└── Rocket.toml             # 后端环境与数据库配置
+docker-compose up -d
 ```
 
-## � 开发环境搭建
+> 💡 **提示**：部署前请参考 `docker-compose.yml` 中的环境变量配置相关 Secret。
 
-1. **一键安装后端关键二进制与前端依赖**:
-   ```bash
-   ./scripts/dev.sh install
-   ```
-2. **前后端并行启动**:
-   ```bash
-   ./scripts/dev.sh start
-   ```
-   _注意：将同时监听 3000 (Next.js) 与 8000 (Rust) 端口。_
+## 📂 项目结构
 
----
+```plaintext
+.
+├── backend/            # Rust 后端源代码
+├── src/                # Next.js 前端源代码
+│   ├── app/           # App Router 路由
+│   ├── components/    # 组件库
+│   ├── lib/           # 工具函数与 Store
+│   └── actions/       # Server Actions
+├── public/             # 静态资源
+├── scripts/            # 辅助脚本
+└── docker-compose.yml  # 容器编排
+```
+
+## 📝 许可证
+
+本项目采用 AGPL 许可证。

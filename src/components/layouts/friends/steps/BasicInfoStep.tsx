@@ -3,7 +3,7 @@
 import type { UseFormRegister } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
 
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 interface BasicInfoStepProps {

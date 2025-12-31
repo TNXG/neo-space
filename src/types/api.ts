@@ -119,29 +119,6 @@ export const LinkType = {
 export type LinkTypeValue = typeof LinkType[keyof typeof LinkType];
 
 /**
- * 部署服务商类型
- */
-export enum HostingProvider {
-  Vercel = "vercel",
-  Cloudflare = "cloudflare",
-  Netlify = "netlify",
-  GitHub = "github",
-  Render = "render",
-  Railway = "railway",
-  Fly = "fly",
-  Heroku = "heroku",
-  AWS = "aws",
-  Azure = "azure",
-  GCP = "gcp",
-  Aliyun = "aliyun",
-  Tencent = "tencent",
-  Nginx = "nginx",
-  Caddy = "caddy",
-  Apache = "apache",
-  Unknown = "unknown",
-}
-
-/**
  * 友链健康状态
  */
 export interface LinkHealthStatus {
@@ -156,7 +133,7 @@ export interface LinkHealthStatus {
   /** 响应延迟（毫秒） */
   latency_ms?: number;
   /** 部署服务商 */
-  hosting_provider: HostingProvider;
+  hosting_provider: string;
   /** 检查时间 */
   checked_at: string;
   /** 错误信息 */

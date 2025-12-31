@@ -1,8 +1,13 @@
 import type { SVGProps } from "react";
-import catppuccinIcons from "@iconify-json/catppuccin/icons.json";
-import { iconToSVG } from "@iconify/utils";
+import React, { useEffect, useMemo, useState } from "react";
 
-// 扩展名映射表
+export interface IconProps extends SVGProps<SVGSVGElement> {
+  size?: number | string;
+  color?: string;
+}
+
+type IconCollectionLoader = () => Promise<any>;
+
 const ext2lang: Record<string, string> = {
   js: "javascript",
   jsx: "javascript-react",
@@ -30,44 +35,205 @@ const ext2lang: Record<string, string> = {
   makefile: "makefile",
 };
 
-function getIconData(iconKey: string) {
-  const icons = catppuccinIcons.icons as Record<string, { body: string; width?: number; height?: number }>;
-  return Object.prototype.hasOwnProperty.call(icons, iconKey) ? icons[iconKey] : null;
-}
+// 集中管理动态导入，方便扩展
+const collectionLoaders: Record<string, IconCollectionLoader> = {
+  "simple-icons": () => import("@iconify-json/simple-icons/icons.json"),
+  "mingcute": () => import("@iconify-json/mingcute/icons.json"),
+  "catppuccin": () => import("@iconify-json/catppuccin/icons.json"),
+};
+
+// --- 通用组件与 Hooks ---
 
 /**
- * 获取文件对应的图标组件
+ * 基础 SVG 渲染组件，处理通用样式和属性
  */
-export function FileIcon({ extension, className, ...props }: { extension?: string } & SVGProps<SVGSVGElement>) {
-  if (!extension)
-    return null;
+const BaseSvg: React.FC<IconProps & { html?: string }> = ({
+  size = "1em",
+  color,
+  className,
+  style,
+  html,
+  children,
+  fill,
+  ...props
+}) => {
+  // 优先使用 props 中的 fill，其次 color，最后 currentColor
+  const fillColor = fill || color || "currentColor";
+  
+  const commonProps = {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    className,
+    style: {
+      width: size,
+      height: size,
+      flexShrink: 0,
+      overflow: "visible",
+      color: fillColor, // 使用 color 属性，让内部的 currentColor 继承
+      ...style,
+    },
+    ...props,
+  };
 
-  // 处理扩展名归一化
-  const normalizedExt = extension.toLowerCase();
-  const fileType = ext2lang[normalizedExt] || normalizedExt;
-  const iconKey = fileType; // Catppuccin json key 通常直接是类型名
-
-  let iconData = getIconData(iconKey);
-
-  // 如果找不到具体语言图标，回退到通用文件图标
-  if (!iconData) {
-    iconData = getIconData("file");
+  if (html) {
+    return <svg {...commonProps} dangerouslySetInnerHTML={{ __html: html }} />;
   }
 
-  if (!iconData)
+  return <svg {...commonProps} fill={fillColor}>{children}</svg>;
+};
+
+/**
+ * 通用图标加载逻辑 Hook
+ */
+function useIconLoader(
+  collectionName: string,
+  iconKey?: string,
+  fallbackKey?: string,
+) {
+  const [svgBody, setSvgBody] = useState<string>("");
+
+  useEffect(() => {
+    if (!iconKey || !collectionLoaders[collectionName])
+      return;
+
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        // 并行加载图标数据和工具函数
+        const [iconsModule, utilsModule] = await Promise.all([
+          collectionLoaders[collectionName](),
+          import("@iconify/utils"),
+        ]);
+
+        const icons = iconsModule.default;
+        const { getIconData, iconToSVG } = utilsModule;
+
+        // 尝试获取图标数据，如果不存在则尝试 fallback
+        let iconData = getIconData(icons, iconKey);
+        if (!iconData && fallbackKey) {
+          iconData = getIconData(icons, fallbackKey);
+        }
+
+        if (iconData && isMounted) {
+          const { body } = iconToSVG(iconData);
+          setSvgBody(body);
+        }
+      } catch (error) {
+        console.error(`Failed to load icon ${collectionName}:${iconKey}`, error);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [collectionName, iconKey, fallbackKey]);
+
+  return svgBody;
+}
+
+function createIconComponent(
+  collection: string,
+  iconKey: string,
+  defaultColor?: string,
+): React.FC<IconProps> {
+  const IconComponent: React.FC<IconProps> = (props) => {
+    const svgBody = useIconLoader(collection, iconKey);
+    if (!svgBody)
+      return null;
+    return <BaseSvg {...props} color={props.color || defaultColor} html={svgBody} />;
+  };
+  IconComponent.displayName = `Icon(${collection}:${iconKey})`;
+  return IconComponent;
+}
+
+export function FileIcon({ extension, ...props }: { extension?: string } & IconProps) {
+  const iconKey = useMemo(() => {
+    if (!extension)
+      return undefined;
+    const normalizedExt = extension.toLowerCase();
+    return ext2lang[normalizedExt] || normalizedExt;
+  }, [extension]);
+
+  const svgBody = useIconLoader("catppuccin", iconKey, "file");
+
+  if (!extension || !svgBody)
     return null;
 
-  const svgData = iconToSVG(iconData);
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={`0 0 ${svgData.attributes.width} ${svgData.attributes.height}`}
-      className={className}
-      // 可信的内部资源
-      // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
-      dangerouslySetInnerHTML={{ __html: svgData.body }}
-      {...props}
-    />
-  );
+  return <BaseSvg {...props} html={svgBody} />;
 }
+
+// 辅助生成函数
+const createSimpleIcon = (key: string, color?: string) => createIconComponent("simple-icons", key, color);
+const createMingcuteIcon = (key: string, color?: string) => createIconComponent("mingcute", key, color);
+
+// --- 静态 SVG 图标 (保留原样，但复用 BaseSvg 以保持样式一致) ---
+
+export const EdgeOneIcon: React.FC<IconProps> = ({ color = "#0055D2", ...props }) => (
+  <BaseSvg fill="none" {...props}>
+    <path d="M29.8101 18.138C29.9349 17.4442 30 16.7297 30 16C30 15.3831 29.9535 14.7772 29.8637 14.1854C29.829 13.9567 29.6296 13.792 29.3983 13.792H21.6802C21.4277 13.792 21.2439 13.5525 21.3093 13.3086L22.2229 9.89892C22.2904 9.6471 22.5185 9.472 22.7792 9.472H27.3634C27.668 9.472 27.8488 9.13574 27.6682 8.89047C25.4834 5.9244 21.9664 4 18 4C11.3726 4 6 9.37258 6 16C6 19.0173 7.11361 21.7745 8.95224 23.883C9.14804 24.1076 9.5076 24.0146 9.58436 23.7268L12.2394 13.7702C12.2882 13.5874 12.1504 13.408 11.9612 13.408H9.65504C9.40274 13.408 9.21899 13.1689 9.284 12.9251L10.0327 10.1174C10.0889 9.90673 10.28 9.76117 10.498 9.75666C13.0104 9.70465 15.493 9.04698 17.6975 7.84351C17.9253 7.71913 18.2007 7.92739 18.1338 8.1782L13.2499 26.4929C13.177 26.7664 13.313 27.0538 13.5761 27.1582C14.9451 27.7014 16.4377 28 18 28C21.7878 28 25.1656 26.2451 27.3649 23.5039C27.5597 23.2611 27.3809 22.912 27.0696 22.912H19.2365C18.984 22.912 18.8002 22.6725 18.8656 22.4286L19.7792 19.0189C19.8467 18.7671 20.0749 18.592 20.3356 18.592H29.2564C29.5268 18.592 29.7622 18.4042 29.8101 18.138Z" fill={color} />
+  </BaseSvg>
+);
+
+export const TencentCloudIcon: React.FC<IconProps> = props => (
+  <BaseSvg fill="none" {...props}>
+    <path d="M20 13.0778C19.6444 13.4333 18.9333 13.9667 17.6889 13.9667C17.1556 13.9667 16.5333 13.9667 16.2667 13.9667C15.9111 13.9667 13.2444 13.9667 10.0444 13.9667C12.3556 11.7444 14.3111 9.87778 14.4889 9.7C14.6667 9.52222 15.1111 9.07778 15.5556 8.72222C16.4444 7.92222 17.1556 7.83333 17.7778 7.83333C18.6667 7.83333 19.3778 8.18889 20 8.72222C21.2444 9.87778 21.2444 11.9222 20 13.0778ZM21.5111 7.28889C20.6222 6.31111 19.2889 5.68889 17.8667 5.68889C16.6222 5.68889 15.5556 6.13333 14.5778 6.84444C14.2222 7.2 13.6889 7.55556 13.2444 8.08889C12.8889 8.44444 5.24444 15.9222 5.24444 15.9222C5.68889 16.0111 6.22222 16.0111 6.66667 16.0111C7.11111 16.0111 16 16.0111 16.3556 16.0111C17.0667 16.0111 17.6 16.0111 18.1333 15.9222C19.2889 15.8333 20.4444 15.3889 21.4222 14.5L21.5111 14.4111C23.5556 12.5444 23.5556 9.25556 21.5111 7.28889Z" fill="#00A3FF" />
+    <path d="M9.06667 6.75556C8.08889 6.04444 7.11111 5.68889 5.95556 5.68889C4.53333 5.68889 3.2 6.31111 2.31111 7.28889C0.355556 9.34444 0.355556 12.5444 2.4 14.5889C3.28889 15.3889 4.17778 15.8333 5.24444 15.9222L7.28889 13.9667C6.93333 13.9667 6.48889 13.9667 6.13333 13.9667C4.97778 13.8778 4.26667 13.5222 3.82222 13.0778C2.57778 11.8333 2.57778 9.87778 3.73333 8.63333C4.35556 8.01111 5.06667 7.74444 5.95556 7.74444C6.48889 7.74444 7.28889 7.83333 8.08889 8.63333C8.44444 8.98889 9.42222 9.7 9.77778 10.0556L9.86667 10.0556L11.2 8.72222L11.2 8.63333C10.5778 8.01111 9.6 7.21111 9.06667 6.75556" fill="#00C8DC" />
+    <path d="M18.4 4.53333C17.4222 1.86667 14.8444 0 11.9111 0C8.44444 0 5.68889 2.57778 5.15556 5.77778C5.42222 5.77778 5.68889 5.68889 6.04444 5.68889C6.4 5.68889 6.84444 5.77778 7.2 5.77778L7.2 5.77778C7.64444 3.55556 9.6 2 11.9111 2C13.8667 2 15.5556 3.11111 16.3556 4.8C16.3556 4.8 16.4444 4.88889 16.4444 4.8C17.0667 4.71111 17.7778 4.53333 18.4 4.53333C18.4 4.62222 18.4 4.62222 18.4 4.53333" fill="#006EFF" />
+  </BaseSvg>
+);
+
+// --- Simple Icons ---
+// @keep-sorted
+export const AliyunIcon = createSimpleIcon("alibabacloud", "#FF6A00");
+export const ApacheIcon = createSimpleIcon("apache", "#D22128");
+export const AstroIcon = createSimpleIcon("astro", "#FF5D01");
+export const AwsIcon = createSimpleIcon("amazonwebservices", "#232F3E");
+export const AzureIcon = createSimpleIcon("microsoftazure", "#0078D4");
+export const CaddyIcon = createSimpleIcon("caddy", "#22B638");
+export const DenoIcon = createSimpleIcon("deno");
+export const FlyIcon = createSimpleIcon("flydotio", "#7B3BE2");
+export const GcpIcon = createSimpleIcon("googlecloud", "#4285F4");
+export const GitHubIcon = createSimpleIcon("github");
+export const GoIcon = createSimpleIcon("go", "#00ADD8");
+export const HerokuIcon = createSimpleIcon("heroku", "#430098");
+export const HexoIcon = createSimpleIcon("hexo", "#0E83CD");
+export const Html5Icon = createSimpleIcon("html5", "#E34F26");
+export const HugoIcon = createSimpleIcon("hugo", "#FF4088");
+export const JavaScriptIcon = createSimpleIcon("javascript", "#F7DF1E");
+export const LiteSpeedIcon = createSimpleIcon("litespeed", "#003366");
+export const MdnWebDocsIcon = createSimpleIcon("mdnwebdocs");
+export const MicrosoftIcon = createSimpleIcon("microsoft");
+export const NetlifyIcon = createSimpleIcon("netlify", "#00C7B7");
+export const NextjsIcon = createSimpleIcon("nextdotjs");
+export const NginxIcon = createSimpleIcon("nginx", "#009639");
+export const NodejsIcon = createSimpleIcon("nodedotjs", "#5FA04E");
+export const NuxtIcon = createSimpleIcon("nuxtdotjs", "#00DC82");
+export const PhpIcon = createSimpleIcon("php", "#777BB4");
+export const PythonIcon = createSimpleIcon("python", "#3776AB");
+export const RailwayIcon = createSimpleIcon("railway", "#0B0D0E");
+export const ReactIcon = createSimpleIcon("react", "#61DAFB");
+export const RenderIcon = createSimpleIcon("render", "#46E3B7");
+export const RustIcon = createSimpleIcon("rust");
+export const SolidIcon = createSimpleIcon("solid", "#2C4F7C");
+export const SvelteIcon = createSimpleIcon("svelte", "#FF3E00");
+export const TypeScriptIcon = createSimpleIcon("typescript", "#3178C6");
+export const V2exIcon = createSimpleIcon("v2ex");
+export const VercelIcon = createSimpleIcon("vercel");
+export const VitePressIcon = createSimpleIcon("vitepress", "#5C73E7");
+export const VueIcon = createSimpleIcon("vuedotjs", "#4FC08D");
+export const WordPressIcon = createSimpleIcon("wordpress", "#21759B");
+export const CloudflareIcon = createSimpleIcon("cloudflare", "#F38020");
+
+// --- Mingcute Icons ---
+// @keep-sorted
+export const BilibiliIcon = createMingcuteIcon("bilibili-line", "#00A1D6");
+export const CreativeCommonsIcon = createMingcuteIcon("creative-commons-line");
+export const GoogleIcon = createMingcuteIcon("google-fill", "#4285F4");
+export const QQIcon = createMingcuteIcon("qq-fill", "#12B7F5");
+export const WechatIcon = createMingcuteIcon("wechat-fill", "#07C160");
+export const ZhihuIcon = createMingcuteIcon("zhihu-line", "#0084FF");

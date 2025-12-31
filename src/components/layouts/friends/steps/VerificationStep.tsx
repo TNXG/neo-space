@@ -2,7 +2,7 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";

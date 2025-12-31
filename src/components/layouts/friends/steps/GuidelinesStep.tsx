@@ -2,7 +2,7 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/offline";
 
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
