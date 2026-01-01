@@ -48,7 +48,6 @@ jobs:
         run: |
           mkdir -p dist
           cp backend/target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }} dist/
-          cp -r backend/data dist/
           chmod +x dist/${{ env.BINARY_NAME }}
 
       - name: Upload binary artifact

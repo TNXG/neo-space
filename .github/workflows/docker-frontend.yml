@@ -1,18 +1,18 @@
 name: Build Frontend Docker Image
 
 on:
-  push:
-    # branches: [master]
-    # tags: ["v*"]
-    # paths:
-    #   - "src/**"
-    #   - "public/**"
-    #   - package.json
-    #   - pnpm-lock.yaml
-    #   - next.config.ts
-    #   - tsconfig.json
-    #   - Dockerfile
-    #   - .github/workflows/docker-frontend.yml
+  # push:
+  #   branches: [master]
+  #   tags: ["v*"]
+  #   paths:
+  #     - "src/**"
+  #     - "public/**"
+  #     - package.json
+  #     - pnpm-lock.yaml
+  #     - next.config.ts
+  #     - tsconfig.json
+  #     - Dockerfile
+  #     - .github/workflows/docker-frontend.yml
   workflow_dispatch:
 
 env:
