@@ -1,6 +1,7 @@
 import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, LinkApplyRequest, Note, Page, PaginatedData, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 
-// eslint-disable-next-line node/prefer-global/process
+import process from "node:process";
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
 
 /**
@@ -58,7 +59,7 @@ async function apiClient<T>(
 export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<Post>> {
   return apiClient<PaginatedResponse<Post>>(`/posts?page=${page}&size=${size}`, {
     tags: ["posts"],
-    revalidate: false, // 永不过期，依赖 Change Stream 主动刷新
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -68,7 +69,7 @@ export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<P
 export async function getHomePagePosts(size = 5): Promise<PaginatedResponse<Post>> {
   return apiClient<PaginatedResponse<Post>>(`/posts?page=1&size=${size}`, {
     tags: ["posts", "home"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -78,21 +79,21 @@ export async function getHomePagePosts(size = 5): Promise<PaginatedResponse<Post
 export async function getHomePageNotes(size = 5): Promise<PaginatedResponse<Note>> {
   return apiClient<PaginatedResponse<Note>>(`/notes?page=1&size=${size}`, {
     tags: ["notes", "home"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
 export async function getPostById(id: string): Promise<ApiResponse<Post>> {
   return apiClient<ApiResponse<Post>>(`/posts/${id}`, {
     tags: ["posts", `post-${id}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
 export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
   return apiClient<ApiResponse<Post>>(`/posts/slug/${slug}`, {
     tags: ["posts", `post-slug-${slug}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -102,7 +103,7 @@ export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
 export async function getPageBySlug(slug: string): Promise<ApiResponse<Page>> {
   return apiClient<ApiResponse<Page>>(`/pages/${slug}`, {
     tags: ["pages", `page-${slug}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -112,21 +113,21 @@ export async function getPageBySlug(slug: string): Promise<ApiResponse<Page>> {
 export async function getNotes(page = 1, size = 10): Promise<PaginatedResponse<Note>> {
   return apiClient<PaginatedResponse<Note>>(`/notes?page=${page}&size=${size}`, {
     tags: ["notes"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
 export async function getNoteById(id: string): Promise<ApiResponse<Note>> {
   return apiClient<ApiResponse<Note>>(`/notes/${id}`, {
     tags: ["notes", `note-${id}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
 export async function getNoteByNid(nid: number): Promise<ApiResponse<Note>> {
   return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}`, {
     tags: ["notes", `note-nid-${nid}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -146,7 +147,7 @@ export interface AdjacentNotes {
 export async function getAdjacentNotes(nid: number): Promise<ApiResponse<AdjacentNotes>> {
   return apiClient<ApiResponse<AdjacentNotes>>(`/notes/nid/${nid}/adjacent`, {
     tags: ["notes"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -167,7 +168,7 @@ export interface AdjacentPosts {
 export async function getAdjacentPosts(slug: string): Promise<ApiResponse<AdjacentPosts>> {
   return apiClient<ApiResponse<AdjacentPosts>>(`/posts/slug/${slug}/adjacent`, {
     tags: ["posts"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -177,7 +178,7 @@ export async function getAdjacentPosts(slug: string): Promise<ApiResponse<Adjace
 export async function getCategories(): Promise<ApiResponse<Category[]>> {
   return apiClient<ApiResponse<Category[]>>("/categories", {
     tags: ["categories"],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -192,7 +193,7 @@ export async function getLinks(page = 1, size = 50): Promise<ApiResponse<Paginat
   return apiClient<ApiResponse<PaginatedData<Link>>>(`/links?page=${page}&size=${size}`, {
     next: {
       tags: ["links"],
-      revalidate: false,
+      revalidate: process.env.NODE_ENV === "development" ? 0 : false,
     },
   });
 }
@@ -203,7 +204,7 @@ export async function getLinks(page = 1, size = 50): Promise<ApiResponse<Paginat
 export async function getLinkById(id: string): Promise<ApiResponse<Link>> {
   return apiClient<ApiResponse<Link>>(`/links/${id}`, {
     tags: ["links", `link-${id}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -242,7 +243,7 @@ export async function getUserProfile(): Promise<ApiResponse<User>> {
     cache: "force-cache", // 永久缓存用户资料
     next: {
       tags: ["user-profile"],
-      revalidate: false, // 不自动重新验证
+      revalidate: process.env.NODE_ENV === "development" ? 0 : false, // 不自动重新验证
     },
   });
 }
@@ -310,7 +311,7 @@ export async function analyzeTimeCapsule(
 export async function getTimeCapsule(refId: string): Promise<ApiResponse<TimeCapsuleResponse>> {
   return apiClient<ApiResponse<TimeCapsuleResponse>>(`/ai/time-capsule/${refId}`, {
     tags: ["time-capsule", `time-capsule-${refId}`],
-    revalidate: false,
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 

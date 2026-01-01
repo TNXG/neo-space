@@ -1,8 +1,10 @@
 "use client";
 
 import type { Note, Post } from "@/types/api";
+import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
@@ -35,6 +37,7 @@ export function InteractiveList<T extends Item>({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const mounted = useHasMounted();
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   // SWR Infinite 用于无限滚动
   const getKey = useCallback((pageIndex: number, previousPageData: Awaited<ReturnType<typeof fetchPosts>> | null) => {
@@ -139,15 +142,8 @@ export function InteractiveList<T extends Item>({
     indicatorRef.current.style.opacity = "1";
   }, [activeItem]);
 
-  const handleMouseEnter = (id: string) => {
-    if (!mounted || isMobile)
-      return;
-    setHoveredId(id);
-    setSelectedId(id);
-  };
-
   // 生成 URL
-  const getItemUrl = (item: T): string => {
+  const getItemUrl = useCallback((item: T): string => {
     if (type === "post") {
       const post = item as Post;
       const categorySlug = post.category?.slug || "default";
@@ -155,6 +151,20 @@ export function InteractiveList<T extends Item>({
     }
     const note = item as Note;
     return `/notes/${note.nid}`;
+  }, [type]);
+
+  const handleMouseEnter = (id: string) => {
+    if (!mounted || isMobile)
+      return;
+    setHoveredId(id);
+    setSelectedId(id);
+
+    // 在 hover 时手动触发预加载
+    const item = items.find(i => i._id === id);
+    if (item) {
+      const url = getItemUrl(item);
+      router.prefetch(url);
+    }
   };
 
   /**
@@ -176,9 +186,7 @@ export function InteractiveList<T extends Item>({
       return (
         <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
           <span className="flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
+            <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
             {emptyMessage}
           </span>
         </div>
@@ -199,18 +207,12 @@ export function InteractiveList<T extends Item>({
           {/* Dates */}
           <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
             <div className="flex items-center gap-2" title="发布时间">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
+              <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
               <span>{formatDate(post.created)}</span>
             </div>
             {post.modified && (
               <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
+                <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
                 <span>{formatDate(post.modified)}</span>
               </div>
             )}
@@ -225,9 +227,7 @@ export function InteractiveList<T extends Item>({
           {post.category && (
             <div className="flex justify-start">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
+                <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
                 {post.category.name}
               </span>
             </div>
@@ -237,9 +237,7 @@ export function InteractiveList<T extends Item>({
           <div className="text-primary-600 text-sm leading-7">
             {post.aiSummary && !post.summary && (
               <div className="flex items-center gap-1.5 mb-2">
-                <svg className="w-3.5 h-3.5 text-accent-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6z" />
-                </svg>
+                <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
                 <span className="text-xs font-medium text-accent-600">AI 摘要</span>
               </div>
             )}
@@ -255,10 +253,7 @@ export function InteractiveList<T extends Item>({
             <div className="flex flex-wrap justify-start gap-2 pt-2">
               {post.tags.map(tag => (
                 <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </svg>
+                  <Icon icon="mingcute:tag-line" className="w-3 h-3" />
                   {tag}
                 </span>
               ))}
@@ -282,18 +277,12 @@ export function InteractiveList<T extends Item>({
         {/* Dates */}
         <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
           <div className="flex items-center gap-2" title="发布时间">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
+            <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
             <span>{formatDate(note.created)}</span>
           </div>
           {note.modified && (
             <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
+              <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
               <span>{formatDate(note.modified)}</span>
             </div>
           )}
@@ -308,27 +297,19 @@ export function InteractiveList<T extends Item>({
         <div className="flex flex-wrap justify-start gap-2">
           {note.mood && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
-              </svg>
+              <Icon icon="mingcute:emoji-line" className="w-3.5 h-3.5" />
               {note.mood}
             </span>
           )}
           {note.weather && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-              </svg>
+              <Icon icon="mingcute:cloud-line" className="w-3.5 h-3.5" />
               {note.weather}
             </span>
           )}
           {note.location && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
+              <Icon icon="mingcute:location-line" className="w-3.5 h-3.5" />
               {note.location}
             </span>
           )}
@@ -338,9 +319,7 @@ export function InteractiveList<T extends Item>({
         <div className="text-primary-600 text-sm leading-7">
           {note.aiSummary && (
             <div className="flex items-center gap-1.5 mb-2">
-              <svg className="w-3.5 h-3.5 text-accent-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6z" />
-              </svg>
+              <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
               <span className="text-xs font-medium text-accent-600">AI 摘要</span>
             </div>
           )}
@@ -394,6 +373,7 @@ export function InteractiveList<T extends Item>({
                       itemRefs.current.set(item._id, el);
                   }}
                   href={itemUrl}
+                  prefetch={false}
                   onMouseEnter={() => handleMouseEnter(item._id)}
                   className="group relative block outline-none border-b border-dashed border-border/30 lg:border-0 last:border-0"
                 >
@@ -435,15 +415,18 @@ export function InteractiveList<T extends Item>({
             })}
 
             {/* 无限滚动加载指示器 - 放在列表下方 */}
-            <div ref={loadMoreRef} className="flex justify-center py-6 pl-3 md:pl-6">
+            <div ref={loadMoreRef} className="flex justify-center py-6 pl-3 md:pl-6 min-h-[60px]">
               {mounted && isValidating
                 ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                      </svg>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
                       <span>加载中...</span>
-                    </div>
+                    </motion.div>
                   )
                 : hasMore
                   ? (
