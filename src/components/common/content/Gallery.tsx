@@ -77,9 +77,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors cursor-pointer"
             aria-label="Close"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <span className="iconify w-8 h-8" data-icon="mingcute:close-line" />
           </button>
 
           <button
@@ -91,9 +89,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute left-4 text-white/80 hover:text-white transition-colors cursor-pointer"
             aria-label="Previous"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <span className="iconify w-8 h-8" data-icon="mingcute:left-line" />
           </button>
 
           <button
@@ -105,9 +101,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute right-4 text-white/80 hover:text-white transition-colors cursor-pointer"
             aria-label="Next"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="iconify w-8 h-8" data-icon="mingcute:right-line" />
           </button>
 
           <div className="relative max-w-6xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>

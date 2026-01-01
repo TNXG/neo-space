@@ -84,15 +84,7 @@ export default function NotFound() {
               <div className="absolute inset-0 rounded-lg overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
               </div>
-              <svg
-                className="w-4 h-4 transition-transform group-hover:-translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
+              <span className="iconify w-4 h-4 transition-transform group-hover:-translate-x-1" data-icon="mingcute:home-3-line" />
               <span>返回首页</span>
             </Link>
 
@@ -103,15 +95,7 @@ export default function NotFound() {
               hover:bg-secondary hover:border-primary-300 hover:text-accent-700 dark:hover:text-accent-400 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
               cursor-pointer select-none text-sm sm:text-base"
             >
-              <svg
-                className="w-4 h-4 transition-transform group-hover:-translate-x-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              <span className="iconify w-4 h-4 transition-transform group-hover:-translate-x-1" data-icon="mingcute:arrow-left-line" />
               <span>返回上页</span>
             </button>
           </div>
