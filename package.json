@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:auto": "./scripts/dev.sh start",
+    "dev:backend": "cd backend && cargo watch --ignore cache -x run",
     "dev:install": "./scripts/dev.sh install",
     "build": "next build",
     "start": "next start"

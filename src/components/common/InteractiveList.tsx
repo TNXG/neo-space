@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useSWRConfig } from "swr";
 import useSWRInfinite from "swr/infinite";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
@@ -23,11 +24,6 @@ interface InteractiveListProps<T extends Item> {
   pageSize?: number;
 }
 
-/**
- * 通用交互式列表组件
- * 支持 Post 和 Note 两种类型
- * 桌面端 + 移动端：统一使用无限滚动 + 预览面板
- */
 export function InteractiveList<T extends Item>({
   items: initialItems,
   type,
@@ -38,18 +34,19 @@ export function InteractiveList<T extends Item>({
   const mounted = useHasMounted();
   const isMobile = useIsMobile();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const getPageKey = useCallback((pageIndex: number) => {
+    return `${type}-page-${pageIndex + 1}`;
+  }, [type]);
 
-  // SWR Infinite 用于无限滚动
   const getKey = useCallback((pageIndex: number, previousPageData: Awaited<ReturnType<typeof fetchPosts>> | null) => {
-    // 未挂载时不启用
     if (!mounted)
       return null;
-    // 已到达末尾
     if (previousPageData && !previousPageData.data.pagination.has_next_page)
       return null;
-    // 返回页码字符串（从 1 开始）
-    return `${type}-page-${pageIndex + 1}`;
-  }, [type, mounted]);
+
+    return getPageKey(pageIndex);
+  }, [mounted, getPageKey]);
 
   const fetcher = useCallback(async (key: string) => {
     const page = Number.parseInt(key.split("-").pop() || "1", 10);
@@ -69,20 +66,32 @@ export function InteractiveList<T extends Item>({
     revalidateOnFocus: false,
   });
 
-  // 合并所有页面的数据（客户端挂载后才使用 SWR 数据）
   const items = mounted && infiniteData && infiniteData.length > 0
     ? infiniteData.flatMap(page => page.data.items as T[])
     : initialItems;
 
-  // 是否还有更多数据（首次渲染时基于初始数据判断）
   const hasMore = mounted
     ? (infiniteData?.[infiniteData.length - 1]?.data.pagination.has_next_page ?? initialItems.length >= pageSize)
     : initialItems.length >= pageSize;
 
-  // 无限滚动触发器 ref
+  const prefetchNextPage = useCallback(() => {
+    if (!mounted || isValidating || !hasMore)
+      return;
+
+    const nextKey = getPageKey(size);
+
+    mutate(
+      nextKey,
+      fetcher(nextKey),
+      {
+        populateCache: true,
+        revalidate: false,
+      },
+    ).catch(() => { });
+  }, [mounted, isValidating, hasMore, size, getPageKey, mutate, fetcher]);
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // 无限滚动 IntersectionObserver
   useEffect(() => {
     if (!mounted || !loadMoreRef.current)
       return;
@@ -100,16 +109,13 @@ export function InteractiveList<T extends Item>({
     return () => observer.disconnect();
   }, [mounted, hasMore, isValidating, size, setSize]);
 
-  // 选中状态（默认选中第一项，仅桌面端）
   const defaultSelectedId = !isMobile && initialItems.length > 0 ? initialItems[0]._id : null;
   const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
 
-  // 用于追踪指示条位置
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const indicatorRef = useRef<HTMLDivElement>(null);
 
-  // 移动端不显示预览，activeItem 为 null
   const activeItem = !mounted || isMobile
     ? null
     : hoveredId
@@ -118,7 +124,6 @@ export function InteractiveList<T extends Item>({
           ? items.find(item => item._id === selectedId)
           : items[0];
 
-  // 当 activeItem 变化时，直接更新 DOM（不触发 re-render）
   useLayoutEffect(() => {
     if (!indicatorRef.current || !listRef.current)
       return;
@@ -142,7 +147,6 @@ export function InteractiveList<T extends Item>({
     indicatorRef.current.style.opacity = "1";
   }, [activeItem]);
 
-  // 生成 URL
   const getItemUrl = useCallback((item: T): string => {
     if (type === "post") {
       const post = item as Post;
@@ -158,18 +162,8 @@ export function InteractiveList<T extends Item>({
       return;
     setHoveredId(id);
     setSelectedId(id);
-
-    // 在 hover 时手动触发预加载
-    const item = items.find(i => i._id === id);
-    if (item) {
-      const url = getItemUrl(item);
-      router.prefetch(url);
-    }
   };
 
-  /**
-   * 格式化日期（使用固定格式避免水合错误）
-   */
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     const year = date.getFullYear();
@@ -180,7 +174,6 @@ export function InteractiveList<T extends Item>({
     return `${year}/${month}/${day} ${hour}:${minute}`;
   };
 
-  // 渲染左侧预览面板
   const renderPreview = () => {
     if (!activeItem) {
       return (
@@ -204,7 +197,6 @@ export function InteractiveList<T extends Item>({
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="space-y-6"
         >
-          {/* Dates */}
           <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
             <div className="flex items-center gap-2" title="发布时间">
               <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
@@ -218,12 +210,10 @@ export function InteractiveList<T extends Item>({
             )}
           </div>
 
-          {/* Title */}
           <h2 className="text-3xl font-bold leading-tight text-foreground">
             {post.title}
           </h2>
 
-          {/* Category */}
           {post.category && (
             <div className="flex justify-start">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
@@ -233,7 +223,6 @@ export function InteractiveList<T extends Item>({
             </div>
           )}
 
-          {/* Summary */}
           <div className="text-primary-600 text-sm leading-7">
             {post.aiSummary && !post.summary && (
               <div className="flex items-center gap-1.5 mb-2">
@@ -248,7 +237,6 @@ export function InteractiveList<T extends Item>({
             </p>
           </div>
 
-          {/* Tags */}
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap justify-start gap-2 pt-2">
               {post.tags.map(tag => (
@@ -263,7 +251,6 @@ export function InteractiveList<T extends Item>({
       );
     }
 
-    // Note preview
     const note = activeItem as Note;
     return (
       <motion.div
@@ -274,7 +261,6 @@ export function InteractiveList<T extends Item>({
         transition={{ duration: 0.35, ease: "easeOut" }}
         className="space-y-6"
       >
-        {/* Dates */}
         <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
           <div className="flex items-center gap-2" title="发布时间">
             <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
@@ -288,12 +274,10 @@ export function InteractiveList<T extends Item>({
           )}
         </div>
 
-        {/* Title */}
         <h2 className="text-3xl font-bold leading-tight text-foreground">
           {note.title}
         </h2>
 
-        {/* Mood & Weather & Location */}
         <div className="flex flex-wrap justify-start gap-2">
           {note.mood && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
@@ -315,7 +299,6 @@ export function InteractiveList<T extends Item>({
           )}
         </div>
 
-        {/* Text Preview */}
         <div className="text-primary-600 text-sm leading-7">
           {note.aiSummary && (
             <div className="flex items-center gap-1.5 mb-2">
@@ -336,21 +319,18 @@ export function InteractiveList<T extends Item>({
   return (
     <div className="max-w-5xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 md:gap-8 relative items-start">
-        {/* Left Panel - Preview (Desktop Only) - sticky 随视口滚动 */}
         <aside className="hidden lg:block sticky top-24 h-fit pr-4 self-start">
           <AnimatePresence mode="wait">
             {renderPreview()}
           </AnimatePresence>
         </aside>
 
-        {/* Right Panel - List */}
         <div className="flex flex-col">
           <div
             ref={listRef}
             className="space-y-0 lg:space-y-1 lg:border-l lg:border-border/50 relative"
             onMouseLeave={() => setHoveredId(null)}
           >
-            {/* 指示条 - 使用 CSS 变量控制位置 (Desktop Only) */}
             <div
               ref={indicatorRef}
               className="hidden lg:block absolute left-0 w-[3px] bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
@@ -361,9 +341,11 @@ export function InteractiveList<T extends Item>({
               }}
             />
 
-            {items.map((item) => {
+            {items.map((item, index) => {
               const isActive = mounted && activeItem?._id === item._id;
               const itemUrl = getItemUrl(item);
+
+              const isLastFewItems = index >= items.length - 3;
 
               return (
                 <Link
@@ -374,7 +356,12 @@ export function InteractiveList<T extends Item>({
                   }}
                   href={itemUrl}
                   prefetch={false}
-                  onMouseEnter={() => handleMouseEnter(item._id)}
+                  onMouseEnter={() => {
+                    router.prefetch(itemUrl);
+                    handleMouseEnter(item._id);
+                    if (isLastFewItems)
+                      prefetchNextPage();
+                  }}
                   className="group relative block outline-none border-b border-dashed border-border/30 lg:border-0 last:border-0"
                 >
                   <motion.div
@@ -414,38 +401,54 @@ export function InteractiveList<T extends Item>({
               );
             })}
 
-            {/* 无限滚动加载指示器 - 放在列表下方 */}
-            <div ref={loadMoreRef} className="flex justify-center py-6 pl-3 md:pl-6 min-h-[60px]">
-              {mounted && isValidating
-                ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                      <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
-                      <span>加载中...</span>
-                    </motion.div>
-                  )
-                : hasMore
-                  ? (
-                      <div className="text-sm text-muted-foreground/50">
-                        向下滚动加载更多
-                      </div>
-                    )
-                  : items.length > 0
+            <div
+              className="relative flex flex-col items-center justify-center py-6 pl-3 md:pl-6 min-h-[80px]"
+              onMouseEnter={prefetchNextPage}
+            >
+              <div
+                ref={loadMoreRef}
+                className="absolute bottom-0 left-0 w-full h-24 pointer-events-none opacity-0 z-[-1]"
+              />
+
+              <div className="relative w-full flex justify-center items-center">
+
+                <div
+                  className={cn(
+                    "flex items-center gap-2 text-sm text-muted-foreground transition-all duration-300 absolute",
+                    mounted && isValidating
+                      ? "opacity-100 translate-y-0 visible"
+                      : "opacity-0 translate-y-2 invisible",
+                  )}
+                >
+                  {mounted && (
+                    <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
+                  )}
+                  <span>加载中...</span>
+                </div>
+                <div
+                  className={cn(
+                    "text-sm text-muted-foreground/50 transition-all duration-300",
+                    mounted && isValidating
+                      ? "opacity-0 invisible delay-0"
+                      : "opacity-100 visible delay-300",
+                  )}
+                >
+                  {!hasMore
                     ? (
-                        <div className="text-sm text-muted-foreground/50">
+                        <span>
                           已加载全部
-                          {" "}
                           {items.length}
                           {" "}
                           条
                           {type === "post" ? "文章" : "日记"}
-                        </div>
+                        </span>
                       )
-                    : null}
+                    : (
+                        <span>向下滚动加载更多</span>
+                      )}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
