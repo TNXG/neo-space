@@ -48,6 +48,7 @@ const KEY_MAP: Record<string, { mac: string; win: string }> = {
 }
 
 type Platform = "mac" | "win" | "auto"
+type Variant = "default" | "lightbox"
 
 interface KbdProps extends Omit<React.ComponentProps<"kbd">, "children"> {
   /**
@@ -62,6 +63,12 @@ interface KbdProps extends Omit<React.ComponentProps<"kbd">, "children"> {
    * - "win": 强制 Windows 风格
    */
   platform?: Platform
+  /**
+   * 样式变体
+   * - "default": 默认样式（浅色背景）
+   * - "lightbox": 灯箱样式（深色背景）
+   */
+  variant?: Variant
 }
 
 /**
@@ -82,7 +89,7 @@ function transformKey(key: string, isMac: boolean): string {
  * - Mac: 使用符号 (⌘, ⌥, ⇧)
  * - Windows/Linux: 使用文字 (Ctrl, Alt, Shift)
  */
-function Kbd({ className, children, platform = "auto", ...props }: KbdProps) {
+function Kbd({ className, children, platform = "auto", variant = "default", ...props }: KbdProps) {
   const [isMac, setIsMac] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -109,16 +116,25 @@ function Kbd({ className, children, platform = "auto", ...props }: KbdProps) {
     <kbd
       data-slot="kbd"
       data-platform={isMac ? "mac" : "win"}
+      data-variant={variant}
       className={cn(
         // 基础样式
         "pointer-events-none inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 px-1.5 select-none",
         // 字体 - Mac 符号需要更大字号
         isMac ? "font-sans text-[13px] font-normal" : "font-mono text-[11px] font-medium",
-        // 配色 - 增强对比度
-        "bg-primary-100 text-primary-800",
-        // 边框和阴影
-        "rounded border border-primary-300",
-        "shadow-[0_1px_0_1px_var(--primary-300),inset_0_0.5px_0_rgba(255,255,255,0.5)]",
+        // 配色 - 根据变体切换
+        variant === "default" && [
+          "bg-primary-100 text-primary-800",
+          "border border-primary-300",
+          "shadow-[0_1px_0_1px_var(--primary-300),inset_0_0.5px_0_rgba(255,255,255,0.5)]",
+        ],
+        variant === "lightbox" && [
+          "bg-white/10 text-white/90",
+          "border border-white/20",
+          "shadow-none",
+        ],
+        // 边框和圆角
+        "rounded",
         // 图标尺寸
         "[&_svg:not([class*='size-'])]:size-3",
         // Tooltip 内的特殊样式
@@ -166,11 +182,13 @@ function KbdShortcut({
   keys,
   separator = null,
   platform = "auto",
+  variant = "default",
   className,
 }: {
   keys: string[]
   separator?: React.ReactNode
   platform?: Platform
+  variant?: Variant
   className?: string
 }) {
   const [isMac, setIsMac] = useState(false)
@@ -187,14 +205,21 @@ function KbdShortcut({
   }, [platform])
 
   // Mac 默认不显示分隔符，Win 默认显示 +
-  const actualSeparator = separator ?? (isMac ? null : <span className="text-primary-400 text-[10px]">+</span>)
+  // 灯箱模式下使用白色分隔符
+  const actualSeparator = separator ?? (isMac ? null : (
+    <span className={cn(
+      "text-[10px]",
+      variant === "default" && "text-primary-400",
+      variant === "lightbox" && "text-white/50"
+    )}>+</span>
+  ))
 
   return (
     <KbdGroup className={className}>
       {keys.map((key, index) => (
         <span key={key} className="inline-flex items-center gap-1">
           {index > 0 && actualSeparator}
-          <Kbd platform={platform}>{mounted ? transformKey(key, isMac) : key}</Kbd>
+          <Kbd platform={platform} variant={variant}>{mounted ? transformKey(key, isMac) : key}</Kbd>
         </span>
       ))}
     </KbdGroup>

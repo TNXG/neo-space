@@ -1,7 +1,9 @@
 "use client";
 
+import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { KbdShortcut } from "@/components/ui/kbd";
 
 interface GalleryImage {
   url: string;
@@ -18,6 +20,26 @@ interface GalleryProps {
  */
 export function Gallery({ images, className }: GalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  // 阻止背景滚动
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      document.body.style.overflow = "hidden";
+
+      const preventScroll = (e: WheelEvent | TouchEvent) => {
+        e.preventDefault();
+      };
+
+      document.body.addEventListener("wheel", preventScroll, { passive: false });
+      document.body.addEventListener("touchmove", preventScroll, { passive: false });
+
+      return () => {
+        document.body.style.overflow = "";
+        document.body.removeEventListener("wheel", preventScroll);
+        document.body.removeEventListener("touchmove", preventScroll);
+      };
+    }
+  }, [selectedIndex]);
 
   if (images.length === 0) {
     return null;
@@ -74,10 +96,10 @@ export function Gallery({ images, className }: GalleryProps) {
           <button
             type="button"
             onClick={handleClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors cursor-pointer"
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Close"
           >
-            <span className="iconify w-8 h-8" data-icon="mingcute:close-line" />
+            <Icon icon="mingcute:close-line" width={32} height={32} />
           </button>
 
           <button
@@ -86,10 +108,10 @@ export function Gallery({ images, className }: GalleryProps) {
               e.stopPropagation();
               handlePrev();
             }}
-            className="absolute left-4 text-white/80 hover:text-white transition-colors cursor-pointer"
+            className="absolute left-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Previous"
           >
-            <span className="iconify w-8 h-8" data-icon="mingcute:left-line" />
+            <Icon icon="mingcute:left-line" width={32} height={32} />
           </button>
 
           <button
@@ -98,19 +120,32 @@ export function Gallery({ images, className }: GalleryProps) {
               e.stopPropagation();
               handleNext();
             }}
-            className="absolute right-4 text-white/80 hover:text-white transition-colors cursor-pointer"
+            className="absolute right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Next"
           >
-            <span className="iconify w-8 h-8" data-icon="mingcute:right-line" />
+            <Icon icon="mingcute:right-line" width={32} height={32} />
           </button>
 
           <div className="relative max-w-6xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
             <img
               src={images[selectedIndex].url}
               alt={images[selectedIndex].alt || `Gallery image ${selectedIndex + 1}`}
-              className="object-contain"
+              className="object-contain w-full h-full"
               sizes="90vw"
             />
+          </div>
+
+          {/* 操作提示 */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 text-white/70 text-xs select-none px-4">
+            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+              <Icon icon="mingcute:arrow-left-line" width={14} height={14} />
+              <Icon icon="mingcute:arrow-right-line" width={14} height={14} />
+              <span>切换图片</span>
+            </div>
+            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+              <KbdShortcut keys={["Esc"]} variant="lightbox" />
+              <span>关闭</span>
+            </div>
           </div>
         </div>
       )}

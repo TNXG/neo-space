@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react/offline";
 import ExifReader from "exifreader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { KbdShortcut } from "@/components/ui/kbd";
 
 interface ImageFigureProps {
   src: string;
@@ -248,18 +249,32 @@ function LightboxPortal({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape")
         onClose();
     };
+
+    // 阻止背景页面滚动
+    const preventScroll = (e: WheelEvent | TouchEvent) => {
+      e.preventDefault();
+    };
+
     window.addEventListener("keydown", handleEsc);
+    // 使用 passive: false 确保可以阻止默认行为
+    document.body.addEventListener("wheel", preventScroll, { passive: false });
+    document.body.addEventListener("touchmove", preventScroll, { passive: false });
+
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleEsc);
+      document.body.removeEventListener("wheel", preventScroll);
+      document.body.removeEventListener("touchmove", preventScroll);
     };
   }, [onClose]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const delta = -e.deltaY * 0.002;
     setScale((prevScale) => {
@@ -464,6 +479,15 @@ function LightboxPortal({
         className="absolute bottom-8 md:bottom-12 left-0 right-0 flex flex-col items-center gap-2 md:gap-3 animate-in slide-in-from-bottom-4 duration-500 pointer-events-auto z-50 px-4"
         onClick={e => e.stopPropagation()}
       >
+        {/* 滚轮缩放提示 */}
+        <div className="flex items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+          <Icon icon="mingcute:mouse-line" width={14} height={14} />
+          <span>滚轮缩放</span>
+          <span className="mx-1">·</span>
+          <KbdShortcut keys={["Esc"]} variant="lightbox" />
+          <span>关闭</span>
+        </div>
+
         {exif && (
           <p className="text-white/70 text-xs md:text-sm font-light tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
             {exif.model && <span className="text-accent-300 font-semibold">{exif.model}</span>}
