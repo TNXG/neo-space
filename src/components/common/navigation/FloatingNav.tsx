@@ -160,7 +160,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
               </div>
 
               <div className="flex flex-col justify-center">
-                <span className="text-primary-900 text-xs md:text-sm font-bold whitespace-nowrap truncate max-w-[120px] md:max-w-[150px]">
+                <span className="text-primary-900 text-xs md:text-sm font-bold whitespace-nowrap truncate max-w-30 md:max-w-37.5">
                   {user.name}
                 </span>
                 <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">

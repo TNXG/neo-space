@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
@@ -137,7 +138,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
                 <div className="size-4 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
               )
             : (
-                <span className="iconify size-4" data-icon="mingcute:github-line" />
+                <Icon icon="mingcute:github-line" className="size-4" />
               )}
           <span>GitHub</span>
         </button>
@@ -154,7 +155,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
                 <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               )
             : (
-                <span className="iconify size-4" data-icon="mingcute:qq-line" />
+                <Icon icon="mingcute:qq-line" className="size-4" />
               )}
           <span>QQ</span>
         </button>
@@ -177,7 +178,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <div className="size-5 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
             )
           : (
-              <span className="iconify size-5" data-icon="mingcute:github-line" />
+              <Icon icon="mingcute:github-line" className="size-5" />
             )}
         <span className="font-medium">
           {isLoading ? "登录中..." : "使用 GitHub 登录"}
@@ -196,7 +197,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )
           : (
-              <span className="iconify size-5" data-icon="mingcute:qq-line" />
+              <Icon icon="mingcute:qq-line" className="size-5" />
             )}
         <span className="font-medium">
           {isLoading ? "登录中..." : "使用 QQ 登录"}

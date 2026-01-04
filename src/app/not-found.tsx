@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 
@@ -84,7 +85,7 @@ export default function NotFound() {
               <div className="absolute inset-0 rounded-lg overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
               </div>
-              <span className="iconify w-4 h-4 transition-transform group-hover:-translate-x-1" data-icon="mingcute:home-3-line" />
+              <Icon icon="mingcute:home-3-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               <span>返回首页</span>
             </Link>
 
@@ -95,7 +96,7 @@ export default function NotFound() {
               hover:bg-secondary hover:border-primary-300 hover:text-accent-700 dark:hover:text-accent-400 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
               cursor-pointer select-none text-sm sm:text-base"
             >
-              <span className="iconify w-4 h-4 transition-transform group-hover:-translate-x-1" data-icon="mingcute:arrow-left-line" />
+              <Icon icon="mingcute:arrow-left-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               <span>返回上页</span>
             </button>
           </div>

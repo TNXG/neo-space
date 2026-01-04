@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
 
 interface BannerProps {
@@ -47,9 +48,9 @@ export function Banner({ type, children, className }: BannerProps) {
       )}
     >
       <div className="shrink-0 mt-0.5">
-        <span
-          className={clsx("iconify w-5 h-5", style.icon)}
-          data-icon={style.iconName}
+        <Icon
+          icon={style.iconName}
+          className={clsx("w-5 h-5", style.icon)}
         />
       </div>
       <div className="flex-1 min-w-0 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
