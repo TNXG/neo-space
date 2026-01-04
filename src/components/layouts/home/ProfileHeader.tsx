@@ -14,7 +14,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
     <header className="space-y-5 md:space-y-6">
       <div className="flex gap-4 md:gap-5 items-center">
-        <div className="group rounded-2xl bg-stone-200 h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden">
+        <div className="group rounded-2xl bg-secondary h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden">
           {profile.avatar
             ? (
                 <img
@@ -34,7 +34,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
               )
             : null}
           {/* Fallback avatar */}
-          <div className={`text-xl md:text-2xl font-bold h-full w-full items-center justify-center from-stone-200 to-stone-300 bg-linear-to-br text-neutral-400 ${profile.avatar ? "hidden" : "flex"}`}>
+          <div className={`text-xl md:text-2xl font-bold h-full w-full items-center justify-center from-secondary to-secondary-foreground bg-linear-to-br text-muted-foreground ${profile.avatar ? "hidden" : "flex"}`}>
             {profile.name.charAt(0).toUpperCase()}
           </div>
           {/* Status indicator */}

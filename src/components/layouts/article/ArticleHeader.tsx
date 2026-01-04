@@ -100,7 +100,7 @@ export function ArticleHeader({
           {tags.map(tag => (
             <span
               key={tag}
-              className="text-xs px-2.5 py-1 rounded-full bg-primary-100 text-primary-700"
+              className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground"
             >
               #
               {tag}
