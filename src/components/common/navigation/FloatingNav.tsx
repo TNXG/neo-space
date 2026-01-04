@@ -143,12 +143,10 @@ export function FloatingNav({ user }: FloatingNavProps) {
             {/* User Info */}
             <div className="flex items-center gap-3 px-2 md:px-3 shrink-0">
               <div className="relative shrink-0">
-                <div
-                  className="absolute inset-0 transition-opacity duration-300 opacity-100"
-                  style={{ opacity: (isExpanded && hasMounted) ? 0 : 1 }}
-                >
-                  <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring hidden md:block" />
-                  <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring-delayed hidden md:block" />
+                {/* Pulse rings - online status indicator */}
+                <div className="absolute inset-0">
+                  <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring" />
+                  <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring-delayed" />
                 </div>
                 {user.avatar
                   ? (
