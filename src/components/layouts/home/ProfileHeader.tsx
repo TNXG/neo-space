@@ -12,7 +12,7 @@ interface ProfileHeaderProps {
  */
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
-    <header className="animate-fade-in space-y-5 md:space-y-6">
+    <header className="space-y-5 md:space-y-6">
       <div className="flex gap-4 md:gap-5 items-center">
         <div className="group rounded-2xl bg-stone-200 h-16 w-16 md:h-20 md:w-20 shadow-sm relative overflow-hidden">
           {profile.avatar
@@ -39,7 +39,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
           {/* Status indicator */}
           <div className="rounded-full flex h-3.5 w-3.5 md:h-4 md:w-4 items-center bottom-0.5 right-0.5 md:bottom-1 md:right-1 justify-center absolute bg-neutral-50">
-            <div className="rounded-full bg-teal-500 h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse" />
+            <div className="rounded-full bg-teal-500 h-2 w-2 md:h-2.5 md:w-2.5" />
           </div>
         </div>
         <div>
