@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { parseOwOIcon } from "./utils";
 
 interface EmojiPickerProps {
   open: boolean;
@@ -21,7 +20,6 @@ interface EmojiPickerProps {
  */
 function EmojiItem({ item, onSelect }: { item: OwOItem; onSelect: (item: OwOItem) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const iconUrl = parseOwOIcon(item.icon);
 
   return (
     <Popover open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -34,7 +32,7 @@ function EmojiItem({ item, onSelect }: { item: OwOItem; onSelect: (item: OwOItem
           className="relative w-full aspect-square flex items-center justify-center p-1 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
         >
           <img
-            src={iconUrl}
+            src={item.icon}
             alt={item.text}
             className="w-full h-full object-contain"
             loading="lazy"
@@ -49,7 +47,7 @@ function EmojiItem({ item, onSelect }: { item: OwOItem; onSelect: (item: OwOItem
       >
         <div className="flex flex-col items-center gap-1.5">
           <img
-            src={iconUrl}
+            src={item.icon}
             alt={item.text}
             className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
           />

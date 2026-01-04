@@ -9,20 +9,12 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { updateAuthComment } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { OWO_API } from "../constants";
 
 // --- Types for Emoji ---
 interface OwOItem { text: string; icon: string }
 interface OwOPackage { type: string; container: OwOItem[] }
 type OwOResponse = Record<string, OwOPackage>;
-
-// --- Constants ---
-const OWO_API = "https://cdn.tnxg.top/images/face/owo.json";
-
-// --- Utils ---
-const parseOwOIcon = (iconString: string): string => {
-  const match = iconString.match(/src="([^"]+)"/);
-  return match && match[1] ? (match[1].startsWith("http") ? match[1] : `https://${match[1]}`) : "";
-};
 
 interface CommentEditFormProps {
   commentId: string;
@@ -54,7 +46,7 @@ export function CommentEditForm({
   const toggleEditEmoji = () => {
     setShowEditEmoji((prev) => {
       if (!prev && !owoData) {
-        fetch(OWO_API).then(r => r.json()).then((d) => {
+        fetch(OWO_API, { cache: 'no-store' }).then(r => r.json()).then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });
@@ -65,13 +57,14 @@ export function CommentEditForm({
 
   // 插入表情到编辑内容
   const insertEditEmoji = (item: OwOItem) => {
-    const url = parseOwOIcon(item.icon);
     const textarea = editTextareaRef.current;
     if (!textarea)
       return;
 
     const start = textarea.selectionStart;
-    const newContent = `${editContent.slice(0, start)}![${item.text}](${url}) ${editContent.slice(textarea.selectionEnd)}`;
+    // 使用特殊语法 :表情名: 而非直接的 Markdown 图片链接
+    const emojiSyntax = `:${item.text}:`;
+    const newContent = `${editContent.slice(0, start)}${emojiSyntax} ${editContent.slice(textarea.selectionEnd)}`;
     setEditContent(newContent);
     setShowEditEmoji(false);
     setTimeout(() => textarea.focus(), 0);
@@ -193,7 +186,7 @@ export function CommentEditForm({
                           onClick={() => insertEditEmoji(item)}
                           className="relative w-full aspect-square flex items-center justify-center p-1 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
                         >
-                          <img src={parseOwOIcon(item.icon)} alt={item.text} className="w-full h-full object-contain" loading="lazy" />
+                          <img src={item.icon} alt={item.text} className="w-full h-full object-contain" loading="lazy" />
                         </button>
                       ))}
                     </div>

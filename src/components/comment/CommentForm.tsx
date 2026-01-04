@@ -21,12 +21,9 @@ import {
   AuthenticatedUser,
   CornerBorders,
   GuestActions,
-  OWO_API,
-  parseOwOIcon,
-  STORAGE_KEY_DRAFT_PREFIX,
-  STORAGE_KEY_USER,
   ToolbarLeft,
 } from "./comment-form";
+import { OWO_API, STORAGE_KEY_DRAFT_PREFIX, STORAGE_KEY_USER } from "./constants";
 import { useCommentRefresh } from "./hooks";
 import { TurnstileWidget } from "./TurnstileWidget";
 
@@ -156,7 +153,7 @@ export function CommentForm({
       // 关闭 ProfilePopover
       setActivePopover(null);
       if (!owoData) {
-        fetch(OWO_API).then(r => r.json()).then((d) => {
+        fetch(OWO_API, { cache: 'no-store' }).then(r => r.json()).then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });
@@ -166,12 +163,13 @@ export function CommentForm({
   }, [owoData]);
 
   const insertEmoji = (item: OwOItem) => {
-    const url = parseOwOIcon(item.icon);
     const input = textareaRef.current;
     if (!input)
       return;
     const start = input.selectionStart;
-    const newContent = `${content.slice(0, start)}![${item.text}](${url}) ${content.slice(input.selectionEnd)}`;
+    // 使用特殊语法 :表情名: 而非直接的 Markdown 图片链接
+    const emojiSyntax = `:${item.text}:`;
+    const newContent = `${content.slice(0, start)}${emojiSyntax} ${content.slice(input.selectionEnd)}`;
     setContent(newContent);
     setShowEmoji(false);
     setTimeout(() => input.focus(), 0);

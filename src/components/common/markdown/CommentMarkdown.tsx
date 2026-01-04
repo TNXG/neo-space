@@ -1,11 +1,14 @@
 "use client";
 
 import type { Components } from "react-markdown";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+import { OWO_API } from "@/components/comment/constants";
+import { buildOwOEmojiMap, parseOwOEmojis } from "@/components/comment/hooks";
 import { DashedSeparator } from "@/components/ui/separator";
 
 import { AnimatedLink } from "../content/AnimatedLink";
@@ -167,8 +170,40 @@ interface CommentMarkdownProps {
 /**
  * 评论专用 Markdown 渲染器
  * 使用 rehype-sanitize 进行 XSS 防护
+ * 支持 OwO 表情特殊语法解析
  */
 export function CommentMarkdown({ content, className = "" }: CommentMarkdownProps) {
+  const [emojiMap, setEmojiMap] = useState<Record<string, string>>({});
+
+  // 加载 OwO 表情映射表
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(OWO_API, { cache: "no-store" })
+      .then(r => r.json())
+      .then((data) => {
+        if (isMounted) {
+          const map = buildOwOEmojiMap(data);
+          setEmojiMap(map);
+        }
+      })
+      .catch(() => {
+        // 静默失败，使用空映射表
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 使用 useMemo 解析表情语法，避免在 effect 中调用 setState
+  const parsedContent = useMemo(() => {
+    if (Object.keys(emojiMap).length > 0) {
+      return parseOwOEmojis(content, emojiMap);
+    }
+    return content;
+  }, [content, emojiMap]);
+
   return (
     <div className={`comment-markdown ${className}`}>
       <ReactMarkdown
@@ -176,7 +211,7 @@ export function CommentMarkdown({ content, className = "" }: CommentMarkdownProp
         rehypePlugins={[rehypeSanitize]}
         components={commentComponents}
       >
-        {content}
+        {parsedContent}
       </ReactMarkdown>
     </div>
   );

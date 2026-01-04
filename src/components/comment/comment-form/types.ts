@@ -4,7 +4,7 @@
 
 export interface OwOItem {
   text: string;
-  icon: string;
+  icon: string; // 直接的图片 URL
 }
 
 export interface OwOPackage {
@@ -13,6 +13,12 @@ export interface OwOPackage {
 }
 
 export type OwOResponse = Record<string, OwOPackage>;
+
+/**
+ * OwO 表情映射表，用于解析特殊语法
+ * 格式: { "表情名": "图片URL" }
+ */
+export type OwOEmojiMap = Record<string, string>;
 
 export interface CommentFormProps {
   refId: string;

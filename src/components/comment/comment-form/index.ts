@@ -3,12 +3,6 @@
  */
 
 export { AuthenticatedUser } from "./AuthenticatedUser";
-// Constants
-export {
-  OWO_API,
-  STORAGE_KEY_DRAFT_PREFIX,
-  STORAGE_KEY_USER,
-} from "./constants";
 export { CornerBorders } from "./CornerBorders";
 export { EmojiPicker } from "./EmojiPicker";
 export { GuestActions } from "./GuestActions";
@@ -28,6 +22,3 @@ export type {
   OwOResponse,
   TurnstileStatus as TurnstileStatusType,
 } from "./types";
-
-// Utils
-export { parseOwOIcon } from "./utils";
