@@ -1,7 +1,6 @@
 "use client";
 
 import type { Reader } from "@/types/api";
-import process from "node:process";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 

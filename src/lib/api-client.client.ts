@@ -2,7 +2,6 @@
 
 import type { Link, Note, PaginatedResponse, Post } from "@/types/api";
 
-import process from "node:process";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 
