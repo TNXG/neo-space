@@ -7,10 +7,10 @@
 
 ## Issue #4: 优化站点SEO
 
-- [ ] 添加 sitemap.xml 文件
-- [ ] 添加 robots.txt 文件
-- [ ] 补充站点的 OG 图（Open Graph）等内容
-- [ ] 进一步优化站点的 SEO 配置
+- [X] 添加 sitemap.xml 文件
+- [X] 添加 robots.txt 文件
+- [X] 补充站点的 OG 图（Open Graph）等内容
+- [X] 进一步优化站点的 SEO 配置
 
 ## Issue #3: 重构 OwO 表情逻辑
 

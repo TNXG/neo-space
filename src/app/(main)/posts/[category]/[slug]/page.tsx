@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
+import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
@@ -39,10 +40,28 @@ export async function generateMetadata({ params }: PageProps) {
       return { title: "文章不存在" };
     }
 
+    const description = post.summary || post.text.slice(0, 150).replace(/\n/g, " ");
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+
     return {
       title: post.title,
-      description: post.summary || post.text.slice(0, 100),
+      description,
       keywords: post.tags,
+      authors: [{ name: post.category?.name || "作者" }],
+      openGraph: {
+        title: post.title,
+        description,
+        type: "article",
+        publishedTime: post.created,
+        modifiedTime: post.modified || post.created,
+        url: `${baseUrl}/posts/${post.category?.slug}/${post.slug}`,
+        tags: post.tags,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: post.title,
+        description,
+      },
     };
   } catch {
     return { title: "文章不存在" };
@@ -85,8 +104,22 @@ export default async function PostPage({ params }: PageProps) {
   // 获取文章发布年份
   const postYear = new Date(post.created).getFullYear().toString();
 
+  // 生成 JSON-LD 结构化数据
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const jsonLd = generateArticleJsonLd({
+    title: post.title,
+    description: post.summary || post.text.slice(0, 150).replace(/\n/g, " "),
+    url: `${baseUrl}/posts/${post.category?.slug}/${post.slug}`,
+    datePublished: post.created,
+    dateModified: post.modified || post.created,
+    authorName,
+    keywords: post.tags,
+  });
+
   return (
-    <ArticleLayout
+    <>
+      <JsonLd data={jsonLd} />
+      <ArticleLayout
       toc={toc}
       header={(
         <ArticleHeader
@@ -136,6 +169,7 @@ export default async function PostPage({ params }: PageProps) {
         prevTitle: adjacentPosts.prev?.title,
         nextTitle: adjacentPosts.next?.title,
       }}
-    />
+      />
+    </>
   );
 }

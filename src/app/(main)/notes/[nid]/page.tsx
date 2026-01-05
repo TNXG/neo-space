@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
-import { getAdjacentNotes, getNoteByNid, getNotes } from "@/lib/api-client";
+import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
+import { getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
 // ISR 配置：16小时过期
@@ -35,9 +36,25 @@ export async function generateMetadata({ params }: PageProps) {
 
   try {
     const { data: note } = await getNoteByNid(nidNum);
+    const description = note.text.slice(0, 150).replace(/\n/g, " ");
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+
     return {
       title: note.title,
-      description: note.text.slice(0, 100),
+      description,
+      openGraph: {
+        title: note.title,
+        description,
+        type: "article",
+        publishedTime: note.created,
+        modifiedTime: note.modified || note.created,
+        url: `${baseUrl}/notes/${note.nid}`,
+      },
+      twitter: {
+        card: "summary",
+        title: note.title,
+        description,
+      },
     };
   } catch {
     return { title: "日记不存在" };
@@ -53,23 +70,42 @@ export default async function NotePage({ params }: PageProps) {
   let note;
   let toc;
   let adjacentNotes;
+  let authorName = "作者";
 
   try {
-    // 并行获取手记内容和相邻手记信息
-    const [noteResponse, adjacentResponse] = await Promise.all([
+    // 并行获取手记内容、相邻手记信息和站点配置
+    const [noteResponse, adjacentResponse, configResponse] = await Promise.all([
       getNoteByNid(nidNum),
       getAdjacentNotes(nidNum),
+      getSiteConfig().catch(() => null),
     ]);
 
     note = noteResponse.data;
     adjacentNotes = adjacentResponse.data;
     toc = await extractTOC(note.text);
+    
+    if (configResponse) {
+      authorName = configResponse.data.seo.title;
+    }
   } catch {
     notFound();
   }
 
+  // 生成 JSON-LD 结构化数据
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const jsonLd = generateArticleJsonLd({
+    title: note.title,
+    description: note.text.slice(0, 150).replace(/\n/g, " "),
+    url: `${baseUrl}/notes/${note.nid}`,
+    datePublished: note.created,
+    dateModified: note.modified || note.created,
+    authorName,
+  });
+
   return (
-    <ArticleLayout
+    <>
+      <JsonLd data={jsonLd} />
+      <ArticleLayout
       toc={toc}
       header={(
         <NoteHeader
@@ -107,6 +143,7 @@ export default async function NotePage({ params }: PageProps) {
         prevTitle: adjacentNotes.prev?.title,
         nextTitle: adjacentNotes.next?.title,
       }}
-    />
+      />
+    </>
   );
 }

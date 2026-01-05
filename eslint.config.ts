@@ -19,6 +19,7 @@ const atf = antfu({
     "eslinttailwindcss/no-custom-classname": "off",
     "no-console": ["warn", { allow: ["warn", "error"] }],
     "style/brace-style": ["error", "1tbs", { allowSingleLine: true }],
+    "node/prefer-global/process": "off",
   },
 });
 
