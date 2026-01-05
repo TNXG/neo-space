@@ -1,5 +1,17 @@
 # TODO
 
+## Issue #5: 评论区验证码有效域名没有更新
+
+- [X] 在 Cloudflare 更新 Turnstile 验证码的有效域名配置
+- [X] 将有效域名从 blog.tnxg.moe 更新为 www.tnxg.moe
+
+## Issue #4: 优化站点SEO
+
+- [ ] 添加 sitemap.xml 文件
+- [ ] 添加 robots.txt 文件
+- [ ] 补充站点的 OG 图（Open Graph）等内容
+- [ ] 进一步优化站点的 SEO 配置
+
 ## Issue #3: 重构 OwO 表情逻辑
 
 - [X] 重构评论区 OwO 表情解析逻辑

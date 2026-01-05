@@ -46,7 +46,7 @@ export function CommentEditForm({
   const toggleEditEmoji = () => {
     setShowEditEmoji((prev) => {
       if (!prev && !owoData) {
-        fetch(OWO_API, { cache: 'no-store' }).then(r => r.json()).then((d) => {
+        fetch(OWO_API).then(r => r.json()).then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });
@@ -62,8 +62,8 @@ export function CommentEditForm({
       return;
 
     const start = textarea.selectionStart;
-    // 使用特殊语法 :表情名: 而非直接的 Markdown 图片链接
-    const emojiSyntax = `:${item.text}:`;
+    // 使用特殊语法 [族名_表情名] 而非直接的 Markdown 图片链接
+    const emojiSyntax = `[${activePkg}_${item.text}]`;
     const newContent = `${editContent.slice(0, start)}${emojiSyntax} ${editContent.slice(textarea.selectionEnd)}`;
     setEditContent(newContent);
     setShowEditEmoji(false);

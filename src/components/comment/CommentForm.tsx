@@ -153,7 +153,7 @@ export function CommentForm({
       // 关闭 ProfilePopover
       setActivePopover(null);
       if (!owoData) {
-        fetch(OWO_API, { cache: 'no-store' }).then(r => r.json()).then((d) => {
+        fetch(OWO_API).then(r => r.json()).then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });
@@ -167,8 +167,8 @@ export function CommentForm({
     if (!input)
       return;
     const start = input.selectionStart;
-    // 使用特殊语法 :表情名: 而非直接的 Markdown 图片链接
-    const emojiSyntax = `:${item.text}:`;
+    // 使用特殊语法 [族名_表情名] 而非直接的 Markdown 图片链接
+    const emojiSyntax = `[${activePkg}_${item.text}]`;
     const newContent = `${content.slice(0, start)}${emojiSyntax} ${content.slice(input.selectionEnd)}`;
     setContent(newContent);
     setShowEmoji(false);

@@ -179,7 +179,7 @@ export function CommentMarkdown({ content, className = "" }: CommentMarkdownProp
   useEffect(() => {
     let isMounted = true;
 
-    fetch(OWO_API, { cache: "no-store" })
+    fetch(OWO_API)
       .then(r => r.json())
       .then((data) => {
         if (isMounted) {
