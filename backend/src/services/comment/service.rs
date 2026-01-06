@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use crate::guards::OptionalAuthGuard;
 use crate::models::{Comment, CommentTree};
-use crate::services::ReaderRepository;
+use crate::repositories::ReaderRepository;
 
 /// 评论服务
 pub struct CommentService {

@@ -2,7 +2,9 @@
 
 use bson::oid::ObjectId;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use crate::models::JwtClaims;
+
+// 重新导出 JwtClaims 供外部使用
+pub use crate::models::JwtClaims;
 
 /// JWT error types
 #[derive(Debug)]

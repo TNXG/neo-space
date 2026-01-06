@@ -3,7 +3,7 @@ use rocket::State;
 use mongodb::Database;
 use crate::guards::AuthGuard;
 use crate::models::{ApiResponse, ReaderResponse, AccountResponse};
-use crate::services::{ReaderRepository, AccountRepository};
+use crate::repositories::{ReaderRepository, AccountRepository};
 
 #[get("/me")]
 pub async fn get_current_user(auth: AuthGuard, db: &State<Database>) -> Result<Json<ApiResponse<ReaderResponse>>, Json<ApiResponse<()>>> {

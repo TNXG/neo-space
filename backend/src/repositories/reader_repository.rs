@@ -19,16 +19,16 @@ impl ReaderRepository {
     }
 
     /// 在数据库中创建新的 reader
-    /// 
+    ///
     /// # 参数
     /// * `reader` - 要创建的 Reader
-    /// 
+    ///
     /// # 返回
     /// * `Ok(ObjectId)` - 创建的 reader 的 ID
     /// * `Err(mongodb::error::Error)` - 创建失败时
     pub async fn create_reader(&self, reader: &Reader) -> Result<ObjectId, mongodb::error::Error> {
         let result = self.collection.insert_one(reader).await?;
-        
+
         match result.inserted_id.as_object_id() {
             Some(id) => Ok(id),
             None => Err(mongodb::error::Error::custom("无法获取插入的 ID")),
@@ -36,10 +36,10 @@ impl ReaderRepository {
     }
 
     /// 通过 ID 查找 reader
-    /// 
+    ///
     /// # 参数
     /// * `id` - Reader 的 `ObjectId`
-    /// 
+    ///
     /// # 返回
     /// * `Ok(Some(Reader))` - 找到 reader
     /// * `Ok(None)` - 未找到 reader
@@ -51,10 +51,10 @@ impl ReaderRepository {
     }
 
     /// 通过邮箱查找 reader
-    /// 
+    ///
     /// # 参数
     /// * `email` - 邮箱地址
-    /// 
+    ///
     /// # 返回
     /// * `Ok(Some(Reader))` - 找到 reader
     /// * `Ok(None)` - 未找到 reader
@@ -66,29 +66,29 @@ impl ReaderRepository {
     }
 
     /// 通过昵称和邮箱查找 reader
-    /// 
+    ///
     /// # 参数
     /// * `name` - 昵称
     /// * `email` - 邮箱地址
-    /// 
+    ///
     /// # 返回
     /// * `Ok(Some(Reader))` - 找到 reader
     /// * `Ok(None)` - 未找到 reader
     /// * `Err(mongodb::error::Error)` - 查询失败时
     pub async fn find_by_name_and_email(&self, name: &str, email: &str) -> Result<Option<Reader>, mongodb::error::Error> {
         self.collection
-            .find_one(doc! { 
+            .find_one(doc! {
                 "name": name,
-                "email": email 
+                "email": email
             })
             .await
     }
 
     /// 更新 reader
-    /// 
+    ///
     /// # 参数
     /// * `reader` - 要更新的 Reader
-    /// 
+    ///
     /// # 返回
     /// * `Ok(())` - 更新成功
     /// * `Err(mongodb::error::Error)` - 更新失败时
@@ -103,10 +103,10 @@ impl ReaderRepository {
     }
 
     /// 删除 reader
-    /// 
+    ///
     /// # 参数
     /// * `id` - Reader 的 `ObjectId`
-    /// 
+    ///
     /// # 返回
     /// * `Ok(())` - 删除成功
     /// * `Err(mongodb::error::Error)` - 删除失败时
@@ -118,7 +118,7 @@ impl ReaderRepository {
     }
 
     /// 检查 readers 集合是否为空
-    /// 
+    ///
     /// # 返回
     /// * `Ok(true)` - 集合为空
     /// * `Ok(false)` - 集合不为空
@@ -129,7 +129,7 @@ impl ReaderRepository {
     }
 
     /// 获取所有 readers
-    /// 
+    ///
     /// # 返回
     /// * `Ok(Vec<Reader>)` - readers 列表
     /// * `Err(mongodb::error::Error)` - 查询失败时
@@ -148,11 +148,11 @@ impl ReaderRepository {
     }
 
     /// 查找或创建匿名用户
-    /// 
+    ///
     /// # 参数
     /// * `name` - 用户名
     /// * `email` - 邮箱地址
-    /// 
+    ///
     /// # 返回
     /// * `Ok(ObjectId)` - 用户 ID
     /// * `Err(mongodb::error::Error)` - 操作失败时

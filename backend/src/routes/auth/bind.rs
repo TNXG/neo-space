@@ -8,7 +8,7 @@ use mongodb::Database;
 use crate::config::OAuthConfig;
 use crate::guards::AuthGuard;
 use crate::models::{ApiResponse, Reader, ReaderResponse};
-use crate::services::{ReaderRepository, AccountRepository};
+use crate::repositories::{ReaderRepository, AccountRepository};
 use crate::services::auth::identity::IdentityService;
 
 /// 绑定匿名身份请求

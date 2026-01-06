@@ -1,11 +1,11 @@
 //! 删除评论路由
 
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::bson::doc;
 use rocket::serde::json::Json;
 use rocket::{State, http::Status, delete};
-use std::str::FromStr;
 
 use crate::models::{ApiResponse, Comment};
+use crate::utils::db::parse_object_id;
 
 /**
  * DELETE /api/comments/<id>
@@ -18,10 +18,7 @@ pub async fn delete_comment(
 ) -> Result<Json<ApiResponse<()>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     match collection.delete_one(doc! { "_id": oid }).await {
         Ok(_) => Ok(Json(ApiResponse::success_with_message(

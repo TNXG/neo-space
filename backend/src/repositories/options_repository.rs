@@ -71,7 +71,7 @@ impl OptionsRepository {
     }
 
     /// 获取 OAuth 配置
-    /// 
+    ///
     /// # 返回
     /// * `Ok(OAuthOptions)` - OAuth 配置
     /// * `Err(mongodb::error::Error)` - 数据库错误
@@ -102,7 +102,7 @@ impl OptionsRepository {
             }
         }
 
-        log::debug!("从数据库读取 OAuth 配置: github_client_id={:?}", 
+        log::debug!("从数据库读取 OAuth 配置: github_client_id={:?}",
             options.github_client_id.as_ref().map(|s| format!("{}...", &s[..8.min(s.len())])));
 
         Ok(options)

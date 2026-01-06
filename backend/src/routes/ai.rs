@@ -11,6 +11,13 @@ use crate::models::{
     TimeCapsule, TimeCapsuleRequest, TimeCapsuleResponse, TimeSensitivity,
 };
 use crate::services::{AiService, ChatMessage, ChatRole};
+use crate::db_find_one;
+
+/// 内容信息结构
+struct ContentInfo {
+    title: String,
+    text: String,
+}
 
 /// 计算内容 SHA1 哈希
 fn compute_sha1(content: &str) -> String {
@@ -21,7 +28,7 @@ fn compute_sha1(content: &str) -> String {
 
 /// 构建 Time Capsule 分析的 prompt
 fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
-    let system_prompt = r#"你是一个内容时效性分析专家。你的任务是分析文章内容，判断其是否属于"易过期"类型。
+    let system_prompt = r###"你是一个内容时效性分析专家。你的任务是分析文章内容，判断其是否属于"易过期"类型。
 
 易过期内容的特征包括：
 - 特定版本的技术/框架/库（如 "React 18", "Node.js 20"）
@@ -47,7 +54,7 @@ fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
   "markers": ["检测到的易过期元素1", "元素2", ...]
 }
 
-只返回 JSON，不要其他内容。"#;
+只返回 JSON，不要其他内容。"###;
 
     let user_prompt = format!(
         "请分析以下文章的时效性：\n\n标题：{title}\n\n内容：\n{content}"
@@ -81,19 +88,19 @@ fn parse_ai_response(response: &str) -> Result<(TimeSensitivity, String, Vec<Str
     let parsed: serde_json::Value = serde_json::from_str(json_str)
         .map_err(|e| format!("Failed to parse AI response: {e}"))?;
 
-    let sensitivity = match parsed["sensitivity"].as_str().unwrap_or("medium") {
+    let sensitivity = match parsed.get("sensitivity").and_then(|v| v.as_str()).unwrap_or("medium") {
         "high" => TimeSensitivity::High,
         "low" => TimeSensitivity::Low,
         _ => TimeSensitivity::Medium,
     };
 
-    let reason = parsed["reason"]
-        .as_str()
+    let reason = parsed.get("reason")
+        .and_then(|v| v.as_str())
         .unwrap_or("无法获取分析理由")
         .to_string();
 
-    let markers = parsed["markers"]
-        .as_array()
+    let markers = parsed.get("markers")
+        .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
                 .filter_map(|v| v.as_str().map(String::from))
@@ -124,80 +131,108 @@ pub async fn analyze_time_capsule(
     request: Json<TimeCapsuleRequest>,
 ) -> Result<Json<ApiResponse<TimeCapsuleResponse>>, Status> {
     // 1. 获取文章内容
-    let (title, content) = match request.ref_type.as_str() {
+    let content_info = fetch_content_by_type(db, &request).await?;
+
+    // 2. 计算当前内容的 SHA1
+    let content_hash = compute_sha1(&format!("{}{}", content_info.title, content_info.text));
+
+    // 3. 检查缓存
+    if let Some(cached) = get_cached_capsule(db, &request.ref_id, &content_hash).await {
+        return Ok(Json(ApiResponse::success(TimeCapsuleResponse {
+            sensitivity: cached.sensitivity,
+            reason: cached.reason,
+            markers: cached.markers,
+            is_new: false,
+        })));
+    }
+
+    // 4. 调用 AI 服务分析
+    let (sensitivity, reason, markers) = analyze_with_ai(db, &content_info).await?;
+
+    // 5. 保存到数据库
+    save_time_capsule(db, &request, &content_hash, &sensitivity, &reason, &markers).await?;
+
+    Ok(Json(ApiResponse::success(TimeCapsuleResponse {
+        sensitivity,
+        reason,
+        markers,
+        is_new: true,
+    })))
+}
+
+/// 根据类型获取内容
+async fn fetch_content_by_type(
+    db: &State<Database>,
+    request: &TimeCapsuleRequest,
+) -> Result<ContentInfo, Status> {
+    match request.ref_type.as_str() {
         "post" => {
             let object_id = ObjectId::from_str(&request.ref_id)
                 .map_err(|_| Status::BadRequest)?;
             let collection = db.collection::<Post>("posts");
-            let post = collection
-                .find_one(doc! { "_id": object_id })
-                .await
-                .map_err(|_| Status::InternalServerError)?
-                .ok_or(Status::NotFound)?;
-            (post.title, post.text)
+            let post = db_find_one!(collection, doc! { "_id": object_id })?;
+            Ok(ContentInfo { title: post.title, text: post.text })
         }
         "note" => {
             let object_id = ObjectId::from_str(&request.ref_id)
                 .map_err(|_| Status::BadRequest)?;
             let collection = db.collection::<Note>("notes");
-            let note = collection
-                .find_one(doc! { "_id": object_id })
-                .await
-                .map_err(|_| Status::InternalServerError)?
-                .ok_or(Status::NotFound)?;
-            (format!("日记 #{}", note.nid), note.text)
+            let note = db_find_one!(collection, doc! { "_id": object_id })?;
+            Ok(ContentInfo { title: format!("日记 #{}", note.nid), text: note.text })
         }
         "page" => {
             let collection = db.collection::<Page>("pages");
-            let page = collection
-                .find_one(doc! { "slug": &request.ref_id })
-                .await
-                .map_err(|_| Status::InternalServerError)?
-                .ok_or(Status::NotFound)?;
-            (page.title, page.text)
+            let page = db_find_one!(collection, doc! { "slug": &request.ref_id })?;
+            Ok(ContentInfo { title: page.title, text: page.text })
         }
-        _ => return Err(Status::BadRequest),
-    };
+        _ => Err(Status::BadRequest),
+    }
+}
 
-    // 2. 计算当前内容的 SHA1
-    let content_hash = compute_sha1(&format!("{title}{content}"));
+/// 获取缓存的时间胶囊
+async fn get_cached_capsule(
+    db: &State<Database>,
+    ref_id: &str,
+    content_hash: &str,
+) -> Option<TimeCapsule> {
     let capsules_collection = db.collection::<TimeCapsule>("time_capsules");
-
-    // 3. 检查数据库是否有匹配的记录（按创建时间倒序取最新）
     let find_options = mongodb::options::FindOneOptions::builder()
         .sort(doc! { "created": -1 })
         .build();
 
-    eprintln!("Looking for refId: {}, current_hash: {}", &request.ref_id, content_hash);
+    eprintln!("Looking for refId: {ref_id}, current_hash: {content_hash}");
 
     match capsules_collection
-        .find_one(doc! { "refId": &request.ref_id })
+        .find_one(doc! { "refId": ref_id })
         .with_options(find_options)
         .await
     {
         Ok(Some(existing)) => {
             eprintln!("Found existing record, db_hash: {}, current_hash: {}", existing.hash, content_hash);
-            // 4. 如果 hash 匹配，直接返回缓存结果
             if existing.hash == content_hash {
                 eprintln!("Hash matched, returning cached result");
-                return Ok(Json(ApiResponse::success(TimeCapsuleResponse {
-                    sensitivity: existing.sensitivity,
-                    reason: existing.reason,
-                    markers: existing.markers,
-                    is_new: false,
-                })));
+                Some(existing)
+            } else {
+                eprintln!("Hash mismatch, will call AI");
+                None
             }
-            eprintln!("Hash mismatch, will call AI");
         }
         Ok(None) => {
             eprintln!("No existing record found");
+            None
         }
         Err(e) => {
             eprintln!("Database query error: {e:?}");
+            None
         }
     }
+}
 
-    // 调用 AI 服务分析
+/// 使用 AI 分析内容
+async fn analyze_with_ai(
+    db: &State<Database>,
+    content_info: &ContentInfo,
+) -> Result<(TimeSensitivity, String, Vec<String>), Status> {
     let ai_service = AiService::from_database(db.inner())
         .await
         .map_err(|e| {
@@ -209,7 +244,7 @@ pub async fn analyze_time_capsule(
         return Err(Status::ServiceUnavailable);
     }
 
-    let messages = build_analysis_prompt(&title, &content);
+    let messages = build_analysis_prompt(&content_info.title, &content_info.text);
     let ai_response = ai_service
         .chat(messages, Some(0.3), None)
         .await
@@ -218,21 +253,30 @@ pub async fn analyze_time_capsule(
             Status::InternalServerError
         })?;
 
-    let (sensitivity, reason, markers) = parse_ai_response(&ai_response)
-        .map_err(|e| {
-            eprintln!("Failed to parse AI response: {e}");
-            Status::InternalServerError
-        })?;
+    parse_ai_response(&ai_response).map_err(|e| {
+        eprintln!("Failed to parse AI response: {e}");
+        Status::InternalServerError
+    })
+}
 
-    // 保存到数据库
+/// 保存时间胶囊到数据库
+async fn save_time_capsule(
+    db: &State<Database>,
+    request: &TimeCapsuleRequest,
+    content_hash: &str,
+    sensitivity: &TimeSensitivity,
+    reason: &str,
+    markers: &[String],
+) -> Result<(), Status> {
+    let capsules_collection = db.collection::<TimeCapsule>("time_capsules");
     let new_capsule = TimeCapsule {
         id: ObjectId::new(),
         ref_id: request.ref_id.clone(),
         ref_type: request.ref_type.clone(),
         sensitivity: sensitivity.clone(),
-        reason: reason.clone(),
-        markers: markers.clone(),
-        hash: content_hash,
+        reason: reason.to_string(),
+        markers: markers.to_vec(),
+        hash: content_hash.to_string(),
         created: bson::Bson::DateTime(bson::DateTime::now()),
     };
 
@@ -244,12 +288,7 @@ pub async fn analyze_time_capsule(
             Status::InternalServerError
         })?;
 
-    Ok(Json(ApiResponse::success(TimeCapsuleResponse {
-        sensitivity,
-        reason,
-        markers,
-        is_new: true,
-    })))
+    Ok(())
 }
 
 /// 获取文章的 Time Capsule 分析结果

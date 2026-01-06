@@ -1,11 +1,11 @@
 //! 更新评论路由
 
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::bson::doc;
 use rocket::serde::json::Json;
 use rocket::{State, http::Status, put};
-use std::str::FromStr;
 
 use crate::models::{ApiResponse, Comment, UpdateCommentRequest};
+use crate::utils::db::parse_object_id;
 
 /**
  * PUT /api/comments/<id>
@@ -19,10 +19,7 @@ pub async fn update_comment(
 ) -> Result<Json<ApiResponse<Comment>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     let update = doc! {
         "$set": {

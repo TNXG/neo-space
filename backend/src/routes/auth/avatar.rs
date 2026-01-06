@@ -7,7 +7,7 @@ use mongodb::Database;
 
 use crate::guards::AuthGuard;
 use crate::models::{ApiResponse, ReaderResponse};
-use crate::services::{ReaderRepository, AccountRepository};
+use crate::repositories::{ReaderRepository, AccountRepository};
 
 /// 更新头像请求
 #[derive(Debug, Deserialize)]

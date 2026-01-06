@@ -3,15 +3,15 @@
 use mongodb::{
     bson::{doc, Document},
     change_stream::event::ChangeStreamEvent,
-    options::ChangeStreamOptions,
+    options::{ChangeStreamOptions, ReadConcern},
     Database,
 };
 use futures::stream::TryStreamExt;
 use std::time::Duration;
 use tokio::time::sleep;
 
-use super::cache_service::{CacheKey, CacheService};
-use super::revalidation_service::RevalidationService;
+use crate::infrastructure::{CacheService, RevalidationService};
+use crate::infrastructure::cache::CacheKey;
 
 /// Change Stream 监听服务
 pub struct ChangeStreamService {
@@ -76,6 +76,7 @@ impl ChangeStreamService {
             .watch()
             .pipeline(pipeline)
             .with_options(options)
+            .read_concern(ReadConcern::majority())
             .await?;
 
         log::info!("✓ Change Stream 连接成功，开始监听数据变更");
@@ -404,7 +405,7 @@ impl ChangeStreamService {
             // 1. 清除本地缓存
             if let Some(ref id) = link_id {
                 self.cache_service
-                    .invalidate(&crate::services::cache_service::CacheKey::Link(id.clone()))
+                    .invalidate(&CacheKey::Link(id.clone()))
                     .await;
                 log::info!("已清除友链本地缓存: {id}");
             }

@@ -1,40 +1,44 @@
-//! Service modules
+//! Service modules - 业务逻辑服务层
+//!
+//! 核心业务逻辑保留在此模块，基础设施服务和第三方集成已迁移：
+//! - infrastructure/: 缓存、邮件、数据库、revalidation
+//! - integrations/: OpenAI、Turnstile、状态检测
 
-pub mod db_service;
+// ===== 核心业务逻辑模块 =====
+
 pub mod options_service;
-pub mod ai_service;
-pub mod reader_repository;
-pub mod account_repository;
-pub mod github_oauth;
-pub mod qq_oauth;
-pub mod options_repository;
+pub mod spam_detector;
+
 pub mod auth;
 pub mod comment;
-pub mod turnstile;
-pub mod spam_detector;
-pub mod ip_service;
-pub mod cache_service;
-pub mod revalidation_service;
-pub mod change_stream_service;
-pub mod link_health_service;
-pub mod hosting_detector;
-pub mod email_service;
-pub mod verification_service;
+pub mod content;
 
-pub use db_service::*;
-pub use options_service::*;
-pub use ai_service::*;
-pub use reader_repository::ReaderRepository;
-pub use account_repository::AccountRepository;
-pub use github_oauth::GitHubOAuthService;
-pub use qq_oauth::QQOAuthService;
-pub use options_repository::OptionsRepository;
+// ===== OAuth 服务（已迁移到 auth/oauth）=====
+
+// 导出新的统一 OAuth 服务
+pub use crate::services::auth::oauth::{OAuthProviderType, OAuthUserInfo, OAuthService};
+
+// ===== 重新导出基础设施服务 =====
+
+pub use crate::infrastructure::{
+    CacheService,
+    RevalidationService,
+    ChangeStreamService,
+    VerificationService,
+};
+
+// ===== 重新导出第三方集成服务 =====
+
+pub use crate::integrations::{
+    AiService,
+    ChatMessage,
+    ChatRole,
+    verify_turnstile,
+    IpService,
+};
+
+// ===== 公共导出 =====
+
 pub use comment::service::CommentService;
-pub use turnstile::verify_turnstile;
 pub use spam_detector::SpamDetector;
-pub use ip_service::IpService;
-pub use cache_service::CacheService;
-pub use revalidation_service::RevalidationService;
-pub use change_stream_service::ChangeStreamService;
-pub use link_health_service::LinkHealthService;
-pub use verification_service::VerificationService;
+pub use options_service::get_site_config;

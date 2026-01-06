@@ -4,8 +4,7 @@ use rocket::request::{FromRequest, Outcome, Request};
 use rocket::http::Status;
 use rocket::State;
 use bson::oid::ObjectId;
-use crate::config::OAuthConfig;
-use crate::utils::jwt::verify_jwt;
+use crate::services::auth::JWTVerifier;
 
 /// 认证守卫 - 从 JWT token 中提取用户信息
 #[derive(Debug, Clone)]
@@ -33,28 +32,23 @@ impl<'r> FromRequest<'r> for AuthGuard {
             return Outcome::Error((Status::Unauthorized, ()));
         };
 
-        // 2. 获取配置
-        let config = if let Outcome::Success(config) = req.guard::<&State<OAuthConfig>>().await { config } else {
-            log::error!("无法获取 OAuthConfig");
+        // 2. 获取 JWT 验证服务
+        let jwt_verifier = if let Outcome::Success(verifier) = req.guard::<&State<JWTVerifier>>().await {
+            verifier
+        } else {
+            log::error!("无法获取 JWTVerifier");
             return Outcome::Error((Status::InternalServerError, ()));
         };
 
         // 3. 验证 JWT token
-        let claims = match verify_jwt(token, &config.jwt_secret) {
+        let claims = match jwt_verifier.verify_for_guard(token) {
             Ok(claims) => claims,
             Err(e) => {
-                log::warn!("JWT 验证失败: {e:?}");
-                return Outcome::Error((Status::Unauthorized, ()));
+                return Outcome::Error((e, ()));
             }
         };
 
-        // 4. 检查 token 是否过期
-        if claims.is_expired() {
-            log::warn!("JWT token 已过期");
-            return Outcome::Error((Status::Unauthorized, ()));
-        }
-
-        // 5. 解析 user_id
+        // 4. 解析 user_id
         let user_id = match claims.user_id() {
             Ok(id) => id,
             Err(e) => {
@@ -108,9 +102,9 @@ impl<'r> FromRequest<'r> for OptionalAuthGuard {
             }
         };
 
-        // 2. 获取配置
-        let config = match req.guard::<&State<OAuthConfig>>().await {
-            Outcome::Success(config) => config,
+        // 2. 获取 JWT 验证服务
+        let jwt_verifier = match req.guard::<&State<JWTVerifier>>().await {
+            Outcome::Success(verifier) => verifier,
             _ => {
                 return Outcome::Success(OptionalAuthGuard {
                     user_id: None,
@@ -120,7 +114,7 @@ impl<'r> FromRequest<'r> for OptionalAuthGuard {
         };
 
         // 3. 验证 JWT token
-        let claims = match verify_jwt(token, &config.jwt_secret) {
+        let claims = match jwt_verifier.verify_for_guard(token) {
             Ok(claims) => claims,
             Err(_) => {
                 return Outcome::Success(OptionalAuthGuard {
@@ -130,15 +124,7 @@ impl<'r> FromRequest<'r> for OptionalAuthGuard {
             }
         };
 
-        // 4. 检查 token 是否过期
-        if claims.is_expired() {
-            return Outcome::Success(OptionalAuthGuard {
-                user_id: None,
-                is_owner: false,
-            });
-        }
-
-        // 5. 解析 user_id
+        // 4. 解析 user_id
         let user_id = claims.user_id().ok();
 
         Outcome::Success(OptionalAuthGuard {

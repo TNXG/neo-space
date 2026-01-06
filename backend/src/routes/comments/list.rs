@@ -1,14 +1,13 @@
 //! 评论列表路由
 
-use mongodb::bson::oid::ObjectId;
 use rocket::serde::json::Json;
 use rocket::{State, http::Status, get};
-use std::str::FromStr;
 use futures::stream::TryStreamExt;
 
 use crate::models::{ApiResponse, CommentListResponse};
 use crate::guards::OptionalAuthGuard;
 use crate::services::CommentService;
+use crate::utils::db::parse_object_id;
 
 /**
  * GET /api/comments?refId=xxx&refType=posts
@@ -28,7 +27,7 @@ pub async fn list_comments(
     let comment_service = CommentService::new(db.inner());
 
     // 解析 ObjectId
-    let ref_oid = match ObjectId::from_str(&ref_id) {
+    let ref_oid = match parse_object_id(&ref_id) {
         Ok(oid) => oid,
         Err(_) => {
             return Ok(ApiResponse::json_error_with_default(400, "Invalid ref_id".to_string()));

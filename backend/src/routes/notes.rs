@@ -2,11 +2,12 @@ use rocket::{State, serde::json::Json, http::Status};
 use mongodb::Database;
 use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::models::{Note, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
+use crate::utils::parse_object_id;
+use crate::db_find_one;
 
 /// Helper function to get the latest AI summary for a given ref ID
 async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<String> {
@@ -128,12 +129,10 @@ pub async fn get_note_by_id(
     db: &State<Database>,
     id: String,
 ) -> Result<Json<ApiResponse<Note>>, Status> {
-    let object_id = ObjectId::from_str(&id).map_err(|_| Status::BadRequest)?;
-    
+    let object_id = parse_object_id(&id)?;
+
     let collection = db.collection::<Note>("notes");
-    let mut note = collection.find_one(doc! { "_id": object_id, "isPublished": true }).await
-        .map_err(|_| Status::InternalServerError)?
-        .ok_or(Status::NotFound)?;
+    let mut note = db_find_one!(collection, doc! { "_id": object_id, "isPublished": true })?;
 
     // Fetch AI summary (default to Chinese)
     note.ai_summary = get_ai_summary(db, &note.id.to_hex(), "zh").await;

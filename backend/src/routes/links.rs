@@ -5,9 +5,12 @@ use futures::stream::TryStreamExt;
 use log::error;
 
 use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, Pagination};
-use crate::services::{LinkHealthService, VerificationService};
-use crate::services::link_health_service::LinkWithHealth;
-use crate::services::email_service;
+use crate::integrations::LinkHealthService;
+use crate::integrations::status::link_health::LinkWithHealth;
+use crate::services::VerificationService;
+use crate::infrastructure::send_verification_email;
+use crate::utils::parse_object_id;
+use crate::db_find_one;
 
 /// 发送验证码请求
 #[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
@@ -115,14 +118,10 @@ pub async fn get_link(
     db: &State<Database>,
     id: &str,
 ) -> Result<Json<ApiResponse<Link>>, Status> {
-    let object_id = ObjectId::parse_str(id).map_err(|_| Status::BadRequest)?;
+    let object_id = parse_object_id(id)?;
     let collection = db.collection::<Link>("links");
 
-    let link = collection
-        .find_one(doc! { "_id": object_id })
-        .await
-        .map_err(|_| Status::InternalServerError)?
-        .ok_or(Status::NotFound)?;
+    let link = db_find_one!(collection, doc! { "_id": object_id })?;
 
     Ok(Json(ApiResponse::success(link)))
 }
@@ -239,7 +238,7 @@ pub async fn send_verification_code(
     };
 
     // 发送邮件
-    match email_service::send_verification_email(db, &request.email, &code, &site_name).await {
+    match send_verification_email(db, &request.email, &code, &site_name).await {
         Ok(()) => {
             log::info!("验证码已发送到: {}", request.email);
             Ok(Json(ApiResponse::success("验证码已发送".to_string())))

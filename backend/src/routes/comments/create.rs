@@ -3,12 +3,23 @@
 use mongodb::bson::{doc, oid::ObjectId, DateTime};
 use rocket::serde::json::Json;
 use rocket::{http::Status, post, State};
-use std::str::FromStr;
 
 use crate::config::OAuthConfig;
 use crate::guards::{OptionalAuthGuard, ClientIp};
 use crate::models::{ApiResponse, Comment, CommentState, CreateCommentRequest};
-use crate::services::{verify_turnstile, AccountRepository, CommentService, IpService, ReaderRepository, SpamDetector};
+use crate::repositories::{AccountRepository, ReaderRepository};
+use crate::services::{verify_turnstile, CommentService, IpService, SpamDetector};
+use crate::utils::db::parse_object_id;
+
+/// 用户信息结构
+#[allow(dead_code)]
+struct UserInfo {
+    author: String,
+    mail: String,
+    avatar_url: String,
+    source: Option<String>,
+    reader_id: Option<String>,
+}
 
 /**
  * POST /api/comments
@@ -38,231 +49,356 @@ pub async fn create_comment(
     // 获取客户端 IP 和地理位置
     let ip_address = client_ip.0;
     let location = ip_service.get_location(&ip_address).await;
-    
+
     log::info!("收到评论请求 - IP: {ip_address}, 位置: {location:?}");
 
-    // 确定作者信息和头像
-    let (author, mail, avatar_url, source, _reader_id) = if let Some(user_id) = auth.user_id {
-        // 已登录用户：从 Reader 获取信息，无需 Turnstile 验证码
-        match reader_repo.find_by_id(user_id).await {
-            Ok(Some(reader)) => {
-                let author = request.author.clone().unwrap_or(reader.name.clone());
-                let mail = request.mail.clone().unwrap_or(reader.email.clone());
-                // 优先使用 Reader 的头像，否则根据邮箱生成
-                let avatar = if reader.image.is_empty() {
-                    CommentService::generate_avatar_url(&mail)
-                } else {
-                    reader.image.clone()
-                };
-                
-                // 查询用户绑定的 OAuth 提供商，确定 source
-                let account_repo = AccountRepository::new(db.inner());
-                let source = match account_repo.find_by_user_id(user_id).await {
-                    Ok(accounts) => {
-                        let providers: Vec<&str> = accounts.iter().map(|a| a.provider.as_str()).collect();
-                        let has_github = providers.contains(&"github");
-                        let has_qq = providers.contains(&"qq");
-                        
-                        match (has_github, has_qq) {
-                            (true, false) => Some("from_oauth_github".to_string()),
-                            (false, true) => Some("from_oauth_qq".to_string()),
-                            (true, true) => Some("from_oauth_both".to_string()),
-                            (false, false) => Some("oauth".to_string()), // 兜底
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!("查询用户 OAuth 账号失败: {e}");
-                        Some("oauth".to_string())
-                    }
-                };
-                
-                (author, mail, avatar, source, Some(user_id))
-            }
-            Ok(None) => {
-                log::warn!("用户 {user_id} 不存在");
-                return Ok(ApiResponse::json_error_with_default(401, "用户不存在".to_string()));
-            }
-            Err(e) => {
-                log::error!("查询用户失败: {e}");
-                return Err(Status::InternalServerError);
-            }
-        }
-    } else {
-        // 未登录用户：必须提供 author 和 mail，并进行 Turnstile 验证
-        let author = match &request.author {
-            Some(a) if !a.trim().is_empty() => a.clone(),
-            _ => {
-                return Ok(ApiResponse::json_error_with_default(400, "未登录用户必须提供昵称".to_string()));
-            }
-        };
-        let mail = match &request.mail {
-            Some(m) if !m.trim().is_empty() => m.clone(),
-            _ => {
-                return Ok(ApiResponse::json_error_with_default(400, "未登录用户必须提供邮箱".to_string()));
-            }
-        };
-
-        // 验证 Turnstile token（仅匿名用户需要）
-        let turnstile_token = match &request.turnstile_token {
-            Some(token) if !token.trim().is_empty() => token,
-            _ => {
-                return Ok(ApiResponse::json_error_with_default(400, "请完成人机验证".to_string()));
-            }
-        };
-
-        match verify_turnstile(turnstile_token, &oauth_config.turnstile_secret).await {
-            Ok(true) => {
-                log::info!("Turnstile 验证通过");
-            }
-            Ok(false) => {
-                return Ok(ApiResponse::json_error_with_default(400, "人机验证失败，请重试".to_string()));
-            }
-            Err(e) => {
-                log::error!("Turnstile 验证错误: {e}");
-                return Ok(ApiResponse::json_error_with_default(500, format!("验证服务异常: {e}")));
-            }
-        }
-
-        // 查找或创建匿名 Reader
-        let reader_id = match reader_repo.find_or_create_anonymous(&author, &mail).await {
-            Ok(id) => id,
-            Err(e) => {
-                log::error!("创建匿名 Reader 失败: {e}");
-                return Err(Status::InternalServerError);
-            }
-        };
-
-        let avatar = CommentService::generate_avatar_url(&mail);
-        (author, mail, avatar, None, Some(reader_id))
-    };
+    // 解析用户信息（已登录或匿名）
+    let user_info = resolve_user_info(
+        db.inner(),
+        oauth_config.inner(),
+        &reader_repo,
+        &auth,
+        &request,
+    ).await?;
 
     // 验证必填字段
-    if request.text.trim().is_empty() {
-        return Ok(ApiResponse::json_error_with_default(400, "评论内容不能为空".to_string()));
-    }
+    validate_comment_data(&request)?;
 
-    // 解析 ref ObjectId
-    let ref_oid = match ObjectId::from_str(&request.r#ref) {
-        Ok(oid) => oid,
-        Err(_) => {
-            return Ok(ApiResponse::json_error_with_default(400, "Invalid ref id".to_string()));
-        }
-    };
+    // 解析 ObjectId
+    let ref_oid = parse_object_id(&request.r#ref)?;
+    let parent_oid = parse_parent_id(&request.parent)?;
 
-    // 解析 parent ObjectId（如果有）
-    let parent_oid = if let Some(parent_str) = &request.parent {
-        ObjectId::from_str(parent_str).ok()
-    } else {
-        None
-    };
-
-    // 生成 key
-    let key = match comment_service
+    // 生成评论 key
+    let key = comment_service
         .generate_comment_key(ref_oid, &request.ref_type, parent_oid)
         .await
-    {
-        Ok(key) => key,
-        Err(e) => {
-            eprintln!("Failed to generate comment key: {e}");
-            return Err(Status::InternalServerError);
-        }
-    };
+        .map_err(|e| {
+            log::error!("生成评论 key 失败: {e}");
+            Status::InternalServerError
+        })?;
 
-    // 获取当前评论索引
-    let comments_index = match comment_service
+    // 获取评论索引
+    let comments_index = comment_service
         .get_comment_index(ref_oid, &request.ref_type)
         .await
-    {
-        Ok(index) => index,
+        .map_err(|e| {
+            log::error!("获取评论索引失败: {e}");
+            Status::InternalServerError
+        })?;
+
+    // 检查 AI 审核是否启用
+    let ai_review_enabled = SpamDetector::is_ai_review_enabled(db.inner()).await;
+
+    // 创建评论对象
+    let comment = build_comment_object(
+        &request,
+        ref_oid,
+        parent_oid,
+        &user_info,
+        comments_index,
+        key,
+        ip_address,
+        location,
+        ai_review_enabled,
+    );
+
+    // 插入评论并处理后续逻辑
+    let (_comment_id, created_comment) = insert_and_process_comment(
+        &collection,
+        &comment_service,
+        comment,
+        parent_oid,
+        ai_review_enabled,
+        &db,
+        &user_info,
+        &request,
+    ).await?;
+
+    Ok(Json(ApiResponse::success_with_message(
+        created_comment,
+        if ai_review_enabled {
+            "评论已提交，正在审核中"
+        } else {
+            "评论发布成功"
+        }.to_string(),
+    )))
+}
+
+/// 解析用户信息（已登录或匿名）
+async fn resolve_user_info(
+    db: &mongodb::Database,
+    oauth_config: &OAuthConfig,
+    reader_repo: &ReaderRepository,
+    auth: &OptionalAuthGuard,
+    request: &CreateCommentRequest,
+) -> Result<UserInfo, Status> {
+    if let Some(user_oid) = auth.user_id {
+        // 已登录用户：从 Reader 获取信息
+        resolve_logged_in_user(db, reader_repo, user_oid, request).await
+    } else {
+        // 匿名用户：需要 Turnstile 验证
+        resolve_anonymous_user(oauth_config, reader_repo, request).await
+    }
+}
+
+/// 解析已登录用户信息
+async fn resolve_logged_in_user(
+    db: &mongodb::Database,
+    reader_repo: &ReaderRepository,
+    user_oid: ObjectId,
+    request: &CreateCommentRequest,
+) -> Result<UserInfo, Status> {
+    let user_id = user_oid.to_string();
+
+    let reader = match reader_repo.find_by_id(user_oid).await {
+        Ok(Some(reader)) => reader,
+        Ok(None) => {
+            log::warn!("用户 {user_id} 不存在");
+            return Err(Status::Unauthorized);
+        }
         Err(e) => {
-            eprintln!("Failed to get comment index: {e}");
+            log::error!("查询用户失败: {e}");
             return Err(Status::InternalServerError);
         }
     };
 
-    // 检查是否启用 AI 审核，决定初始状态
-    let ai_review_enabled = SpamDetector::is_ai_review_enabled(db.inner()).await;
-    let initial_state = if ai_review_enabled {
-        CommentState::PENDING // 待审核
+    let author = request.author.clone().unwrap_or(reader.name.clone());
+    let mail = request.mail.clone().unwrap_or(reader.email.clone());
+    let avatar_url = if reader.image.is_empty() {
+        CommentService::generate_avatar_url(&mail)
     } else {
-        CommentState::UNREAD // 未读+正常
+        reader.image.clone()
     };
 
-    // 创建评论
-    let comment = Comment {
+    // 查询用户绑定的 OAuth 提供商
+    let account_repo = AccountRepository::new(db);
+    let source = determine_oauth_source(&account_repo, &user_id).await;
+
+    Ok(UserInfo {
+        author,
+        mail,
+        avatar_url,
+        source: Some(source),
+        reader_id: Some(user_id),
+    })
+}
+
+/// 解析匿名用户信息
+async fn resolve_anonymous_user(
+    oauth_config: &OAuthConfig,
+    reader_repo: &ReaderRepository,
+    request: &CreateCommentRequest,
+) -> Result<UserInfo, Status> {
+    // 验证必填字段
+    let author = request.author.as_ref()
+        .filter(|a| !a.trim().is_empty())
+        .cloned()
+        .ok_or_else(|| Status::BadRequest)?;
+
+    let mail = request.mail.as_ref()
+        .filter(|m| !m.trim().is_empty())
+        .cloned()
+        .ok_or_else(|| Status::BadRequest)?;
+
+    // 验证 Turnstile token
+    let turnstile_token = request.turnstile_token.as_ref()
+        .filter(|t| !t.trim().is_empty())
+        .ok_or_else(|| Status::BadRequest)?;
+
+    match verify_turnstile(turnstile_token, &oauth_config.turnstile_secret).await {
+        Ok(true) => {
+            log::info!("Turnstile 验证通过");
+        }
+        Ok(false) => {
+            log::warn!("Turnstile 验证失败");
+            return Err(Status::BadRequest);
+        }
+        Err(e) => {
+            log::error!("Turnstile 验证错误: {e}");
+            return Err(Status::InternalServerError);
+        }
+    }
+
+    // 查找或创建匿名 Reader
+    let reader_id = reader_repo.find_or_create_anonymous(&author, &mail).await
+        .map_err(|e| {
+            log::error!("创建匿名 Reader 失败: {e}");
+            Status::InternalServerError
+        })?;
+
+    let avatar_url = CommentService::generate_avatar_url(&mail);
+
+    Ok(UserInfo {
+        author,
+        mail,
+        avatar_url,
+        source: None,
+        reader_id: Some(reader_id.to_string()),
+    })
+}
+
+/// 确定 OAuth 提供商
+async fn determine_oauth_source(
+    account_repo: &AccountRepository,
+    user_id: &str,
+) -> String {
+    // 将 user_id 转换为 ObjectId
+    let user_oid = match parse_object_id(user_id) {
+        Ok(oid) => oid,
+        Err(_) => {
+            return "oauth".to_string();
+        }
+    };
+
+    match account_repo.find_by_user_id(user_oid).await {
+        Ok(accounts) => {
+            let providers: Vec<&str> = accounts.iter().map(|a| a.provider.as_str()).collect();
+            let has_github = providers.contains(&"github");
+            let has_qq = providers.contains(&"qq");
+
+            match (has_github, has_qq) {
+                (true, false) => "from_oauth_github".to_string(),
+                (false, true) => "from_oauth_qq".to_string(),
+                (true, true) => "from_oauth_both".to_string(),
+                (false, false) => "oauth".to_string(),
+            }
+        }
+        Err(e) => {
+            log::warn!("查询用户 OAuth 账号失败: {e}");
+            "oauth".to_string()
+        }
+    }
+}
+
+/// 验证评论数据
+fn validate_comment_data(request: &CreateCommentRequest) -> Result<(), Status> {
+    if request.text.trim().is_empty() {
+        return Err(Status::BadRequest);
+    }
+    Ok(())
+}
+
+/// 解析父评论 ObjectId
+fn parse_parent_id(parent: &Option<String>) -> Result<Option<ObjectId>, Status> {
+    match parent {
+        Some(parent_str) => {
+            parse_object_id(parent_str)
+                .map(Some)
+        }
+        None => Ok(None),
+    }
+}
+
+/// 启动 AI 审核异步任务
+fn spawn_ai_review_task(
+    db: mongodb::Database,
+    comment_id: ObjectId,
+    author: &str,
+    mail: &str,
+    text: &str,
+) {
+    let text_clone = text.to_string();
+    let author_clone = author.to_string();
+    let mail_clone = mail.to_string();
+
+    tokio::spawn(async move {
+        SpamDetector::review_async(
+            &db,
+            comment_id,
+            &text_clone,
+            &author_clone,
+            &mail_clone,
+        )
+        .await;
+    });
+
+    log::info!("评论 {comment_id} 已创建，异步审核任务已启动");
+}
+
+/// 构建评论对象
+fn build_comment_object(
+    request: &CreateCommentRequest,
+    ref_oid: ObjectId,
+    parent_oid: Option<ObjectId>,
+    user_info: &UserInfo,
+    comments_index: i32,
+    key: String,
+    ip_address: String,
+    location: Option<String>,
+    ai_review_enabled: bool,
+) -> Comment {
+    let initial_state = if ai_review_enabled {
+        CommentState::PENDING
+    } else {
+        CommentState::UNREAD
+    };
+
+    Comment {
         id: None,
         r#ref: ref_oid,
         ref_type: request.ref_type.clone(),
-        author: author.clone(),
-        mail: mail.clone(),
+        author: user_info.author.clone(),
+        mail: user_info.mail.clone(),
         text: request.text.clone(),
         state: initial_state,
         children: Some(vec![]),
         comments_index,
         key,
-        ip: Some(ip_address.clone()),
+        ip: Some(ip_address),
         agent: None,
         pin: false,
         is_whispers: false,
-        source,
-        avatar: Some(avatar_url),
+        source: user_info.source.clone(),
+        avatar: Some(user_info.avatar_url.clone()),
         created: DateTime::now(),
         location,
         url: request.url.clone(),
         parent: parent_oid,
         ua: request.ua.clone(),
-    };
-
-    match collection.insert_one(&comment).await {
-        Ok(result) => {
-            let mut created_comment = comment.clone();
-            let comment_id = if let Some(id) = result.inserted_id.as_object_id() { id } else {
-                log::error!("Failed to get ObjectId from insert result");
-                return Err(Status::InternalServerError);
-            };
-            created_comment.id = Some(comment_id);
-
-            // 如果是回复，更新父评论的 children 字段
-            if let Some(parent_id) = parent_oid {
-                let _ = comment_service
-                    .update_parent_children(parent_id, comment_id)
-                    .await;
-            }
-
-            // 如果启用了 AI 审核，启动异步审核任务
-            if ai_review_enabled {
-                let db_clone = db.inner().clone();
-                let text_clone = request.text.clone();
-                let author_clone = author.clone();
-                let mail_clone = mail.clone();
-
-                // 使用 tokio::spawn 启动异步任务
-                tokio::spawn(async move {
-                    SpamDetector::review_async(
-                        &db_clone,
-                        comment_id,
-                        &text_clone,
-                        &author_clone,
-                        &mail_clone,
-                    )
-                    .await;
-                });
-
-                log::info!("评论 {comment_id} 已创建，异步审核任务已启动");
-            }
-
-            Ok(Json(ApiResponse::success_with_message(
-                created_comment,
-                if ai_review_enabled {
-                    "评论已提交，正在审核中".to_string()
-                } else {
-                    "评论发布成功".to_string()
-                },
-            )))
-        }
-        Err(e) => {
-            eprintln!("Failed to create comment: {e}");
-            Err(Status::InternalServerError)
-        }
     }
+}
+
+/// 插入评论并处理后续逻辑
+async fn insert_and_process_comment(
+    collection: &mongodb::Collection<Comment>,
+    comment_service: &CommentService,
+    comment: Comment,
+    parent_oid: Option<ObjectId>,
+    ai_review_enabled: bool,
+    db: &State<mongodb::Database>,
+    user_info: &UserInfo,
+    request: &CreateCommentRequest,
+) -> Result<(ObjectId, Comment), Status> {
+    // 插入评论
+    let insert_result = collection.insert_one(&comment).await.map_err(|e| {
+        log::error!("插入评论失败: {e}");
+        Status::InternalServerError
+    })?;
+
+    let comment_id = insert_result.inserted_id.as_object_id()
+        .ok_or_else(|| {
+            log::error!("无法获取插入的 ObjectId");
+            Status::InternalServerError
+        })?;
+
+    let mut created_comment = comment.clone();
+    created_comment.id = Some(comment_id);
+
+    // 如果是回复，更新父评论的 children
+    if let Some(parent_id) = parent_oid {
+        let _ = comment_service.update_parent_children(parent_id, comment_id).await;
+    }
+
+    // 如果启用了 AI 审核，启动异步审核任务
+    if ai_review_enabled {
+        spawn_ai_review_task(
+            db.inner().clone(),
+            comment_id,
+            &user_info.author,
+            &user_info.mail,
+            &request.text,
+        );
+    }
+
+    Ok((comment_id, created_comment))
 }

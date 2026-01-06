@@ -1,7 +1,7 @@
 use mongodb::Database;
 use bson::oid::ObjectId;
 use crate::models::Account;
-use crate::services::{ReaderRepository, AccountRepository};
+use crate::repositories::{ReaderRepository, AccountRepository};
 use crate::utils::jwt::generate_jwt;
 
 pub struct OAuthUserPayload {

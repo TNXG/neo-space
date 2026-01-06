@@ -19,7 +19,7 @@ use tokio::sync::Mutex;
 use utoipa::ToSchema;
 
 use crate::models::{Link, LinkState};
-use crate::services::hosting_detector::{HostingDetector, HostingProvider};
+use crate::integrations::status::hosting::{HostingDetector, HostingProvider};
 
 /// 友链健康状态
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -116,7 +116,7 @@ pub struct LinkHealthService {
     /// 缓存过期时间（小时）
     stale_time_hours: u64,
     /// Revalidation 服务（可选）
-    revalidation_service: Option<Arc<crate::services::revalidation_service::RevalidationService>>,
+    revalidation_service: Option<Arc<crate::infrastructure::RevalidationService>>,
 }
 
 impl LinkHealthService {
@@ -125,6 +125,7 @@ impl LinkHealthService {
     /// # 参数
     /// - `stale_time_hours`: 缓存过期时间（小时），默认 6
     /// - `timeout_seconds`: 请求超时时间（秒），默认 10
+    #[allow(clippy::expect_used)]
     pub fn new(stale_time_hours: u64, timeout_seconds: u64) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(timeout_seconds))
@@ -152,7 +153,7 @@ impl LinkHealthService {
     /// 设置 Revalidation 服务（用于通知 Next.js 刷新缓存）
     pub fn with_revalidation_service(
         mut self,
-        service: Arc<crate::services::revalidation_service::RevalidationService>,
+        service: Arc<crate::infrastructure::RevalidationService>,
     ) -> Self {
         self.revalidation_service = Some(service);
         self

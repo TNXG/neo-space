@@ -1,12 +1,12 @@
 //! 管理员评论操作路由
 
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::bson::doc;
 use rocket::serde::json::Json;
 use rocket::{State, http::Status, patch, delete};
-use std::str::FromStr;
 
 use crate::models::{ApiResponse, Comment};
 use crate::guards::OwnerGuard;
+use crate::utils::db::parse_object_id;
 
 /**
  * PATCH /api/comments/<id>/hide
@@ -20,10 +20,7 @@ pub async fn hide_comment(
 ) -> Result<Json<ApiResponse<()>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     let update = doc! {
         "$set": {
@@ -55,10 +52,7 @@ pub async fn unhide_comment(
 ) -> Result<Json<ApiResponse<()>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     let update = doc! {
         "$set": {
@@ -90,10 +84,7 @@ pub async fn pin_comment(
 ) -> Result<Json<ApiResponse<()>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     let update = doc! {
         "$set": {
@@ -125,10 +116,7 @@ pub async fn unpin_comment(
 ) -> Result<Json<ApiResponse<()>>, Status> {
     let collection = db.collection::<Comment>("comments");
 
-    let oid = match ObjectId::from_str(&id) {
-        Ok(oid) => oid,
-        Err(_) => return Err(Status::BadRequest),
-    };
+    let oid = parse_object_id(&id)?;
 
     let update = doc! {
         "$set": {

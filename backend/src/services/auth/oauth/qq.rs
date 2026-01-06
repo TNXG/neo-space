@@ -1,8 +1,9 @@
-//! QQ OAuth 服务 - 通过第三方 API 处理 QQ OAuth 认证流程
-//! 使用 <https://api-space.tnxg.top> 作为 OAuth 代理
+//! QQ OAuth 提供商实现
 
+use async_trait::async_trait;
 use serde::Deserialize;
-use crate::models::QQUser;
+use super::{OAuthProviderType, OAuthUserInfo};
+use super::provider::OAuthProvider;
 
 /// 第三方 API 响应结构
 #[derive(Debug, Deserialize)]
@@ -15,26 +16,23 @@ struct ApiResponse {
 /// QQ 用户信息响应（从第三方 API）
 #[derive(Debug, Deserialize)]
 struct QQUserInfoResponse {
-    #[allow(unused)]
+    #[allow(dead_code)]
     user_id: String,
     qq_openid: String,
     nickname: String,
     avatar: String,
-    #[allow(unused)]
+    #[allow(dead_code)]
     gender: Option<String>,
 }
 
-/// QQ OAuth 服务
-pub struct QQOAuthService {
+/// QQ OAuth 提供商
+pub struct QQOAuthProvider {
     client: reqwest::Client,
     redirect_uri: String,
 }
 
-impl QQOAuthService {
-    /// 创建新的 `QQOAuthService`
-    /// 
-    /// # 参数
-    /// * `redirect_uri` - 回调 URL
+impl QQOAuthProvider {
+    /// 创建新的 QQ OAuth 提供商
     pub fn new(redirect_uri: String) -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -43,9 +41,6 @@ impl QQOAuthService {
     }
 
     /// 生成 QQ OAuth 授权 URL
-    /// 
-    /// # 返回
-    /// * 授权 URL
     pub fn get_authorize_url(&self) -> String {
         format!(
             "https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
@@ -54,14 +49,7 @@ impl QQOAuthService {
     }
 
     /// 使用授权码获取 QQ 用户信息
-    /// 
-    /// # 参数
-    /// * `code` - 第三方 API 返回的授权码
-    /// 
-    /// # 返回
-    /// * `Ok((QQUser, String))` - (用户信息, openid)
-    /// * `Err(String)` - 错误信息
-    pub async fn get_user_info_with_code(&self, code: &str) -> Result<(QQUser, String), String> {
+    async fn get_user_info_with_code(&self, code: &str) -> Result<(QQUserInfoResponse, String), String> {
         let user_url = format!("https://api-space.tnxg.top/user/get?code={code}");
 
         let response = self.client
@@ -87,29 +75,25 @@ impl QQOAuthService {
         }
 
         let user_data = api_response.data.ok_or("响应中缺少用户数据")?;
+        let openid = user_data.qq_openid.clone();
 
-        // 转换为 QQUser 格式
-        let qq_user = QQUser {
-            nickname: user_data.nickname,
-            figureurl_qq_1: user_data.avatar.clone(),
-            figureurl_qq_2: Some(user_data.avatar),
-        };
-
-        Ok((qq_user, user_data.qq_openid))
+        Ok((user_data, openid))
     }
+}
 
-    /// 完整的 QQ OAuth 流程（简化版，使用第三方 API）
-    /// 
-    /// # 参数
-    /// * `code` - 第三方 API 返回的授权码
-    /// 
-    /// # 返回
-    /// * `Ok((QQUser, String, String))` - (用户信息, openid, code)
-    /// * `Err(String)` - 错误信息
-    pub async fn oauth_flow(&self, code: &str) -> Result<(QQUser, String, String), String> {
-        let (qq_user, openid) = self.get_user_info_with_code(code).await?;
-        
-        // 返回 code 作为 access_token（第三方 API 不返回真实的 access_token）
-        Ok((qq_user, openid, code.to_string()))
+#[async_trait]
+impl OAuthProvider for QQOAuthProvider {
+    /// 使用授权码换取用户信息
+    async fn exchange_code_for_user(&self, code: &str) -> Result<OAuthUserInfo, String> {
+        let (user_data, openid) = self.get_user_info_with_code(code).await?;
+
+        Ok(OAuthUserInfo {
+            provider: OAuthProviderType::QQ,
+            provider_user_id: openid.clone(),
+            nickname: user_data.nickname,
+            avatar: user_data.avatar,
+            email: None, // QQ 不提供邮箱
+            access_token: None, // QQ 使用 code 而非 access_token
+        })
     }
 }

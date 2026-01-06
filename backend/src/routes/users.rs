@@ -3,7 +3,7 @@ use rocket::{get, State};
 use mongodb::{Database, Collection};
 use bson::oid::ObjectId;
 use crate::models::{ApiResponse, User, Reader};
-use crate::services::ReaderRepository;
+use crate::repositories::ReaderRepository;
 
 /// 获取用户资料（非敏感数据）
 #[utoipa::path(

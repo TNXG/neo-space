@@ -7,8 +7,9 @@ use rocket::{response::Redirect, State};
 
 use crate::config::OAuthConfig;
 use crate::models::ApiResponse;
+use crate::repositories::OptionsRepository;
 use crate::services::auth::identity::{IdentityService, OAuthUserPayload};
-use crate::services::{GitHubOAuthService, OptionsRepository, QQOAuthService};
+use crate::services::{OAuthService, OAuthProviderType, OAuthUserInfo};
 
 /// OAuth 重定向端点
 ///
@@ -48,9 +49,13 @@ pub async fn oauth_redirect(
             )
         }
         "qq" => {
-            // QQ OAuth 通常使用统一的第三方或预设回调
-            let qq_service = QQOAuthService::new(config.qq_redirect_uri());
-            qq_service.get_authorize_url()
+            // QQ OAuth 使用统一的服务
+            let oauth_service = OAuthService::new(None, None, Some(config.qq_redirect_uri()));
+            oauth_service.get_qq_authorize_url().unwrap_or_else(|_| {
+                format!("https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
+                    urlencoding::encode(&config.qq_redirect_uri())
+                )
+            })
         }
         _ => {
             return Err(ApiResponse::bad_request(format!(
@@ -134,6 +139,25 @@ pub async fn oauth_callback(
 
 // --- 内部逻辑封装：负责与各平台 API 交互 ---
 
+/// 将 OAuthUserInfo 转换为 OAuthUserPayload
+fn convert_to_payload(info: OAuthUserInfo) -> OAuthUserPayload {
+    let provider = match info.provider {
+        OAuthProviderType::GitHub => "github",
+        OAuthProviderType::QQ => "qq",
+    }.to_string();
+
+    OAuthUserPayload {
+        provider,
+        provider_id: info.provider_user_id,
+        name: info.nickname,
+        email: info.email,
+        avatar: Some(info.avatar),
+        handle: None,
+        access_token: info.access_token.unwrap_or_default(),
+        scope: None,
+    }
+}
+
 /// 处理 GitHub 的 OAuth 交换逻辑
 async fn handle_github_logic(
     code: &str,
@@ -156,22 +180,19 @@ async fn handle_github_logic(
         return Err(ApiResponse::internal_error("GitHub 配置缺失".into()));
     }
 
-    let github_service = GitHubOAuthService::new(client_id, client_secret);
-    let (user, access_token, scope) = github_service
-        .oauth_flow(code)
+    // 使用新的统一 OAuth 服务
+    let oauth_service = OAuthService::new(
+        Some(client_id),
+        Some(client_secret),
+        None, // QQ redirect_uri
+    );
+
+    let user_info = oauth_service
+        .exchange_github_code(code)
         .await
         .map_err(|e| ApiResponse::internal_error(format!("GitHub API 调用失败: {e}")))?;
 
-    Ok(OAuthUserPayload {
-        provider: "github".to_string(),
-        provider_id: user.id.to_string(), // 这里保持 String，Service 内部会 parse 为 u64
-        name: user.name.unwrap_or_else(|| user.login.clone()),
-        email: user.email,
-        avatar: Some(user.avatar_url),
-        handle: Some(user.login),
-        access_token,
-        scope: Some(scope),
-    })
+    Ok(convert_to_payload(user_info))
 }
 
 /// 处理 QQ 的 OAuth 交换逻辑
@@ -180,20 +201,17 @@ async fn handle_qq_logic(
     config: &OAuthConfig,
     _db: &Database,
 ) -> Result<OAuthUserPayload, Json<ApiResponse<()>>> {
-    let qq_service = QQOAuthService::new(config.qq_redirect_uri());
-    let (user, openid, access_token) = qq_service
-        .oauth_flow(code)
+    // 使用新的统一 OAuth 服务
+    let oauth_service = OAuthService::new(
+        None, // GitHub credentials
+        None,
+        Some(config.qq_redirect_uri()),
+    );
+
+    let user_info = oauth_service
+        .exchange_qq_code(code)
         .await
         .map_err(|e| ApiResponse::internal_error(format!("QQ API 调用失败: {e}")))?;
 
-    Ok(OAuthUserPayload {
-        provider: "qq".to_string(),
-        provider_id: openid,
-        name: user.nickname,
-        email: None,
-        avatar: Some(user.figureurl_qq_2.unwrap_or(user.figureurl_qq_1)),
-        handle: None,
-        access_token,
-        scope: None,
-    })
+    Ok(convert_to_payload(user_info))
 }

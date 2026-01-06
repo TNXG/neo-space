@@ -2,9 +2,45 @@ use rocket::{State, serde::json::Json, http::Status};
 use mongodb::Database;
 use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
-use std::str::FromStr;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
+use crate::utils::parse_object_id;
+use crate::db_find_one;
+
+/// Minimal post structure for projection queries
+#[derive(Debug, Serialize, Deserialize)]
+struct MinimalPost {
+    #[serde(rename = "_id")]
+    pub id: ObjectId,
+    pub slug: String,
+    pub title: String,
+    #[serde(rename = "categoryId")]
+    pub category_id: ObjectId,
+    pub created: bson::DateTime,
+}
+
+/// Adjacent post structure
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct AdjacentPost {
+    /// 文章URL别名
+    pub slug: String,
+    /// 文章标题
+    pub title: String,
+    /// 分类URL别名
+    #[serde(rename = "categorySlug")]
+    pub category_slug: String,
+}
+
+/// Adjacent posts response
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct AdjacentPosts {
+    /// 上一篇文章
+    pub prev: Option<AdjacentPost>,
+    /// 下一篇文章
+    pub next: Option<AdjacentPost>,
+}
 
 /// List published posts with pagination
 #[utoipa::path(
@@ -31,15 +67,7 @@ pub async fn list_posts(
     let skip = (page - 1) * size;
 
     let posts_collection = db.collection::<Post>("posts");
-    let categories_collection = db.collection::<Category>("categories");
-    
-    // Query only published posts, sorted by creation date (newest first)
     let filter = doc! { "isPublished": true };
-    let find_options = mongodb::options::FindOptions::builder()
-        .sort(doc! { "created": -1 })
-        .skip(skip as u64)
-        .limit(size)
-        .build();
 
     // Get total count
     let total = posts_collection.count_documents(filter.clone()).await
@@ -48,36 +76,11 @@ pub async fn list_posts(
             Status::InternalServerError
         })?;
 
-    // Fetch posts
-    let mut cursor = posts_collection.find(filter).with_options(find_options).await
-        .map_err(|e| {
-            eprintln!("Error finding posts: {e:?}");
-            Status::InternalServerError
-        })?;
+    // Fetch posts with pagination
+    let posts = fetch_published_posts(db, skip, size).await?;
 
-    let mut items = Vec::new();
-    while let Some(post) = cursor.try_next().await.map_err(|e| {
-        eprintln!("Error iterating posts cursor: {e:?}");
-        Status::InternalServerError
-    })? {
-        // Fetch category information
-        let category = categories_collection
-            .find_one(doc! { "_id": post.category_id })
-            .await
-            .map_err(|e| {
-                eprintln!("Error finding category: {e:?}");
-                Status::InternalServerError
-            })?;
-
-        let post_id = post.id.to_hex();
-        let mut post_with_category = PostWithCategory::from(post);
-        post_with_category.category = category;
-        
-        // Fetch AI summary (default to Chinese)
-        post_with_category.ai_summary = get_ai_summary(db, &post_id, "zh").await;
-        
-        items.push(post_with_category);
-    }
+    // Enrich posts with category and AI summary
+    let items = enrich_posts_with_data(db, posts).await?;
 
     let total_page = (total as f64 / size as f64).ceil() as i64;
     let pagination = Pagination {
@@ -90,24 +93,6 @@ pub async fn list_posts(
     };
 
     Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
-}
-
-/// Helper function to get the latest AI summary for a given ref ID
-async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<String> {
-    let ai_summaries_collection = db.collection::<AiSummary>("ai_summaries");
-    
-    // Find the latest AI summary for this ref ID and language
-    let find_options = mongodb::options::FindOneOptions::builder()
-        .sort(doc! { "created": -1 })
-        .build();
-    
-    ai_summaries_collection
-        .find_one(doc! { "refId": ref_id, "lang": lang })
-        .with_options(find_options)
-        .await
-        .ok()
-        .flatten()
-        .map(|s| s.summary)
 }
 
 /// Get post by ID
@@ -130,28 +115,14 @@ pub async fn get_post_by_id(
     db: &State<Database>,
     id: String,
 ) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
-    let object_id = ObjectId::from_str(&id).map_err(|_| Status::BadRequest)?;
-    
+    let object_id = parse_object_id(&id)?;
+
     let posts_collection = db.collection::<Post>("posts");
-    let categories_collection = db.collection::<Category>("categories");
-    
-    let post = posts_collection.find_one(doc! { "_id": object_id, "isPublished": true }).await
-        .map_err(|_| Status::InternalServerError)?
-        .ok_or(Status::NotFound)?;
+    let post = db_find_one!(posts_collection, doc! { "_id": object_id, "isPublished": true })?;
 
-    // Fetch category information
-    let category = categories_collection
-        .find_one(doc! { "_id": post.category_id })
-        .await
-        .map_err(|_| Status::InternalServerError)?;
+    let enriched = enrich_single_post(db, post, &id).await?;
 
-    let mut post_with_category = PostWithCategory::from(post);
-    post_with_category.category = category;
-    
-    // Fetch AI summary (default to Chinese)
-    post_with_category.ai_summary = get_ai_summary(db, &id, "zh").await;
-
-    Ok(Json(ApiResponse::success(post_with_category)))
+    Ok(Json(ApiResponse::success(enriched)))
 }
 
 /// Get post by slug
@@ -174,63 +145,18 @@ pub async fn get_post_by_slug(
     slug: &str,
 ) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
     let posts_collection = db.collection::<Post>("posts");
-    let categories_collection = db.collection::<Category>("categories");
-    
+
     let post = posts_collection.find_one(doc! { "slug": slug, "isPublished": true }).await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
-    // Get post ID as string for AI summary lookup
     let post_id = post.id.to_hex();
+    let enriched = enrich_single_post(db, post, &post_id).await?;
 
-    // Fetch category information
-    let category = categories_collection
-        .find_one(doc! { "_id": post.category_id })
-        .await
-        .map_err(|_| Status::InternalServerError)?;
-
-    let mut post_with_category = PostWithCategory::from(post);
-    post_with_category.category = category;
-    
-    // Fetch AI summary (default to Chinese)
-    post_with_category.ai_summary = get_ai_summary(db, &post_id, "zh").await;
-
-    Ok(Json(ApiResponse::success(post_with_category)))
+    Ok(Json(ApiResponse::success(enriched)))
 }
 
 /// Get adjacent posts (previous and next) by slug
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct AdjacentPosts {
-    /// 上一篇文章
-    pub prev: Option<AdjacentPost>,
-    /// 下一篇文章
-    pub next: Option<AdjacentPost>,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct AdjacentPost {
-    /// 文章URL别名
-    pub slug: String,
-    /// 文章标题
-    pub title: String,
-    /// 分类URL别名
-    #[serde(rename = "categorySlug")]
-    pub category_slug: String,
-}/// Minimal post structure for projection queries
-#[derive(Debug, Serialize, Deserialize)]
-struct MinimalPost {
-    #[serde(rename = "_id")]
-    pub id: ObjectId,
-    pub slug: String,
-    pub title: String,
-    #[serde(rename = "categoryId")]
-    pub category_id: ObjectId,
-    pub created: bson::DateTime,
-}
-
 #[utoipa::path(
     get,
     path = "/api/posts/slug/{slug}/adjacent",
@@ -250,9 +176,8 @@ pub async fn get_adjacent_posts(
     slug: &str,
 ) -> Result<Json<ApiResponse<AdjacentPosts>>, Status> {
     let posts_collection = db.collection::<MinimalPost>("posts");
-    let categories_collection = db.collection::<Category>("categories");
-    
-    // First, get the current post to find its creation date
+
+    // Get current post to find its creation date
     let current_post = posts_collection
         .find_one(doc! { "slug": slug, "isPublished": true })
         .await
@@ -261,83 +186,158 @@ pub async fn get_adjacent_posts(
             Status::InternalServerError
         })?
         .ok_or(Status::NotFound)?;
-    
-    // Find previous post (older, smaller created date)
-    let prev_filter = doc! { 
-        "created": { "$lt": current_post.created },
-        "isPublished": true 
+
+    // Find previous and next posts
+    let prev = find_adjacent_post(db, &current_post, true).await?;
+    let next = find_adjacent_post(db, &current_post, false).await?;
+
+    let adjacent = AdjacentPosts { prev, next };
+
+    Ok(Json(ApiResponse::success(adjacent)))
+}
+
+/// Fetch published posts with pagination
+async fn fetch_published_posts(
+    db: &State<Database>,
+    skip: i64,
+    size: i64,
+) -> Result<Vec<Post>, Status> {
+    let posts_collection = db.collection::<Post>("posts");
+
+    let filter = doc! { "isPublished": true };
+    let find_options = mongodb::options::FindOptions::builder()
+        .sort(doc! { "created": -1 })
+        .skip(skip as u64)
+        .limit(size)
+        .build();
+
+    let mut cursor = posts_collection.find(filter).with_options(find_options).await
+        .map_err(|e| {
+            eprintln!("Error finding posts: {e:?}");
+            Status::InternalServerError
+        })?;
+
+    let mut posts = Vec::new();
+    while let Some(post) = cursor.try_next().await.map_err(|e| {
+        eprintln!("Error iterating posts cursor: {e:?}");
+        Status::InternalServerError
+    })? {
+        posts.push(post);
+    }
+
+    Ok(posts)
+}
+
+/// Enrich a single post with category and AI summary
+async fn enrich_single_post(
+    db: &State<Database>,
+    post: Post,
+    post_id: &str,
+) -> Result<PostWithCategory, Status> {
+    let category = fetch_category_by_id(db, post.category_id).await?;
+    let ai_summary = get_ai_summary(db, post_id, "zh").await;
+
+    let mut post_with_category = PostWithCategory::from(post);
+    post_with_category.category = category;
+    post_with_category.ai_summary = ai_summary;
+
+    Ok(post_with_category)
+}
+
+/// Enrich multiple posts with category and AI summary
+async fn enrich_posts_with_data(
+    db: &State<Database>,
+    posts: Vec<Post>,
+) -> Result<Vec<PostWithCategory>, Status> {
+    let mut enriched_posts = Vec::new();
+
+    for post in posts {
+        let post_id = post.id.to_hex();
+        let enriched = enrich_single_post(db, post, &post_id).await?;
+        enriched_posts.push(enriched);
+    }
+
+    Ok(enriched_posts)
+}
+
+/// Fetch category by ID
+async fn fetch_category_by_id(
+    db: &State<Database>,
+    category_id: ObjectId,
+) -> Result<Option<Category>, Status> {
+    let categories_collection = db.collection::<Category>("categories");
+
+    categories_collection
+        .find_one(doc! { "_id": category_id })
+        .await
+        .map_err(|e| {
+            eprintln!("Error finding category: {e:?}");
+            Status::InternalServerError
+        })
+}
+
+/// Find adjacent post (previous or next)
+async fn find_adjacent_post(
+    db: &State<Database>,
+    current_post: &MinimalPost,
+    find_previous: bool,
+) -> Result<Option<AdjacentPost>, Status> {
+    let posts_collection = db.collection::<MinimalPost>("posts");
+
+    let filter = if find_previous {
+        doc! {
+            "created": { "$lt": current_post.created },
+            "isPublished": true
+        }
+    } else {
+        doc! {
+            "created": { "$gt": current_post.created },
+            "isPublished": true
+        }
     };
-    let prev_options = mongodb::options::FindOneOptions::builder()
+
+    let sort_order = if find_previous { -1 } else { 1 };
+    let find_options = mongodb::options::FindOneOptions::builder()
+        .sort(doc! { "created": sort_order })
+        .build();
+
+    let adjacent_post = posts_collection.find_one(filter).with_options(find_options).await
+        .map_err(|e| {
+            eprintln!("Error finding adjacent post: {e:?}");
+            Status::InternalServerError
+        })?;
+
+    match adjacent_post {
+        Some(post) => {
+            let category = fetch_category_by_id(db, post.category_id).await?;
+            if let Some(cat) = category {
+                Ok(Some(AdjacentPost {
+                    slug: post.slug,
+                    title: post.title,
+                    category_slug: cat.slug,
+                }))
+            } else {
+                Ok(None)
+            }
+        }
+        None => Ok(None),
+    }
+}
+
+/// Helper function to get the latest AI summary for a given ref ID
+async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<String> {
+    let ai_summaries_collection = db.collection::<AiSummary>("ai_summaries");
+
+    // Find the latest AI summary for this ref ID and language
+    let find_options = mongodb::options::FindOneOptions::builder()
         .sort(doc! { "created": -1 })
         .build();
-    
-    let prev_post = posts_collection.find_one(prev_filter)
-        .with_options(prev_options)
+
+    ai_summaries_collection
+        .find_one(doc! { "refId": ref_id, "lang": lang })
+        .with_options(find_options)
         .await
-        .map_err(|e| {
-            eprintln!("Error finding previous post: {e:?}");
-            Status::InternalServerError
-        })?;
-    
-    // Find next post (newer, larger created date)
-    let next_filter = doc! { 
-        "created": { "$gt": current_post.created },
-        "isPublished": true 
-    };
-    let next_options = mongodb::options::FindOneOptions::builder()
-        .sort(doc! { "created": 1 })
-        .build();
-    
-    let next_post = posts_collection.find_one(next_filter)
-        .with_options(next_options)
-        .await
-        .map_err(|e| {
-            eprintln!("Error finding next post: {e:?}");
-            Status::InternalServerError
-        })?;
-    
-    // Build adjacent posts with category slugs
-    let prev = if let Some(post) = prev_post {
-        let category = categories_collection
-            .find_one(doc! { "_id": post.category_id })
-            .await
-            .ok()
-            .flatten();
-        
-        if let Some(cat) = category {
-            Some(AdjacentPost {
-                slug: post.slug,
-                title: post.title,
-                category_slug: cat.slug,
-            })
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    
-    let next = if let Some(post) = next_post {
-        let category = categories_collection
-            .find_one(doc! { "_id": post.category_id })
-            .await
-            .ok()
-            .flatten();
-        
-        if let Some(cat) = category {
-            Some(AdjacentPost {
-                slug: post.slug,
-                title: post.title,
-                category_slug: cat.slug,
-            })
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    
-    let adjacent = AdjacentPosts { prev, next };
-    
-    Ok(Json(ApiResponse::success(adjacent)))
+        .ok()
+        .flatten()
+        .map(|s| s.summary)
 }
