@@ -7,7 +7,6 @@ RUN apk add --no-cache ca-certificates tzdata wget && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY neo-space-backend /app/neo-space-backend
-COPY data/ /app/data/
 RUN chmod +x /app/neo-space-backend
 
 USER appuser
