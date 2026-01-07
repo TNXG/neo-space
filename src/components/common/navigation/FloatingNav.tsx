@@ -201,7 +201,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                         onClick={handleScrollToTopAction}
                         className="w-9 h-9 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
                       >
-                        <svg className="absolute inset-0 w-full h-full -rotate-90 p-0.5" viewBox="0 0 36 36">
+                        <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
                           <motion.path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -365,7 +365,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                           onClick={handleScrollToTopAction}
                           className="w-10 h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
                         >
-                          <svg className="absolute inset-0 w-full h-full -rotate-90 p-0.5" viewBox="0 0 36 36">
+                          <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
                             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
                             <motion.path
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
