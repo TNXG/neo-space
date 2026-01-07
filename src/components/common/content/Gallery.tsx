@@ -142,7 +142,7 @@ export function Gallery({ images, className }: GalleryProps) {
               <Icon icon="mingcute:arrow-right-line" width={14} height={14} />
               <span>切换图片</span>
             </div>
-            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+            <div className="hidden md:flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
               <KbdShortcut keys={["Esc"]} variant="lightbox" />
               <span>关闭</span>
             </div>

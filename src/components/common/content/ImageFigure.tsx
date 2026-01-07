@@ -479,8 +479,12 @@ function LightboxPortal({
         className="absolute bottom-8 md:bottom-12 left-0 right-0 flex flex-col items-center gap-2 md:gap-3 animate-in slide-in-from-bottom-4 duration-500 pointer-events-auto z-50 px-4"
         onClick={e => e.stopPropagation()}
       >
-        {/* 滚轮缩放提示 */}
-        <div className="flex items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+        {/* 缩放提示 - 移动端显示捏合，桌面端显示滚轮 */}
+        <div className="flex md:hidden items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+          <Icon icon="mingcute:finger-tap-line" width={14} height={14} />
+          <span>双指捏合缩放</span>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
           <Icon icon="mingcute:mouse-line" width={14} height={14} />
           <span>滚轮缩放</span>
           <span className="mx-1">·</span>
