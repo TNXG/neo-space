@@ -30,6 +30,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
   // Return to top states
   const [isSpinning, setIsSpinning] = useState(false);
@@ -60,13 +61,16 @@ export function FloatingNav({ user }: FloatingNavProps) {
     setReadingProgress(progress);
 
     // 3. Desktop Menu Auto-Expand (Only on Home & Top)
-    if (!isMobileView && isHomePage) {
-      setIsExpanded((prev) => {
+    if (!isMobileView) {
+      if (isHomePage) {
         const shouldExpand = scrollY <= 100;
-        return prev !== shouldExpand ? shouldExpand : prev;
-      });
+        setIsExpanded(shouldExpand || isHovering);
+      } else {
+        setIsExpanded(isHovering);
+      }
     } else {
-      setIsExpanded(prev => (prev ? false : prev));
+      // Mobile: keep collapsed, only open drawer on click
+      setIsExpanded(false);
     }
 
     // 4. Animation State
@@ -77,7 +81,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
         setAnimationProgress(0);
       }
     }
-  }, [hasMounted, isHomePage, isSpinning]);
+  }, [hasMounted, isHomePage, isSpinning, isHovering]);
 
   // Init & Listeners
   useEffect(() => {
@@ -129,19 +133,16 @@ export function FloatingNav({ user }: FloatingNavProps) {
     <>
       <MobileNavDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
 
-      <div className="flex gap-3 pointer-events-none bottom-4 md:bottom-8 left-0 right-0 justify-center fixed z-50 px-4">
-
+      {/* Mobile: Both capsules at bottom center side by side */}
+      <div className="md:hidden flex gap-3 pointer-events-none bottom-4 left-0 right-0 justify-center fixed z-50 px-4">
         {/* Left Capsule */}
         <div
-          className="glass-nav rounded-full flex h-12 md:h-14 pointer-events-auto items-center shrink-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95 md:cursor-default md:active:scale-100"
-          onMouseEnter={() => !isHomePage && setIsExpanded(true)}
-          onMouseLeave={() => !isHomePage && setIsExpanded(false)}
+          className="glass-nav rounded-full flex h-12 pointer-events-auto items-center shrink-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer active:scale-95"
           onClick={handleCapsuleClick}
         >
           <div className="px-1 flex items-center h-full">
-
             {/* User Info */}
-            <div className="flex items-center gap-3 px-2 md:px-3 shrink-0">
+            <div className="flex items-center gap-3 px-2 shrink-0">
               <div className="relative shrink-0">
                 {/* Pulse rings - online status indicator */}
                 <div className="absolute inset-0">
@@ -160,7 +161,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
               </div>
 
               <div className="flex flex-col justify-center">
-                <span className="text-primary-900 text-xs md:text-sm font-bold whitespace-nowrap truncate max-w-30 md:max-w-37.5">
+                <span className="text-primary-900 text-xs font-bold whitespace-nowrap truncate max-w-30">
                   {user.name}
                 </span>
                 <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
@@ -171,40 +172,9 @@ export function FloatingNav({ user }: FloatingNavProps) {
             </div>
 
             {/* Mobile Hint */}
-            <div className="flex md:hidden pr-3 pl-1 items-center animate-in fade-in zoom-in duration-300">
+            <div className="flex pr-3 pl-1 items-center animate-in fade-in zoom-in duration-300">
               <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700/50 mr-3" />
               <Icon icon="mingcute:up-small-line" className="text-neutral-400 text-lg animate-bounce-custom" />
-            </div>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center overflow-hidden">
-              <motion.div
-                initial={false}
-                animate={{
-                  width: (isExpanded && hasMounted) ? "auto" : 0,
-                  opacity: (isExpanded && hasMounted) ? 1 : 0,
-                }}
-                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-                className="flex items-center overflow-hidden"
-              >
-                <div className="flex items-center gap-1 pr-2 whitespace-nowrap">
-                  <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1 shrink-0" />
-                  {NAV_ITEMS.map(item => (
-                    <Tooltip key={item.id}>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          onClick={e => handleNavClick(e, item)}
-                          className="p-2 rounded-full text-neutral-500 hover:text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors"
-                        >
-                          <Icon icon={item.icon} className="text-lg" />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">{item.title}</TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </motion.div>
             </div>
           </div>
         </div>
@@ -213,7 +183,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-nav rounded-full flex h-12 md:h-14 pointer-events-auto items-center shrink-0"
+          className="glass-nav rounded-full flex h-12 pointer-events-auto items-center shrink-0"
         >
           <AnimatePresence>
             {showBackToTop && (
@@ -229,7 +199,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                     <TooltipTrigger asChild>
                       <button
                         onClick={handleScrollToTopAction}
-                        className="w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
+                        className="w-9 h-9 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
                       >
                         <svg className="absolute inset-0 w-full h-full -rotate-90 p-0.5" viewBox="0 0 36 36">
                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
@@ -259,10 +229,175 @@ export function FloatingNav({ user }: FloatingNavProps) {
             )}
           </AnimatePresence>
 
-          <div className="px-2 md:px-3">
+          <div className="px-2">
             <ThemeToggle />
           </div>
         </motion.div>
+      </div>
+
+      {/* Desktop: Left capsule at top-left, Right actions at bottom-right */}
+      <div className="hidden md:block">
+        {/* Left Capsule - Desktop: top-left */}
+        <div className="pointer-events-none top-4 left-4 fixed z-50 px-4">
+          <div
+            className="glass-nav rounded-full flex h-14 pointer-events-auto items-center shrink-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            onMouseEnter={() => {
+              if (window.innerWidth >= 768) {
+                setIsHovering(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (window.innerWidth >= 768) {
+                setIsHovering(false);
+              }
+            }}
+          >
+            <div className="px-1 flex items-center h-full">
+              {/* User Info */}
+              <div className="flex items-center gap-3 px-3 shrink-0">
+                <div className="relative shrink-0">
+                  {/* Pulse rings - online status indicator */}
+                  <div className="absolute inset-0">
+                    <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring" />
+                    <div className="absolute -inset-0.75 rounded-full border-2 border-accent-500 animate-pulse-ring-delayed" />
+                  </div>
+                  {user.avatar
+                    ? (
+                        <img src={user.avatar} alt={user.name} className="relative z-10 rounded-full h-8 w-8 object-cover bg-neutral-100" />
+                      )
+                    : (
+                        <div className="relative z-10 text-neutral-600 font-bold rounded-full flex h-8 w-8 items-center justify-center bg-neutral-200">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <span className="text-primary-900 text-sm font-bold whitespace-nowrap truncate max-w-37.5">
+                    {user.name}
+                  </span>
+                  <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
+                    <Icon icon="mingcute:sparkles-line" className="text-[9px]" />
+                    在线
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop Menu */}
+              <div className="flex items-center overflow-hidden">
+                {/* Fixed Divider */}
+                <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1 shrink-0" />
+
+                <div className="relative flex items-center overflow-hidden">
+                  {/* Expand Hint Arrow - Show when collapsed */}
+                  <AnimatePresence>
+                    {!isExpanded && hasMounted && (
+                      <motion.div
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: "auto", opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center pr-2">
+                          <Icon
+                            icon="mingcute:right-line"
+                            className="text-neutral-400 text-base animate-pulse"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Navigation Items - Show when expanded */}
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      width: (isExpanded && hasMounted) ? "auto" : 0,
+                      opacity: (isExpanded && hasMounted) ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                    className="flex items-center overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1 pr-2 whitespace-nowrap">
+                      {NAV_ITEMS.map(item => (
+                        <Tooltip key={item.id}>
+                          <TooltipTrigger asChild>
+                            <Link
+                              href={item.href}
+                              onClick={e => handleNavClick(e, item)}
+                              className="p-2 rounded-full text-neutral-500 hover:text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors"
+                            >
+                              <Icon icon={item.icon} className="text-lg" />
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">{item.title}</TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Actions - Desktop: bottom-right */}
+        <div className="pointer-events-none bottom-8 right-4 fixed z-50 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-nav rounded-full flex h-14 pointer-events-auto items-center shrink-0"
+          >
+            <AnimatePresence>
+              {showBackToTop && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0, scale: 0.8 }}
+                  animate={{ width: "auto", opacity: 1, scale: 1 }}
+                  exit={{ width: 0, opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pl-2 pr-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={handleScrollToTopAction}
+                          className="w-10 h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
+                        >
+                          <svg className="absolute inset-0 w-full h-full -rotate-90 p-0.5" viewBox="0 0 36 36">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
+                            <motion.path
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="var(--accent-500)"
+                              strokeWidth="2"
+                              strokeDasharray="100, 100"
+                              initial={{ pathLength: 0 }}
+                              animate={{ pathLength: (isSpinning ? animationProgress : readingProgress) / 100 }}
+                            />
+                          </svg>
+                          {isSpinning
+                            ? (
+                                <Icon icon="mingcute:loading-line" className="text-lg animate-spin" />
+                              )
+                            : (
+                                <Icon icon="mingcute:arrow-up-line" className="text-lg" />
+                              )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">返回顶部</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="px-3">
+              <ThemeToggle />
+            </div>
+          </motion.div>
+        </div>
       </div>
     </>
   );
