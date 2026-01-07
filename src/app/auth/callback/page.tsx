@@ -57,11 +57,23 @@ function AuthCallbackContent() {
           const errorMessage = decodeURIComponent(errorParam);
           setStatus("error");
           setMessage(errorMessage);
+          
+          // 检测是否为移动端直接跳转模式
+          const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
+          
           if (window.opener) {
             window.opener.postMessage({ type: "oauth_error", message: errorMessage }, window.location.origin);
+            const timer = setTimeout(() => window.close(), 3000);
+            timers.push(timer);
+          } else if (isMobileMode) {
+            // 移动端模式：显示错误后返回原页面
+            const timer = setTimeout(() => {
+              const returnUrl = sessionStorage.getItem("oauth_return_url") || "/";
+              sessionStorage.removeItem("oauth_return_url");
+              window.location.href = returnUrl;
+            }, 3000);
+            timers.push(timer);
           }
-          const timer = setTimeout(() => window.close(), 3000);
-          timers.push(timer);
           return;
         }
 
@@ -85,25 +97,51 @@ function AuthCallbackContent() {
         } else {
           setStatus("success");
           setMessage("登录成功");
+          
+          // 检测是否为移动端直接跳转模式
+          const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
+          
           if (window.opener) {
             window.opener.postMessage(
               { type: "oauth_success", token: tokenParam, isNewUser: false },
               window.location.origin,
             );
+            const timer = setTimeout(() => window.close(), 1500);
+            timers.push(timer);
+          } else if (isMobileMode) {
+            // 移动端模式：保存 token 到 localStorage，然后返回原页面
+            localStorage.setItem("oauth_token", tokenParam);
+            localStorage.setItem("oauth_is_new_user", "false");
+            const timer = setTimeout(() => {
+              const returnUrl = sessionStorage.getItem("oauth_return_url") || "/";
+              sessionStorage.removeItem("oauth_return_url");
+              window.location.href = returnUrl;
+            }, 1500);
+            timers.push(timer);
           }
-          const timer = setTimeout(() => window.close(), 1500);
-          timers.push(timer);
         }
       } catch (err) {
         console.error("OAuth callback error:", err);
         const errorMessage = err instanceof Error ? err.message : "登录失败";
         setStatus("error");
         setMessage(errorMessage);
+        
+        // 检测是否为移动端直接跳转模式
+        const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
+        
         if (window.opener) {
           window.opener.postMessage({ type: "oauth_error", message: errorMessage }, window.location.origin);
+          const timer = setTimeout(() => window.close(), 3000);
+          timers.push(timer);
+        } else if (isMobileMode) {
+          // 移动端模式：显示错误后返回原页面
+          const timer = setTimeout(() => {
+            const returnUrl = sessionStorage.getItem("oauth_return_url") || "/";
+            sessionStorage.removeItem("oauth_return_url");
+            window.location.href = returnUrl;
+          }, 3000);
+          timers.push(timer);
         }
-        const timer = setTimeout(() => window.close(), 3000);
-        timers.push(timer);
       }
 
       return () => {
@@ -132,14 +170,29 @@ function AuthCallbackContent() {
         toast.success("绑定成功");
         setStatus("success");
         setMessage("身份绑定完成");
+        
+        // 检测是否为移动端直接跳转模式
+        const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
+        
         if (window.opener) {
           window.opener.postMessage(
             { type: "oauth_success", token: response.message, isNewUser: true, bound: true },
             window.location.origin,
           );
+          const timer = setTimeout(() => window.close(), 1500);
+          return () => clearTimeout(timer);
+        } else if (isMobileMode) {
+          // 移动端模式：保存 token 到 localStorage，然后返回原页面
+          localStorage.setItem("oauth_token", response.message);
+          localStorage.setItem("oauth_is_new_user", "true");
+          localStorage.setItem("oauth_bound", "true");
+          const timer = setTimeout(() => {
+            const returnUrl = sessionStorage.getItem("oauth_return_url") || "/";
+            sessionStorage.removeItem("oauth_return_url");
+            window.location.href = returnUrl;
+          }, 1500);
+          return () => clearTimeout(timer);
         }
-        const timer = setTimeout(() => window.close(), 1500);
-        return () => clearTimeout(timer);
       } else {
         toast.error(response.message || "绑定失败");
       }
@@ -160,14 +213,29 @@ function AuthCallbackContent() {
       if (response.code === 200) {
         setStatus("success");
         setMessage("注册成功");
+        
+        // 检测是否为移动端直接跳转模式
+        const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
+        
         if (window.opener) {
           window.opener.postMessage(
             { type: "oauth_success", token: response.message, isNewUser: true, bound: false },
             window.location.origin,
           );
+          const timer = setTimeout(() => window.close(), 1500);
+          return () => clearTimeout(timer);
+        } else if (isMobileMode) {
+          // 移动端模式：保存 token 到 localStorage，然后返回原页面
+          localStorage.setItem("oauth_token", response.message);
+          localStorage.setItem("oauth_is_new_user", "true");
+          localStorage.setItem("oauth_bound", "false");
+          const timer = setTimeout(() => {
+            const returnUrl = sessionStorage.getItem("oauth_return_url") || "/";
+            sessionStorage.removeItem("oauth_return_url");
+            window.location.href = returnUrl;
+          }, 1500);
+          return () => clearTimeout(timer);
         }
-        const timer = setTimeout(() => window.close(), 1500);
-        return () => clearTimeout(timer);
       } else {
         toast.error(response.message || "注册失败");
         setIsSkipping(false);

@@ -146,7 +146,7 @@ export function CommentActions({
   };
 
   return (
-    <dd className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
+    <dd className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2.5 sm:mt-2">
       <motion.button
         type="button"
         onClick={() => {
@@ -158,7 +158,7 @@ export function CommentActions({
         whileHover={{ scale: editView ? 1 : 1.05 }}
         whileTap={{ scale: editView ? 1 : 0.95 }}
         className={cn(
-          "flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+          "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
           editView
             ? "text-muted-foreground/50 cursor-not-allowed"
             : replyView
@@ -166,7 +166,7 @@ export function CommentActions({
               : "text-muted-foreground hover:text-primary",
         )}
       >
-        <Icon icon="mingcute:share-forward-line" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <Icon icon="mingcute:share-forward-line" className="w-4 h-4 sm:w-4 sm:h-4" />
         <span>回复</span>
       </motion.button>
 
@@ -180,13 +180,13 @@ export function CommentActions({
             whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
-              "flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+              "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
               editView
                 ? "text-blue-500 cursor-default"
                 : "text-muted-foreground hover:text-blue-500",
             )}
           >
-            <Icon icon="mingcute:edit-line" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Icon icon="mingcute:edit-line" className="w-4 h-4 sm:w-4 sm:h-4" />
             <span>{editView ? "编辑中" : "编辑"}</span>
           </motion.button>
 
@@ -197,13 +197,13 @@ export function CommentActions({
             whileHover={{ scale: (isDeleting || editView) ? 1 : 1.05 }}
             whileTap={{ scale: (isDeleting || editView) ? 1 : 0.95 }}
             className={cn(
-              "flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors",
+              "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors min-h-[32px] sm:min-h-0 px-1",
               (isDeleting || editView)
                 ? "text-muted-foreground/50 cursor-not-allowed opacity-50"
                 : "text-muted-foreground hover:text-red-500 cursor-pointer",
             )}
           >
-            <Icon icon={isDeleting ? "mingcute:loading-line" : "mingcute:delete-line"} className={`w-3.5 h-3.5 sm:w-4 sm:h-4${isDeleting ? " animate-spin" : ""}`} />
+            <Icon icon={isDeleting ? "mingcute:loading-line" : "mingcute:delete-line"} className={`w-4 h-4 sm:w-4 sm:h-4${isDeleting ? " animate-spin" : ""}`} />
             <span>{isDeleting ? "删除中..." : "删除"}</span>
           </motion.button>
         </>
@@ -219,7 +219,7 @@ export function CommentActions({
             whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
-              "flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+              "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
               editView
                 ? "text-muted-foreground/50 cursor-not-allowed"
                 : comment.isWhispers
@@ -227,7 +227,7 @@ export function CommentActions({
                   : "text-muted-foreground hover:text-orange-500",
             )}
           >
-            <Icon icon={comment.isWhispers ? "mingcute:eye-line" : "mingcute:eye-close-line"} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Icon icon={comment.isWhispers ? "mingcute:eye-line" : "mingcute:eye-close-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
             <span>{comment.isWhispers ? "显示" : "隐藏"}</span>
           </motion.button>
 
@@ -238,7 +238,7 @@ export function CommentActions({
             whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
-              "flex items-center gap-1 text-[11px] sm:text-xs font-medium transition-colors cursor-pointer",
+              "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
               editView
                 ? "text-muted-foreground/50 cursor-not-allowed"
                 : comment.pin
@@ -246,7 +246,7 @@ export function CommentActions({
                   : "text-muted-foreground hover:text-red-500",
             )}
           >
-            <Icon icon={comment.pin ? "mingcute:pin-fill" : "mingcute:pin-line"} className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Icon icon={comment.pin ? "mingcute:pin-fill" : "mingcute:pin-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
             <span>{comment.pin ? "取消置顶" : "置顶"}</span>
           </motion.button>
         </>

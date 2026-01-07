@@ -30,13 +30,13 @@ export function GuestActions({
       initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
-      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 w-full sm:w-auto"
+      className="flex flex-col gap-2.5 w-full sm:flex-row sm:items-center sm:gap-2 sm:w-auto"
     >
       {/* 输入框 */}
       <GuestInputs user={user} onChange={onUserChange} />
 
       {/* 登录按钮 + 发送按钮 */}
-      <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+      <div className="flex items-center justify-end gap-2">
         <LoginPopover />
         <SubmitButton onClick={onSubmit} disabled={!canSubmit} isPending={isPending} />
       </div>

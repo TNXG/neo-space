@@ -13,6 +13,7 @@ import { DashedSeparator } from "@/components/ui/separator";
 
 import { AnimatedLink } from "../content/AnimatedLink";
 import { Spoiler } from "../content/Spoiler";
+import styles from "./CommentMarkdown.module.css";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 /**

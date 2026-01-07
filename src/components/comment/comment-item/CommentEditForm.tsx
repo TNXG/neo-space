@@ -111,8 +111,8 @@ export function CommentEditForm({
   };
 
   return (
-    <div className="relative mt-2 w-full overflow-visible">
-      <fieldset className="group relative flex flex-col gap-0 border-none p-0 m-0 overflow-visible">
+    <div className="relative mt-2 w-full min-w-0">
+      <fieldset className="group relative flex flex-col gap-0 border-none p-0 m-0 w-full min-w-0">
         {/* === 四角点线动画 (The Four Corners) === */}
         <span className="absolute z-10 top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tl-sm" />
         <span className="absolute z-10 top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tr-sm" />
@@ -120,10 +120,10 @@ export function CommentEditForm({
         <span className="absolute z-10 bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-br-sm" />
 
         {/* 编辑区 */}
-        <div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0">
+        <div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0 w-full min-w-0">
           {editPreview
             ? (
-                <div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone max-w-none animate-fade-in">
+                <div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
                   {editContent.trim() ? <CommentMarkdown content={editContent} /> : <span className="text-muted-foreground/40 italic">预览中...</span>}
                 </div>
               )
@@ -140,7 +140,7 @@ export function CommentEditForm({
                       handleSaveEdit();
                     }
                   }}
-                  className="grow w-full bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[50px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
+                  className="grow w-full min-w-0 bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[50px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
                   placeholder="编辑你的评论..."
                   disabled={isEditing}
                   autoFocus
@@ -150,7 +150,7 @@ export function CommentEditForm({
         </div>
 
         {/* 工具栏 */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 sm:px-4 pb-3 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 sm:px-4 pb-3 relative z-10 w-full min-w-0">
           {/* 左侧功能区：表情 + 预览 */}
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="relative">

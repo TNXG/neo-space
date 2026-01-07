@@ -17,13 +17,13 @@ export function GuestInputs({ user, onChange }: GuestInputsProps) {
         value={user.name}
         onChange={e => onChange({ ...user, name: e.target.value })}
         placeholder="昵称*"
-        className="flex-1 sm:flex-initial sm:w-24 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-1 py-1 text-[11px] sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center"
+        className="flex-1 sm:flex-initial sm:w-24 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center min-w-0"
       />
       <input
         value={user.email}
         onChange={e => onChange({ ...user, email: e.target.value })}
         placeholder="邮箱"
-        className="flex-1 sm:flex-initial sm:w-32 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-1 py-1 text-[11px] sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center"
+        className="flex-1 sm:flex-initial sm:w-32 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center min-w-0"
       />
     </div>
   );

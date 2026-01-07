@@ -265,21 +265,21 @@ export function CommentForm({
   const showToolbar = hasMounted && (isFocused || content.length > 0);
 
   return (
-    <div className="relative mt-4 w-full overflow-visible">
+    <div className="relative mt-4 w-full min-w-0">
       <fieldset
         ref={containerRef}
         className={cn(
-          "group relative flex flex-col gap-0 border-none p-0 m-0 overflow-visible",
+          "group relative flex flex-col gap-0 border-none p-0 m-0 w-full min-w-0",
         )}
       >
         {/* 四角点线动画 */}
         <CornerBorders />
 
         {/* 编辑区 */}
-        <div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0">
+        <div className="flex flex-col min-h-20 sm:min-h-20 py-3 sm:py-3 px-4 sm:px-4 relative z-0 w-full min-w-0">
           {preview
             ? (
-                <div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone max-w-none animate-fade-in">
+                <div className="min-h-[60px] sm:min-h-[60px] prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
                   {content.trim()
                     ? <CommentMarkdown content={content} />
                     : <span className="text-muted-foreground/40 italic">预览中...</span>}
@@ -298,7 +298,7 @@ export function CommentForm({
                     }
                   }}
                   placeholder={parentId ? "回复..." : "写下你的想法..."}
-                  className="grow w-full bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[50px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
+                  className="grow w-full min-w-0 bg-transparent text-base sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[60px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
                   spellCheck={false}
                   disabled={isPending}
                 />
@@ -333,7 +333,7 @@ export function CommentForm({
           }}
           className="overflow-visible"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 sm:px-4 pb-3 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3 px-4 sm:px-4 pb-3 sm:pb-3 relative z-10 w-full min-w-0">
             {/* 左侧功能区 */}
             <ToolbarLeft
               showEmoji={showEmoji}

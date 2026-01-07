@@ -68,7 +68,7 @@ export function CommentItem({
       )}
     >
       {/* 评论内容区域 */}
-      <dl className="relative flex flex-col gap-1.5 sm:gap-2 mt-4 sm:mt-6">
+      <dl className="relative flex flex-col gap-2 sm:gap-2 mt-4 sm:mt-6 px-2 sm:px-0">
         {/* 高亮层 */}
         <AnimatePresence>
           {isHighlighting && (
@@ -94,9 +94,9 @@ export function CommentItem({
               onClick={handleReplyClick}
               whileHover={{ x: 2 }}
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-1 mb-1 text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group/reply"
+              className="flex items-center gap-1 mb-1.5 sm:mb-1 text-xs sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group/reply"
             >
-              <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3 sm:size-3.5" />
+              <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
               <span>回复</span>
               <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-[80px] sm:max-w-none">
                 @
@@ -119,7 +119,7 @@ export function CommentItem({
                 />
               )
             : (
-                <div className="prose prose-sm prose-stone max-w-none text-foreground/90 leading-relaxed text-sm sm:text-base">
+                <div className="prose prose-sm prose-stone max-w-none text-foreground/90 leading-relaxed text-[15px] sm:text-base">
                   <CommentMarkdown content={comment.text} />
                 </div>
               )}

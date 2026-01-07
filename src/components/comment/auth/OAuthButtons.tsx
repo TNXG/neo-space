@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react/offline";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -34,12 +34,75 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
   const [isLoading, setIsLoading] = useState(false);
 
   /**
+   * 监听移动端 OAuth 返回
+   */
+  useEffect(() => {
+    const handleMobileOAuthReturn = async () => {
+      const token = localStorage.getItem("oauth_token");
+      const isNewUser = localStorage.getItem("oauth_is_new_user") === "true";
+      const bound = localStorage.getItem("oauth_bound") === "true";
+
+      if (token) {
+        // 清除 localStorage
+        localStorage.removeItem("oauth_token");
+        localStorage.removeItem("oauth_is_new_user");
+        localStorage.removeItem("oauth_bound");
+
+        try {
+          // 获取用户信息
+          const response = await getCurrentUser(token);
+
+          if (response.code === 200 && response.data) {
+            // 保存认证信息
+            setAuth(response.data, token);
+
+            // 显示欢迎消息
+            if (isNewUser) {
+              if (bound) {
+                toast.success(`欢迎，${response.data.name}！已成功绑定历史评论`);
+              } else {
+                toast.success(`欢迎，${response.data.name}！`);
+              }
+            } else {
+              toast.success(`欢迎回来，${response.data.name}！`);
+            }
+          } else {
+            console.error("[OAuth] 用户信息响应异常:", response);
+            throw new Error(response.message || "获取用户信息失败");
+          }
+        } catch (error) {
+          console.error("[OAuth] 错误:", error);
+          toast.error(error instanceof Error ? error.message : "登录失败");
+        }
+      }
+    };
+
+    // 页面加载时检查是否有待处理的 OAuth 返回
+    handleMobileOAuthReturn();
+  }, [setAuth]);
+
+  /**
    * 处理 OAuth 登录（弹窗方式）
    */
   const handleOAuthLogin = async (provider: "github" | "qq") => {
     setIsLoading(true);
 
     try {
+      // 检测是否为移动设备
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.innerWidth < 768;
+
+      // 移动端：直接跳转，使用 sessionStorage 保存当前页面
+      if (isMobile) {
+        // 保存当前页面 URL，登录后返回
+        sessionStorage.setItem("oauth_return_url", window.location.href);
+
+        // 直接跳转到 OAuth 授权页面
+        window.location.href = `${API_BASE_URL}/auth/oauth/${provider}`;
+        return;
+      }
+
+      // 桌面端：使用弹窗方式
       // 1. 打开 OAuth 授权弹窗
       const width = 600;
       const height = 700;
