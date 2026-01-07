@@ -1,4 +1,4 @@
-import type { Root } from "mdast";
+import type { PhrasingContent, Root } from "mdast";
 import { visit } from "unist-util-visit";
 
 export const remarkSpoiler = () => {
@@ -8,7 +8,7 @@ export const remarkSpoiler = () => {
         return;
 
       const regex = /\|\|(.+?)\|\|/g;
-      const children: Array<any> = [];
+      const children: Array<PhrasingContent> = [];
       let lastIndex = 0;
 
       for (let match = regex.exec(node.value); match !== null; match = regex.exec(node.value)) {
@@ -19,11 +19,16 @@ export const remarkSpoiler = () => {
           });
         }
 
-        // 创建一个 HTML 节点而不是自定义节点
+        // 创建一个包含文本的 emphasis 节点，通过 data.hProperties 添加 class
+        // 这样内部的文本可以继续被其他插件处理
         children.push({
-          type: "html",
-          value: `<span class="spoiler">${match[1]}</span>`,
-        });
+          type: "emphasis",
+          data: {
+            hName: "span",
+            hProperties: { className: "spoiler" },
+          },
+          children: [{ type: "text", value: match[1] }],
+        } as any);
 
         lastIndex = regex.lastIndex;
       }

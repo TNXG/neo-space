@@ -1,12 +1,13 @@
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
+import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 
 import { AbbreviationText } from "@/components/common/nbnhhsh/AbbreviationText";
-
+import { Mark } from "../content/Mark";
 import { truncateText } from "./utils";
 
 /**
@@ -54,6 +55,7 @@ const previewComponents: Components = {
   ),
   table: () => <span className="text-muted-foreground italic">[表格]</span>,
   hr: () => null,
+  mark: ({ children }) => <Mark>{children}</Mark>,
 };
 
 /**
@@ -68,13 +70,19 @@ export async function MarkdownPreview({
 }): Promise<React.ReactElement> {
   const truncated = truncateText(content, maxLength);
 
+  // 自定义 sanitize schema，允许 mark 标签
+  const sanitizeSchema = {
+    ...defaultSchema,
+    tagNames: [...(defaultSchema.tagNames || []), "mark"],
+  };
+
   return (
     <span className="text-foreground/70 **:text-inherit">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkFlexibleMarkers, remarkGfm, remarkBreaks]}
         rehypePlugins={[
           rehypeRaw,
-          rehypeSanitize,
+          [rehypeSanitize, sanitizeSchema],
         ]}
         components={previewComponents}
       >

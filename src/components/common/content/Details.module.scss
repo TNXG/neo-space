@@ -1,0 +1,140 @@
+.details {
+  --transition-speed: 0.3s;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  position: relative;
+  margin: 0.5rem 0;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-speed);
+
+  // 融入 UI：默认不显示边框，只在悬停时提示
+  &:hover {
+    background-color: var(--primary-100);
+  }
+
+  &.open {
+    background-color: var(--primary-50);
+    // 展开时左侧显示 Accent 颜色线，使其"融入"正文层级
+    border-left: 2px solid var(--accent-500);
+    border-radius: 2px var(--radius-md) var(--radius-md) 2px;
+  }
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  cursor: pointer;
+  user-select: none;
+
+  // 防止被内容挤压
+  min-width: 0;
+  width: 100%;
+
+  // 重置按钮默认样式
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+
+  // 明确的按钮视觉反馈
+  &:focus-visible {
+    outline: 2px solid var(--accent-500);
+    outline-offset: 2px;
+  }
+}
+
+.chevronBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; // 防止被挤压
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+  background-color: transparent;
+  transition: background-color 0.2s;
+
+  .details.open & {
+    background-color: var(--accent-100);
+  }
+}
+
+.icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--primary-500);
+  transition:
+    transform var(--transition-speed) var(--ease),
+    color var(--transition-speed);
+
+  &.rotate {
+    transform: rotate(90deg);
+    color: var(--accent-600);
+  }
+}
+
+.title {
+  flex: 1;
+  min-width: 0; // 防止被挤压
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary-800);
+
+  .details.open & {
+    color: var(--primary-950);
+  }
+}
+
+/* 核心动画：使用 CSS Grid (不需要手动计算 scrollHeight) */
+.contentGrid {
+  display: grid;
+  grid-template-rows: 0fr; // 初始状态
+  transition: grid-template-rows var(--transition-speed) var(--ease);
+  overflow: hidden;
+
+  .details.open & {
+    grid-template-rows: 1fr; // 展开状态
+  }
+}
+
+.contentInner {
+  min-height: 0; // 动画生效的关键
+}
+
+.realContent {
+  padding: 0.25rem 1rem 1rem 2.75rem; // 对齐标题文字
+  font-size: 0.925rem;
+  line-height: 1.6;
+  color: var(--primary-700);
+
+  // 内容与标题之间的微弱分隔
+  border-top: 1px solid transparent;
+  .details.open & {
+    border-top-color: var(--primary-100);
+    color: var(--primary-700);
+  }
+}
+
+/* 暗色模式适配 */
+:global(.dark) {
+  .details {
+    &:hover {
+      background-color: var(--primary-200);
+    }
+    &.open {
+      background-color: var(--primary-100);
+      border-left-color: var(--accent-400);
+    }
+  }
+  .title {
+    color: var(--primary-900);
+  }
+  .icon {
+    color: var(--primary-400);
+  }
+  .realContent {
+    border-top-color: var(--primary-200);
+  }
+}

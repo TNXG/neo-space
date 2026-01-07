@@ -6,27 +6,31 @@ import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import remarkBreaks from "remark-breaks";
+import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
+
 import { DashedSeparator } from "@/components/ui/separator";
 
 import { AnimatedLink } from "../content/AnimatedLink";
-
 import { ClientOnlyScript } from "../content/ClientOnlyScript";
 import { CodeBlock } from "../content/CodeBlock";
 import { ContainerBlock } from "../content/ContainerBlock";
+import { Details } from "../content/Details";
 import { EnhancedHeading } from "../content/EnhancedHeading";
 import { ImageFigure } from "../content/ImageFigure";
 import { KatexStyles } from "../content/KatexStyles";
+import { Mark } from "../content/Mark";
+
 import { MermaidDiagram } from "../content/MermaidDiagram";
-
 import { Spoiler } from "../content/Spoiler";
-import { getHighlighter } from "./highlighter";
 
+import { getHighlighter } from "./highlighter";
 import { remarkContainer } from "./plugins/container";
 import { remarkMathDelimiters } from "./plugins/math";
 import { remarkMermaid } from "./plugins/mermaid";
+import { rehypeInlineSyntax } from "./plugins/rehype-inline-syntax";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 import { getStandaloneImageProps } from "./utils";
@@ -265,6 +269,10 @@ const components: Components = {
     );
   },
 
+  mark: ({ children }) => <Mark>{children}</Mark>,
+
+  details: ({ children, ...props }) => <Details {...props}>{children}</Details>,
+
   script: ({ children, ...props }) => {
     return <ClientOnlyScript {...props}>{children}</ClientOnlyScript>;
   },
@@ -311,6 +319,7 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
   const highlighter = await getHighlighter(Array.from(usedLanguages));
   const rehypePlugins: any[] = [
     rehypeRaw,
+    rehypeInlineSyntax,
     rehypeSlug,
     [
       rehypeShikiFromHighlighter,
@@ -364,7 +373,7 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
       {hasMath && <KatexStyles />}
       <div className={`markdown-body ${className}`}>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkSpoiler, remarkMermaid, remarkContainer]}
+          remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkMermaid, remarkContainer]}
           rehypePlugins={rehypePlugins}
           components={components}
         >

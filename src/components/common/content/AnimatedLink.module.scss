@@ -1,7 +1,5 @@
 .linkWrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2em;
+  display: inline;
   vertical-align: baseline;
 }
 
@@ -11,7 +9,8 @@
   justify-content: center;
   width: 0.9em;
   height: 0.9em;
-  flex-shrink: 0;
+  margin-right: 0.2em;
+  vertical-align: middle;
 
   svg {
     width: 100%;
@@ -20,37 +19,31 @@
 }
 
 .link {
-  position: relative;
   color: inherit;
-  text-decoration: none;
   line-height: 1.4;
+  text-decoration: none;
 
-  // 灰色下划线（底层，始终显示）
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 1px;
-    width: 100%;
-    height: 2px;
-    background-color: var(--primary-300);
-  }
+  // 双层背景：灰色底层 + 主题色上层，支持多行 + 从左到右展开动画
+  background-image:
+    linear-gradient(var(--accent-600), var(--accent-600)), linear-gradient(var(--primary-300), var(--primary-300));
+  background-size:
+    0% 2px,
+    100% 2px;
+  background-position:
+    left bottom,
+    left bottom;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease-out;
 
-  // 主题色下划线（上层，hover 时从左到右展开）
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 1px;
-    width: 0;
-    height: 2px;
-    background-color: var(--accent-600);
-    transition: width 0.3s ease-out;
-  }
+  // 支持多行
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 
-  &:hover::after {
-    width: 100%;
-  }
+.linkWrapper:hover .link {
+  background-size:
+    100% 2px,
+    100% 2px;
 }
 
 .popoverContent {

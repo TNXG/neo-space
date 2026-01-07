@@ -3,17 +3,17 @@
 import type { Components } from "react-markdown";
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
+import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
-
 import { OWO_API } from "@/components/comment/constants";
 import { buildOwOEmojiMap, parseOwOEmojis } from "@/components/comment/hooks";
-import { DashedSeparator } from "@/components/ui/separator";
 
+import { DashedSeparator } from "@/components/ui/separator";
 import { AnimatedLink } from "../content/AnimatedLink";
+import { Mark } from "../content/Mark";
 import { Spoiler } from "../content/Spoiler";
-import styles from "./CommentMarkdown.module.css";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 /**
@@ -161,6 +161,8 @@ const commentComponents: Components = {
       </span>
     );
   },
+
+  mark: ({ children }) => <Mark>{children}</Mark>,
 };
 
 interface CommentMarkdownProps {
@@ -205,11 +207,19 @@ export function CommentMarkdown({ content, className = "" }: CommentMarkdownProp
     return content;
   }, [content, emojiMap]);
 
+  // 自定义 sanitize schema，允许 mark 标签
+  const sanitizeSchema = useMemo(() => {
+    return {
+      ...defaultSchema,
+      tagNames: [...(defaultSchema.tagNames || []), "mark"],
+    };
+  }, []);
+
   return (
     <div className={`comment-markdown ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
-        rehypePlugins={[rehypeSanitize]}
+        remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks]}
+        rehypePlugins={[[rehypeSanitize, sanitizeSchema]]}
         components={commentComponents}
       >
         {parsedContent}
