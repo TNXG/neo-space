@@ -40,6 +40,15 @@ pub async fn build_rocket_with_routes() -> rocket::Rocket<rocket::Build> {
     rocket
         .mount("/api/auth", routes::auth::routes())
         .mount("/api/comments", routes::comments::routes())
+        .mount("/api/ws", routes![
+            // WebSocket routes
+            websocket::reader_ws,
+            websocket::owner_desktop_ws,
+        ])
+        .mount("/api/static/artworks", routes![
+            // 封面缓存文件服务
+            routes::artworks::get_artwork,
+        ])
         .mount("/api", routes![
             // Posts routes
             routes::posts::list_posts,

@@ -1,6 +1,11 @@
+"use client";
+
 import type { User } from "@/types/api";
+
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
+import { useReaderWebSocket } from "@/hooks/use-reader-websocket";
+import { OwnerStatus } from "./OwnerStatus";
 
 interface ProfileHeaderProps {
   profile: User;
@@ -11,6 +16,11 @@ interface ProfileHeaderProps {
  * Displays user avatar, name, bio, intro, and social links
  */
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
+  const { isConnected, ownerStatus } = useReaderWebSocket();
+
+  // 判断博主是否在线
+  const isOwnerOnline = isConnected && ownerStatus && ownerStatus.updatedAt > 0;
+
   return (
     <header className="space-y-5 md:space-y-6">
       <div className="flex gap-4 md:gap-5 items-center">
@@ -39,7 +49,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
           {/* Status indicator */}
           <div className="rounded-full flex h-3.5 w-3.5 md:h-4 md:w-4 items-center bottom-0.5 right-0.5 md:bottom-1 md:right-1 justify-center absolute bg-neutral-50">
-            <div className="rounded-full bg-teal-500 h-2 w-2 md:h-2.5 md:w-2.5" />
+            <div className={`rounded-full h-2 w-2 md:h-2.5 md:w-2.5 transition-colors duration-300 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
           </div>
         </div>
         <div>
@@ -56,6 +66,9 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       <p className="text-base md:text-xl leading-relaxed max-w-lg text-secondary-foreground">
         <AbbreviationText>{profile.introduce}</AbbreviationText>
       </p>
+
+      {/* 博主状态 */}
+      <OwnerStatus ownerStatus={ownerStatus} isConnected={isConnected} />
 
       <div className="pt-1 md:pt-2 flex gap-4 md:gap-5 flex-wrap">
         {profile.socialIds?.github && (

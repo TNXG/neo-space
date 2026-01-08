@@ -8,6 +8,7 @@ use rocket_cors::{AllowedOrigins, CorsOptions};
 use crate::config::OAuthConfig;
 use crate::models::ApiResponse;
 use crate::openapi::ApiDoc;
+use crate::websocket::EventBus;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use rocket::Rocket;
@@ -32,6 +33,7 @@ pub struct AppInitialized {
     pub oauth_config: OAuthConfig,
     pub app_services: AppServices,
     pub cors: rocket_cors::Cors,
+    pub event_bus: EventBus,
 }
 
 /// 初始化应用组件
@@ -56,12 +58,30 @@ pub async fn init_app() -> Result<AppInitialized, Box<dyn std::error::Error>> {
     let cors = configure_cors()?;
     log::info!("CORS 配置完成");
 
+    // 6. 初始化 EventBus
+    let event_bus = EventBus::new();
+    log::info!("EventBus 初始化完成");
+
+    // 7. 初始化缓存目录
+    init_cache_dirs()?;
+
     Ok(AppInitialized {
         database,
         oauth_config,
         app_services,
         cors,
+        event_bus,
     })
+}
+
+/// 初始化缓存目录
+fn init_cache_dirs() -> Result<(), Box<dyn std::error::Error>> {
+    let artwork_cache_dir = std::path::Path::new("./cache/artworks");
+    if !artwork_cache_dir.exists() {
+        std::fs::create_dir_all(artwork_cache_dir)?;
+        log::info!("创建封面缓存目录: {}", artwork_cache_dir.display());
+    }
+    Ok(())
 }
 
 /// 构建带有所有管理状态的 Rocket 实例
@@ -71,6 +91,7 @@ pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
         oauth_config,
         app_services,
         cors,
+        event_bus,
     } = init;
 
     rocket::build()
@@ -81,6 +102,7 @@ pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
         .manage(app_services.link_health)
         .manage(app_services.verification)
         .manage(app_services.jwt_verifier)
+        .manage(event_bus)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])
         .mount(

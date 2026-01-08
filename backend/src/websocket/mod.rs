@@ -5,3 +5,6 @@
 pub mod event_bus;
 pub mod handler;
 pub mod messages;
+
+pub use event_bus::EventBus;
+pub use handler::{reader_ws, owner_desktop_ws};

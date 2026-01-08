@@ -28,6 +28,7 @@ indexing_slicing = "forbid"
 [dependencies]
 # Rocket: 仅保留 JSON 功能
 rocket = { version = "0.5.1", default-features = false, features = [ "json" ] }
+rocket_ws = "0.1.1"
 
 # Rocket Pools
 rocket_db_pools = { version = "0.2.0", default-features = false, features = [ "mongodb", ] }
@@ -37,7 +38,7 @@ mongodb = "3.4.1"
 
 # Serde
 serde = { version = "1.0.228", features = [ "derive" ] }
-serde_json = "1.0.148"
+serde_json = "1.0.149"
 
 # Tokio: 极致精简，仅保留后端必要模块
 tokio = "1.49.0"
@@ -104,6 +105,7 @@ moka = { version = "0.12.12", default-features = false, features = [ "future" ] 
 hmac = { version = "0.12.1", default-features = false }
 sha2 = { version = "0.10.9", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = [ "std" ] }
+uuid = { version = "1.19.0", features = [ "v4" ] }
 utoipa = { version = "5.2.0", features = [
   "rocket_extras",
   "chrono",

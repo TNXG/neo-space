@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod artworks;
 pub mod auth;
 pub mod categories;
 pub mod comments;

@@ -119,7 +119,7 @@ start_services() {
     if [ -d "backend" ] && check_command cargo; then
         echo -e "${BLUE}启动后端服务...${NC}"
         cd backend
-        cargo watch -x run &
+        cargo watch -i cache/ -x run &
         BACKEND_PID=$!
         echo "$BACKEND_PID" > "$BACKEND_PID_FILE"
         echo -e "${GREEN}后端服务已启动 (PID: $BACKEND_PID)${NC}"

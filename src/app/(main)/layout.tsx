@@ -1,6 +1,8 @@
 import { FloatingNav } from "@/components/common/navigation/FloatingNav";
 import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { Footer } from "@/components/layouts/Footer";
+import { ReaderStatus } from "@/components/websocket/ReaderStatus";
+import { PageProvider } from "@/contexts/PageContext";
 import { getUserProfile } from "@/lib/api-client";
 
 /**
@@ -23,15 +25,18 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   }));
 
   return (
-    <NbnhhshProvider>
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer user={profileResponse.data} />
-        <FloatingNav user={profileResponse.data} />
-      </div>
-      <NbnhhshPanel />
-    </NbnhhshProvider>
+    <PageProvider>
+      <NbnhhshProvider>
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer user={profileResponse.data} />
+          <FloatingNav user={profileResponse.data} />
+          <ReaderStatus />
+        </div>
+        <NbnhhshPanel />
+      </NbnhhshProvider>
+    </PageProvider>
   );
 }
