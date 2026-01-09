@@ -1,6 +1,25 @@
 import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, LinkApplyRequest, Note, Page, PaginatedData, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 
+/**
+ * API 配置 - 统一管理所有 API 相关的 URL
+ */
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
+
+/**
+ * WebSocket URL - 从 API_BASE_URL 自动推导
+ * https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/api/ws
+ * http://localhost:8000/api -> ws://localhost:8000/api/ws
+ */
+export const WS_BASE_URL = (() => {
+  try {
+    const url = new URL(API_BASE_URL);
+    const protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    // 保留 /api 路径，并添加 /ws
+    return `${protocol}//${url.host}/api/ws`;
+  } catch {
+    return "ws://localhost:8000/api/ws";
+  }
+})();
 
 /**
  * Generic API client with error handling and ISR support

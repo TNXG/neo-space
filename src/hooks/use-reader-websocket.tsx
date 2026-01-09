@@ -2,6 +2,7 @@
 
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { WS_BASE_URL } from "@/lib/api-client";
 
 // --- 类型定义 ---
 type ReaderMessage
@@ -82,8 +83,6 @@ let fingerprintCache: string | null = null;
 let activeSubscribers = 0; // 订阅者计数
 let disconnectTimeout: NodeJS.Timeout | null = null; // 延迟断开计时器
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-
 export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
   // 使用 useRef 保持 options 的最新引用，防止 props 变化导致重连
   const optionsRef = useRef(options);
@@ -101,6 +100,11 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
   const [fingerprint, setFingerprint] = useState<string | null>(fingerprintCache);
   const reconnectAttempts = useRef(0);
   const heartbeatTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 状态更新函数（避免 ESLint 警告）
+  const updateConnectionState = useCallback((isConnected: boolean) => {
+    setSocketState(prev => ({ ...prev, isConnected }));
+  }, []);
 
   // --- 核心逻辑 ---
 
@@ -174,7 +178,10 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
     }
 
     if (wsInstance?.readyState === WebSocket.OPEN) {
-      setSocketState(prev => ({ ...prev, isConnected: true }));
+      // 使用 queueMicrotask 避免在 useEffect 中直接调用 setState
+      queueMicrotask(() => {
+        updateConnectionState(true);
+      });
       return;
     }
 
@@ -190,13 +197,13 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
         setFingerprint(fingerprintCache);
       }
 
-      const ws = new WebSocket(`${WS_URL}/api/ws/reader`);
+      const ws = new WebSocket(`${WS_BASE_URL}/reader`);
       wsInstance = ws;
 
       ws.onopen = () => {
         console.log("WS Connected");
         reconnectAttempts.current = 0;
-        setSocketState(prev => ({ ...prev, isConnected: true }));
+        updateConnectionState(true);
         optionsRef.current.onOpen?.();
 
         // 发送握手（只发送 fingerprint，不带 type 字段）
@@ -217,7 +224,7 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
 
       ws.onclose = () => {
         console.log("WS Closed");
-        setSocketState(prev => ({ ...prev, isConnected: false }));
+        updateConnectionState(false);
         if (heartbeatTimer.current)
           clearInterval(heartbeatTimer.current);
         optionsRef.current.onClose?.();
@@ -237,7 +244,7 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
     } catch (e) {
       console.error("WS Init Error", e);
     }
-  }, [handleMessage, startHeartbeat]);
+  }, [handleMessage, startHeartbeat, updateConnectionState]);
 
   // 页面进入/离开的快捷方法
   const enterPage = useCallback((pageType: string, pageId: string, pageTitle?: string) => {
@@ -273,6 +280,16 @@ export function useReaderWebSocket(options: UseReaderWebSocketOptions = {}) {
       }
     };
   }, [connect]);
+
+  // 组件卸载时清理 disconnectTimeout
+  useEffect(() => {
+    return () => {
+      if (disconnectTimeout) {
+        clearTimeout(disconnectTimeout);
+        disconnectTimeout = null;
+      }
+    };
+  }, []);
 
   return {
     ...socketState, // 展开所有状态 (isConnected, onlineCount, etc.)

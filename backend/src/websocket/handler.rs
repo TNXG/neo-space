@@ -2,6 +2,7 @@
 
 use rocket::State;
 use rocket_ws::{Channel, Message, WebSocket};
+use rocket_ws::frame::{CloseCode, CloseFrame};
 use tokio::sync::mpsc;
 use futures::{SinkExt, StreamExt};
 use chrono::Utc;
@@ -257,28 +258,63 @@ pub fn owner_desktop_ws(
     ws: WebSocket,
     token: Option<String>,
     event_bus: &State<EventBus>,
-) -> Option<Channel<'static>> {
-    // 验证 token
-    let expected_token = std::env::var("OWNER_DESKTOP_TOKEN").ok()?;
-    
-    if token.as_ref() != Some(&expected_token) {
-        log::warn!("博主桌面客户端 WebSocket 认证失败");
-        return None;
-    }
-    
+) -> Channel<'static> {
     let event_bus = event_bus.inner().clone();
+    let token = token.clone();
     
-    Some(ws.channel(move |stream| {
-        Box::pin(handle_owner_desktop_connection(stream, event_bus))
-    }))
+    ws.channel(move |stream| {
+        Box::pin(handle_owner_desktop_connection(stream, event_bus, token))
+    })
 }
 
 /// 处理博主桌面客户端 WebSocket 连接
 async fn handle_owner_desktop_connection(
     mut stream: rocket_ws::stream::DuplexStream,
     event_bus: EventBus,
+    token: Option<String>,
 ) -> Result<(), rocket_ws::result::Error> {
-    log::info!("博主桌面客户端已连接");
+    // 验证 token
+    let expected_token = match std::env::var("OWNER_DESKTOP_TOKEN") {
+        Ok(t) => {
+            log::info!("环境变量 OWNER_DESKTOP_TOKEN 已设置");
+            t
+        }
+        Err(e) => {
+            log::error!("环境变量 OWNER_DESKTOP_TOKEN 未设置: {}", e);
+            let error_msg = ServerToOwnerDesktopMessage::Error {
+                message: "服务器配置错误：未设置 OWNER_DESKTOP_TOKEN".to_string(),
+            };
+            if let Ok(json) = error_msg.to_json() {
+                let _ = stream.send(Message::Text(json)).await;
+            }
+            let _ = stream.close(Some(CloseFrame {
+                code: CloseCode::Policy,
+                reason: "服务器配置错误".into(),
+            })).await;
+            return Ok(());
+        }
+    };
+    
+    log::info!("收到 token: {:?}", token);
+    log::info!("期望 token: {}", expected_token);
+    
+    if token.as_ref() != Some(&expected_token) {
+        log::warn!("博主桌面客户端 WebSocket 认证失败: token 不匹配");
+        let error_msg = ServerToOwnerDesktopMessage::Error {
+            message: "认证失败：token 无效".to_string(),
+        };
+        if let Ok(json) = error_msg.to_json() {
+            let _ = stream.send(Message::Text(json)).await;
+        }
+        // 使用 Policy 关闭码表示认证失败（类似 403）
+        let _ = stream.close(Some(CloseFrame {
+            code: CloseCode::Policy,
+            reason: "认证失败".into(),
+        })).await;
+        return Ok(());
+    }
+    
+    log::info!("博主桌面客户端 WebSocket 认证成功，已连接");
     
     // 发送连接成功消息
     let connected_msg = ServerToOwnerDesktopMessage::Connected;

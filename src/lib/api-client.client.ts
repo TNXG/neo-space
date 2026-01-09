@@ -5,10 +5,13 @@ import type { Link, Note, PaginatedResponse, Post } from "@/types/api";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 
+import { API_BASE_URL } from "./api-client";
+
 /**
- * 客户端 API 基础 URL
+ * 客户端使用服务端的 API_BASE_URL 配置
+ * 避免重复定义，确保配置统一
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
+export { API_BASE_URL };
 
 /**
  * 通用 fetcher
