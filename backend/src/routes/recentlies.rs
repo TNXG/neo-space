@@ -1,9 +1,9 @@
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
-use mongodb::bson::doc;
 use futures::stream::TryStreamExt;
+use mongodb::bson::doc;
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
 
-use crate::models::{Recently, ApiResponse, PaginatedResponse, PaginatedData, Pagination};
+use crate::models::{ApiResponse, PaginatedData, PaginatedResponse, Pagination, Recently};
 
 /// List recentlies with pagination
 #[utoipa::path(
@@ -30,7 +30,7 @@ pub async fn list_recentlies(
     let skip = (page - 1) * size;
 
     let collection = db.collection::<Recently>("recentlies");
-    
+
     let find_options = mongodb::options::FindOptions::builder()
         .sort(doc! { "created": -1 })
         .skip(skip as u64)
@@ -38,14 +38,16 @@ pub async fn list_recentlies(
         .build();
 
     // Get total count
-    let total = collection.count_documents(doc! {}).await
-        .map_err(|e| {
-            eprintln!("Error counting recentlies: {e:?}");
-            Status::InternalServerError
-        })?;
+    let total = collection.count_documents(doc! {}).await.map_err(|e| {
+        eprintln!("Error counting recentlies: {e:?}");
+        Status::InternalServerError
+    })?;
 
     // Fetch items
-    let mut cursor = collection.find(doc! {}).with_options(find_options).await
+    let mut cursor = collection
+        .find(doc! {})
+        .with_options(find_options)
+        .await
         .map_err(|e| {
             eprintln!("Error finding recentlies: {e:?}");
             Status::InternalServerError
@@ -69,5 +71,8 @@ pub async fn list_recentlies(
         has_prev_page: page > 1,
     };
 
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }

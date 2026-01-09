@@ -4,13 +4,13 @@
 //! Only specific, safe fields are extracted and exposed via API endpoints.
 //! Sensitive data (API keys, passwords, secrets) are NEVER exposed.
 
+use crate::models::{
+    AdminExtraPublic, AlgoliaPublicOptions, CommentOptionsPublic, FeatureListOptions,
+    FriendLinkOptions, OAuthProvider, OAuthPublicOptions, RawOption, SeoOptions, SiteConfig,
+    UrlOptions,
+};
 use futures::stream::TryStreamExt;
 use mongodb::{bson::doc, Collection, Database};
-use crate::models::{
-    RawOption, SiteConfig, SeoOptions, UrlOptions, FeatureListOptions,
-    FriendLinkOptions, CommentOptionsPublic, OAuthPublicOptions, OAuthProvider,
-    AlgoliaPublicOptions, AdminExtraPublic,
-};
 
 /// Get a single option by name (internal use only)
 #[allow(unused)]
@@ -34,13 +34,17 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
 
     // Fetch all options we need
     let names = vec![
-        "seo", "url", "featureList", "friendLinkOptions",
-        "commentOptions", "oauth", "algoliaSearchOptions", "adminExtra"
+        "seo",
+        "url",
+        "featureList",
+        "friendLinkOptions",
+        "commentOptions",
+        "oauth",
+        "algoliaSearchOptions",
+        "adminExtra",
     ];
 
-    let mut cursor = collection
-        .find(doc! { "name": { "$in": &names } })
-        .await?;
+    let mut cursor = collection.find(doc! { "name": { "$in": &names } }).await?;
 
     while let Some(opt) = cursor.try_next().await? {
         match opt.name.as_str() {
@@ -89,7 +93,8 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
                     // Get public github client id
                     if let Ok(public) = doc.get_document("public") {
                         if let Ok(github) = public.get_document("github") {
-                            oauth.github_client_id = github.get_str("clientId").ok().map(String::from);
+                            oauth.github_client_id =
+                                github.get_str("clientId").ok().map(String::from);
                         }
                     }
 

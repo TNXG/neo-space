@@ -18,25 +18,25 @@ impl OAuthConfig {
     pub fn from_env() -> Result<Self, ConfigError> {
         let jwt_secret = env::var("JWT_SECRET")
             .map_err(|_| ConfigError::MissingEnvVar("JWT_SECRET".to_string()))?;
-        
+
         if jwt_secret.is_empty() {
-            return Err(ConfigError::InvalidConfig("JWT_SECRET cannot be empty".to_string()));
+            return Err(ConfigError::InvalidConfig(
+                "JWT_SECRET cannot be empty".to_string(),
+            ));
         }
 
-        let github_client_id = env::var("GITHUB_CLIENT_ID")
-            .unwrap_or_default();
-        
-        let github_client_secret = env::var("GITHUB_CLIENT_SECRET")
-            .unwrap_or_default();
-        
-        let frontend_url = env::var("FRONTEND_URL")
-            .unwrap_or_else(|_| "http://localhost:3000".to_string());
+        let github_client_id = env::var("GITHUB_CLIENT_ID").unwrap_or_default();
 
-        let backend_url = env::var("BACKEND_URL")
-            .unwrap_or_else(|_| "http://localhost:8000".to_string());
+        let github_client_secret = env::var("GITHUB_CLIENT_SECRET").unwrap_or_default();
 
-        let turnstile_secret = env::var("TURNSTILE_SECRET")
-            .unwrap_or_else(|_| "THISISTURNSTILEKEY".to_string());
+        let frontend_url =
+            env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+        let backend_url =
+            env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+
+        let turnstile_secret =
+            env::var("TURNSTILE_SECRET").unwrap_or_else(|_| "THISISTURNSTILEKEY".to_string());
 
         Ok(Self {
             jwt_secret,

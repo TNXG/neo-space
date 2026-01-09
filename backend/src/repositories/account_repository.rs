@@ -1,9 +1,9 @@
 //! Account 数据仓库 - Account 模型的数据库操作
 
-use mongodb::{bson::doc, Collection, Database};
+use crate::models::Account;
 use bson::oid::ObjectId;
 use futures::stream::TryStreamExt;
-use crate::models::Account;
+use mongodb::{bson::doc, Collection, Database};
 
 /// Account 数据仓库，用于数据库操作
 pub struct AccountRepository {
@@ -26,7 +26,10 @@ impl AccountRepository {
     /// # 返回
     /// * `Ok(ObjectId)` - 创建的 account 的 ID
     /// * `Err(mongodb::error::Error)` - 创建失败时
-    pub async fn create_account(&self, account: &Account) -> Result<ObjectId, mongodb::error::Error> {
+    pub async fn create_account(
+        &self,
+        account: &Account,
+    ) -> Result<ObjectId, mongodb::error::Error> {
         let result = self.collection.insert_one(account).await?;
 
         match result.inserted_id.as_object_id() {
@@ -66,8 +69,12 @@ impl AccountRepository {
     /// # 返回
     /// * `Ok(Vec<Account>)` - 用户的 accounts 列表
     /// * `Err(mongodb::error::Error)` - 查询失败时
-    pub async fn find_by_user_id(&self, user_id: ObjectId) -> Result<Vec<Account>, mongodb::error::Error> {
-        let mut cursor = self.collection
+    pub async fn find_by_user_id(
+        &self,
+        user_id: ObjectId,
+    ) -> Result<Vec<Account>, mongodb::error::Error> {
+        let mut cursor = self
+            .collection
             .find(doc! { "userId": user_id })
             .sort(doc! { "createdAt": -1 })
             .await?;
@@ -89,11 +96,15 @@ impl AccountRepository {
     /// # 返回
     /// * `Ok(())` - 更新成功
     /// * `Err(mongodb::error::Error)` - 更新失败时
-    pub async fn update_user_id(&self, account_id: ObjectId, new_user_id: ObjectId) -> Result<(), mongodb::error::Error> {
+    pub async fn update_user_id(
+        &self,
+        account_id: ObjectId,
+        new_user_id: ObjectId,
+    ) -> Result<(), mongodb::error::Error> {
         self.collection
             .update_one(
                 doc! { "_id": account_id },
-                doc! { "$set": { "userId": new_user_id } }
+                doc! { "$set": { "userId": new_user_id } },
             )
             .await?;
         Ok(())

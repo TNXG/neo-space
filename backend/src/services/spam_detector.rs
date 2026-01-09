@@ -1,18 +1,18 @@
 //! 垃圾评论检测服务
-//! 
+//!
 //! 支持两种检测模式：
 //! 1. binary - 二分法：AI 直接判断是/否垃圾评论
 //! 2. score - 评分法：AI 给出 0-10 分，根据阈值判断
-//! 
+//!
 //! 支持异步审核：先存入数据库，后台异步调用 AI 审核
 
-use mongodb::{bson::doc, Database};
 use mongodb::bson::oid::ObjectId;
+use mongodb::{bson::doc, Database};
 use serde::Deserialize;
 
-use crate::models::{RawOption, CommentState};
 use crate::integrations::{AiService, ChatMessage, ChatRole};
-use crate::utils::detection::{SpamCheckResult, parse_binary_response, parse_score_response};
+use crate::models::{CommentState, RawOption};
+use crate::utils::detection::{parse_binary_response, parse_score_response, SpamCheckResult};
 
 /// 评论配置选项
 #[derive(Debug, Clone, Deserialize)]
@@ -45,7 +45,7 @@ pub struct SpamDetector;
 
 impl SpamDetector {
     /// 检查是否启用了 AI 审核
-    /// 
+    ///
     /// # Returns
     /// * `bool` - 是否启用 AI 审核
     pub async fn is_ai_review_enabled(db: &Database) -> bool {
@@ -64,10 +64,10 @@ impl SpamDetector {
         email: &str,
     ) {
         log::info!("开始异步审核评论: {comment_id}");
-        
+
         // 执行垃圾检测
         let result = Self::check(db, text, author, email).await;
-        
+
         // 根据结果更新评论状态
         let new_state = if result.is_spam {
             log::warn!(
@@ -81,7 +81,7 @@ impl SpamDetector {
             log::info!("异步审核: 评论 {comment_id} 审核通过");
             CommentState::UNREAD
         };
-        
+
         // 更新数据库
         let collection = db.collection::<mongodb::bson::Document>("comments");
         if let Err(e) = collection
@@ -96,12 +96,7 @@ impl SpamDetector {
     }
 
     /// 检测评论是否为垃圾内容
-    pub async fn check(
-        db: &Database,
-        text: &str,
-        author: &str,
-        email: &str,
-    ) -> SpamCheckResult {
+    pub async fn check(db: &Database, text: &str, author: &str, email: &str) -> SpamCheckResult {
         // 1. 获取评论配置
         let comment_options = match Self::get_comment_options(db).await {
             Ok(opts) => opts,
@@ -135,7 +130,14 @@ impl SpamDetector {
         match comment_options.ai_review_type.as_str() {
             "binary" => Self::check_binary(&ai_service, text, author, email).await,
             "score" => {
-                Self::check_score(&ai_service, text, author, email, comment_options.ai_review_threshold).await
+                Self::check_score(
+                    &ai_service,
+                    text,
+                    author,
+                    email,
+                    comment_options.ai_review_threshold,
+                )
+                .await
             }
             _ => {
                 log::warn!("未知的 AI 审核类型: {}", comment_options.ai_review_type);
@@ -151,7 +153,7 @@ impl SpamDetector {
         author: &str,
         email: &str,
     ) -> SpamCheckResult {
-        let system_prompt = r###"你是一个专业的垃圾评论检测助手。你的任务是判断用户提交的评论是否为垃圾内容。
+        let system_prompt = r#"你是一个专业的垃圾评论检测助手。你的任务是判断用户提交的评论是否为垃圾内容。
 
 垃圾评论的特征包括但不限于：
 - 广告推广、营销信息
@@ -167,7 +169,7 @@ impl SpamDetector {
   "reason": "判断理由"
 }
 
-只返回 JSON，不要有其他内容。"###;
+只返回 JSON，不要有其他内容。"#;
 
         let user_prompt = format!(
             "请检测以下评论是否为垃圾内容：\n\n作者：{author}\n邮箱：{email}\n内容：{text}"
@@ -211,7 +213,7 @@ impl SpamDetector {
         threshold: u8,
     ) -> SpamCheckResult {
         let system_prompt = format!(
-            r###"你是一个专业的垃圾评论检测助手。你的任务是对用户提交的评论进行评分，判断其垃圾程度。
+            r#"你是一个专业的垃圾评论检测助手。你的任务是对用户提交的评论进行评分，判断其垃圾程度。
 
 评分标准（0-10 分）：
 - 0-2 分：正常评论，无任何垃圾特征
@@ -234,7 +236,7 @@ impl SpamDetector {
   "reason": "评分理由"
 }}
 
-只返回 JSON，不要有其他内容。当前阈值为 {threshold}，评分 >= {threshold} 将被拦截。"###
+只返回 JSON，不要有其他内容。当前阈值为 {threshold}，评分 >= {threshold} 将被拦截。"#
         );
 
         let user_prompt = format!(
@@ -285,8 +287,8 @@ impl SpamDetector {
             .as_document()
             .ok_or_else(|| "评论配置不是文档类型".to_string())?;
 
-        let comment_options: CommentOptions = bson::from_document(doc.clone())
-            .map_err(|e| format!("解析评论配置失败: {e}"))?;
+        let comment_options: CommentOptions =
+            bson::from_document(doc.clone()).map_err(|e| format!("解析评论配置失败: {e}"))?;
 
         Ok(comment_options)
     }

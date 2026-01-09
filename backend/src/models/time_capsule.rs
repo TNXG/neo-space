@@ -1,9 +1,9 @@
 //! Time Capsule model - 文章时效性分析结果
 
+use crate::utils::serializers::serialize_object_id;
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::serialize_object_id;
 
 /// 时效性等级
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]

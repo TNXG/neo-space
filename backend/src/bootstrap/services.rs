@@ -2,13 +2,12 @@
 //!
 //! 负责所有服务的初始化
 
-use mongodb::Database;
 use crate::config::OAuthConfig;
-use crate::services::{
-    CacheService, RevalidationService, ChangeStreamService,
-    VerificationService, auth::JWTVerifier
-};
 use crate::integrations::{IpService, LinkHealthService};
+use crate::services::{
+    auth::JWTVerifier, CacheService, ChangeStreamService, RevalidationService, VerificationService,
+};
+use mongodb::Database;
 
 /// 所有应用服务的集合
 pub struct AppServices {
@@ -46,11 +45,11 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
     log::info!("缓存服务初始化成功");
 
     // Initialize revalidation service (optional - only if configured)
-    let nextjs_url = std::env::var("NEXTJS_URL")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let nextjs_url =
+        std::env::var("NEXTJS_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
     let revalidation_secret = std::env::var("REVALIDATION_SECRET").ok();
-    let revalidation_salt = std::env::var("REVALIDATION_SALT")
-        .unwrap_or_else(|_| "default-salt".to_string());
+    let revalidation_salt =
+        std::env::var("REVALIDATION_SALT").unwrap_or_else(|_| "default-salt".to_string());
 
     let revalidation_service_opt = if let Some(secret) = revalidation_secret.clone() {
         let service = std::sync::Arc::new(RevalidationService::new(
@@ -108,14 +107,13 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
         .and_then(|v| v.parse().ok())
         .unwrap_or(6); // 默认 6 小时检查一次
 
-    let mut link_health_service = LinkHealthService::new(
-        link_health_stale_hours,
-        link_health_timeout,
-    );
+    let mut link_health_service =
+        LinkHealthService::new(link_health_stale_hours, link_health_timeout);
 
     // 注入 Revalidation 服务（如果已配置）
     if let Some(ref revalidation_service) = revalidation_service_opt {
-        link_health_service = link_health_service.with_revalidation_service(revalidation_service.clone());
+        link_health_service =
+            link_health_service.with_revalidation_service(revalidation_service.clone());
         log::info!("友链健康检查服务已关联 Revalidation 服务");
     }
 
@@ -138,7 +136,10 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
             let result = service.check_all_links(&db).await;
             log::info!(
                 "友链健康检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
-                result.total, result.alive_count, result.failed_count, result.duration_ms
+                result.total,
+                result.alive_count,
+                result.failed_count,
+                result.duration_ms
             );
         });
     }

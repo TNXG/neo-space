@@ -1,10 +1,10 @@
 //! 评论路由模块
 
-pub mod list;
-pub mod create;
-pub mod update;
-pub mod delete;
 pub mod admin;
+pub mod create;
+pub mod delete;
+pub mod list;
+pub mod update;
 
 use rocket::Route;
 

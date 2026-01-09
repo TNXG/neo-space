@@ -1,17 +1,17 @@
 //! Change Stream service - `MongoDB` Change Stream listener with auto-reconnect
 
+use futures::stream::TryStreamExt;
 use mongodb::{
     bson::{doc, Document},
     change_stream::event::ChangeStreamEvent,
     options::{ChangeStreamOptions, ReadConcern},
     Database,
 };
-use futures::stream::TryStreamExt;
 use std::time::Duration;
 use tokio::time::sleep;
 
-use crate::infrastructure::{CacheService, RevalidationService};
 use crate::infrastructure::cache::CacheKey;
+use crate::infrastructure::{CacheService, RevalidationService};
 
 /// Change Stream 监听服务
 pub struct ChangeStreamService {
@@ -57,14 +57,12 @@ impl ChangeStreamService {
     /// 监听集合变更
     async fn watch_collections(&self) -> Result<(), mongodb::error::Error> {
         // 配置 Change Stream 选项
-        let pipeline = vec![
-            doc! {
-                "$match": {
-                    "operationType": { "$in": ["insert", "update", "replace", "delete"] },
-                    "ns.coll": { "$in": ["posts", "notes", "pages", "categories", "links"] }
-                }
-            },
-        ];
+        let pipeline = vec![doc! {
+            "$match": {
+                "operationType": { "$in": ["insert", "update", "replace", "delete"] },
+                "ns.coll": { "$in": ["posts", "notes", "pages", "categories", "links"] }
+            }
+        }];
 
         let options = ChangeStreamOptions::builder()
             .full_document(Some(mongodb::options::FullDocumentType::UpdateLookup))
@@ -98,9 +96,7 @@ impl ChangeStreamService {
             .and_then(|ns| ns.coll.as_deref())
             .unwrap_or("unknown");
 
-        log::info!(
-            "检测到数据变更 - 集合: {collection_name}, 操作: {operation_type}"
-        );
+        log::info!("检测到数据变更 - 集合: {collection_name}, 操作: {operation_type}");
 
         // 根据集合类型处理缓存失效
         match collection_name {
@@ -204,9 +200,7 @@ impl ChangeStreamService {
             // 清除 Moka 列表缓存
             self.cache_service.invalidate_by_prefix("posts").await;
 
-            log::info!(
-                "✓ 博文数量变化 ({operation_type}) - 已刷新列表页和首页"
-            );
+            log::info!("✓ 博文数量变化 ({operation_type}) - 已刷新列表页和首页");
         }
 
         log::info!(
@@ -225,7 +219,7 @@ impl ChangeStreamService {
 
         // 提取文档信息
         let mut note_id: Option<String> = None;
-        let mut note_nid: Option<i32> = None;
+        let mut nid: Option<i32> = None;
 
         // 从 document_key 获取 ID
         if let Some(doc_key) = &event.document_key {
@@ -236,8 +230,8 @@ impl ChangeStreamService {
 
         // 从 full_document 获取 nid
         if let Some(full_doc) = &event.full_document {
-            if let Ok(nid) = full_doc.get_i32("nid") {
-                note_nid = Some(nid);
+            if let Ok(nid_value) = full_doc.get_i32("nid") {
+                nid = Some(nid_value);
             }
         }
 
@@ -261,8 +255,8 @@ impl ChangeStreamService {
         }
 
         // 刷新具体手记（按 nid）
-        if let Some(nid) = note_nid {
-            let tag = format!("note-nid-{nid}");
+        if let Some(nid_value) = nid {
+            let tag = format!("note-nid-{nid_value}");
             if self.revalidation_service.revalidate_tag(&tag).await.is_ok() {
                 revalidated_tags.push(tag);
             }
@@ -293,13 +287,11 @@ impl ChangeStreamService {
             // 清除 Moka 列表缓存
             self.cache_service.invalidate_by_prefix("notes").await;
 
-            log::info!(
-                "✓ 手记数量变化 ({operation_type}) - 已刷新列表页和首页"
-            );
+            log::info!("✓ 手记数量变化 ({operation_type}) - 已刷新列表页和首页");
         }
 
         log::info!(
-            "✓ 手记缓存已刷新 - id: {note_id:?}, nid: {note_nid:?}, tags: {revalidated_tags:?}"
+            "✓ 手记缓存已刷新 - id: {note_id:?}, nid: {nid:?}, tags: {revalidated_tags:?}"
         );
     }
 
@@ -330,17 +322,13 @@ impl ChangeStreamService {
             }
         }
 
-        log::info!(
-            "✓ 页面缓存已刷新 - slug: {page_slug:?}, tags: {revalidated_tags:?}"
-        );
+        log::info!("✓ 页面缓存已刷新 - slug: {page_slug:?}, tags: {revalidated_tags:?}");
     }
 
     /// 处理分类变更
     async fn handle_category_change(&self) {
         // 1. 清除本地缓存
-        self.cache_service
-            .invalidate(&CacheKey::Categories)
-            .await;
+        self.cache_service.invalidate(&CacheKey::Categories).await;
 
         // 分类变更会影响博文列表，也需要清除
         self.cache_service.invalidate_by_prefix("posts").await;
@@ -348,11 +336,7 @@ impl ChangeStreamService {
         log::info!("已清除分类缓存");
 
         // 2. 通知 Next.js 重新验证
-        if let Err(e) = self
-            .revalidation_service
-            .revalidate_tag("categories")
-            .await
-        {
+        if let Err(e) = self.revalidation_service.revalidate_tag("categories").await {
             log::error!("通知 Next.js 重新验证失败: {e:?}");
         } else {
             log::info!("✓ 已通知 Next.js 重新验证分类页面");
@@ -362,7 +346,7 @@ impl ChangeStreamService {
     /// 处理友链变更
     async fn handle_link_change(&self, event: &ChangeStreamEvent<Document>) {
         let operation_type = format!("{:?}", event.operation_type);
-        
+
         // 提取友链信息
         let mut link_id: Option<String> = None;
         let mut link_state: Option<i32> = None;
@@ -392,7 +376,7 @@ impl ChangeStreamService {
                 link_state == Some(0) // LinkState::NORMAL
             }
             // 更新友链：如果状态变为正常（审核通过），需要刷新
-            mongodb::change_stream::event::OperationType::Update 
+            mongodb::change_stream::event::OperationType::Update
             | mongodb::change_stream::event::OperationType::Replace => {
                 link_state == Some(0) // LinkState::NORMAL
             }

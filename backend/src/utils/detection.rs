@@ -39,14 +39,17 @@ struct ScoreResponse {
 }
 
 /// 提取响应中的 JSON 内容
-/// 
+///
 /// 修复了原版代码中的语法错误，并优化了匹配逻辑
 pub fn extract_json(response: &str) -> String {
     let response = response.trim();
 
     // 1. 尝试移除 markdown 代码块标记 (```json ... ```)
     let cleaned = if response.starts_with("```") {
-        let content = response.trim_start_matches('`').trim_start_matches("json").trim_start();
+        let content = response
+            .trim_start_matches('`')
+            .trim_start_matches("json")
+            .trim_start();
         if let Some(end_pos) = content.rfind("```") {
             content[..end_pos].trim()
         } else {
@@ -71,14 +74,18 @@ pub fn extract_json(response: &str) -> String {
     // 从 '{' 开始遍历
     for (idx, ch) in cleaned[start_idx..].char_indices() {
         let actual_idx = start_idx + idx;
-        
+
         if escape_next {
             escape_next = false;
             continue;
         }
 
         match ch {
-            '\\' => { if in_string { escape_next = true; } },
+            '\\' => {
+                if in_string {
+                    escape_next = true;
+                }
+            }
             '\"' => in_string = !in_string,
             '{' if !in_string => depth += 1,
             '}' if !in_string => {
@@ -101,12 +108,12 @@ pub fn extract_json(response: &str) -> String {
         None => {
             // 情况 A: 没找到闭合括号，说明 JSON 被截断了
             let mut partial = cleaned[start_idx..].to_string();
-            
+
             // 如果在字符串内被截断，补全引号
             if in_string {
                 partial.push('\"');
             }
-            
+
             // 补全缺失的括号
             let open_braces = partial.matches('{').count();
             let close_braces = partial.matches('}').count();
@@ -164,12 +171,12 @@ mod tests {
     fn test_parse_binary() {
         // 测试 JSON 前后有额外文本的情况
         let raw = "AI 的废话 {\"is_spam\": false, \"reason\": \"正常评论\"} 又是废话";
-        let res = parse_binary_response(raw).unwrap();
+        let res = parse_binary_response(raw).expect("Failed to parse binary response");
         assert!(!res.is_spam);
-        
+
         // 测试纯 JSON
         let raw2 = "{\"is_spam\": true, \"reason\": \"垃圾评论\"}";
-        let res2 = parse_binary_response(raw2).unwrap();
+        let res2 = parse_binary_response(raw2).expect("Failed to parse binary response");
         assert!(res2.is_spam);
     }
 }

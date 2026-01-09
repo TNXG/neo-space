@@ -37,7 +37,7 @@ pub struct GuessResult {
 #[post("/nbnhhsh/guess", data = "<request>")]
 pub async fn guess(request: Json<GuessRequest>) -> Json<Vec<GuessResult>> {
     let client = reqwest::Client::new();
-    
+
     let result = client
         .post("https://lab.magiconch.com/api/nbnhhsh/guess")
         .json(&serde_json::json!({ "text": request.text }))

@@ -2,18 +2,18 @@
 //!
 //! 负责构建 Rocket 应用实例
 
-use mongodb::Database;
-use rocket::http::Method;
-use rocket_cors::{AllowedOrigins, CorsOptions};
 use crate::config::OAuthConfig;
 use crate::models::ApiResponse;
 use crate::openapi::ApiDoc;
 use crate::websocket::EventBus;
+use mongodb::Database;
+use rocket::http::Method;
+use rocket::Rocket;
+use rocket_cors::{AllowedOrigins, CorsOptions};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use rocket::Rocket;
 
-use super::{load_config, init_database, init_services, AppServices};
+use super::{init_database, init_services, load_config, AppServices};
 
 /// 404 Not Found error catcher
 #[catch(404)]
@@ -107,8 +107,7 @@ pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
         .register("/", catchers![not_found, internal_error])
         .mount(
             "/",
-            SwaggerUi::new("/swagger-ui/<_..>")
-                .url("/api-docs/openapi.json", ApiDoc::openapi()),
+            SwaggerUi::new("/swagger-ui/<_..>").url("/api-docs/openapi.json", ApiDoc::openapi()),
         )
 }
 
@@ -121,7 +120,7 @@ fn init_logging() {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
-    
+
     // 使用 try_init 避免在测试中重复初始化 logger
     if env_logger::try_init().is_ok() {
         log::info!("启动 Rocket 服务器...");
@@ -133,10 +132,16 @@ fn configure_cors() -> Result<rocket_cors::Cors, rocket_cors::Error> {
     CorsOptions::default()
         .allowed_origins(AllowedOrigins::all())
         .allowed_methods(
-            vec![Method::Get, Method::Post, Method::Put, Method::Delete, Method::Patch]
-                .into_iter()
-                .map(From::from)
-                .collect(),
+            vec![
+                Method::Get,
+                Method::Post,
+                Method::Put,
+                Method::Delete,
+                Method::Patch,
+            ]
+            .into_iter()
+            .map(From::from)
+            .collect(),
         )
         .allowed_headers(rocket_cors::AllowedHeaders::some(&[
             "Authorization",

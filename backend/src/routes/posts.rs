@@ -1,13 +1,16 @@
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
-use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::models::{Post, PostWithCategory, Category, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
-use crate::utils::parse_object_id;
 use crate::db_find_one;
+use crate::models::{
+    AiSummary, ApiResponse, Category, PaginatedData, PaginatedResponse, Pagination, Post,
+    PostWithCategory,
+};
+use crate::utils::parse_object_id;
 
 /// Minimal post structure for projection queries
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,7 +73,9 @@ pub async fn list_posts(
     let filter = doc! { "isPublished": true };
 
     // Get total count
-    let total = posts_collection.count_documents(filter.clone()).await
+    let total = posts_collection
+        .count_documents(filter.clone())
+        .await
         .map_err(|e| {
             eprintln!("Error counting posts: {e:?}");
             Status::InternalServerError
@@ -92,7 +97,10 @@ pub async fn list_posts(
         has_prev_page: page > 1,
     };
 
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }
 
 /// Get post by ID
@@ -118,7 +126,10 @@ pub async fn get_post_by_id(
     let object_id = parse_object_id(&id)?;
 
     let posts_collection = db.collection::<Post>("posts");
-    let post = db_find_one!(posts_collection, doc! { "_id": object_id, "isPublished": true })?;
+    let post = db_find_one!(
+        posts_collection,
+        doc! { "_id": object_id, "isPublished": true }
+    )?;
 
     let enriched = enrich_single_post(db, post, &id).await?;
 
@@ -146,7 +157,9 @@ pub async fn get_post_by_slug(
 ) -> Result<Json<ApiResponse<PostWithCategory>>, Status> {
     let posts_collection = db.collection::<Post>("posts");
 
-    let post = posts_collection.find_one(doc! { "slug": slug, "isPublished": true }).await
+    let post = posts_collection
+        .find_one(doc! { "slug": slug, "isPublished": true })
+        .await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
@@ -211,7 +224,10 @@ async fn fetch_published_posts(
         .limit(size)
         .build();
 
-    let mut cursor = posts_collection.find(filter).with_options(find_options).await
+    let mut cursor = posts_collection
+        .find(filter)
+        .with_options(find_options)
+        .await
         .map_err(|e| {
             eprintln!("Error finding posts: {e:?}");
             Status::InternalServerError
@@ -301,7 +317,10 @@ async fn find_adjacent_post(
         .sort(doc! { "created": sort_order })
         .build();
 
-    let adjacent_post = posts_collection.find_one(filter).with_options(find_options).await
+    let adjacent_post = posts_collection
+        .find_one(filter)
+        .with_options(find_options)
+        .await
         .map_err(|e| {
             eprintln!("Error finding adjacent post: {e:?}");
             Status::InternalServerError

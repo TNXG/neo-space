@@ -1,17 +1,17 @@
 //! AI 相关路由
 
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
 use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
+use sha1::{Digest, Sha1};
 use std::str::FromStr;
-use sha1::{Sha1, Digest};
 
+use crate::db_find_one;
 use crate::models::{
-    ApiResponse, Post, Note, Page,
-    TimeCapsule, TimeCapsuleRequest, TimeCapsuleResponse, TimeSensitivity,
+    ApiResponse, Note, Page, Post, TimeCapsule, TimeCapsuleRequest, TimeCapsuleResponse,
+    TimeSensitivity,
 };
 use crate::services::{AiService, ChatMessage, ChatRole};
-use crate::db_find_one;
 
 /// 内容信息结构
 struct ContentInfo {
@@ -28,7 +28,7 @@ fn compute_sha1(content: &str) -> String {
 
 /// 构建 Time Capsule 分析的 prompt
 fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
-    let system_prompt = r###"你是一个内容时效性分析专家。你的任务是分析文章内容，判断其是否属于"易过期"类型。
+    let system_prompt = r#"你是一个内容时效性分析专家。你的任务是分析文章内容，判断其是否属于"易过期"类型。
 
 易过期内容的特征包括：
 - 特定版本的技术/框架/库（如 "React 18", "Node.js 20"）
@@ -54,15 +54,19 @@ fn build_analysis_prompt(title: &str, content: &str) -> Vec<ChatMessage> {
   "markers": ["检测到的易过期元素1", "元素2", ...]
 }
 
-只返回 JSON，不要其他内容。"###;
+只返回 JSON，不要其他内容。"#;
 
-    let user_prompt = format!(
-        "请分析以下文章的时效性：\n\n标题：{title}\n\n内容：\n{content}"
-    );
+    let user_prompt = format!("请分析以下文章的时效性：\n\n标题：{title}\n\n内容：\n{content}");
 
     vec![
-        ChatMessage { role: ChatRole::System, content: system_prompt.to_string() },
-        ChatMessage { role: ChatRole::User, content: user_prompt },
+        ChatMessage {
+            role: ChatRole::System,
+            content: system_prompt.to_string(),
+        },
+        ChatMessage {
+            role: ChatRole::User,
+            content: user_prompt,
+        },
     ]
 }
 
@@ -85,21 +89,27 @@ fn parse_ai_response(response: &str) -> Result<(TimeSensitivity, String, Vec<Str
         json_str
     };
 
-    let parsed: serde_json::Value = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse AI response: {e}"))?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(json_str).map_err(|e| format!("Failed to parse AI response: {e}"))?;
 
-    let sensitivity = match parsed.get("sensitivity").and_then(|v| v.as_str()).unwrap_or("medium") {
+    let sensitivity = match parsed
+        .get("sensitivity")
+        .and_then(|v| v.as_str())
+        .unwrap_or("medium")
+    {
         "high" => TimeSensitivity::High,
         "low" => TimeSensitivity::Low,
         _ => TimeSensitivity::Medium,
     };
 
-    let reason = parsed.get("reason")
+    let reason = parsed
+        .get("reason")
         .and_then(|v| v.as_str())
         .unwrap_or("无法获取分析理由")
         .to_string();
 
-    let markers = parsed.get("markers")
+    let markers = parsed
+        .get("markers")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -167,23 +177,30 @@ async fn fetch_content_by_type(
 ) -> Result<ContentInfo, Status> {
     match request.ref_type.as_str() {
         "post" => {
-            let object_id = ObjectId::from_str(&request.ref_id)
-                .map_err(|_| Status::BadRequest)?;
+            let object_id = ObjectId::from_str(&request.ref_id).map_err(|_| Status::BadRequest)?;
             let collection = db.collection::<Post>("posts");
             let post = db_find_one!(collection, doc! { "_id": object_id })?;
-            Ok(ContentInfo { title: post.title, text: post.text })
+            Ok(ContentInfo {
+                title: post.title,
+                text: post.text,
+            })
         }
         "note" => {
-            let object_id = ObjectId::from_str(&request.ref_id)
-                .map_err(|_| Status::BadRequest)?;
+            let object_id = ObjectId::from_str(&request.ref_id).map_err(|_| Status::BadRequest)?;
             let collection = db.collection::<Note>("notes");
             let note = db_find_one!(collection, doc! { "_id": object_id })?;
-            Ok(ContentInfo { title: format!("日记 #{}", note.nid), text: note.text })
+            Ok(ContentInfo {
+                title: format!("日记 #{}", note.nid),
+                text: note.text,
+            })
         }
         "page" => {
             let collection = db.collection::<Page>("pages");
             let page = db_find_one!(collection, doc! { "slug": &request.ref_id })?;
-            Ok(ContentInfo { title: page.title, text: page.text })
+            Ok(ContentInfo {
+                title: page.title,
+                text: page.text,
+            })
         }
         _ => Err(Status::BadRequest),
     }
@@ -208,7 +225,10 @@ async fn get_cached_capsule(
         .await
     {
         Ok(Some(existing)) => {
-            eprintln!("Found existing record, db_hash: {}, current_hash: {}", existing.hash, content_hash);
+            eprintln!(
+                "Found existing record, db_hash: {}, current_hash: {}",
+                existing.hash, content_hash
+            );
             if existing.hash == content_hash {
                 eprintln!("Hash matched, returning cached result");
                 Some(existing)
@@ -233,12 +253,10 @@ async fn analyze_with_ai(
     db: &State<Database>,
     content_info: &ContentInfo,
 ) -> Result<(TimeSensitivity, String, Vec<String>), Status> {
-    let ai_service = AiService::from_database(db.inner())
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to init AI service: {e}");
-            Status::InternalServerError
-        })?;
+    let ai_service = AiService::from_database(db.inner()).await.map_err(|e| {
+        eprintln!("Failed to init AI service: {e}");
+        Status::InternalServerError
+    })?;
 
     if !ai_service.is_enabled() {
         return Err(Status::ServiceUnavailable);

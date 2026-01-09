@@ -47,7 +47,7 @@ pub struct CacheService {
 
 impl CacheService {
     /// 创建新的缓存服务实例
-    /// 
+    ///
     /// # 参数
     /// - `max_capacity`: 最大缓存条目数
     /// - `ttl_seconds`: 缓存过期时间（秒）
@@ -57,9 +57,7 @@ impl CacheService {
             .time_to_live(Duration::from_secs(ttl_seconds))
             .build();
 
-        log::info!(
-            "缓存服务初始化完成 - 容量: {max_capacity}, TTL: {ttl_seconds}秒"
-        );
+        log::info!("缓存服务初始化完成 - 容量: {max_capacity}, TTL: {ttl_seconds}秒");
 
         Self {
             cache: Arc::new(cache),
@@ -70,13 +68,13 @@ impl CacheService {
     pub async fn get(&self, key: &CacheKey) -> Option<Vec<u8>> {
         let key_str = key.to_string();
         let value = self.cache.get(&key_str).await;
-        
+
         if value.is_some() {
             log::info!("[Cache] ✓ 命中缓存: {key_str}");
         } else {
             log::debug!("[Cache] 未命中: {key_str}");
         }
-        
+
         value
     }
 
@@ -98,10 +96,10 @@ impl CacheService {
     /// 批量删除缓存（通过前缀匹配）
     pub async fn invalidate_by_prefix(&self, prefix: &str) {
         log::info!("批量清除缓存 (前缀: {prefix})");
-        
+
         // 遍历所有键并删除匹配的
         self.cache.run_pending_tasks().await;
-        
+
         // 注意: Moka 不支持直接的前缀删除，需要手动遍历
         // 这里我们使用 invalidate_all 作为简化实现
         // 在生产环境中，建议维护一个键的索引来实现精确的前缀删除
@@ -120,7 +118,7 @@ impl CacheService {
     /// 获取缓存统计信息
     pub async fn stats(&self) -> CacheStats {
         self.cache.run_pending_tasks().await;
-        
+
         CacheStats {
             entry_count: self.cache.entry_count(),
             weighted_size: self.cache.weighted_size(),

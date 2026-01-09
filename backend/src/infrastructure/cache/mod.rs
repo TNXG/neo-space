@@ -2,4 +2,4 @@
 
 pub mod service;
 
-pub use service::{CacheService, CacheKey};
+pub use service::{CacheKey, CacheService};

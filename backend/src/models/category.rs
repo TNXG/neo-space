@@ -1,9 +1,9 @@
 //! Category model
 
+use crate::utils::serializers::{serialize_datetime, serialize_object_id};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::{serialize_object_id, serialize_datetime};
 
 /// Category model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]

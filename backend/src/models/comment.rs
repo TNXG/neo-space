@@ -159,10 +159,8 @@ pub struct UpdateCommentRequest {
     pub text: String,
 }
 
-#[derive(Debug, Serialize)]
-#[derive(Default)]
+#[derive(Debug, Serialize, Default)]
 pub struct CommentListResponse {
     pub comments: Vec<CommentTree>,
     pub count: i64,
 }
-

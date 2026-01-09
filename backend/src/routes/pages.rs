@@ -1,9 +1,8 @@
-
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
 use mongodb::bson::doc;
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
 
-use crate::models::{Page, ApiResponse};
+use crate::models::{ApiResponse, Page};
 
 /// Get page by slug
 #[utoipa::path(
@@ -25,7 +24,9 @@ pub async fn get_page_by_slug(
     slug: &str,
 ) -> Result<Json<ApiResponse<Page>>, Status> {
     let collection = db.collection::<Page>("pages");
-    let page = collection.find_one(doc! { "slug": slug }).await
+    let page = collection
+        .find_one(doc! { "slug": slug })
+        .await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 

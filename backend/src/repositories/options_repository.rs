@@ -1,6 +1,6 @@
 //! Options Repository - 从数据库读取配置选项
 
-use mongodb::{Database, bson::doc};
+use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
 
 /// OAuth 配置选项（存储在数据库中）
@@ -79,15 +79,15 @@ impl OptionsRepository {
         let collection = self.db.collection::<OAuthDocument>("options");
 
         // 查询 name 为 "oauth" 的文档
-        let oauth_doc = collection
-            .find_one(doc! { "name": "oauth" })
-            .await?;
+        let oauth_doc = collection.find_one(doc! { "name": "oauth" }).await?;
 
         let mut options = OAuthOptions::default();
 
         if let Some(doc) = oauth_doc {
             // 检查 GitHub 是否启用
-            let github_enabled = doc.value.providers
+            let github_enabled = doc
+                .value
+                .providers
                 .iter()
                 .any(|p| p.provider_type == "github" && p.enabled);
 
@@ -102,8 +102,13 @@ impl OptionsRepository {
             }
         }
 
-        log::debug!("从数据库读取 OAuth 配置: github_client_id={:?}",
-            options.github_client_id.as_ref().map(|s| format!("{}...", &s[..8.min(s.len())])));
+        log::debug!(
+            "从数据库读取 OAuth 配置: github_client_id={:?}",
+            options
+                .github_client_id
+                .as_ref()
+                .map(|s| format!("{}...", &s[..8.min(s.len())]))
+        );
 
         Ok(options)
     }

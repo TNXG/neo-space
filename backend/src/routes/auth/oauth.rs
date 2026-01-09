@@ -9,7 +9,7 @@ use crate::config::OAuthConfig;
 use crate::models::ApiResponse;
 use crate::repositories::OptionsRepository;
 use crate::services::auth::identity::{IdentityService, OAuthUserPayload};
-use crate::services::{OAuthService, OAuthProviderType, OAuthUserInfo};
+use crate::services::{OAuthProviderType, OAuthService, OAuthUserInfo};
 
 /// OAuth 重定向端点
 ///
@@ -52,7 +52,8 @@ pub async fn oauth_redirect(
             // QQ OAuth 使用统一的服务
             let oauth_service = OAuthService::new(None, None, Some(config.qq_redirect_uri()));
             oauth_service.get_qq_authorize_url().unwrap_or_else(|_| {
-                format!("https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
+                format!(
+                    "https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
                     urlencoding::encode(&config.qq_redirect_uri())
                 )
             })
@@ -144,7 +145,8 @@ fn convert_to_payload(info: OAuthUserInfo) -> OAuthUserPayload {
     let provider = match info.provider {
         OAuthProviderType::GitHub => "github",
         OAuthProviderType::QQ => "qq",
-    }.to_string();
+    }
+    .to_string();
 
     OAuthUserPayload {
         provider,

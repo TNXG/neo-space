@@ -51,8 +51,11 @@ impl IpService {
     /// # Returns
     /// * `Option<String>` - 成功返回省级地理位置信息，失败返回 "未知"
     pub async fn get_location(&self, ip: &str) -> Option<String> {
-        let url = format!("https://api.live.bilibili.com/client/v1/Ip/getInfoNew?ip={}", ip);
-        
+        let url = format!(
+            "https://api.live.bilibili.com/client/v1/Ip/getInfoNew?ip={}",
+            ip
+        );
+
         match self.client.get(&url).send().await {
             Ok(response) => {
                 match response.json::<BilibiliIpResponse>().await {

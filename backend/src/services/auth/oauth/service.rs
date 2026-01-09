@@ -22,7 +22,9 @@ impl OAuthService {
         github_client_secret: Option<String>,
         qq_redirect_uri: Option<String>,
     ) -> Self {
-        let github = if let (Some(client_id), Some(client_secret)) = (github_client_id, github_client_secret) {
+        let github = if let (Some(client_id), Some(client_secret)) =
+            (github_client_id, github_client_secret)
+        {
             Some(GitHubOAuthProvider::new(client_id, client_secret))
         } else {
             None
@@ -34,14 +36,26 @@ impl OAuthService {
     }
 
     /// 使用授权码交换用户信息（GitHub）
-    pub async fn exchange_github_code(&self, code: &str) -> Result<super::provider::OAuthUserInfo, String> {
-        let provider = self.github.as_ref().ok_or_else(|| "GitHub OAuth 未配置".to_string())?;
+    pub async fn exchange_github_code(
+        &self,
+        code: &str,
+    ) -> Result<super::provider::OAuthUserInfo, String> {
+        let provider = self
+            .github
+            .as_ref()
+            .ok_or_else(|| "GitHub OAuth 未配置".to_string())?;
         provider.exchange_code_for_user(code).await
     }
 
     /// 使用授权码交换用户信息（QQ）
-    pub async fn exchange_qq_code(&self, code: &str) -> Result<super::provider::OAuthUserInfo, String> {
-        let provider = self.qq.as_ref().ok_or_else(|| "QQ OAuth 未配置".to_string())?;
+    pub async fn exchange_qq_code(
+        &self,
+        code: &str,
+    ) -> Result<super::provider::OAuthUserInfo, String> {
+        let provider = self
+            .qq
+            .as_ref()
+            .ok_or_else(|| "QQ OAuth 未配置".to_string())?;
         provider.exchange_code_for_user(code).await
     }
 

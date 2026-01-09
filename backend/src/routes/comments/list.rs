@@ -1,11 +1,11 @@
 //! 评论列表路由
 
-use rocket::serde::json::Json;
-use rocket::{State, http::Status, get};
 use futures::stream::TryStreamExt;
+use rocket::serde::json::Json;
+use rocket::{get, http::Status, State};
 
-use crate::models::{ApiResponse, CommentListResponse};
 use crate::guards::OptionalAuthGuard;
+use crate::models::{ApiResponse, CommentListResponse};
 use crate::services::CommentService;
 use crate::utils::db::parse_object_id;
 
@@ -27,15 +27,21 @@ pub async fn list_comments(
     let comment_service = CommentService::new(db.inner());
 
     // 解析 ObjectId
-    let ref_oid = match parse_object_id(&ref_id) {
+    let reference_oid = match parse_object_id(&ref_id) {
         Ok(oid) => oid,
         Err(_) => {
-            return Ok(ApiResponse::json_error_with_default(400, "Invalid ref_id".to_string()));
+            return Ok(ApiResponse::json_error_with_default(
+                400,
+                "Invalid ref_id".to_string(),
+            ));
         }
     };
 
     // 构建查询过滤器
-    let filter = match comment_service.build_visibility_filter(ref_oid, &ref_type, &auth).await {
+    let filter = match comment_service
+        .build_visibility_filter(reference_oid, &ref_type, &auth)
+        .await
+    {
         Ok(filter) => filter,
         Err(e) => {
             eprintln!("Failed to build visibility filter: {e}");
@@ -72,16 +78,18 @@ pub async fn list_comments(
         .collect();
 
     // 批量查询所有 Reader，构建邮箱到头像和站长身份的映射
-    let (email_to_avatar, email_to_is_owner) = match comment_service.build_reader_mappings(emails).await {
-        Ok(mappings) => mappings,
-        Err(e) => {
-            eprintln!("Failed to build reader mappings: {e}");
-            return Err(Status::InternalServerError);
-        }
-    };
+    let (email_to_avatar, email_to_is_owner) =
+        match comment_service.build_reader_mappings(emails).await {
+            Ok(mappings) => mappings,
+            Err(e) => {
+                eprintln!("Failed to build reader mappings: {e}");
+                return Err(Status::InternalServerError);
+            }
+        };
 
     // 构建树形结构
-    let tree = CommentService::build_comment_tree(&all_comments, &email_to_avatar, &email_to_is_owner);
+    let tree =
+        CommentService::build_comment_tree(&all_comments, &email_to_avatar, &email_to_is_owner);
 
     Ok(Json(ApiResponse::success_with_message(
         CommentListResponse {

@@ -1,34 +1,42 @@
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
-use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::models::{Note, ApiResponse, PaginatedResponse, PaginatedData, Pagination, AiSummary};
-use crate::utils::parse_object_id;
 use crate::db_find_one;
+use crate::models::{AiSummary, ApiResponse, Note, PaginatedData, PaginatedResponse, Pagination};
+use crate::utils::parse_object_id;
 
 /// Helper function to get the latest AI summary for a given ref ID
 async fn get_ai_summary(db: &Database, ref_id: &str, lang: &str) -> Option<String> {
     let ai_summaries_collection = db.collection::<AiSummary>("ai_summaries");
-    
+
     // Find the latest AI summary for this ref_id and language
-    let filter = doc! { 
+    let filter = doc! {
         "refId": ref_id,
         "lang": lang
     };
-    
+
     let find_options = mongodb::options::FindOneOptions::builder()
         .sort(doc! { "created": -1 }) // Get the latest one
         .build();
-    
-    match ai_summaries_collection.find_one(filter).with_options(find_options.clone()).await {
+
+    match ai_summaries_collection
+        .find_one(filter)
+        .with_options(find_options.clone())
+        .await
+    {
         Ok(Some(ai_summary)) => Some(ai_summary.summary),
         Ok(None) => {
             // If no summary found for the requested language, try to get any summary
             let fallback_filter = doc! { "refId": ref_id };
-            match ai_summaries_collection.find_one(fallback_filter).with_options(find_options).await {
+            match ai_summaries_collection
+                .find_one(fallback_filter)
+                .with_options(find_options)
+                .await
+            {
                 Ok(Some(ai_summary)) => Some(ai_summary.summary),
                 _ => None,
             }
@@ -62,7 +70,7 @@ pub async fn list_notes(
     let skip = (page - 1) * size;
 
     let collection = db.collection::<Note>("notes");
-    
+
     // Query only published notes, sorted by creation date (newest first)
     let filter = doc! { "isPublished": true };
     let find_options = mongodb::options::FindOptions::builder()
@@ -72,14 +80,19 @@ pub async fn list_notes(
         .build();
 
     // Get total count
-    let total = collection.count_documents(filter.clone()).await
+    let total = collection
+        .count_documents(filter.clone())
+        .await
         .map_err(|e| {
             eprintln!("Error counting documents: {e:?}");
             Status::InternalServerError
         })?;
 
     // Fetch notes
-    let mut cursor = collection.find(filter).with_options(find_options).await
+    let mut cursor = collection
+        .find(filter)
+        .with_options(find_options)
+        .await
         .map_err(|e| {
             eprintln!("Error finding documents: {e:?}");
             Status::InternalServerError
@@ -92,7 +105,7 @@ pub async fn list_notes(
     })? {
         // Fetch AI summary (default to Chinese)
         note.ai_summary = get_ai_summary(db, &note.id.to_hex(), "zh").await;
-        
+
         items.push(note);
     }
 
@@ -106,7 +119,10 @@ pub async fn list_notes(
         has_prev_page: page > 1,
     };
 
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }
 
 /// Get note by ID
@@ -160,7 +176,9 @@ pub async fn get_note_by_nid(
     nid: i32,
 ) -> Result<Json<ApiResponse<Note>>, Status> {
     let collection = db.collection::<Note>("notes");
-    let mut note = collection.find_one(doc! { "nid": nid, "isPublished": true }).await
+    let mut note = collection
+        .find_one(doc! { "nid": nid, "isPublished": true })
+        .await
         .map_err(|_| Status::InternalServerError)?
         .ok_or(Status::NotFound)?;
 
@@ -214,41 +232,43 @@ pub async fn get_adjacent_notes(
     nid: i32,
 ) -> Result<Json<ApiResponse<AdjacentNotes>>, Status> {
     let collection = db.collection::<MinimalNote>("notes");
-    
+
     // Find previous note (smaller nid, get the largest one)
-    let prev_filter = doc! { 
+    let prev_filter = doc! {
         "nid": { "$lt": nid },
-        "isPublished": true 
+        "isPublished": true
     };
     let prev_options = mongodb::options::FindOneOptions::builder()
         .sort(doc! { "nid": -1 })
         .build();
-    
-    let prev_note = collection.find_one(prev_filter)
+
+    let prev_note = collection
+        .find_one(prev_filter)
         .with_options(prev_options)
         .await
         .map_err(|e| {
             eprintln!("Error finding previous note: {e:?}");
             Status::InternalServerError
         })?;
-    
+
     // Find next note (larger nid, get the smallest one)
-    let next_filter = doc! { 
+    let next_filter = doc! {
         "nid": { "$gt": nid },
-        "isPublished": true 
+        "isPublished": true
     };
     let next_options = mongodb::options::FindOneOptions::builder()
         .sort(doc! { "nid": 1 })
         .build();
-    
-    let next_note = collection.find_one(next_filter)
+
+    let next_note = collection
+        .find_one(next_filter)
         .with_options(next_options)
         .await
         .map_err(|e| {
             eprintln!("Error finding next note: {e:?}");
             Status::InternalServerError
         })?;
-    
+
     let adjacent = AdjacentNotes {
         prev: prev_note.map(|note| AdjacentNote {
             nid: note.nid,
@@ -259,6 +279,6 @@ pub async fn get_adjacent_notes(
             title: note.title,
         }),
     };
-    
+
     Ok(Json(ApiResponse::success(adjacent)))
 }

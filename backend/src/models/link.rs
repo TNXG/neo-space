@@ -1,7 +1,9 @@
 //! Link (Friend) model
 #![allow(unused)]
 
-use crate::utils::serializers::{serialize_object_id, serialize_datetime, deserialize_flexible_datetime};
+use crate::utils::serializers::{
+    deserialize_flexible_datetime, serialize_datetime, serialize_object_id,
+};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -71,7 +73,10 @@ pub struct Link {
     #[serde(default)]
     pub r#type: i32,
     /// 创建时间
-    #[serde(serialize_with = "serialize_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[serde(
+        serialize_with = "serialize_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     #[schema(value_type = String)]
     pub created: bson::DateTime,
     /// 联系邮箱

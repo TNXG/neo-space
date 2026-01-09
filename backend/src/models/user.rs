@@ -1,9 +1,11 @@
 //! User and Reader models
 
+use crate::utils::serializers::{
+    deserialize_flexible_datetime, serialize_datetime, serialize_object_id,
+};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::{serialize_object_id, serialize_datetime, deserialize_flexible_datetime};
 
 /// User model (non-sensitive data only)
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -117,11 +119,19 @@ pub struct Reader {
     #[serde(rename = "emailVerified", default)]
     pub email_verified: Option<bool>,
     /// 创建时间
-    #[serde(rename = "createdAt", default = "default_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[serde(
+        rename = "createdAt",
+        default = "default_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     #[schema(value_type = String)]
     pub created_at: bson::DateTime,
     /// 更新时间
-    #[serde(rename = "updatedAt", default = "default_datetime", deserialize_with = "deserialize_flexible_datetime")]
+    #[serde(
+        rename = "updatedAt",
+        default = "default_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     #[schema(value_type = String)]
     pub updated_at: bson::DateTime,
 }

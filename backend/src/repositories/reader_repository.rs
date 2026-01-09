@@ -1,9 +1,9 @@
 //! Reader 数据仓库 - Reader 模型的数据库操作
 
-use mongodb::{bson::doc, Collection, Database};
+use crate::models::Reader;
 use bson::oid::ObjectId;
 use futures::stream::TryStreamExt;
-use crate::models::{Reader};
+use mongodb::{bson::doc, Collection, Database};
 
 /// Reader 数据仓库，用于数据库操作
 pub struct ReaderRepository {
@@ -45,9 +45,7 @@ impl ReaderRepository {
     /// * `Ok(None)` - 未找到 reader
     /// * `Err(mongodb::error::Error)` - 查询失败时
     pub async fn find_by_id(&self, id: ObjectId) -> Result<Option<Reader>, mongodb::error::Error> {
-        self.collection
-            .find_one(doc! { "_id": id })
-            .await
+        self.collection.find_one(doc! { "_id": id }).await
     }
 
     /// 通过邮箱查找 reader
@@ -59,10 +57,11 @@ impl ReaderRepository {
     /// * `Ok(Some(Reader))` - 找到 reader
     /// * `Ok(None)` - 未找到 reader
     /// * `Err(mongodb::error::Error)` - 查询失败时
-    pub async fn find_by_email(&self, email: &str) -> Result<Option<Reader>, mongodb::error::Error> {
-        self.collection
-            .find_one(doc! { "email": email })
-            .await
+    pub async fn find_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<Reader>, mongodb::error::Error> {
+        self.collection.find_one(doc! { "email": email }).await
     }
 
     /// 通过昵称和邮箱查找 reader
@@ -75,7 +74,11 @@ impl ReaderRepository {
     /// * `Ok(Some(Reader))` - 找到 reader
     /// * `Ok(None)` - 未找到 reader
     /// * `Err(mongodb::error::Error)` - 查询失败时
-    pub async fn find_by_name_and_email(&self, name: &str, email: &str) -> Result<Option<Reader>, mongodb::error::Error> {
+    pub async fn find_by_name_and_email(
+        &self,
+        name: &str,
+        email: &str,
+    ) -> Result<Option<Reader>, mongodb::error::Error> {
         self.collection
             .find_one(doc! {
                 "name": name,
@@ -94,10 +97,7 @@ impl ReaderRepository {
     /// * `Err(mongodb::error::Error)` - 更新失败时
     pub async fn update_reader(&self, reader: &Reader) -> Result<(), mongodb::error::Error> {
         self.collection
-            .replace_one(
-                doc! { "_id": reader.id },
-                reader
-            )
+            .replace_one(doc! { "_id": reader.id }, reader)
             .await?;
         Ok(())
     }
@@ -111,9 +111,7 @@ impl ReaderRepository {
     /// * `Ok(())` - 删除成功
     /// * `Err(mongodb::error::Error)` - 删除失败时
     pub async fn delete_reader(&self, id: ObjectId) -> Result<(), mongodb::error::Error> {
-        self.collection
-            .delete_one(doc! { "_id": id })
-            .await?;
+        self.collection.delete_one(doc! { "_id": id }).await?;
         Ok(())
     }
 
@@ -134,7 +132,8 @@ impl ReaderRepository {
     /// * `Ok(Vec<Reader>)` - readers 列表
     /// * `Err(mongodb::error::Error)` - 查询失败时
     pub async fn get_all(&self) -> Result<Vec<Reader>, mongodb::error::Error> {
-        let mut cursor = self.collection
+        let mut cursor = self
+            .collection
             .find(doc! {})
             .sort(doc! { "createdAt": -1 })
             .await?;
@@ -156,7 +155,11 @@ impl ReaderRepository {
     /// # 返回
     /// * `Ok(ObjectId)` - 用户 ID
     /// * `Err(mongodb::error::Error)` - 操作失败时
-    pub async fn find_or_create_anonymous(&self, name: &str, email: &str) -> Result<ObjectId, mongodb::error::Error> {
+    pub async fn find_or_create_anonymous(
+        &self,
+        name: &str,
+        email: &str,
+    ) -> Result<ObjectId, mongodb::error::Error> {
         // 先尝试查找现有用户
         if let Some(existing_reader) = self.find_by_name_and_email(name, email).await? {
             return Ok(existing_reader.id);

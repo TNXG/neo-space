@@ -11,7 +11,8 @@ impl AvatarService {
 
     /// 从 Account 获取第三方头像
     pub fn get_oauth_avatar(provider: &str, accounts: &[crate::models::Account]) -> Option<String> {
-        accounts.iter()
+        accounts
+            .iter()
             .find(|acc| acc.provider == provider)
             .and_then(|acc| acc.oauth_avatar.clone())
     }

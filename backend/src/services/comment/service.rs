@@ -67,7 +67,7 @@ impl CommentService {
                     "普通用户模式：显示正常评论 + 用户 {} 的所有评论（包括待审核）",
                     reader.email
                 );
-                
+
                 // 构建复合过滤器：
                 // 1. 正常状态的公开评论（state = 0 或 1，且非私密）
                 // 2. 自己的所有评论（包括待审核 state = 3，但排除垃圾 state = 2）
@@ -92,7 +92,7 @@ impl CommentService {
                         },
                     ],
                 };
-                
+
                 return Ok(filter);
             }
             // 用户不存在，只显示正常状态的公开评论
@@ -215,7 +215,9 @@ impl CommentService {
             for comment in comments {
                 if let Some(parent_oid) = &comment.parent {
                     if parent_oid.to_hex() == parent_id {
-                        let child_id = if let Some(id) = comment.id.as_ref() { id.to_hex() } else {
+                        let child_id = if let Some(id) = comment.id.as_ref() {
+                            id.to_hex()
+                        } else {
                             log::error!("comment missing id: {comment:?}");
                             continue;
                         };

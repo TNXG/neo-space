@@ -5,7 +5,7 @@ use rocket::serde::json::Json;
 use rocket::{http::Status, post, State};
 
 use crate::config::OAuthConfig;
-use crate::guards::{OptionalAuthGuard, ClientIp};
+use crate::guards::{ClientIp, OptionalAuthGuard};
 use crate::models::{ApiResponse, Comment, CommentState, CreateCommentRequest};
 use crate::repositories::{AccountRepository, ReaderRepository};
 use crate::services::{verify_turnstile, CommentService, IpService, SpamDetector};
@@ -59,7 +59,8 @@ pub async fn create_comment(
         &reader_repo,
         &auth,
         &request,
-    ).await?;
+    )
+    .await?;
 
     // 验证必填字段
     validate_comment_data(&request)?;
@@ -112,7 +113,8 @@ pub async fn create_comment(
         &db,
         &user_info,
         &request,
-    ).await?;
+    )
+    .await?;
 
     Ok(Json(ApiResponse::success_with_message(
         created_comment,
@@ -120,7 +122,8 @@ pub async fn create_comment(
             "评论已提交，正在审核中"
         } else {
             "评论发布成功"
-        }.to_string(),
+        }
+        .to_string(),
     )))
 }
 
@@ -148,12 +151,12 @@ async fn resolve_logged_in_user(
     user_oid: ObjectId,
     request: &CreateCommentRequest,
 ) -> Result<UserInfo, Status> {
-    let user_id = user_oid.to_string();
+    let user_id_str = user_oid.to_string();
 
     let reader = match reader_repo.find_by_id(user_oid).await {
         Ok(Some(reader)) => reader,
         Ok(None) => {
-            log::warn!("用户 {user_id} 不存在");
+            log::warn!("用户 {user_id_str} 不存在");
             return Err(Status::Unauthorized);
         }
         Err(e) => {
@@ -172,14 +175,14 @@ async fn resolve_logged_in_user(
 
     // 查询用户绑定的 OAuth 提供商
     let account_repo = AccountRepository::new(db);
-    let source = determine_oauth_source(&account_repo, &user_id).await;
+    let source = determine_oauth_source(&account_repo, &user_id_str).await;
 
     Ok(UserInfo {
         author,
         mail,
         avatar_url,
         source: Some(source),
-        reader_id: Some(user_id),
+        reader_id: Some(user_id_str),
     })
 }
 
@@ -190,18 +193,24 @@ async fn resolve_anonymous_user(
     request: &CreateCommentRequest,
 ) -> Result<UserInfo, Status> {
     // 验证必填字段
-    let author = request.author.as_ref()
+    let author = request
+        .author
+        .as_ref()
         .filter(|a| !a.trim().is_empty())
         .cloned()
         .ok_or_else(|| Status::BadRequest)?;
 
-    let mail = request.mail.as_ref()
+    let mail = request
+        .mail
+        .as_ref()
         .filter(|m| !m.trim().is_empty())
         .cloned()
         .ok_or_else(|| Status::BadRequest)?;
 
     // 验证 Turnstile token
-    let turnstile_token = request.turnstile_token.as_ref()
+    let turnstile_token = request
+        .turnstile_token
+        .as_ref()
         .filter(|t| !t.trim().is_empty())
         .ok_or_else(|| Status::BadRequest)?;
 
@@ -220,7 +229,9 @@ async fn resolve_anonymous_user(
     }
 
     // 查找或创建匿名 Reader
-    let reader_id = reader_repo.find_or_create_anonymous(&author, &mail).await
+    let reader_id = reader_repo
+        .find_or_create_anonymous(&author, &mail)
+        .await
         .map_err(|e| {
             log::error!("创建匿名 Reader 失败: {e}");
             Status::InternalServerError
@@ -238,19 +249,16 @@ async fn resolve_anonymous_user(
 }
 
 /// 确定 OAuth 提供商
-async fn determine_oauth_source(
-    account_repo: &AccountRepository,
-    user_id: &str,
-) -> String {
+async fn determine_oauth_source(account_repo: &AccountRepository, user_id: &str) -> String {
     // 将 user_id 转换为 ObjectId
-    let user_oid = match parse_object_id(user_id) {
+    let user_object_id = match parse_object_id(user_id) {
         Ok(oid) => oid,
         Err(_) => {
             return "oauth".to_string();
         }
     };
 
-    match account_repo.find_by_user_id(user_oid).await {
+    match account_repo.find_by_user_id(user_object_id).await {
         Ok(accounts) => {
             let providers: Vec<&str> = accounts.iter().map(|a| a.provider.as_str()).collect();
             let has_github = providers.contains(&"github");
@@ -281,10 +289,7 @@ fn validate_comment_data(request: &CreateCommentRequest) -> Result<(), Status> {
 /// 解析父评论 ObjectId
 fn parse_parent_id(parent: &Option<String>) -> Result<Option<ObjectId>, Status> {
     match parent {
-        Some(parent_str) => {
-            parse_object_id(parent_str)
-                .map(Some)
-        }
+        Some(parent_str) => parse_object_id(parent_str).map(Some),
         None => Ok(None),
     }
 }
@@ -302,14 +307,7 @@ fn spawn_ai_review_task(
     let mail_clone = mail.to_string();
 
     tokio::spawn(async move {
-        SpamDetector::review_async(
-            &db,
-            comment_id,
-            &text_clone,
-            &author_clone,
-            &mail_clone,
-        )
-        .await;
+        SpamDetector::review_async(&db, comment_id, &text_clone, &author_clone, &mail_clone).await;
     });
 
     log::info!("评论 {comment_id} 已创建，异步审核任务已启动");
@@ -375,18 +373,19 @@ async fn insert_and_process_comment(
         Status::InternalServerError
     })?;
 
-    let comment_id = insert_result.inserted_id.as_object_id()
-        .ok_or_else(|| {
-            log::error!("无法获取插入的 ObjectId");
-            Status::InternalServerError
-        })?;
+    let comment_id = insert_result.inserted_id.as_object_id().ok_or_else(|| {
+        log::error!("无法获取插入的 ObjectId");
+        Status::InternalServerError
+    })?;
 
     let mut created_comment = comment.clone();
     created_comment.id = Some(comment_id);
 
     // 如果是回复，更新父评论的 children
     if let Some(parent_id) = parent_oid {
-        let _ = comment_service.update_parent_children(parent_id, comment_id).await;
+        let _ = comment_service
+            .update_parent_children(parent_id, comment_id)
+            .await;
     }
 
     // 如果启用了 AI 审核，启动异步审核任务

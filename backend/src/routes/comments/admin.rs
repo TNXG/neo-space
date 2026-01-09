@@ -2,10 +2,10 @@
 
 use mongodb::bson::doc;
 use rocket::serde::json::Json;
-use rocket::{State, http::Status, patch, delete};
+use rocket::{delete, http::Status, patch, State};
 
-use crate::models::{ApiResponse, Comment};
 use crate::guards::OwnerGuard;
+use crate::models::{ApiResponse, Comment};
 use crate::utils::db::parse_object_id;
 
 /**

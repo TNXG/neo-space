@@ -1,10 +1,10 @@
 //! 认证守卫 - 验证 JWT token 并提取用户信息
 
-use rocket::request::{FromRequest, Outcome, Request};
-use rocket::http::Status;
-use rocket::State;
-use bson::oid::ObjectId;
 use crate::services::auth::JWTVerifier;
+use bson::oid::ObjectId;
+use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
+use rocket::State;
 
 /// 认证守卫 - 从 JWT token 中提取用户信息
 #[derive(Debug, Clone)]
@@ -33,12 +33,13 @@ impl<'r> FromRequest<'r> for AuthGuard {
         };
 
         // 2. 获取 JWT 验证服务
-        let jwt_verifier = if let Outcome::Success(verifier) = req.guard::<&State<JWTVerifier>>().await {
-            verifier
-        } else {
-            log::error!("无法获取 JWTVerifier");
-            return Outcome::Error((Status::InternalServerError, ()));
-        };
+        let jwt_verifier =
+            if let Outcome::Success(verifier) = req.guard::<&State<JWTVerifier>>().await {
+                verifier
+            } else {
+                log::error!("无法获取 JWTVerifier");
+                return Outcome::Error((Status::InternalServerError, ()));
+            };
 
         // 3. 验证 JWT token
         let claims = match jwt_verifier.verify_for_guard(token) {
@@ -57,7 +58,11 @@ impl<'r> FromRequest<'r> for AuthGuard {
             }
         };
 
-        log::debug!("认证成功: user_id={}, is_owner={}", user_id, claims.is_owner);
+        log::debug!(
+            "认证成功: user_id={}, is_owner={}",
+            user_id,
+            claims.is_owner
+        );
 
         Outcome::Success(AuthGuard {
             user_id,
@@ -65,7 +70,6 @@ impl<'r> FromRequest<'r> for AuthGuard {
         })
     }
 }
-
 
 /// 可选认证守卫 - 如果有 JWT token 就验证，没有就返回 None
 #[derive(Debug, Clone)]

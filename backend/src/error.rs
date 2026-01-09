@@ -1,11 +1,11 @@
 //! 统一错误处理模块
 
-use rocket::serde::json::Json;
 use rocket::http::Status;
 use rocket::response::{self, Responder};
+use rocket::serde::json::Json;
 use rocket::Request;
 
-use crate::models::{ApiResponse};
+use crate::models::ApiResponse;
 
 /// 认证错误类型
 #[derive(Debug)]
@@ -85,7 +85,7 @@ impl From<crate::utils::jwt::JwtError> for AuthError {
         match err {
             crate::utils::jwt::JwtError::InvalidToken => AuthError::InvalidToken,
             crate::utils::jwt::JwtError::TokenExpired => AuthError::ExpiredToken,
-            crate::utils::jwt::JwtError::TokenGenerationFailed(_) 
+            crate::utils::jwt::JwtError::TokenGenerationFailed(_)
             | crate::utils::jwt::JwtError::TokenVerificationFailed(_) => AuthError::InvalidToken,
         }
     }

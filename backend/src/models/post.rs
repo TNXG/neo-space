@@ -1,10 +1,12 @@
 //! Post (Article) model
 
+use super::Category;
+use crate::utils::serializers::{
+    serialize_datetime, serialize_object_id, serialize_optional_datetime,
+};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::{serialize_object_id, serialize_datetime, serialize_optional_datetime};
-use super::Category;
 
 /// Post (Article) model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]

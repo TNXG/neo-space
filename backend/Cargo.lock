@@ -2311,6 +2311,7 @@ dependencies = [
  "sha1",
  "sha2",
  "tokio",
+ "tokio-stream",
  "urlencoding",
  "utoipa",
  "utoipa-swagger-ui",

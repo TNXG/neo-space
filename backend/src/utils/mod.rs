@@ -1,9 +1,9 @@
 //! Utility modules
 
-pub mod serializers;
-pub mod jwt;
 pub mod db;
 pub mod detection;
+pub mod jwt;
+pub mod serializers;
 
 #[allow(unused)]
 pub use jwt::{generate_jwt, verify_jwt, JwtError};

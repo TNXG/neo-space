@@ -1,9 +1,9 @@
 //! QQ OAuth 提供商实现
 
+use super::provider::OAuthProvider;
+use super::{OAuthProviderType, OAuthUserInfo};
 use async_trait::async_trait;
 use serde::Deserialize;
-use super::{OAuthProviderType, OAuthUserInfo};
-use super::provider::OAuthProvider;
 
 /// 第三方 API 响应结构
 #[derive(Debug, Deserialize)]
@@ -49,10 +49,14 @@ impl QQOAuthProvider {
     }
 
     /// 使用授权码获取 QQ 用户信息
-    async fn get_user_info_with_code(&self, code: &str) -> Result<(QQUserInfoResponse, String), String> {
+    async fn get_user_info_with_code(
+        &self,
+        code: &str,
+    ) -> Result<(QQUserInfoResponse, String), String> {
         let user_url = format!("https://api-space.tnxg.top/user/get?code={code}");
 
-        let response = self.client
+        let response = self
+            .client
             .get(&user_url)
             .send()
             .await
@@ -70,7 +74,9 @@ impl QQOAuthProvider {
             .map_err(|e| format!("解析 QQ 用户信息响应失败: {e}"))?;
 
         if api_response.status != "success" {
-            let msg = api_response.message.unwrap_or_else(|| "获取用户信息失败".to_string());
+            let msg = api_response
+                .message
+                .unwrap_or_else(|| "获取用户信息失败".to_string());
             return Err(msg);
         }
 
@@ -92,7 +98,7 @@ impl OAuthProvider for QQOAuthProvider {
             provider_user_id: openid.clone(),
             nickname: user_data.nickname,
             avatar: user_data.avatar,
-            email: None, // QQ 不提供邮箱
+            email: None,        // QQ 不提供邮箱
             access_token: None, // QQ 使用 code 而非 access_token
         })
     }

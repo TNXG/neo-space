@@ -1,9 +1,11 @@
 //! Note (Diary) model
 
+use crate::utils::serializers::{
+    serialize_datetime, serialize_object_id, serialize_optional_datetime,
+};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::utils::serializers::{serialize_object_id, serialize_datetime, serialize_optional_datetime};
 
 /// Note (Diary) model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -54,7 +56,11 @@ pub struct Note {
     #[serde(default)]
     pub password: Option<String>,
     /// 公开时间
-    #[serde(rename = "publicAt", default, serialize_with = "serialize_optional_datetime")]
+    #[serde(
+        rename = "publicAt",
+        default,
+        serialize_with = "serialize_optional_datetime"
+    )]
     #[schema(value_type = Option<String>)]
     pub public_at: Option<bson::DateTime>,
     /// 坐标

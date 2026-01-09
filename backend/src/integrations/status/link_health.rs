@@ -18,8 +18,8 @@ use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 use utoipa::ToSchema;
 
-use crate::models::{Link, LinkState};
 use crate::integrations::status::hosting::{HostingDetector, HostingProvider};
+use crate::models::{Link, LinkState};
 
 /// 友链健康状态
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -125,7 +125,9 @@ impl LinkHealthService {
     /// # 参数
     /// - `stale_time_hours`: 缓存过期时间（小时），默认 6
     /// - `timeout_seconds`: 请求超时时间（秒），默认 10
-    #[allow(clippy::expect_used)]
+    ///
+    /// # Panics
+    /// 如果 HTTP 客户端创建失败，将会 panic
     pub fn new(stale_time_hours: u64, timeout_seconds: u64) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(timeout_seconds))
@@ -329,7 +331,10 @@ impl LinkHealthService {
         // 通知 Next.js 刷新友链页面缓存（同时刷新 tag 和 ISR 页面）
         if let Some(ref revalidation_service) = self.revalidation_service {
             log::info!("[LinkHealth] 通知 Next.js 刷新友链缓存...");
-            if let Err(e) = revalidation_service.revalidate_both("links", "/friends").await {
+            if let Err(e) = revalidation_service
+                .revalidate_both("links", "/friends")
+                .await
+            {
                 log::error!("[LinkHealth] 刷新友链缓存失败: {e:?}");
             } else {
                 log::info!("[LinkHealth] ✓ 友链缓存已刷新（tag + ISR 页面）");

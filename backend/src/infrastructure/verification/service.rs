@@ -47,9 +47,7 @@ impl VerificationService {
             attempts: 3, // 允许 3 次尝试
         };
 
-        self.cache
-            .insert(email.to_lowercase(), verification)
-            .await;
+        self.cache.insert(email.to_lowercase(), verification).await;
 
         code
     }
@@ -73,7 +71,10 @@ impl VerificationService {
             verification.attempts -= 1;
             if verification.attempts > 0 {
                 self.cache.insert(email_key, verification.clone()).await;
-                return Err(format!("验证码错误，还剩 {} 次尝试机会", verification.attempts));
+                return Err(format!(
+                    "验证码错误，还剩 {} 次尝试机会",
+                    verification.attempts
+                ));
             }
             self.cache.invalidate(&email_key).await;
             return Err("验证码错误，尝试次数已用完".to_string());

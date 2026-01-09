@@ -2,8 +2,8 @@
 //!
 //! 提供独立的 JWT 验证功能，解耦 Guards 与配置的依赖
 
-use rocket::http::Status;
 use crate::utils::jwt::{verify_jwt, JwtClaims, JwtError};
+use rocket::http::Status;
 
 /// JWT 验证服务
 #[derive(Clone, Debug)]

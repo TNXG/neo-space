@@ -1,9 +1,9 @@
 //! Owner 守卫 - 验证用户是否为 Owner
 
-use rocket::request::{FromRequest, Outcome, Request};
-use rocket::http::Status;
-use bson::oid::ObjectId;
 use crate::guards::AuthGuard;
+use bson::oid::ObjectId;
+use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
 
 /// Owner 守卫 - 确保用户是 Owner
 #[derive(Debug, Clone)]
@@ -26,7 +26,10 @@ impl<'r> FromRequest<'r> for OwnerGuard {
 
         // 2. 检查是否为 Owner
         if !auth.is_owner {
-            log::warn!("用户 {} 尝试访问 Owner 专属 API，但不是 Owner", auth.user_id);
+            log::warn!(
+                "用户 {} 尝试访问 Owner 专属 API，但不是 Owner",
+                auth.user_id
+            );
             return Outcome::Error((Status::Forbidden, ()));
         }
 

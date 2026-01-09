@@ -1,16 +1,16 @@
-use rocket::{State, serde::json::Json, http::Status};
-use mongodb::Database;
-use mongodb::bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use log::error;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::Database;
+use rocket::{http::Status, serde::json::Json, State};
 
-use crate::models::{Link, LinkApplyRequest, LinkState, ApiResponse, Pagination};
-use crate::integrations::LinkHealthService;
-use crate::integrations::status::link_health::LinkWithHealth;
-use crate::services::VerificationService;
-use crate::infrastructure::send_verification_email;
-use crate::utils::parse_object_id;
 use crate::db_find_one;
+use crate::infrastructure::send_verification_email;
+use crate::integrations::status::link_health::LinkWithHealth;
+use crate::integrations::LinkHealthService;
+use crate::models::{ApiResponse, Link, LinkApplyRequest, LinkState, Pagination};
+use crate::services::VerificationService;
+use crate::utils::parse_object_id;
 
 /// 发送验证码请求
 #[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
@@ -45,7 +45,7 @@ pub async fn list_links(
     let skip = (page - 1) * size;
 
     let collection = db.collection::<Link>("links");
-    
+
     // 只返回正常状态的友链（state=0 或 state 字段不存在）
     let filter = doc! {
         "$or": [
@@ -59,13 +59,18 @@ pub async fn list_links(
         .limit(size)
         .build();
 
-    let total = collection.count_documents(filter.clone()).await
+    let total = collection
+        .count_documents(filter.clone())
+        .await
         .map_err(|e| {
             error!("Failed to count links: {e:?}");
             Status::InternalServerError
         })?;
 
-    let mut cursor = collection.find(filter).with_options(find_options).await
+    let mut cursor = collection
+        .find(filter)
+        .with_options(find_options)
+        .await
         .map_err(|e| {
             error!("Failed to find links: {e:?}");
             Status::InternalServerError
@@ -114,10 +119,7 @@ pub async fn list_links(
     tag = "友链管理"
 )]
 #[get("/links/<id>")]
-pub async fn get_link(
-    db: &State<Database>,
-    id: &str,
-) -> Result<Json<ApiResponse<Link>>, Status> {
+pub async fn get_link(db: &State<Database>, id: &str) -> Result<Json<ApiResponse<Link>>, Status> {
     let object_id = parse_object_id(id)?;
     let collection = db.collection::<Link>("links");
 

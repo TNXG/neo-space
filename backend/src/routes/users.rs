@@ -1,9 +1,9 @@
+use crate::models::{ApiResponse, Reader, User};
+use crate::repositories::ReaderRepository;
+use bson::oid::ObjectId;
+use mongodb::{Collection, Database};
 use rocket::serde::json::Json;
 use rocket::{get, State};
-use mongodb::{Database, Collection};
-use bson::oid::ObjectId;
-use crate::models::{ApiResponse, User, Reader};
-use crate::repositories::ReaderRepository;
 
 /// 获取用户资料（非敏感数据）
 #[utoipa::path(
@@ -38,13 +38,15 @@ pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<Us
         .projection(projection)
         .build();
 
-    match collection.find_one(mongodb::bson::doc! {}).with_options(options).await {
-        Ok(Some(doc)) => {
-            match mongodb::bson::from_document::<User>(doc) {
-                Ok(user) => Json(ApiResponse::success(user)),
-                Err(e) => ApiResponse::json_error_with_default(500, format!("解析用户数据失败: {e}")),
-            }
-        }
+    match collection
+        .find_one(mongodb::bson::doc! {})
+        .with_options(options)
+        .await
+    {
+        Ok(Some(doc)) => match mongodb::bson::from_document::<User>(doc) {
+            Ok(user) => Json(ApiResponse::success(user)),
+            Err(e) => ApiResponse::json_error_with_default(500, format!("解析用户数据失败: {e}")),
+        },
         Ok(None) => ApiResponse::json_error_with_default(404, "未找到用户".to_string()),
         Err(e) => ApiResponse::json_error_with_default(500, format!("获取用户资料失败: {e}")),
     }
@@ -63,7 +65,7 @@ pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<Us
 #[get("/readers")]
 pub async fn list_readers(database: &State<Database>) -> Json<ApiResponse<Vec<Reader>>> {
     let repo = ReaderRepository::new(database);
-    
+
     match repo.get_all().await {
         Ok(readers) => Json(ApiResponse::success(readers)),
         Err(e) => ApiResponse::json_error_with_default(500, format!("获取 readers 失败: {e}")),
@@ -88,7 +90,7 @@ pub async fn list_readers(database: &State<Database>) -> Json<ApiResponse<Vec<Re
 #[get("/readers/<id>")]
 pub async fn get_reader_by_id(id: String, database: &State<Database>) -> Json<ApiResponse<Reader>> {
     let repo = ReaderRepository::new(database);
-    
+
     let object_id = match ObjectId::parse_str(&id) {
         Ok(oid) => oid,
         Err(_) => {

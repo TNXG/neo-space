@@ -1,10 +1,10 @@
 //! GitHub OAuth 提供商实现
 
+use super::provider::OAuthProvider;
+use super::{OAuthProviderType, OAuthUserInfo};
 use crate::models::GitHubUser;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use super::{OAuthProviderType, OAuthUserInfo};
-use super::provider::OAuthProvider;
 
 /// GitHub OAuth token 响应
 #[derive(Debug, Deserialize, Serialize)]

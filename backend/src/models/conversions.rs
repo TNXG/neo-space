@@ -6,7 +6,10 @@ impl From<&Account> for ReaderResponse {
         Self {
             id: acc.user_id,
             email: acc.oauth_email.clone().unwrap_or_default(),
-            name: acc.oauth_name.clone().unwrap_or_else(|| "新用户".to_string()),
+            name: acc
+                .oauth_name
+                .clone()
+                .unwrap_or_else(|| "新用户".to_string()),
             handle: acc.oauth_handle.clone().unwrap_or_default(),
             image: acc.oauth_avatar.clone().unwrap_or_default(),
             is_owner: false, // 临时态由 AuthGuard 覆盖

@@ -1,6 +1,8 @@
 //! Account model for OAuth provider linking
 
-use crate::utils::serializers::{deserialize_flexible_datetime, serialize_object_id, serialize_datetime};
+use crate::utils::serializers::{
+    deserialize_flexible_datetime, serialize_datetime, serialize_object_id,
+};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 

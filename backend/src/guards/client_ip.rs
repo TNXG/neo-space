@@ -1,7 +1,7 @@
 //! 客户端 IP 地址请求守卫
 
-use rocket::request::{FromRequest, Outcome, Request};
 use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
 
 /// 客户端 IP 地址
 pub struct ClientIp(pub String);
@@ -20,7 +20,7 @@ impl<'r> FromRequest<'r> for ClientIp {
                 .unwrap_or(forwarded_for)
                 .trim()
                 .to_string();
-            
+
             if !ip.is_empty() {
                 return Outcome::Success(ClientIp(ip));
             }

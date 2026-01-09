@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[get("/<filename>")]
 pub async fn get_artwork(filename: &str) -> Option<(ContentType, NamedFile)> {
     let path = PathBuf::from("./cache/artworks").join(filename);
-    
+
     // 确定 Content-Type
     let content_type = if filename.ends_with(".png") {
         ContentType::PNG
@@ -19,6 +19,6 @@ pub async fn get_artwork(filename: &str) -> Option<(ContentType, NamedFile)> {
     } else {
         ContentType::JPEG
     };
-    
+
     NamedFile::open(path).await.ok().map(|f| (content_type, f))
 }
