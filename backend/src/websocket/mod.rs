@@ -1,10 +1,8 @@
-//! WebSocket 实时通信
+//! WebSocket 实时通信基础设施
 //!
-//! 负责 WebSocket 连接管理和事件总线。
+//! 提供事件总线，供 services 和 routes 使用
+//! 消息类型定义已迁移到 models/realtime.rs
 
 pub mod event_bus;
-pub mod handler;
-pub mod messages;
 
 pub use event_bus::EventBus;
-pub use handler::{reader_ws, owner_desktop_ws};

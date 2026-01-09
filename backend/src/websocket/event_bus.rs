@@ -1,9 +1,9 @@
 //! 事件总线 - 用于广播消息到所有连接的客户端
 
+use crate::models::realtime::{ReaderInfo, ServerToReaderMessage};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
-use crate::websocket::messages::{ServerToReaderMessage, ReaderInfo};
 
 pub type ClientId = String;
 pub type ReaderSender = mpsc::UnboundedSender<ServerToReaderMessage>;
@@ -23,7 +23,12 @@ impl EventBus {
     }
 
     /// 注册读者客户端
-    pub async fn register_reader(&self, client_id: ClientId, sender: ReaderSender, info: ReaderInfo) {
+    pub async fn register_reader(
+        &self,
+        client_id: ClientId,
+        sender: ReaderSender,
+        info: ReaderInfo,
+    ) {
         let mut clients = self.reader_clients.write().await;
         clients.insert(client_id, (sender, info));
     }
@@ -52,7 +57,11 @@ impl EventBus {
     }
 
     /// 发送消息到特定读者
-    pub async fn send_to_reader(&self, client_id: &str, message: ServerToReaderMessage) -> Result<(), String> {
+    pub async fn send_to_reader(
+        &self,
+        client_id: &str,
+        message: ServerToReaderMessage,
+    ) -> Result<(), String> {
         let clients = self.reader_clients.read().await;
         if let Some((sender, _)) = clients.get(client_id) {
             sender.send(message).map_err(|e| format!("发送失败: {e}"))?;
@@ -67,7 +76,11 @@ impl EventBus {
         let clients = self.reader_clients.read().await;
         log::debug!("reader_count: 当前连接数 {}", clients.len());
         for (client_id, (_, info)) in clients.iter() {
-            log::debug!("  - client_id: {}, fingerprint: {}", client_id, info.fingerprint);
+            log::debug!(
+                "  - client_id: {}, fingerprint: {}",
+                client_id,
+                info.fingerprint
+            );
         }
         let unique_fingerprints: std::collections::HashSet<&str> = clients
             .values()
@@ -89,8 +102,8 @@ impl EventBus {
         let unique_fingerprints: std::collections::HashSet<&str> = clients
             .values()
             .filter(|(_, info)| {
-                info.page_type.as_deref() == Some(page_type) && 
-                info.page_id.as_deref() == Some(page_id)
+                info.page_type.as_deref() == Some(page_type)
+                    && info.page_id.as_deref() == Some(page_id)
             })
             .map(|(_, info)| info.fingerprint.as_str())
             .collect();
@@ -101,16 +114,21 @@ impl EventBus {
     pub async fn get_reading_list(&self) -> Vec<(String, String, Option<String>, usize)> {
         let clients = self.reader_clients.read().await;
         // 先按页面分组收集 fingerprint
-        let mut page_fingerprints: HashMap<(String, String), (Option<String>, std::collections::HashSet<String>)> = HashMap::new();
-        
+        let mut page_fingerprints: HashMap<
+            (String, String),
+            (Option<String>, std::collections::HashSet<String>),
+        > = HashMap::new();
+
         for (_, info) in clients.values() {
             if let (Some(page_type), Some(page_id)) = (&info.page_type, &info.page_id) {
                 let key = (page_type.clone(), page_id.clone());
-                let entry = page_fingerprints.entry(key).or_insert((info.page_title.clone(), std::collections::HashSet::new()));
+                let entry = page_fingerprints
+                    .entry(key)
+                    .or_insert((info.page_title.clone(), std::collections::HashSet::new()));
                 entry.1.insert(info.fingerprint.clone());
             }
         }
-        
+
         page_fingerprints
             .into_iter()
             .map(|((page_type, page_id), (page_title, fingerprints))| {

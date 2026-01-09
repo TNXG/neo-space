@@ -1,6 +1,6 @@
 "use client";
 
-import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-websocket";
+import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-sse";
 import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";

@@ -6,20 +6,11 @@ import type { ApiResponse, Category, Comment, CommentListResponse, CreateComment
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
 
 /**
- * WebSocket URL - 从 API_BASE_URL 自动推导
- * https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/api/presence
- * http://localhost:8000/api -> ws://localhost:8000/api/presence
+ * SSE URL - 从 API_BASE_URL 自动推导（用于接收服务器推送）
+ * https://api-blog.tnxg.top/api -> https://api-blog.tnxg.top/api/sse
+ * http://localhost:8000/api -> http://localhost:8000/api/sse
  */
-export const WS_BASE_URL = (() => {
-  try {
-    const url = new URL(API_BASE_URL);
-    const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    // 保留 /api 路径，并添加 /presence（实时在线状态）
-    return `${protocol}//${url.host}/api/presence`;
-  } catch {
-    return "ws://localhost:8000/api/presence";
-  }
-})();
+export const SSE_BASE_URL = `${API_BASE_URL}/sse`.replace(/\/api\/api/, "/api");
 
 /**
  * Generic API client with error handling and ISR support

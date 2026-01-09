@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useHasMounted } from "@/hooks/use-has-mounted";
+import { useReaderSSE } from "@/hooks/use-reader-sse";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { NAV_ITEMS } from "./nav-config";
 
@@ -27,6 +28,9 @@ export function FloatingNav({ user }: FloatingNavProps) {
   const isHomePage = pathname === "/";
   const router = useRouter();
   const hasMounted = useHasMounted();
+
+  // SSE 连接获取在线人数
+  const { isConnected, onlineCount } = useReaderSSE();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -166,7 +170,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                 </span>
                 <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
                   <Icon icon="mingcute:sparkles-line" className="text-[9px]" />
-                  在线
+                  {isConnected ? `在线 · ${onlineCount}` : "离线"}
                 </span>
               </div>
             </div>
@@ -278,7 +282,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                   </span>
                   <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
                     <Icon icon="mingcute:sparkles-line" className="text-[9px]" />
-                    在线
+                    {isConnected ? `在线 · ${onlineCount}` : "离线"}
                   </span>
                 </div>
               </div>
