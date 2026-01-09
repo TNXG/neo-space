@@ -34,7 +34,7 @@ impl OwnerWebSocketService {
     ) -> Result<(), rocket_ws::result::Error> {
         // 验证 token
         if let Err(error_msg) = Self::verify_token(token) {
-            log::warn!("博主桌面客户端 WebSocket 认证失败: {}", error_msg);
+            log::warn!("博主桌面客户端 WebSocket 认证失败: {error_msg}");
 
             let error = ServerToOwnerDesktopMessage::Error {
                 message: error_msg.clone(),
@@ -82,7 +82,7 @@ impl OwnerWebSocketService {
                         }
                         Ok(None) => {}
                         Err(e) => {
-                            log::error!("处理博主桌面客户端消息失败: {}", e);
+                            log::error!("处理博主桌面客户端消息失败: {e}");
                             let error_msg = ServerToOwnerDesktopMessage::Error { message: e };
                             if let Ok(json) = error_msg.to_json() {
                                 let _ = stream.send(Message::Text(json)).await;
@@ -109,7 +109,7 @@ impl OwnerWebSocketService {
                                 }
                             }
                             Err(e) => {
-                                log::error!("处理封面上传失败: {}", e);
+                                log::error!("处理封面上传失败: {e}");
                                 let error_msg = ServerToOwnerDesktopMessage::Error { message: e };
                                 if let Ok(json) = error_msg.to_json() {
                                     let _ = stream.send(Message::Text(json)).await;
@@ -128,7 +128,7 @@ impl OwnerWebSocketService {
                     let _ = stream.send(Message::Pong(vec![])).await;
                 }
                 Some(Err(e)) => {
-                    log::error!("WebSocket 错误: {}", e);
+                    log::error!("WebSocket 错误: {e}");
                     break;
                 }
                 None => break,
@@ -147,7 +147,7 @@ impl OwnerWebSocketService {
         pending_artwork: &mut Option<(String, String)>,
     ) -> Result<Option<ServerToOwnerDesktopMessage>, String> {
         let desktop_msg: OwnerDesktopMessage =
-            serde_json::from_str(text).map_err(|e| format!("解析消息失败: {}", e))?;
+            serde_json::from_str(text).map_err(|e| format!("解析消息失败: {e}"))?;
 
         match desktop_msg {
             OwnerDesktopMessage::WindowInfo { data } => {
@@ -218,9 +218,7 @@ impl OwnerWebSocketService {
                 mime_type,
             } => {
                 log::info!(
-                    "收到封面上传元数据: content_id={}, mime={}",
-                    content_item_identifier,
-                    mime_type
+                    "收到封面上传元数据: content_id={content_item_identifier}, mime={mime_type}"
                 );
                 *pending_artwork = Some((content_item_identifier, mime_type));
                 Ok(None)
@@ -253,18 +251,18 @@ impl OwnerWebSocketService {
         // 确保目录存在
         let artwork_dir = std::path::Path::new("./cache/artworks");
         if !artwork_dir.exists() {
-            std::fs::create_dir_all(artwork_dir).map_err(|e| format!("创建封面目录失败: {}", e))?;
+            std::fs::create_dir_all(artwork_dir).map_err(|e| format!("创建封面目录失败: {e}"))?;
         }
 
         let filepath = artwork_dir.join(&filename);
 
         // 保存文件
-        std::fs::write(&filepath, &artwork_data).map_err(|e| format!("保存封面文件失败: {}", e))?;
+        std::fs::write(&filepath, &artwork_data).map_err(|e| format!("保存封面文件失败: {e}"))?;
 
         log::info!("封面已保存: {}", filepath.display());
 
         // 生成 URL
-        let artwork_url = format!("/api/static/artworks/{}", filename);
+        let artwork_url = format!("/api/static/artworks/{filename}");
 
         Ok(artwork_url)
     }

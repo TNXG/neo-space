@@ -4,7 +4,7 @@
 
 use mongodb::{bson::doc, Client, Database};
 
-/// 初始化 MongoDB 连接
+/// 初始化 `MongoDB` 连接
 ///
 /// 从环境变量 `MONGODB_URI` 读取配置
 pub async fn init_database() -> Result<Database, mongodb::error::Error> {

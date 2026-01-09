@@ -140,7 +140,7 @@ pub async fn oauth_callback(
 
 // --- 内部逻辑封装：负责与各平台 API 交互 ---
 
-/// 将 OAuthUserInfo 转换为 OAuthUserPayload
+/// 将 `OAuthUserInfo` 转换为 `OAuthUserPayload`
 fn convert_to_payload(info: OAuthUserInfo) -> OAuthUserPayload {
     let provider = match info.provider {
         OAuthProviderType::GitHub => "github",

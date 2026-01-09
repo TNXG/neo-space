@@ -29,6 +29,12 @@ pub struct IpService {
     client: reqwest::Client,
 }
 
+impl Default for IpService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IpService {
     /// 创建 IP 服务实例
     ///
@@ -52,8 +58,7 @@ impl IpService {
     /// * `Option<String>` - 成功返回省级地理位置信息，失败返回 "未知"
     pub async fn get_location(&self, ip: &str) -> Option<String> {
         let url = format!(
-            "https://api.live.bilibili.com/client/v1/Ip/getInfoNew?ip={}",
-            ip
+            "https://api.live.bilibili.com/client/v1/Ip/getInfoNew?ip={ip}"
         );
 
         match self.client.get(&url).send().await {

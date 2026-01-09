@@ -63,7 +63,7 @@ impl OAuthService {
     pub fn get_qq_authorize_url(&self) -> Result<String, String> {
         self.qq
             .as_ref()
-            .map(|p| p.get_authorize_url())
+            .map(super::qq::QQOAuthProvider::get_authorize_url)
             .ok_or_else(|| "QQ OAuth 未配置".to_string())
     }
 }

@@ -6,14 +6,14 @@ use mongodb::bson::oid::ObjectId;
 use rocket::http::Status;
 use std::str::FromStr;
 
-/// 统一的 ObjectId 解析
+/// 统一的 `ObjectId` 解析
 ///
 /// # 参数
 /// * `id` - 要解析的字符串 ID
 ///
 /// # 返回
 /// * `Ok(ObjectId)` - 解析成功
-/// * `Err(Status)` - 解析失败，返回 BadRequest
+/// * `Err(Status)` - 解析失败，返回 `BadRequest`
 pub fn parse_object_id(id: &str) -> Result<ObjectId, Status> {
     ObjectId::from_str(id).map_err(|_| {
         log::warn!("无效的 ObjectId: {id}");

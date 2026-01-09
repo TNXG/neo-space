@@ -129,12 +129,18 @@ impl LinkHealthService {
     /// # Panics
     /// 如果 HTTP 客户端创建失败，将会 panic
     pub fn new(stale_time_hours: u64, timeout_seconds: u64) -> Self {
-        let client = Client::builder()
+        let client = match Client::builder()
             .timeout(Duration::from_secs(timeout_seconds))
             .user_agent("Mozilla/5.0 (compatible; MaigoStarlightChecker/1.0; +mailto:tnxg@outlook.jp; ) AppleWebKit/99 (KHTML, like Gecko) Chrome/99 MyGO/5 (KiraKira/DokiDoki; Bananice/Protected) Giraffe/4.11 (Wakarimasu/; Haruhikage/Stop)")
             .redirect(reqwest::redirect::Policy::limited(5))
             .build()
-            .expect("Failed to create HTTP client");
+        {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to create HTTP client: {e}");
+                std::process::exit(1);
+            }
+        };
 
         // 缓存永不过期，由我们手动管理过期逻辑
         let cache = Cache::builder().max_capacity(1000).build();

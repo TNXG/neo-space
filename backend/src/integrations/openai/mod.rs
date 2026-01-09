@@ -1,4 +1,4 @@
-//! OpenAI 集成
+//! `OpenAI` 集成
 
 pub mod client;
 

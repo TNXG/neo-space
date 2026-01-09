@@ -143,9 +143,7 @@ impl RevalidationService {
         };
 
         log::debug!(
-            "发送 Revalidation 请求 - {}, Timestamp: {}",
-            target,
-            timestamp
+            "发送 Revalidation 请求 - {target}, Timestamp: {timestamp}"
         );
 
         // 发送 HTTP POST 请求
@@ -191,10 +189,13 @@ mod tests {
         );
 
         let message = "test-secret1234567890test-saltposts";
-        let signature = service.generate_hmac(message).expect("Failed to generate HMAC");
-
-        // 验证签名格式（应该是64个十六进制字符）
-        assert_eq!(signature.len(), 64);
-        assert!(signature.chars().all(|c| c.is_ascii_hexdigit()));
+        let signature = service.generate_hmac(message);
+        assert!(signature.is_ok(), "Failed to generate HMAC: {:?}", signature.err());
+        
+        if let Ok(sig) = signature {
+            // 验证签名格式（应该是64个十六进制字符）
+            assert_eq!(sig.len(), 64);
+            assert!(sig.chars().all(|c| c.is_ascii_hexdigit()));
+        }
     }
 }

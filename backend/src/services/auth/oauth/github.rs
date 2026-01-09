@@ -33,7 +33,7 @@ impl GitHubOAuthProvider {
         }
     }
 
-    /// 交换授权码获取 access_token
+    /// 交换授权码获取 `access_token`
     async fn exchange_code(&self, code: &str) -> Result<String, String> {
         let token_url = "https://github.com/login/oauth/access_token";
 

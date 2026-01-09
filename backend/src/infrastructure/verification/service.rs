@@ -20,6 +20,12 @@ pub struct VerificationService {
     cache: Arc<Cache<String, VerificationCode>>,
 }
 
+impl Default for VerificationService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VerificationService {
     /// 创建新的验证码服务
     pub fn new() -> Self {

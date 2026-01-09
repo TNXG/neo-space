@@ -110,7 +110,7 @@ pub async fn create_comment(
         comment,
         parent_oid,
         ai_review_enabled,
-        &db,
+        db,
         &user_info,
         &request,
     )
@@ -198,21 +198,21 @@ async fn resolve_anonymous_user(
         .as_ref()
         .filter(|a| !a.trim().is_empty())
         .cloned()
-        .ok_or_else(|| Status::BadRequest)?;
+        .ok_or(Status::BadRequest)?;
 
     let mail = request
         .mail
         .as_ref()
         .filter(|m| !m.trim().is_empty())
         .cloned()
-        .ok_or_else(|| Status::BadRequest)?;
+        .ok_or(Status::BadRequest)?;
 
     // 验证 Turnstile token
     let turnstile_token = request
         .turnstile_token
         .as_ref()
         .filter(|t| !t.trim().is_empty())
-        .ok_or_else(|| Status::BadRequest)?;
+        .ok_or(Status::BadRequest)?;
 
     match verify_turnstile(turnstile_token, &oauth_config.turnstile_secret).await {
         Ok(true) => {
@@ -286,7 +286,7 @@ fn validate_comment_data(request: &CreateCommentRequest) -> Result<(), Status> {
     Ok(())
 }
 
-/// 解析父评论 ObjectId
+/// 解析父评论 `ObjectId`
 fn parse_parent_id(parent: &Option<String>) -> Result<Option<ObjectId>, Status> {
     match parent {
         Some(parent_str) => parse_object_id(parent_str).map(Some),

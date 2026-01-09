@@ -85,6 +85,7 @@ fn init_cache_dirs() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 构建带有所有管理状态的 Rocket 实例
+#[must_use] 
 pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
     let AppInitialized {
         database,

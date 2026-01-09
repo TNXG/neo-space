@@ -21,13 +21,13 @@ pub enum HostingProvider {
     Railway,
     Fly,
     Heroku,
-    /// 腾讯云 EdgeOne Pages
+    /// 腾讯云 `EdgeOne` Pages
     TencentEdgeOnePages,
 
     // -----------------------------------------------------
     // Tencent Cloud (Infrastructure / CDN)
     // -----------------------------------------------------
-    /// EdgeOne 边缘安全加速 (动态/全站加速)
+    /// `EdgeOne` 边缘安全加速 (动态/全站加速)
     TencentEdgeOne,
     /// 传统 CDN
     TencentCDN,
@@ -74,7 +74,7 @@ impl HostingDetector {
         Self::detect_from_headers(response.headers())
     }
 
-    /// 从 HeaderMap 检测托管服务商
+    /// 从 `HeaderMap` 检测托管服务商
     pub fn detect_from_headers(headers: &HeaderMap) -> HostingProvider {
         // 预处理 Server 头
         let server_header = headers

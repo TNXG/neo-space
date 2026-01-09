@@ -34,7 +34,13 @@ pub use bootstrap::{build_rocket, init_app};
 /// 如果应用初始化失败，将会 panic
 pub async fn build_rocket_with_routes() -> rocket::Rocket<rocket::Build> {
     // 初始化应用组件
-    let initialized = init_app().await.expect("应用初始化失败");
+    let initialized = match init_app().await {
+        Ok(init) => init,
+        Err(e) => {
+            eprintln!("应用初始化失败: {e}");
+            std::process::exit(1);
+        }
+    };
 
     // 构建 Rocket 实例（不包含路由）
     let rocket = build_rocket(initialized);
