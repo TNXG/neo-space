@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react/offline";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface OAuthButtonsProps {
   /**

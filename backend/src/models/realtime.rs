@@ -1,11 +1,12 @@
 //! 实时通信相关的数据模型
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 // ==================== 共享类型 ====================
 
 /// 窗口信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct WindowInfo {
     pub title: String,
     pub process_name: String,
@@ -15,7 +16,7 @@ pub struct WindowInfo {
 }
 
 /// 媒体元数据
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct MediaMetadata {
     pub bundle_identifier: Option<String>,
     pub title: Option<String>,
@@ -27,7 +28,7 @@ pub struct MediaMetadata {
 }
 
 /// 播放状态
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PlaybackState {
     pub playing: bool,
     pub playback_rate: f64,
@@ -37,7 +38,7 @@ pub struct PlaybackState {
 // ==================== SSE 相关 ====================
 
 /// 读者信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReaderInfo {
     pub fingerprint: String,
     pub page_type: Option<String>,
@@ -48,7 +49,7 @@ pub struct ReaderInfo {
 }
 
 /// 正在阅读的内容项
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReadingItem {
     pub page_type: String,
     pub page_id: String,
@@ -57,7 +58,7 @@ pub struct ReadingItem {
 }
 
 /// 服务器发送给读者的消息（SSE）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerToReaderMessage {
     Pong,
@@ -96,7 +97,7 @@ impl ServerToReaderMessage {
 }
 
 /// 博主桌面客户端消息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum OwnerDesktopMessage {
     WindowInfo {
@@ -118,7 +119,7 @@ pub enum OwnerDesktopMessage {
 }
 
 /// 服务器发送给博主桌面客户端的消息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerToOwnerDesktopMessage {
     Connected,

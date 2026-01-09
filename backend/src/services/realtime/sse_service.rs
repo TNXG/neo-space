@@ -49,8 +49,23 @@ impl ReaderSSEService {
 
             // 发送欢迎消息
             let welcome = ServerToReaderMessage::Welcome { online_count };
-            if let Ok(json) = welcome.to_json() {
-                yield Event::json(&json);
+            yield Event::json(&welcome);
+
+            // 发送博主当前状态（如果3分钟内有效）
+            if let Some(window_state) = event_bus.get_owner_window_state().await {
+                let msg = ServerToReaderMessage::OwnerWindowInfo {
+                    window_info: window_state.window_info,
+                    updated_at: window_state.updated_at,
+                };
+                yield Event::json(&msg);
+            }
+            if let Some(media_state) = event_bus.get_owner_media_state().await {
+                let msg = ServerToReaderMessage::OwnerMediaPlayback {
+                    metadata: media_state.metadata,
+                    playback_state: media_state.playback_state,
+                    updated_at: media_state.updated_at,
+                };
+                yield Event::json(&msg);
             }
 
             // 通知所有读者在线人数更新
@@ -66,9 +81,7 @@ impl ReaderSSEService {
             let mut stream = UnboundedReceiverStream::new(rx);
 
             while let Some(server_msg) = stream.next().await {
-                if let Ok(json) = server_msg.to_json() {
-                    yield Event::json(&json);
-                }
+                yield Event::json(&server_msg);
             }
 
             // 注销读者

@@ -4,7 +4,7 @@ import type { Comment } from "@/types/api";
 import { useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
 import { getComments } from "@/lib/api-client";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 /**
  * 检查评论列表中是否有待审核的评论

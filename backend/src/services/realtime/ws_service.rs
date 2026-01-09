@@ -152,15 +152,21 @@ impl OwnerWebSocketService {
         match desktop_msg {
             OwnerDesktopMessage::WindowInfo { data } => {
                 log::info!(
-                    "收到博主窗口信息: title={}, process={}",
+                    "收到博主窗口信息: title={}, process={}, app_id={:?}",
                     data.title,
-                    data.process_name
+                    data.process_name,
+                    data.app_id
                 );
+
+                let now = Utc::now().timestamp();
+
+                // 更新 EventBus 中的状态
+                event_bus.update_owner_window_info(data.clone(), now).await;
 
                 // 广播窗口信息到所有读者
                 let msg = ServerToReaderMessage::OwnerWindowInfo {
                     window_info: data,
-                    updated_at: Utc::now().timestamp(),
+                    updated_at: now,
                 };
                 event_bus.broadcast_to_readers(msg).await;
 
@@ -177,11 +183,18 @@ impl OwnerWebSocketService {
                     playback_state.playing
                 );
 
+                let now = Utc::now().timestamp();
+
+                // 更新 EventBus 中的状态
+                event_bus
+                    .update_owner_media_playback(metadata.clone(), playback_state.clone(), now)
+                    .await;
+
                 // 广播媒体播放状态到所有读者
                 let msg = ServerToReaderMessage::OwnerMediaPlayback {
                     metadata,
                     playback_state,
-                    updated_at: Utc::now().timestamp(),
+                    updated_at: now,
                 };
                 event_bus.broadcast_to_readers(msg).await;
 
@@ -261,8 +274,9 @@ impl OwnerWebSocketService {
 
         log::info!("封面已保存: {}", filepath.display());
 
-        // 生成 URL
-        let artwork_url = format!("/api/static/artworks/{filename}");
+        // 生成完整 URL
+        let backend_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+        let artwork_url = format!("{}/api/static/artworks/{}", backend_url, filename);
 
         Ok(artwork_url)
     }

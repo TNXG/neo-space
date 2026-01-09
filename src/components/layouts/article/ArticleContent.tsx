@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { TOCItem } from "@/lib/toc";
 import { useCallback, useEffect, useRef } from "react";
-import { useTOCStore } from "@/lib/stores/toc-store";
+import { useTOCStore } from "@/stores/toc-store";
 
 interface ArticleContentProps {
   children: ReactNode;

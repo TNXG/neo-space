@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
-import { useTOCStore } from "@/lib/stores/toc-store";
+import { useTOCStore } from "@/stores/toc-store";
 
 interface ArticleTOCProps {
   className?: string;

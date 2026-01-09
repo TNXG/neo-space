@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { useTOCStore } from "@/lib/stores/toc-store";
+import { useTOCStore } from "@/stores/toc-store";
 
 interface EnhancedHeadingProps {
   id?: string;

@@ -15,8 +15,8 @@ import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
 import { getUAInfo } from "@/lib/parse";
-import { useAuthStore } from "@/lib/stores/auth-store";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   AuthenticatedUser,
   CornerBorders,

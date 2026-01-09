@@ -116,6 +116,14 @@ use utoipa::OpenApi;
             // 工具接口模型
             GuessRequest,
             GuessResult,
+
+            // 实时通信模型
+            crate::models::realtime::ServerToReaderMessage,
+            crate::models::realtime::WindowInfo,
+            crate::models::realtime::MediaMetadata,
+            crate::models::realtime::PlaybackState,
+            crate::models::realtime::ReaderInfo,
+            crate::models::realtime::ReadingItem,
         )
     ),
     tags(
@@ -129,6 +137,7 @@ use utoipa::OpenApi;
         (name = "站点配置", description = "站点配置接口"),
         (name = "AI服务", description = "AI相关服务接口"),
         (name = "工具接口", description = "实用工具接口"),
+        (name = "实时通信", description = "WebSocket 和 SSE 实时通信接口"),
     )
 )]
 pub struct ApiDoc;

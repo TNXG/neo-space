@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTOCStore } from "@/lib/stores/toc-store";
+import { useTOCStore } from "@/stores/toc-store";
 
 interface ArticleTOCWrapperProps {
   children: ReactNode;

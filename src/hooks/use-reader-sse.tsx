@@ -1,61 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  MediaMetadata,
+  PlaybackState,
+  ReadingItem,
+  WindowInfo,
+} from "@/stores/sse-store";
+import { useCallback, useEffect, useRef } from "react";
 import { SSE_BASE_URL } from "@/lib/api-client";
+import { useSSEStore } from "@/stores/sse-store";
 
-// --- 类型定义 ---
-/** 窗口信息 */
-export interface WindowInfo {
-  title: string;
-  process_name: string;
-  icon_url?: string;
-  app_id?: string;
-  pid: number;
-}
+// 导出类型供其他组件使用
+export type { MediaMetadata, PlaybackState, ReadingItem, WindowInfo };
+export type { OwnerStatus } from "@/stores/sse-store";
 
-/** 媒体元数据 */
-export interface MediaMetadata {
-  bundle_identifier?: string;
-  title?: string;
-  artist?: string;
-  album?: string;
-  duration: number;
-  artwork_url?: string;
-  content_item_identifier?: string;
-}
-
-/** 播放状态 */
-export interface PlaybackState {
-  playing: boolean;
-  playback_rate: number;
-  elapsed_time: number;
-}
-
-/** 博主状态 */
-export interface OwnerStatus {
-  windowInfo?: WindowInfo;
-  mediaPlayback?: {
-    metadata: MediaMetadata;
-    playbackState: PlaybackState;
-  };
-  updatedAt: number;
-}
-
-type ServerToReaderMessage
-  = | { type: "pong" }
-    | { type: "welcome"; online_count: number }
-    | { type: "online_count_update"; count: number }
-    | { type: "page_readers"; page_type: string; page_id: string; count: number }
-    | { type: "reading_list"; items: ReadingItem[] }
-    | { type: "owner_window_info"; window_info: WindowInfo; updated_at: number }
-    | { type: "owner_media_playback"; metadata: MediaMetadata; playback_state: PlaybackState; updated_at: number }
-    | { type: "error"; message: string };
-
-export interface ReadingItem {
-  page_type: string;
-  page_id: string;
-  page_title?: string;
-  reader_count: number;
+/** 服务器发送给读者的消息 */
+interface ServerToReaderMessage {
+  type: string;
+  online_count?: number;
+  count?: number;
+  page_type?: string;
+  page_id?: string;
+  items?: ReadingItem[];
+  window_info?: WindowInfo;
+  metadata?: MediaMetadata;
+  playback_state?: PlaybackState;
+  updated_at?: number;
+  message?: string;
 }
 
 interface UseReaderSSEOptions {
@@ -69,7 +40,7 @@ interface UseReaderSSEOptions {
   onError?: (error: Event) => void;
 }
 
-// --- 模块级单例 ---
+// --- SSE 连接管理（模块级单例）---
 let sseInstance: EventSource | null = null;
 let activeSubscribers = 0;
 let disconnectTimeout: NodeJS.Timeout | null = null;
@@ -78,61 +49,67 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const [sseState, setSSEState] = useState({
-    isConnected: false,
-    onlineCount: 0,
-    currentPageReaders: 0,
-    ownerStatus: null as OwnerStatus | null,
-    readingList: [] as ReadingItem[],
-  });
+  // 从 Zustand store 获取状态和 actions
+  const isConnected = useSSEStore(state => state.isConnected);
+  const onlineCount = useSSEStore(state => state.onlineCount);
+  const currentPageReaders = useSSEStore(state => state.currentPageReaders);
+  const ownerStatus = useSSEStore(state => state.ownerStatus);
+  const readingList = useSSEStore(state => state.readingList);
 
-  // 状态更新函数
-  const updateConnectionState = useCallback((isConnected: boolean) => {
-    setSSEState(prev => ({ ...prev, isConnected }));
-  }, []);
+  // 获取 actions
+  const setConnected = useSSEStore(state => state.setConnected);
+  const setOnlineCount = useSSEStore(state => state.setOnlineCount);
+  const setCurrentPageReaders = useSSEStore(state => state.setCurrentPageReaders);
+  const setOwnerWindowInfo = useSSEStore(state => state.setOwnerWindowInfo);
+  const setOwnerMediaPlayback = useSSEStore(state => state.setOwnerMediaPlayback);
+  const setReadingList = useSSEStore(state => state.setReadingList);
 
+  // 消息处理函数
   const handleMessage = useCallback((data: ServerToReaderMessage) => {
     const opts = optionsRef.current;
     opts.onMessage?.(data);
 
     switch (data.type) {
       case "welcome":
-        setSSEState(prev => ({ ...prev, onlineCount: (data as any).online_count }));
+        if (data.online_count !== undefined)
+          setOnlineCount(data.online_count);
         break;
+
       case "online_count_update":
-        setSSEState(prev => ({ ...prev, onlineCount: (data as any).count }));
+        if (data.count !== undefined)
+          setOnlineCount(data.count);
         break;
-      case "owner_window_info":
-        setSSEState(prev => ({
-          ...prev,
-          ownerStatus: {
-            ...prev.ownerStatus,
-            windowInfo: data.window_info,
-            updatedAt: data.updated_at,
-          },
-        }));
-        break;
-      case "owner_media_playback":
-        setSSEState(prev => ({
-          ...prev,
-          ownerStatus: {
-            ...prev.ownerStatus,
-            mediaPlayback: {
-              metadata: data.metadata,
-              playbackState: data.playback_state,
-            },
-            updatedAt: data.updated_at,
-          },
-        }));
-        break;
+
       case "page_readers":
-        setSSEState(prev => ({ ...prev, currentPageReaders: data.count }));
+        if (data.count !== undefined)
+          setCurrentPageReaders(data.count);
         break;
+
       case "reading_list":
-        setSSEState(prev => ({ ...prev, readingList: data.items }));
+        if (data.items)
+          setReadingList(data.items);
+        break;
+
+      case "owner_window_info":
+        if (data.window_info && data.updated_at !== undefined) {
+          setOwnerWindowInfo(data.window_info, data.updated_at);
+        }
+        break;
+
+      case "owner_media_playback":
+        if (data.metadata && data.playback_state && data.updated_at !== undefined) {
+          setOwnerMediaPlayback(data.metadata, data.playback_state, data.updated_at);
+        }
+        break;
+
+      case "error":
+        console.error("SSE Error:", data.message);
+        break;
+
+      case "pong":
         break;
     }
-  }, []);
+  }, [setOnlineCount, setCurrentPageReaders, setReadingList, setOwnerWindowInfo, setOwnerMediaPlayback]);
 
   const connect = useCallback(() => {
     if (disconnectTimeout) {
@@ -141,9 +118,7 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
     }
 
     if (sseInstance?.readyState === EventSource.OPEN) {
-      queueMicrotask(() => {
-        updateConnectionState(true);
-      });
+      queueMicrotask(() => setConnected(true));
       return;
     }
 
@@ -151,7 +126,6 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
       return;
 
     try {
-      // 构建 URL，包含页面信息
       const params = new URLSearchParams();
       const opts = optionsRef.current;
 
@@ -167,50 +141,47 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
       sseInstance = sse;
 
       sse.onopen = () => {
-        console.log("SSE Connected");
-        updateConnectionState(true);
+        setConnected(true);
         optionsRef.current.onOpen?.();
       };
 
       sse.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data);
-          handleMessage(msg);
+          let msg = event.data;
+          if (typeof msg === "string")
+            msg = JSON.parse(msg);
+          if (typeof msg === "string")
+            msg = JSON.parse(msg);
+          handleMessage(msg as ServerToReaderMessage);
         } catch (e) {
-          console.error("SSE Parse Error", e);
+          console.error("SSE Parse Error:", e);
         }
       };
 
       sse.onerror = (e) => {
-        console.log("SSE Error or Closed");
-        updateConnectionState(false);
+        setConnected(false);
         optionsRef.current.onError?.(e);
-        optionsRef.current.onClose?.();
 
-        // EventSource 会自动重连，除非我们手动关闭
-        // 如果没有订阅者，关闭连接
         if (activeSubscribers === 0) {
           sse.close();
           sseInstance = null;
+          optionsRef.current.onClose?.();
         }
       };
     } catch (e) {
-      console.error("SSE Init Error", e);
+      console.error("SSE Init Error:", e);
     }
-  }, [handleMessage, updateConnectionState]);
+  }, [handleMessage, setConnected]);
 
   useEffect(() => {
     const { autoConnect = true } = optionsRef.current;
-
     activeSubscribers++;
 
-    if (autoConnect) {
+    if (autoConnect)
       connect();
-    }
 
     return () => {
       activeSubscribers--;
-
       if (activeSubscribers === 0) {
         disconnectTimeout = setTimeout(() => {
           if (activeSubscribers === 0 && sseInstance) {
@@ -222,7 +193,6 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
     };
   }, [connect]);
 
-  // 组件卸载时清理 disconnectTimeout
   useEffect(() => {
     return () => {
       if (disconnectTimeout) {
@@ -233,7 +203,11 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
   }, []);
 
   return {
-    ...sseState,
+    isConnected,
+    onlineCount,
+    currentPageReaders,
+    ownerStatus,
+    readingList,
     connect,
   };
 }

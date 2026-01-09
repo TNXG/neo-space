@@ -1,34 +1,90 @@
 //! 事件总线 - 用于广播消息到所有连接的客户端
 
-use crate::models::realtime::{ReaderInfo, ServerToReaderMessage};
+use crate::models::realtime::{
+    MediaMetadata, PlaybackState, ReaderInfo, ServerToReaderMessage, WindowInfo,
+};
+use moka::future::Cache;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{mpsc, RwLock};
 
 pub type ClientId = String;
 pub type ReaderSender = mpsc::UnboundedSender<ServerToReaderMessage>;
 
-/// 事件总线 - 管理所有 WebSocket 连接
+/// 博主窗口状态
+#[derive(Debug, Clone)]
+pub struct OwnerWindowState {
+    pub window_info: WindowInfo,
+    pub updated_at: i64,
+}
+
+/// 博主媒体播放状态
+#[derive(Debug, Clone)]
+pub struct OwnerMediaState {
+    pub metadata: MediaMetadata,
+    pub playback_state: PlaybackState,
+    pub updated_at: i64,
+}
+
+/// 事件总线 - 管理所有连接
 #[derive(Clone)]
 pub struct EventBus {
     /// 读者连接
     reader_clients: Arc<RwLock<HashMap<ClientId, (ReaderSender, ReaderInfo)>>>,
+    /// 博主窗口状态缓存（3分钟过期）
+    owner_window_cache: Cache<String, OwnerWindowState>,
+    /// 博主媒体播放状态缓存（3分钟过期）
+    owner_media_cache: Cache<String, OwnerMediaState>,
 }
+
+const CACHE_KEY: &str = "current";
+const CACHE_TTL_SECS: u64 = 180; // 3分钟
 
 impl EventBus {
     pub fn new() -> Self {
         Self {
             reader_clients: Arc::new(RwLock::new(HashMap::new())),
+            owner_window_cache: Cache::builder()
+                .time_to_live(Duration::from_secs(CACHE_TTL_SECS))
+                .build(),
+            owner_media_cache: Cache::builder()
+                .time_to_live(Duration::from_secs(CACHE_TTL_SECS))
+                .build(),
         }
     }
 
-    /// 注册读者客户端
-    pub async fn register_reader(
+    /// 更新博主窗口信息
+    pub async fn update_owner_window_info(&self, window_info: WindowInfo, updated_at: i64) {
+        self.owner_window_cache
+            .insert(CACHE_KEY.to_string(), OwnerWindowState { window_info, updated_at })
+            .await;
+    }
+
+    /// 更新博主媒体播放状态
+    pub async fn update_owner_media_playback(
         &self,
-        client_id: ClientId,
-        sender: ReaderSender,
-        info: ReaderInfo,
+        metadata: MediaMetadata,
+        playback_state: PlaybackState,
+        updated_at: i64,
     ) {
+        self.owner_media_cache
+            .insert(CACHE_KEY.to_string(), OwnerMediaState { metadata, playback_state, updated_at })
+            .await;
+    }
+
+    /// 获取博主窗口状态（3分钟内有效）
+    pub async fn get_owner_window_state(&self) -> Option<OwnerWindowState> {
+        self.owner_window_cache.get(&CACHE_KEY.to_string()).await
+    }
+
+    /// 获取博主媒体播放状态（3分钟内有效）
+    pub async fn get_owner_media_state(&self) -> Option<OwnerMediaState> {
+        self.owner_media_cache.get(&CACHE_KEY.to_string()).await
+    }
+
+    /// 注册读者客户端
+    pub async fn register_reader(&self, client_id: ClientId, sender: ReaderSender, info: ReaderInfo) {
         let mut clients = self.reader_clients.write().await;
         clients.insert(client_id, (sender, info));
     }
@@ -39,15 +95,6 @@ impl EventBus {
         clients.remove(client_id);
     }
 
-    /// 更新读者信息
-    pub async fn update_reader_info(&self, client_id: &str, info: ReaderInfo) {
-        let mut clients = self.reader_clients.write().await;
-        if let Some((sender, _)) = clients.get(client_id) {
-            let sender = sender.clone();
-            clients.insert(client_id.to_string(), (sender, info));
-        }
-    }
-
     /// 广播消息到所有读者
     pub async fn broadcast_to_readers(&self, message: ServerToReaderMessage) {
         let clients = self.reader_clients.read().await;
@@ -56,84 +103,31 @@ impl EventBus {
         }
     }
 
-    /// 发送消息到特定读者
-    pub async fn send_to_reader(
-        &self,
-        client_id: &str,
-        message: ServerToReaderMessage,
-    ) -> Result<(), String> {
-        let clients = self.reader_clients.read().await;
-        if let Some((sender, _)) = clients.get(client_id) {
-            sender.send(message).map_err(|e| format!("发送失败: {e}"))?;
-            Ok(())
-        } else {
-            Err("读者客户端不存在".to_string())
-        }
-    }
-
     /// 获取在线读者数量（按 fingerprint 去重）
     pub async fn reader_count(&self) -> usize {
         let clients = self.reader_clients.read().await;
-        log::debug!("reader_count: 当前连接数 {}", clients.len());
-        for (client_id, (_, info)) in clients.iter() {
-            log::debug!(
-                "  - client_id: {}, fingerprint: {}",
-                client_id,
-                info.fingerprint
-            );
-        }
-        let unique_fingerprints: std::collections::HashSet<&str> = clients
+        let unique: std::collections::HashSet<&str> = clients
             .values()
             .map(|(_, info)| info.fingerprint.as_str())
             .collect();
-        log::debug!("reader_count: 去重后人数 {}", unique_fingerprints.len());
-        unique_fingerprints.len()
+        unique.len()
     }
 
-    /// 获取所有读者信息
-    pub async fn get_all_readers(&self) -> Vec<ReaderInfo> {
-        let clients = self.reader_clients.read().await;
-        clients.values().map(|(_, info)| info.clone()).collect()
-    }
-
-    /// 获取特定页面的读者数量（按 fingerprint 去重）
-    pub async fn get_page_reader_count(&self, page_type: &str, page_id: &str) -> usize {
-        let clients = self.reader_clients.read().await;
-        let unique_fingerprints: std::collections::HashSet<&str> = clients
-            .values()
-            .filter(|(_, info)| {
-                info.page_type.as_deref() == Some(page_type)
-                    && info.page_id.as_deref() == Some(page_id)
-            })
-            .map(|(_, info)| info.fingerprint.as_str())
-            .collect();
-        unique_fingerprints.len()
-    }
-
-    /// 获取所有正在阅读的内容（按页面分组，按 fingerprint 去重）
+    /// 获取所有正在阅读的内容
     pub async fn get_reading_list(&self) -> Vec<(String, String, Option<String>, usize)> {
         let clients = self.reader_clients.read().await;
-        // 先按页面分组收集 fingerprint
-        let mut page_fingerprints: HashMap<
-            (String, String),
-            (Option<String>, std::collections::HashSet<String>),
-        > = HashMap::new();
+        let mut groups: HashMap<(String, String), (Option<String>, std::collections::HashSet<String>)> = HashMap::new();
 
         for (_, info) in clients.values() {
-            if let (Some(page_type), Some(page_id)) = (&info.page_type, &info.page_id) {
-                let key = (page_type.clone(), page_id.clone());
-                let entry = page_fingerprints
-                    .entry(key)
+            if let (Some(pt), Some(pid)) = (&info.page_type, &info.page_id) {
+                let entry = groups.entry((pt.clone(), pid.clone()))
                     .or_insert((info.page_title.clone(), std::collections::HashSet::new()));
                 entry.1.insert(info.fingerprint.clone());
             }
         }
 
-        page_fingerprints
-            .into_iter()
-            .map(|((page_type, page_id), (page_title, fingerprints))| {
-                (page_type, page_id, page_title, fingerprints.len())
-            })
+        groups.into_iter()
+            .map(|((pt, pid), (title, fps))| (pt, pid, title, fps.len()))
             .collect()
     }
 }
