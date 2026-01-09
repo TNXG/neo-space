@@ -18,6 +18,8 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
   const [localOffset, setLocalOffset] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevServerTimeRef = useRef<number>(0);
+  const STALE_MS = 90_000;
+  const [now, setNow] = useState(() => Date.now());
 
   const mediaPlayback = ownerStatus?.mediaPlayback;
   const windowInfo = ownerStatus?.windowInfo;
@@ -26,6 +28,7 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
   const playbackRate = playbackState?.playback_rate ?? 1;
   const isPlaying = playbackState?.playing ?? false;
   const duration = mediaPlayback?.metadata.duration ?? 0;
+  const updatedAt = ownerStatus?.updatedAt ?? 0;
 
   // 计算实际播放时间
   const elapsedTime = useMemo(() => {
@@ -34,8 +37,10 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
 
   const progress = duration > 0 ? Math.min((elapsedTime / duration) * 100, 100) : 0;
 
-  // 判断博主是否在线（有任何状态更新）
-  const isOwnerOnline = isConnected && ownerStatus && ownerStatus.updatedAt > 0;
+  // 判断博主是否在线/状态是否新鲜
+  const isFresh = updatedAt > 0 && now - updatedAt < STALE_MS;
+  const hasAnyData = !!(mediaPlayback?.metadata?.title || windowInfo?.title);
+  const isOwnerOnline = isConnected && isFresh;
 
   // 重置本地偏移当服务器时间更新时
   if (serverElapsedTime !== prevServerTimeRef.current) {
@@ -73,20 +78,51 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const formatRelative = (ts: number) => {
+    if (!ts)
+      return "";
+    const diff = Math.max(0, now - ts);
+    const s = Math.floor(diff / 1000);
+    if (s < 10)
+      return "刚刚";
+    if (s < 60)
+      return `${s} 秒前`;
+    const m = Math.floor(s / 60);
+    if (m < 60)
+      return `${m} 分钟前`;
+    const h = Math.floor(m / 60);
+    if (h < 24)
+      return `${h} 小时前`;
+    const d = Math.floor(h / 24);
+    if (d > 7)
+      return ""; // 超过7天不显示相对时间
+    return `${d} 天前`;
+  };
+
   // 获取活动描述
   const getActivityText = () => {
     if (isPlaying && mediaPlayback?.metadata.title) {
-      return "正在听音乐";
+      return mediaPlayback.metadata.artist
+        ? `正在听 · ${mediaPlayback.metadata.title} · ${mediaPlayback.metadata.artist}`
+        : `正在听 · ${mediaPlayback.metadata.title}`;
     }
     if (windowInfo?.title) {
-      return `正在使用 ${windowInfo.process_name}`;
+      return `正在使用 · ${windowInfo.process_name}`;
     }
-    return "在线";
+    if (isConnected && !isFresh)
+      return "在线 · 暂无活动";
+    return isConnected ? "在线" : "离线";
   };
+
+  // 定时刷新相对时间与“新鲜度”判定
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <AnimatePresence mode="wait">
-      {isOwnerOnline
+      {(isConnected || updatedAt > 0)
         ? (
             <motion.div
               key="owner-status"
@@ -97,14 +133,29 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
               className="overflow-hidden"
             >
               <div className="flex flex-col gap-3">
-                {/* 活动状态 */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-500 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-500" />
-                  </span>
-                  <span>{getActivityText()}</span>
+                {/* 顶部状态行 */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="relative flex h-2 w-2">
+                      <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isOwnerOnline ? "animate-ping bg-accent-500" : isConnected ? "bg-amber-400/60" : "bg-neutral-400/60"}`} />
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${isOwnerOnline ? "bg-accent-500" : isConnected ? "bg-amber-500" : "bg-neutral-400"}`} />
+                    </span>
+                    <span>{getActivityText()}</span>
+                  </div>
+                  {updatedAt > 0 && (
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {isFresh ? "刚刚更新" : `最近更新 ${formatRelative(updatedAt)}`}
+                    </span>
+                  )}
                 </div>
+
+                {/* 加载/无数据占位（仅连接但暂无线索时） */}
+                {isConnected && !hasAnyData && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 border border-border/30">
+                    <div className="animate-pulse h-3 w-3 rounded-full bg-muted-foreground/40" />
+                    <span className="text-xs text-muted-foreground">正在连接数据…</span>
+                  </div>
+                )}
 
                 {/* 媒体播放卡片 */}
                 {mediaPlayback?.metadata.title && (
@@ -172,8 +223,8 @@ export function OwnerStatus({ ownerStatus, isConnected }: OwnerStatusProps) {
                   </motion.div>
                 )}
 
-                {/* 窗口信息（仅在没有播放媒体时显示） */}
-                {!mediaPlayback?.metadata.title && windowInfo?.title && (
+                {/* 窗口信息 */}
+                {windowInfo?.title && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

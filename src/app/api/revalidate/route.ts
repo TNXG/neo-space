@@ -7,7 +7,6 @@
  * 3. 严格的请求体校验
  */
 
-/* eslint-disable node/prefer-global/process */
 /* eslint-disable node/prefer-global/buffer */
 
 import type { NextRequest } from "next/server";

@@ -2,6 +2,7 @@
 
 import type { User } from "@/types/api";
 
+import { useEffect, useState } from "react";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderSSE } from "@/hooks/use-reader-sse";
@@ -19,7 +20,15 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { isConnected, ownerStatus } = useReaderSSE();
 
   // 判断博主是否在线
-  const isOwnerOnline = isConnected && ownerStatus && ownerStatus.updatedAt > 0;
+  const STALE_MS = 90_000;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(id);
+  }, []);
+  const isOwnerOnline = Boolean(
+    isConnected && ownerStatus?.updatedAt && now - ownerStatus.updatedAt < STALE_MS,
+  );
 
   return (
     <header className="space-y-5 md:space-y-6">
