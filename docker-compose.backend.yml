@@ -28,22 +28,6 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    environment:
-      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-mx-space}?authSource=admin
-      - RUST_LOG=${RUST_LOG:-info}
-      - JWT_SECRET=${JWT_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - BACKEND_URL=${BACKEND_URL}
-      - TURNSTILE_SECRET=${TURNSTILE_SECRET}
-      - NEXTJS_URL=${NEXTJS_URL}
-      - REVALIDATION_SECRET=${REVALIDATION_SECRET}
-      - REVALIDATION_SALT=${REVALIDATION_SALT}
-      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - QQ_APP_ID=${QQ_APP_ID}
-      - QQ_APP_KEY=${QQ_APP_KEY}
-      - ROCKET_ADDRESS=0.0.0.0
-      - ROCKET_PORT=8000
     volumes:
       - backend_cache:/app/cache
     networks:
@@ -51,6 +35,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    env_file:
+      - .env
     healthcheck:
       test: [CMD, wget, -q, --spider, "http://localhost:8000/api/health"]
       interval: 30s

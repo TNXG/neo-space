@@ -7,17 +7,17 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog
 
 /**
  * WebSocket URL - 从 API_BASE_URL 自动推导
- * https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/api/ws
- * http://localhost:8000/api -> ws://localhost:8000/api/ws
+ * https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/api/presence
+ * http://localhost:8000/api -> ws://localhost:8000/api/presence
  */
 export const WS_BASE_URL = (() => {
   try {
     const url = new URL(API_BASE_URL);
     const protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    // 保留 /api 路径，并添加 /ws
-    return `${protocol}//${url.host}/api/ws`;
+    // 保留 /api 路径，并添加 /presence（实时在线状态）
+    return `${protocol}//${url.host}/api/presence`;
   } catch {
-    return "ws://localhost:8000/api/ws";
+    return "ws://localhost:8000/api/presence";
   }
 })();
 

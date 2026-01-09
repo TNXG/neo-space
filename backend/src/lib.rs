@@ -40,8 +40,8 @@ pub async fn build_rocket_with_routes() -> rocket::Rocket<rocket::Build> {
     rocket
         .mount("/api/auth", routes::auth::routes())
         .mount("/api/comments", routes::comments::routes())
-        .mount("/api/ws", routes![
-            // WebSocket routes
+        .mount("/api/presence", routes![
+            // WebSocket routes - 实时在线状态和活动广播
             websocket::reader_ws,
             websocket::owner_desktop_ws,
         ])
