@@ -44,6 +44,8 @@ services:
       - QQ_APP_KEY=${QQ_APP_KEY}
       - ROCKET_ADDRESS=0.0.0.0
       - ROCKET_PORT=8000
+    volumes:
+      - backend_cache:/app/cache
     networks:
       - neo-space
     depends_on:
@@ -74,6 +76,7 @@ services:
 
 volumes:
   mongo_data:
+  backend_cache:
 
 networks:
   neo-space:

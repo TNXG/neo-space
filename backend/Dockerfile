@@ -7,7 +7,9 @@ RUN apk add --no-cache ca-certificates tzdata wget && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY neo-space-backend /app/neo-space-backend
-RUN chmod +x /app/neo-space-backend
+RUN chmod +x /app/neo-space-backend && \
+    mkdir -p /app/cache/artworks && \
+    chown -R appuser:appgroup /app/cache
 
 USER appuser
 
