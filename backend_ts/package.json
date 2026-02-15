@@ -1,0 +1,23 @@
+{
+  "name": "app",
+  "version": "1.0.50",
+  "module": "src/index.js",
+  "scripts": {
+    "test": "bun test",
+    "dev": "bun run --watch src/index.ts",
+    "indexes:create": "bun run scripts/manage-indexes.ts create",
+    "indexes:list": "bun run scripts/manage-indexes.ts list",
+    "indexes:drop": "bun run scripts/manage-indexes.ts drop"
+  },
+  "dependencies": {
+    "@elysiajs/jwt": "^1.4.0",
+    "elysia": "latest",
+    "ioredis": "^5.9.3",
+    "mongodb": "^7.1.0",
+    "nodemailer": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.9",
+    "bun-types": "latest"
+  }
+}
