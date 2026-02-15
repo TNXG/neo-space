@@ -58,26 +58,29 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
           {/* Status indicator */}
           <div className="rounded-full flex h-3.5 w-3.5 md:h-4 md:w-4 items-center bottom-0.5 right-0.5 md:bottom-1 md:right-1 justify-center absolute bg-neutral-50">
-            <div className={`rounded-full h-2 w-2 md:h-2.5 md:w-2.5 transition-colors duration-300 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
+            <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5">
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isOwnerOnline ? "animate-ping bg-accent-500" : "hidden"}`} />
+              <span className={`relative inline-flex rounded-full h-full w-full transition-colors duration-300 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
+            </span>
           </div>
         </div>
         <div>
           <h1 className="text-2xl md:text-3xl tracking-tight font-bold mb-1.5 md:mb-2 text-foreground">
             {profile.name}
           </h1>
-          <p className="text-xs md:text-sm flex gap-2 items-center text-muted-foreground">
-            @
-            {profile.username}
-          </p>
+          <div className="flex flex-wrap gap-2 items-center text-xs md:text-sm text-muted-foreground">
+            <p>
+              @
+              {profile.username}
+            </p>
+            <OwnerStatus ownerStatus={ownerStatus} isConnected={isConnected} />
+          </div>
         </div>
       </div>
 
       <p className="text-base md:text-xl leading-relaxed max-w-lg text-secondary-foreground">
         <AbbreviationText>{profile.introduce}</AbbreviationText>
       </p>
-
-      {/* 博主状态 */}
-      <OwnerStatus ownerStatus={ownerStatus} isConnected={isConnected} />
 
       <div className="pt-1 md:pt-2 flex gap-4 md:gap-5 flex-wrap">
         {profile.socialIds?.github && (
