@@ -120,6 +120,12 @@ pub async fn list_links(
 )]
 #[get("/links/<id>")]
 pub async fn get_link(db: &State<Database>, id: &str) -> Result<Json<ApiResponse<Link>>, Status> {
+    // Validate that the ID looks like a valid ObjectId (24 hex characters)
+    if id.len() != 24 || !id.chars().all(|c| c.is_ascii_hexdigit()) {
+        log::debug!("Invalid ObjectId format: {id}");
+        return Err(Status::NotFound);
+    }
+    
     let object_id = parse_object_id(id)?;
     let collection = db.collection::<Link>("links");
 
