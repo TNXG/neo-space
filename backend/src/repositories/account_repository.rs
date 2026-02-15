@@ -53,12 +53,27 @@ impl AccountRepository {
         provider: &str,
         account_id: &str,
     ) -> Result<Option<Account>, mongodb::error::Error> {
-        self.collection
+        log::info!(
+            "[AccountRepo] 查找账号: provider={}, account_id={}",
+            provider,
+            account_id
+        );
+        
+        let result = self
+            .collection
             .find_one(doc! {
                 "provider": provider,
                 "accountId": account_id
             })
-            .await
+            .await?;
+        
+        if result.is_some() {
+            log::info!("[AccountRepo] 找到账号");
+        } else {
+            log::info!("[AccountRepo] 未找到账号");
+        }
+        
+        Ok(result)
     }
 
     /// 查找用户的所有 accounts

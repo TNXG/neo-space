@@ -1,10 +1,11 @@
 "use client";
 
 import { Icon } from "@iconify/react/offline";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useOAuthStore } from "@/stores/oauth-store";
 
 interface OAuthButtonsProps {
   /**
@@ -31,8 +32,7 @@ interface OAuthButtonsProps {
  */
 export function OAuthButtons({ variant = "default", className = "" }: OAuthButtonsProps) {
   const { setAuth } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
-
+  const { isLoading, startLogin, markMessageReceived, endLogin, reset } = useOAuthStore();
   /**
    * 监听移动端 OAuth 返回
    */
@@ -85,8 +85,6 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
    * 处理 OAuth 登录（弹窗方式）
    */
   const handleOAuthLogin = async (provider: "github" | "qq") => {
-    setIsLoading(true);
-
     try {
       // 检测是否为移动设备
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -109,17 +107,19 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
 
-      const popup = window.open(
+      const newPopup = window.open(
         `${API_BASE_URL}/auth/oauth/${provider}`,
         "oauth_popup",
         `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`,
       );
 
-      if (!popup) {
+      if (!newPopup) {
         toast.error("无法打开登录窗口，请检查浏览器弹窗设置");
-        setIsLoading(false);
         return;
       }
+
+      // 开始登录流程
+      startLogin(newPopup);
 
       // 2. 监听来自弹窗的消息
       const handleMessage = async (event: MessageEvent) => {
@@ -129,6 +129,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
         }
 
         if (event.data.type === "oauth_success" && event.data.token) {
+          markMessageReceived();
           try {
             // 3. 获取用户信息
             const response = await getCurrentUser(event.data.token);
@@ -153,33 +154,29 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
             }
           } catch (error) {
             console.error("[OAuth] 错误:", error);
-            console.error("OAuth login error:", error);
             toast.error(error instanceof Error ? error.message : "登录失败");
           } finally {
-            setIsLoading(false);
+            endLogin();
             window.removeEventListener("message", handleMessage);
           }
         } else if (event.data.type === "oauth_error") {
+          markMessageReceived();
           toast.error(event.data.message || "登录失败");
-          setIsLoading(false);
+          endLogin();
           window.removeEventListener("message", handleMessage);
         }
       };
 
       window.addEventListener("message", handleMessage);
 
-      // 5. 监听弹窗关闭（用户手动关闭）
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          setIsLoading(false);
-          window.removeEventListener("message", handleMessage);
-        }
-      }, 500);
+      // 清理函数
+      return () => {
+        window.removeEventListener("message", handleMessage);
+      };
     } catch (error) {
       console.error("OAuth error:", error);
       toast.error("登录失败，请重试");
-      setIsLoading(false);
+      reset();
     }
   };
 

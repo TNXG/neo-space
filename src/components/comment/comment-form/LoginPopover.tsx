@@ -5,20 +5,29 @@ import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
 import { OAuthButtons } from "@/components/comment/auth/OAuthButtons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useOAuthPopupMonitor } from "@/hooks/use-oauth-popup-monitor";
 import { cn } from "@/lib/utils";
+import { useOAuthStore } from "@/stores/oauth-store";
+
+interface LoginPopoverProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
 
 /**
  * 登录 Popover 组件
- * 使用 shadcn/ui Popover，内部管理状态
+ * 支持外部控制状态，用于与父组件的失焦逻辑集成
  */
-export function LoginPopover() {
-  const [open, setOpen] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenChange }: LoginPopoverProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const { isLoading } = useOAuthStore();
 
-  const handleOAuthClick = () => {
-    setIsRedirecting(true);
-    setTimeout(() => setOpen(false), 1500);
-  };
+  // 使用外部状态或内部状态
+  const open = externalOpen ?? internalOpen;
+  const setOpen = externalOnOpenChange ?? setInternalOpen;
+
+  // 监听弹窗关闭状态
+  useOAuthPopupMonitor();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,11 +54,11 @@ export function LoginPopover() {
           <h3 className="font-serif text-lg sm:text-xl font-medium text-foreground">登录</h3>
         </div>
 
-        {isRedirecting
+        {isLoading
           ? (
               <div className="flex flex-col items-center justify-center py-4 sm:py-6 gap-2 sm:gap-3">
                 <Icon icon="mingcute:loading-line" className="size-6 sm:size-8 text-accent-500 animate-spin" />
-                <span className="text-[11px] sm:text-xs text-muted-foreground animate-pulse">正在前往登录...</span>
+                <span className="text-[11px] sm:text-xs text-muted-foreground animate-pulse">正在登录...</span>
               </div>
             )
           : (
@@ -72,9 +81,7 @@ export function LoginPopover() {
                 <div className="border-t border-dashed border-border/50 my-3 sm:my-4" />
 
                 <div className="flex flex-col gap-2 sm:gap-2.5">
-                  <div onClick={handleOAuthClick}>
-                    <OAuthButtons variant="compact" className="flex-col" />
-                  </div>
+                  <OAuthButtons variant="compact" className="flex-col" />
                 </div>
 
                 <button

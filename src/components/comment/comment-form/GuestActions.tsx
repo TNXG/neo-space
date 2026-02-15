@@ -12,6 +12,8 @@ interface GuestActionsProps {
   onSubmit: () => void;
   canSubmit: boolean;
   isPending: boolean;
+  isLoginOpen?: boolean;
+  onLoginOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -23,6 +25,8 @@ export function GuestActions({
   onSubmit,
   canSubmit,
   isPending,
+  isLoginOpen,
+  onLoginOpenChange,
 }: GuestActionsProps) {
   return (
     <motion.div
@@ -37,7 +41,7 @@ export function GuestActions({
 
       {/* 登录按钮 + 发送按钮 */}
       <div className="flex items-center justify-end gap-2">
-        <LoginPopover />
+        <LoginPopover open={isLoginOpen} onOpenChange={onLoginOpenChange} />
         <SubmitButton onClick={onSubmit} disabled={!canSubmit} isPending={isPending} />
       </div>
     </motion.div>

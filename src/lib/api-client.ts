@@ -45,6 +45,25 @@ async function apiClient<T>(
     });
 
     if (!response.ok) {
+      // Handle 401 Unauthorized - token expired or invalid
+      if (response.status === 401) {
+        // Only clear auth on client side
+        if (typeof window !== "undefined") {
+          // Dynamically import to avoid circular dependency
+          Promise.all([
+            import("@/stores/auth-store"),
+            import("sonner"),
+          ]).then(([{ useAuthStore }, { toast }]) => {
+            const wasAuthenticated = useAuthStore.getState().isAuthenticated;
+            useAuthStore.getState().clearAuth();
+
+            // Only show toast if user was previously authenticated
+            if (wasAuthenticated) {
+              toast.error("登录已过期，请重新登录");
+            }
+          });
+        }
+      }
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 

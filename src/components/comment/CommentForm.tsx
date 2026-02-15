@@ -52,7 +52,7 @@ export function CommentForm({
   const draftKey = `${STORAGE_KEY_DRAFT_PREFIX}${refId}-${parentId || "root"}`;
   const [isFocused, setIsFocused] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [activePopover, setActivePopover] = useState<"profile" | null>(null);
+  const [activePopover, setActivePopover] = useState<"profile" | "login" | null>(null);
   const [preview, setPreview] = useState(false);
 
   // Turnstile 验证状态（仅非登录用户需要）
@@ -125,7 +125,7 @@ export function CommentForm({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // 如果有任何弹窗打开（ProfilePopover 或表情选择器），不关闭评论栏
+        // 如果有任何弹窗打开（ProfilePopover、LoginPopover 或表情选择器），不关闭评论栏
         if (activePopover || showEmoji) {
           return;
         }
@@ -374,6 +374,10 @@ export function CommentForm({
                       onSubmit={handleSubmit}
                       canSubmit={canSubmit}
                       isPending={isPending}
+                      isLoginOpen={activePopover === "login"}
+                      onLoginOpenChange={(open) => {
+                        setActivePopover(open ? "login" : null);
+                      }}
                     />
                   )}
             </AnimatePresence>

@@ -36,6 +36,14 @@ impl IdentityService {
         let reader_repo = ReaderRepository::new(&self.db);
         let account_repo = AccountRepository::new(&self.db);
 
+        log::info!(
+            "[OAuth] 开始处理登录: provider={}, provider_id={}, name={}, email={:?}",
+            payload.provider,
+            payload.provider_id,
+            payload.name,
+            payload.email
+        );
+
         // 1. 查找现有账号
         let existing_acc = account_repo
             .find_by_provider_and_account_id(&payload.provider, &payload.provider_id)
@@ -43,13 +51,21 @@ impl IdentityService {
             .map_err(|e| e.to_string())?;
 
         if let Some(acc) = existing_acc {
+            log::info!(
+                "[OAuth] 找到现有账号: account_id={}, user_id={}",
+                acc.id,
+                acc.user_id
+            );
             let reader = reader_repo
                 .find_by_id(acc.user_id)
                 .await
                 .map_err(|e| e.to_string())?
                 .ok_or_else(|| "账户数据不一致".to_string())?;
+            log::info!("[OAuth] 返回现有用户: is_new_user=false");
             return Ok((reader.id, reader.is_owner, false));
         }
+
+        log::info!("[OAuth] 未找到现有账号，尝试邮箱匹配");
 
         // 2. 新用户：尝试通过邮箱自动匹配
         if let Some(ref email) = payload.email {
@@ -58,18 +74,28 @@ impl IdentityService {
                 .await
                 .map_err(|e| e.to_string())?
             {
+                log::info!(
+                    "[OAuth] 通过邮箱匹配到现有用户: email={}, user_id={}",
+                    email,
+                    matched_reader.id
+                );
                 // 自动绑定到已有 Reader
                 self.create_account_record(matched_reader.id, &payload)
                     .await?;
+                log::info!("[OAuth] 自动绑定完成: is_new_user=false");
                 return Ok((matched_reader.id, matched_reader.is_owner, false));
             }
         }
+
+        log::info!("[OAuth] 创建新用户");
 
         // 3. 彻底的新用户：检查是否是系统第一个用户
         let is_first = reader_repo.is_empty().await.unwrap_or(false);
         let temp_id = ObjectId::new();
 
         self.create_account_record(temp_id, &payload).await?;
+
+        log::info!("[OAuth] 新用户创建完成: temp_id={}, is_first={}, is_new_user=true", temp_id, is_first);
 
         Ok((temp_id, is_first, true))
     }
