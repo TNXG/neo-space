@@ -20,10 +20,12 @@ impl ReaderSSEService {
         page_type: Option<String>,
         page_id: Option<String>,
         page_title: Option<String>,
+        fingerprint: Option<String>,
     ) -> EventStream![] {
         EventStream! {
             let client_id = format!("reader_sse_{}", Uuid::new_v4());
-            let fingerprint = format!("sse_{}", Utc::now().timestamp());
+            // 使用前端传来的 fingerprint，如果没有则生成一个（兜底）
+            let fingerprint = fingerprint.unwrap_or_else(|| format!("sse_{}", Uuid::new_v4()));
 
             // 创建消息通道
             let (tx, rx) = mpsc::unbounded_channel::<ServerToReaderMessage>();
@@ -42,10 +44,15 @@ impl ReaderSSEService {
             // 注册读者到事件总线
             event_bus.register_reader(client_id.clone(), tx, reader_info).await;
 
-            log::info!("读者 SSE 已连接: {}", client_id);
-
             // 获取当前在线人数
             let online_count = event_bus.reader_count().await;
+
+            log::info!(
+                "读者 SSE 已连接 | client_id: {} | fingerprint: {} | 在线人数: {}",
+                client_id,
+                fingerprint,
+                online_count
+            );
 
             // 发送欢迎消息
             let welcome = ServerToReaderMessage::Welcome { online_count };
@@ -94,7 +101,15 @@ impl ReaderSSEService {
             };
             event_bus.broadcast_to_readers(count_update).await;
 
-            log::info!("读者 SSE 已断开: {}", client_id);
+            // 广播更新后的阅读列表
+            Self::broadcast_reading_list(&event_bus).await;
+
+            log::info!(
+                "读者 SSE 已断开 | client_id: {} | fingerprint: {} | 在线人数: {}",
+                client_id,
+                fingerprint,
+                online_count
+            );
         }
     }
 

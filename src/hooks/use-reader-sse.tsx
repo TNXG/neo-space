@@ -6,6 +6,7 @@ import type {
   ReadingItem,
   WindowInfo,
 } from "@/stores/sse-store";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCallback, useEffect, useRef } from "react";
 import { SSE_BASE_URL } from "@/lib/api-client";
 import { useSSEStore } from "@/stores/sse-store";
@@ -44,6 +45,52 @@ interface UseReaderSSEOptions {
 let sseInstance: EventSource | null = null;
 let activeSubscribers = 0;
 let disconnectTimeout: NodeJS.Timeout | null = null;
+
+// 缓存 fingerprint，避免重复计算
+let cachedFingerprint: string | null = null;
+let fingerprintPromise: Promise<string> | null = null;
+
+// 使用 FingerprintJS 生成浏览器指纹
+async function getFingerprint(): Promise<string> {
+  // 如果已经有缓存，直接返回
+  if (cachedFingerprint) {
+    return cachedFingerprint;
+  }
+
+  // 如果正在计算中，返回同一个 Promise
+  if (fingerprintPromise) {
+    return fingerprintPromise;
+  }
+
+  // 开始计算指纹
+  fingerprintPromise = (async () => {
+    try {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      cachedFingerprint = result.visitorId;
+      return cachedFingerprint;
+    } catch (error) {
+      console.error("Failed to generate fingerprint:", error);
+      // 降级方案：使用 localStorage + 随机数
+      const STORAGE_KEY = "reader_fingerprint_fallback";
+      if (typeof window !== "undefined") {
+        let fallback = localStorage.getItem(STORAGE_KEY);
+        if (!fallback) {
+          fallback = `fp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+          localStorage.setItem(STORAGE_KEY, fallback);
+        }
+        cachedFingerprint = fallback;
+        return fallback;
+      }
+      // SSR 环境兜底
+      return `fp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    } finally {
+      fingerprintPromise = null;
+    }
+  })();
+
+  return fingerprintPromise;
+}
 
 export function useReaderSSE(options: UseReaderSSEOptions = {}) {
   const optionsRef = useRef(options);
@@ -111,7 +158,7 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
     }
   }, [setOnlineCount, setCurrentPageReaders, setReadingList, setOwnerWindowInfo, setOwnerMediaPlayback]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (disconnectTimeout) {
       clearTimeout(disconnectTimeout);
       disconnectTimeout = null;
@@ -135,6 +182,10 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
         params.append("page_id", opts.pageId);
       if (opts.pageTitle)
         params.append("page_title", opts.pageTitle);
+
+      // 添加 fingerprint 参数（异步获取）
+      const fingerprint = await getFingerprint();
+      params.append("fingerprint", fingerprint);
 
       const url = `${SSE_BASE_URL}/reader${params.toString() ? `?${params.toString()}` : ""}`;
       const sse = new EventSource(url);
