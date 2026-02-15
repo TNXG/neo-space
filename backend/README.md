@@ -5,6 +5,7 @@
 Neo Space Backend 是一个基于 Rust 和 Rocket.rs 框架构建的高性能博客系统后端 API。项目采用现代化的分层架构设计，注重代码质量、类型安全和性能优化。
 
 **技术栈：**
+
 - **Web 框架**: Rocket.rs 0.5.1
 - **数据库**: MongoDB 3.4.1
 - **异步运行时**: Tokio 1.49.0
@@ -179,6 +180,7 @@ backend/
 - **services.rs**: 初始化所有应用服务（缓存、邮件、验证码等）
 
 **启动流程：**
+
 ```rust
 1. init_logging()          // 初始化日志系统
 2. load_config()           // 加载 OAuth 配置
@@ -192,11 +194,13 @@ backend/
 #### 2. Routes 模块（路由层）
 
 处理 HTTP 请求，负责：
+
 - 参数验证和解析
 - 调用 Service 层处理业务逻辑
 - 格式化响应数据
 
 **主要路由组：**
+
 - `/api/posts` - 文章管理
 - `/api/notes` - 日记管理
 - `/api/categories` - 分类管理
@@ -208,6 +212,7 @@ backend/
 - `/api/config` - 站点配置
 
 **统一响应格式：**
+
 ```rust
 pub struct ApiResponse<T> {
     pub code: i32,
@@ -249,6 +254,7 @@ pub struct ApiResponse<T> {
 - **options_repository.rs**: 配置数据访问
 
 **设计原则：**
+
 - 单一职责：每个 Repository 只负责一个集合
 - 无业务逻辑：只包含数据库操作，不包含业务判断
 - 类型安全：使用强类型模型，避免运行时错误
@@ -336,6 +342,7 @@ Rocket 请求守卫，用于：
 ### 核心实体
 
 #### Post（文章）
+
 ```rust
 pub struct Post {
     pub _id: ObjectId,
@@ -354,6 +361,7 @@ pub struct Post {
 ```
 
 #### Note（日记）
+
 ```rust
 pub struct Note {
     pub _id: ObjectId,
@@ -371,6 +379,7 @@ pub struct Note {
 ```
 
 #### Comment（评论）
+
 ```rust
 pub struct Comment {
     pub _id: ObjectId,
@@ -389,6 +398,7 @@ pub struct Comment {
 ```
 
 #### Link（友链）
+
 ```rust
 pub struct Link {
     pub _id: ObjectId,
@@ -404,6 +414,7 @@ pub struct Link {
 ```
 
 #### User（用户）
+
 ```rust
 pub struct User {
     pub _id: ObjectId,
@@ -435,10 +446,12 @@ pub struct User {
 ### OAuth 集成
 
 支持的 OAuth 提供商：
+
 - **GitHub**: 使用 GitHub OAuth App
 - **QQ**: 使用 QQ 互联
 
 **OAuth 流程：**
+
 ```
 1. 前端跳转到 OAuth 授权页面
 2. 用户授权后回调到后端
@@ -485,6 +498,7 @@ pub struct User {
 ### OpenAPI 规范
 
 使用 `utoipa` 生成 OpenAPI 3.0 规范，包括：
+
 - 所有路由定义
 - 请求/响应模型
 - 参数说明
@@ -496,11 +510,11 @@ pub struct User {
 
 ```toml
 [profile.release]
-opt-level = "z"        # 优化体积
-lto = true             # 链接时优化
-codegen-units = 1      # 单个代码生成单元
-panic = "abort"        # Panic 时直接终止
-strip = true           # 移除调试符号
+opt-level = "z" # 优化体积
+lto = true # 链接时优化
+codegen-units = 1 # 单个代码生成单元
+panic = "abort" # Panic 时直接终止
+strip = true # 移除调试符号
 ```
 
 ### 依赖优化
@@ -559,10 +573,12 @@ docker run -p 8000:8000 \
 ### 环境变量
 
 必需：
+
 - `MONGODB_URI`: MongoDB 连接字符串
 - `JWT_SECRET`: JWT 签名密钥
 
 可选：
+
 - `CACHE_MAX_CAPACITY`: 缓存最大容量（默认 10000）
 - `CACHE_TTL_SECONDS`: 缓存 TTL（默认 3600）
 - `NEXTJS_URL`: Next.js 前端地址
@@ -628,5 +644,5 @@ cargo fmt
 
 ---
 
-**维护者**: TNXG  
+**维护者**: TNXG
 **最后更新**: 2026-01-06
