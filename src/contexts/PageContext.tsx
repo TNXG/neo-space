@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 "use client";
 
 import type { ReactNode } from "react";
@@ -28,7 +29,7 @@ export function PageProvider({ children }: { children: ReactNode }) {
 
 export function usePageContext() {
   const context = use(PageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("usePageContext must be used within a PageProvider");
   }
   return context;
