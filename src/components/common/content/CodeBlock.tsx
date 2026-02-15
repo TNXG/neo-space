@@ -1,7 +1,8 @@
 "use client";
 
 import { Icon } from "@iconify/react/offline";
-import React, { useRef, useState } from "react";
+import * as React from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { FileIcon } from "@/lib/file-icons";

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useRef } from "react";
+import * as React from "react";
+import { useCallback, useRef } from "react";
 import { clsxm } from "@/lib/utils";
 
 type MagneticHoverEffectProps<T extends React.ElementType> = {

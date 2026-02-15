@@ -1,5 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import type { SVGProps } from "react";
-import React, { useEffect, useMemo, useState } from "react";
+import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number | string;
