@@ -12,7 +12,7 @@ interface TurnstileWidgetProps {
 }
 
 // 从环境变量获取 Turnstile Site Key
-// eslint-disable-next-line node/prefer-global/process
+
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 declare global {

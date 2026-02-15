@@ -57,10 +57,10 @@ function AuthCallbackContent() {
           const errorMessage = decodeURIComponent(errorParam);
           setStatus("error");
           setMessage(errorMessage);
-          
+
           // 检测是否为移动端直接跳转模式
           const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
-          
+
           if (window.opener) {
             window.opener.postMessage({ type: "oauth_error", message: errorMessage }, window.location.origin);
             const timer = setTimeout(() => window.close(), 3000);
@@ -97,10 +97,10 @@ function AuthCallbackContent() {
         } else {
           setStatus("success");
           setMessage("登录成功");
-          
+
           // 检测是否为移动端直接跳转模式
           const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
-          
+
           if (window.opener) {
             window.opener.postMessage(
               { type: "oauth_success", token: tokenParam, isNewUser: false },
@@ -125,10 +125,10 @@ function AuthCallbackContent() {
         const errorMessage = err instanceof Error ? err.message : "登录失败";
         setStatus("error");
         setMessage(errorMessage);
-        
+
         // 检测是否为移动端直接跳转模式
         const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
-        
+
         if (window.opener) {
           window.opener.postMessage({ type: "oauth_error", message: errorMessage }, window.location.origin);
           const timer = setTimeout(() => window.close(), 3000);
@@ -170,10 +170,10 @@ function AuthCallbackContent() {
         toast.success("绑定成功");
         setStatus("success");
         setMessage("身份绑定完成");
-        
+
         // 检测是否为移动端直接跳转模式
         const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
-        
+
         if (window.opener) {
           window.opener.postMessage(
             { type: "oauth_success", token: response.message, isNewUser: true, bound: true },
@@ -213,10 +213,10 @@ function AuthCallbackContent() {
       if (response.code === 200) {
         setStatus("success");
         setMessage("注册成功");
-        
+
         // 检测是否为移动端直接跳转模式
         const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
-        
+
         if (window.opener) {
           window.opener.postMessage(
             { type: "oauth_success", token: response.message, isNewUser: true, bound: false },

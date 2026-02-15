@@ -83,7 +83,7 @@ export default async function NotePage({ params }: PageProps) {
     note = noteResponse.data;
     adjacentNotes = adjacentResponse.data;
     toc = await extractTOC(note.text);
-    
+
     if (configResponse) {
       authorName = configResponse.data.seo.title;
     }
@@ -106,43 +106,43 @@ export default async function NotePage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <ArticleLayout
-      toc={toc}
-      header={(
-        <NoteHeader
-          title={note.title}
-          nid={note.nid}
-          created={note.created}
-          modified={note.modified}
-          mood={note.mood}
-          weather={note.weather}
-          location={note.location}
-        />
-      )}
-      content={(
-        <>
-          <OutdatedAlert
-            refId={note._id}
-            refType="note"
-            lastUpdated={note.modified || note.created}
+        toc={toc}
+        header={(
+          <NoteHeader
+            title={note.title}
+            nid={note.nid}
+            created={note.created}
+            modified={note.modified}
+            mood={note.mood}
+            weather={note.weather}
+            location={note.location}
           />
-          <MarkdownRenderer content={note.text} />
-        </>
-      )}
-      footer={note.allowComment && (
-        <Suspense fallback={<CommentSkeleton />}>
-          <CommentSectionServer
-            refId={note._id}
-            refType="notes"
-          />
-        </Suspense>
-      )}
-      navigation={{
-        type: "note",
-        prevLink: adjacentNotes.prev ? `/notes/${adjacentNotes.prev.nid}` : undefined,
-        nextLink: adjacentNotes.next ? `/notes/${adjacentNotes.next.nid}` : undefined,
-        prevTitle: adjacentNotes.prev?.title,
-        nextTitle: adjacentNotes.next?.title,
-      }}
+        )}
+        content={(
+          <>
+            <OutdatedAlert
+              refId={note._id}
+              refType="note"
+              lastUpdated={note.modified || note.created}
+            />
+            <MarkdownRenderer content={note.text} />
+          </>
+        )}
+        footer={note.allowComment && (
+          <Suspense fallback={<CommentSkeleton />}>
+            <CommentSectionServer
+              refId={note._id}
+              refType="notes"
+            />
+          </Suspense>
+        )}
+        navigation={{
+          type: "note",
+          prevLink: adjacentNotes.prev ? `/notes/${adjacentNotes.prev.nid}` : undefined,
+          nextLink: adjacentNotes.next ? `/notes/${adjacentNotes.next.nid}` : undefined,
+          prevTitle: adjacentNotes.prev?.title,
+          nextTitle: adjacentNotes.next?.title,
+        }}
       />
     </>
   );

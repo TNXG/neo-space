@@ -120,55 +120,55 @@ export default async function PostPage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <ArticleLayout
-      toc={toc}
-      header={(
-        <ArticleHeader
-          title={post.title}
-          category={post.category}
-          tags={post.tags}
-          created={post.created}
-          modified={post.modified}
-          summary={post.summary}
-          aiSummary={post.aiSummary}
-          typeLabel="Article"
-        />
-      )}
-      content={(
-        <>
-          <OutdatedAlert
-            refId={post._id}
-            refType="post"
-            lastUpdated={post.modified || post.created}
+        toc={toc}
+        header={(
+          <ArticleHeader
+            title={post.title}
+            category={post.category}
+            tags={post.tags}
+            created={post.created}
+            modified={post.modified}
+            summary={post.summary}
+            aiSummary={post.aiSummary}
+            typeLabel="Article"
           />
-          <MarkdownRenderer content={post.text} />
-        </>
-      )}
-      footer={(
-        <>
-          {post.copyright && (
-            <CopyrightCard
-              author={authorName}
-              year={postYear}
-              postTitle={post.title}
+        )}
+        content={(
+          <>
+            <OutdatedAlert
+              refId={post._id}
+              refType="post"
+              lastUpdated={post.modified || post.created}
             />
-          )}
-          {post.allowComment && (
-            <Suspense fallback={<CommentSkeleton />}>
-              <CommentSectionServer
-                refId={post._id}
-                refType="posts"
+            <MarkdownRenderer content={post.text} />
+          </>
+        )}
+        footer={(
+          <>
+            {post.copyright && (
+              <CopyrightCard
+                author={authorName}
+                year={postYear}
+                postTitle={post.title}
               />
-            </Suspense>
-          )}
-        </>
-      )}
-      navigation={{
-        type: "post",
-        prevLink: adjacentPosts.prev ? `/posts/${adjacentPosts.prev.categorySlug}/${adjacentPosts.prev.slug}` : undefined,
-        nextLink: adjacentPosts.next ? `/posts/${adjacentPosts.next.categorySlug}/${adjacentPosts.next.slug}` : undefined,
-        prevTitle: adjacentPosts.prev?.title,
-        nextTitle: adjacentPosts.next?.title,
-      }}
+            )}
+            {post.allowComment && (
+              <Suspense fallback={<CommentSkeleton />}>
+                <CommentSectionServer
+                  refId={post._id}
+                  refType="posts"
+                />
+              </Suspense>
+            )}
+          </>
+        )}
+        navigation={{
+          type: "post",
+          prevLink: adjacentPosts.prev ? `/posts/${adjacentPosts.prev.categorySlug}/${adjacentPosts.prev.slug}` : undefined,
+          nextLink: adjacentPosts.next ? `/posts/${adjacentPosts.next.categorySlug}/${adjacentPosts.next.slug}` : undefined,
+          prevTitle: adjacentPosts.prev?.title,
+          nextTitle: adjacentPosts.next?.title,
+        }}
       />
     </>
   );
