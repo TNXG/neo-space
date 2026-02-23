@@ -7,13 +7,13 @@ use crate::models::ApiResponse;
 use crate::openapi::ApiDoc;
 use crate::websocket::EventBus;
 use mongodb::Database;
-use rocket::http::Method;
 use rocket::Rocket;
+use rocket::http::Method;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use super::{init_database, init_services, load_config, AppServices};
+use super::{AppServices, init_database, init_services, load_config};
 
 /// 404 Not Found error catcher
 #[catch(404)]
@@ -120,7 +120,11 @@ fn init_logging() {
 
     // 设置默认日志级别
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
+        // SAFETY: 在单线程初始化阶段设置环境变量是安全的
+        // 这发生在任何其他线程启动之前
+        unsafe {
+            std::env::set_var("RUST_LOG", "info");
+        }
     }
 
     // 使用 try_init 避免在测试中重复初始化 logger

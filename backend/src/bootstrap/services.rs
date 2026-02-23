@@ -75,6 +75,32 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
         .map(|v| v == "true" || v == "1")
         .unwrap_or(false);
 
+    // Initialize search service (optional) - before Change Stream so it can be passed in
+    let search_service = if let Ok(meilisearch_url) = std::env::var("MEILISEARCH_URL") {
+        let api_key = std::env::var("MEILISEARCH_API_KEY").ok();
+        let service = SearchService::new(meilisearch_url, api_key);
+
+        // 异步初始化索引并同步数据
+        let service_clone = service.clone();
+        let db_clone = database.clone();
+        tokio::spawn(async move {
+            if let Err(e) = service_clone.init_indexes().await {
+                log::warn!("Meilisearch 索引初始化失败: {e}");
+                return;
+            }
+
+            // 从 MongoDB 同步数据到 Meilisearch
+            sync_posts_to_search(&db_clone, &service_clone).await;
+            sync_notes_to_search(&db_clone, &service_clone).await;
+        });
+
+        log::info!("Meilisearch 搜索服务初始化成功");
+        Some(service)
+    } else {
+        log::warn!("MEILISEARCH_URL 未配置，搜索服务已禁用");
+        None
+    };
+
     if disable_change_stream {
         log::info!("Change Stream 监听服务已禁用（DISABLE_CHANGE_STREAM=true）");
     } else if let Some(ref revalidation_service) = revalidation_service_opt {
@@ -83,6 +109,7 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
             database.clone(),
             cache_service.clone(),
             revalidation_service.as_ref().clone(),
+            search_service.clone(),
         );
 
         // Spawn Change Stream listener in background task
@@ -132,32 +159,6 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
     // Initialize JWT verifier
     let jwt_verifier = JWTVerifier::new(oauth_config.jwt_secret.clone());
     log::info!("JWT 验证服务初始化成功");
-
-    // Initialize search service (optional)
-    let search_service = if let Ok(meilisearch_url) = std::env::var("MEILISEARCH_URL") {
-        let api_key = std::env::var("MEILISEARCH_API_KEY").ok();
-        let service = SearchService::new(meilisearch_url, api_key);
-
-        // 异步初始化索引并同步数据
-        let service_clone = service.clone();
-        let db_clone = database.clone();
-        tokio::spawn(async move {
-            if let Err(e) = service_clone.init_indexes().await {
-                log::warn!("Meilisearch 索引初始化失败: {e}");
-                return;
-            }
-
-            // 从 MongoDB 同步数据到 Meilisearch
-            sync_posts_to_search(&db_clone, &service_clone).await;
-            sync_notes_to_search(&db_clone, &service_clone).await;
-        });
-
-        log::info!("Meilisearch 搜索服务初始化成功");
-        Some(service)
-    } else {
-        log::warn!("MEILISEARCH_URL 未配置，搜索服务已禁用");
-        None
-    };
 
     // 启动时异步检查所有友链（后台任务）
     {
