@@ -320,10 +320,11 @@ impl SearchService {
         query: &str,
         limit: usize,
         offset: usize,
+        semantic: bool,
     ) -> Result<Vec<PostSearchHit>, Box<dyn std::error::Error>> {
-        let results = self
-            .posts_index()
-            .search()
+        let index = self.posts_index();
+        let mut search = index.search();
+        search
             .with_query(query)
             .with_limit(limit)
             .with_offset(offset)
@@ -331,9 +332,13 @@ impl SearchService {
             .with_attributes_to_crop(Selectors::Some(&[("text", Some(80))]))
             .with_highlight_pre_tag("<mark>")
             .with_highlight_post_tag("</mark>")
-            .with_show_ranking_score(true)
-            .execute::<PostDocument>()
-            .await?;
+            .with_show_ranking_score(true);
+
+        if semantic {
+            search.with_hybrid("default", 0.5);
+        }
+
+        let results = search.execute::<PostDocument>().await?;
 
         Ok(results
             .hits
@@ -352,10 +357,11 @@ impl SearchService {
         query: &str,
         limit: usize,
         offset: usize,
+        semantic: bool,
     ) -> Result<Vec<NoteSearchHit>, Box<dyn std::error::Error>> {
-        let results = self
-            .notes_index()
-            .search()
+        let index = self.notes_index();
+        let mut search = index.search();
+        search
             .with_query(query)
             .with_limit(limit)
             .with_offset(offset)
@@ -363,9 +369,13 @@ impl SearchService {
             .with_attributes_to_crop(Selectors::Some(&[("text", Some(80))]))
             .with_highlight_pre_tag("<mark>")
             .with_highlight_post_tag("</mark>")
-            .with_show_ranking_score(true)
-            .execute::<NoteDocument>()
-            .await?;
+            .with_show_ranking_score(true);
+
+        if semantic {
+            search.with_hybrid("default", 0.5);
+        }
+
+        let results = search.execute::<NoteDocument>().await?;
 
         Ok(results
             .hits

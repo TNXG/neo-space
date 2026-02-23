@@ -121,11 +121,12 @@ export async function fetchLinks(page: number, size = 20): Promise<PaginatedResp
  * @param query - 搜索关键词（为空时不发起请求）
  * @param type_ - 搜索类型：'post' | 'note'，不传则搜索全部
  * @param limit - 每种类型的最大结果数
+ * @param semantic - 是否启用语义搜索（混合搜索）
  */
-export function useSearch(query: string, type_?: "post" | "note", limit = 10) {
+export function useSearch(query: string, type_?: "post" | "note", limit = 10, semantic = false) {
   const trimmed = query.trim();
   const key = trimmed
-    ? `${API_BASE_URL}/search?q=${encodeURIComponent(trimmed)}${type_ ? `&type=${type_}` : ""}&limit=${limit}`
+    ? `${API_BASE_URL}/search?q=${encodeURIComponent(trimmed)}${type_ ? `&type=${type_}` : ""}&limit=${limit}${semantic ? "&semantic=true" : ""}`
     : null;
 
   return useSWR<ApiResponse<SearchResults>>(key, fetcher, {

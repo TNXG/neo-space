@@ -32,9 +32,10 @@ export function SearchPanel({ open, onOpenChange }: SearchPanelProps) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [semantic, setSemantic] = useState(false);
   const prevQueryRef = useRef(debouncedQuery);
 
-  const { data, isLoading } = useSearch(debouncedQuery);
+  const { data, isLoading } = useSearch(debouncedQuery, undefined, 10, semantic);
 
   // 归一化各自分数后混排，避免因两类分数量纲不同而同类堆叠
   const allResults: SearchItem[] = useMemo(() => {
@@ -92,6 +93,7 @@ export function SearchPanel({ open, onOpenChange }: SearchPanelProps) {
     setQuery("");
     setDebouncedQuery("");
     setSelectedIndex(0);
+    setSemantic(false);
     prevQueryRef.current = "";
   };
 
@@ -131,7 +133,9 @@ export function SearchPanel({ open, onOpenChange }: SearchPanelProps) {
                 inputRef={inputRef}
                 query={query}
                 isLoading={isLoading}
+                semantic={semantic}
                 onQueryChange={setQuery}
+                onSemanticChange={setSemantic}
                 onKeyDown={handleKeyDown}
               />
 

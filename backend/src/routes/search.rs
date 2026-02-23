@@ -83,7 +83,8 @@ pub struct SearchResults {
         ("q" = String, Query, description = "搜索关键词"),
         ("type" = Option<String>, Query, description = "搜索类型：post/note，不传则搜索全部"),
         ("limit" = Option<usize>, Query, description = "每种类型的最大结果数，默认 10"),
-        ("offset" = Option<usize>, Query, description = "偏移量，默认 0")
+        ("offset" = Option<usize>, Query, description = "偏移量，默认 0"),
+        ("semantic" = Option<bool>, Query, description = "是否启用语义搜索（混合搜索），默认 false")
     ),
     responses(
         (status = 200, description = "搜索成功", body = ApiResponse<SearchResults>),
@@ -92,13 +93,14 @@ pub struct SearchResults {
     ),
     tag = "搜索"
 )]
-#[get("/search?<q>&<type_>&<limit>&<offset>")]
+#[get("/search?<q>&<type_>&<limit>&<offset>&<semantic>")]
 pub async fn search(
     search_service: &State<Option<SearchService>>,
     q: Option<String>,
     type_: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
+    semantic: Option<bool>,
 ) -> Result<Json<ApiResponse<SearchResults>>, Status> {
     // 检查搜索服务是否可用
     let service = search_service.as_ref().ok_or(Status::ServiceUnavailable)?;
@@ -111,6 +113,7 @@ pub async fn search(
     let limit = limit.unwrap_or(10).min(50);
     let offset = offset.unwrap_or(0);
     let search_type = type_.as_deref();
+    let semantic = semantic.unwrap_or(false);
 
     let mut results = SearchResults {
         posts: Vec::new(),
@@ -119,7 +122,7 @@ pub async fn search(
 
     // 搜索文章
     if search_type.is_none() || search_type == Some("post") {
-        match service.search_posts(&query, limit, offset).await {
+        match service.search_posts(&query, limit, offset, semantic).await {
             Ok(hits) => {
                 results.posts = hits
                     .into_iter()
@@ -147,7 +150,7 @@ pub async fn search(
 
     // 搜索笔记
     if search_type.is_none() || search_type == Some("note") {
-        match service.search_notes(&query, limit, offset).await {
+        match service.search_notes(&query, limit, offset, semantic).await {
             Ok(hits) => {
                 results.notes = hits
                     .into_iter()
