@@ -74,6 +74,10 @@ impl SearchService {
     /// 创建新的搜索服务实例
     pub fn new(url: String, api_key: Option<String>) -> Self {
         log::info!("初始化 Meilisearch 客户端: {url}");
+
+        // 自动将 Meilisearch 主机添加到 NO_PROXY，避免系统代理干扰连接
+        Self::configure_proxy_bypass(&url);
+
         if let Some(ref key) = api_key {
             log::info!("使用 API Key 认证 (Key 长度: {})", key.len());
         } else {
@@ -98,6 +102,47 @@ impl SearchService {
                 panic!("Failed to create Meilisearch client: {e}");
             }
         }
+    }
+
+    /// 将 Meilisearch 主机添加到 NO_PROXY 环境变量，避免系统代理干扰连接
+    ///
+    /// meilisearch-sdk 内部使用 reqwest 发送 HTTP 请求，reqwest 默认读取
+    /// HTTP_PROXY/HTTPS_PROXY 等环境变量。当系统配置了代理但 Meilisearch
+    /// 服务不经过代理时，会导致 "error sending request for url" 错误。
+    fn configure_proxy_bypass(url: &str) {
+        let host = Self::extract_host(url);
+        if host.is_empty() {
+            return;
+        }
+
+        let current = std::env::var("NO_PROXY").unwrap_or_default();
+        if current.split(',').any(|h| h.trim() == host) {
+            log::debug!("{host} 已在 NO_PROXY 列表中，跳过配置");
+            return;
+        }
+
+        let new_val = if current.is_empty() {
+            host.clone()
+        } else {
+            format!("{current},{host}")
+        };
+
+        // SAFETY: 在服务初始化阶段（单线程）调用，不存在并发修改环境变量的风险
+        unsafe {
+            std::env::set_var("NO_PROXY", &new_val);
+            std::env::set_var("no_proxy", &new_val);
+        }
+        log::info!("已将 {host} 添加到 NO_PROXY 以绕过系统代理");
+    }
+
+    /// 从 URL 中提取主机名（不含协议和端口）
+    fn extract_host(url: &str) -> String {
+        let without_scheme = url
+            .strip_prefix("https://")
+            .or_else(|| url.strip_prefix("http://"))
+            .unwrap_or(url);
+        let host_port = without_scheme.split('/').next().unwrap_or_default();
+        host_port.split(':').next().unwrap_or_default().to_string()
     }
 
     /// 健康检查
