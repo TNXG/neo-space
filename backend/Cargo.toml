@@ -56,6 +56,7 @@ futures = { version = "0.3.32", default-features = false, features = [
   "std",
   "async-await",
 ] }
+futures-io = "0.3"
 
 # Async Trait
 async-trait = "0.1.89"
@@ -128,6 +129,9 @@ tokio-stream = "0.1.18"
 
 # Meilisearch
 meilisearch-sdk = "0.32.0"
+# 与 meilisearch-sdk 内部使用的 reqwest 版本一致，用于构建自定义无代理 HTTP 客户端
+reqwest-meili = { package = "reqwest", version = "0.12", default-features = false, features = ["http2", "stream", "rustls-tls"] }
+yaup = "0.3"
 
 [dev-dependencies]
 criterion = { version = "0.8.2", features = [ "html_reports" ] }

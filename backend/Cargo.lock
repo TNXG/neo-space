@@ -2420,6 +2420,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "futures",
+ "futures-io",
  "hex",
  "hmac",
  "jsonwebtoken",
@@ -2431,6 +2432,7 @@ dependencies = [
  "mongodb 3.5.1",
  "rand 0.10.0",
  "regex",
+ "reqwest 0.12.28",
  "reqwest 0.13.2",
  "rocket",
  "rocket_cors",
@@ -2446,6 +2448,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
+ "yaup",
 ]
 
 [[package]]
