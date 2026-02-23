@@ -85,7 +85,7 @@ fn init_cache_dirs() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 构建带有所有管理状态的 Rocket 实例
-#[must_use] 
+#[must_use]
 pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
     let AppInitialized {
         database,
@@ -103,6 +103,7 @@ pub fn build_rocket(init: AppInitialized) -> Rocket<rocket::Build> {
         .manage(app_services.link_health)
         .manage(app_services.verification)
         .manage(app_services.jwt_verifier)
+        .manage(app_services.search)
         .manage(event_bus)
         .attach(cors)
         .register("/", catchers![not_found, internal_error])

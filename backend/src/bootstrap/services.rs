@@ -3,10 +3,15 @@
 //! 负责所有服务的初始化
 
 use crate::config::OAuthConfig;
+use crate::infrastructure::search::service::{NoteDocument, PostDocument};
+use crate::infrastructure::search::SearchService;
 use crate::integrations::{IpService, LinkHealthService};
+use crate::models::{Category, Note, Post};
 use crate::services::{
     auth::JWTVerifier, CacheService, ChangeStreamService, RevalidationService, VerificationService,
 };
+use futures::stream::TryStreamExt;
+use mongodb::bson::doc;
 use mongodb::Database;
 
 /// 所有应用服务的集合
@@ -18,6 +23,7 @@ pub struct AppServices {
     pub link_health: LinkHealthService,
     pub verification: VerificationService,
     pub jwt_verifier: JWTVerifier,
+    pub search: Option<SearchService>,
 }
 
 /// 初始化所有应用服务
@@ -127,6 +133,32 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
     let jwt_verifier = JWTVerifier::new(oauth_config.jwt_secret.clone());
     log::info!("JWT 验证服务初始化成功");
 
+    // Initialize search service (optional)
+    let search_service = if let Ok(meilisearch_url) = std::env::var("MEILISEARCH_URL") {
+        let api_key = std::env::var("MEILISEARCH_API_KEY").ok();
+        let service = SearchService::new(meilisearch_url, api_key);
+
+        // 异步初始化索引并同步数据
+        let service_clone = service.clone();
+        let db_clone = database.clone();
+        tokio::spawn(async move {
+            if let Err(e) = service_clone.init_indexes().await {
+                log::warn!("Meilisearch 索引初始化失败: {e}");
+                return;
+            }
+
+            // 从 MongoDB 同步数据到 Meilisearch
+            sync_posts_to_search(&db_clone, &service_clone).await;
+            sync_notes_to_search(&db_clone, &service_clone).await;
+        });
+
+        log::info!("Meilisearch 搜索服务初始化成功");
+        Some(service)
+    } else {
+        log::warn!("MEILISEARCH_URL 未配置，搜索服务已禁用");
+        None
+    };
+
     // 启动时异步检查所有友链（后台任务）
     {
         let service = link_health_service.clone();
@@ -159,5 +191,81 @@ pub async fn init_services(database: Database, oauth_config: &OAuthConfig) -> Ap
         link_health: link_health_service,
         verification: verification_service,
         jwt_verifier,
+        search: search_service,
+    }
+}
+
+/// 同步文章数据到 Meilisearch
+async fn sync_posts_to_search(db: &Database, search: &SearchService) {
+    let posts_col = db.collection::<Post>("posts");
+    let categories_col = db.collection::<Category>("categories");
+
+    let filter = doc! { "isPublished": true };
+    let mut cursor = match posts_col.find(filter).await {
+        Ok(c) => c,
+        Err(e) => {
+            log::error!("同步文章数据失败 - 无法查询 MongoDB: {e}");
+            return;
+        }
+    };
+
+    let mut docs = Vec::new();
+    while let Ok(Some(post)) = cursor.try_next().await {
+        // 查找分类信息
+        let category = categories_col
+            .find_one(doc! { "_id": post.category_id })
+            .await
+            .ok()
+            .flatten();
+
+        docs.push(PostDocument {
+            id: post.id.to_hex(),
+            title: post.title,
+            text: post.text,
+            slug: post.slug,
+            category: category.as_ref().map(|c| c.slug.clone()),
+            category_name: category.map(|c| c.name),
+            tags: post.tags,
+            created: post.created.timestamp_millis() / 1000,
+        });
+    }
+
+    let count = docs.len();
+    if let Err(e) = search.index_posts(docs).await {
+        log::error!("同步文章到 Meilisearch 失败: {e}");
+    } else {
+        log::info!("已同步 {count} 篇文章到 Meilisearch");
+    }
+}
+
+/// 同步笔记数据到 Meilisearch
+async fn sync_notes_to_search(db: &Database, search: &SearchService) {
+    let notes_col = db.collection::<Note>("notes");
+
+    let filter = doc! {};
+    let mut cursor = match notes_col.find(filter).await {
+        Ok(c) => c,
+        Err(e) => {
+            log::error!("同步笔记数据失败 - 无法查询 MongoDB: {e}");
+            return;
+        }
+    };
+
+    let mut docs = Vec::new();
+    while let Ok(Some(note)) = cursor.try_next().await {
+        docs.push(NoteDocument {
+            id: note.id.to_hex(),
+            title: note.title,
+            text: note.text,
+            nid: note.nid,
+            created: note.created.timestamp_millis() / 1000,
+        });
+    }
+
+    let count = docs.len();
+    if let Err(e) = search.index_notes(docs).await {
+        log::error!("同步笔记到 Meilisearch 失败: {e}");
+    } else {
+        log::info!("已同步 {count} 篇笔记到 Meilisearch");
     }
 }

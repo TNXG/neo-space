@@ -10,6 +10,7 @@ pub mod notes;
 pub mod pages;
 pub mod posts;
 pub mod recentlies;
+pub mod search;
 pub mod sse;
 pub mod users;
 pub mod ws;

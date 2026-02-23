@@ -6,6 +6,7 @@ pub mod cache;
 pub mod database;
 pub mod email;
 pub mod revalidation;
+pub mod search;
 pub mod verification;
 
 // 重新导出所有基础设施服务
