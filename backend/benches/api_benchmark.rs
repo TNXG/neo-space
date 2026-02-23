@@ -3,8 +3,9 @@
 //! 使用 Criterion 进行精确的性能基准测试
 //! 运行: cargo bench
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
 use rocket::local::blocking::Client;
+use std::hint::black_box;
 
 /// 创建测试客户端（只创建一次）
 fn create_test_client() -> Client {
