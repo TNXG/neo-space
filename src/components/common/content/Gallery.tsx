@@ -20,6 +20,7 @@ interface GalleryProps {
  */
 export function Gallery({ images, className }: GalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   // 阻止背景滚动
   useEffect(() => {
@@ -45,7 +46,13 @@ export function Gallery({ images, className }: GalleryProps) {
     return null;
   }
 
-  const handleClose = () => setSelectedIndex(null);
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setSelectedIndex(null);
+      setIsClosing(false);
+    }, 200);
+  };
   const handlePrev = () => {
     if (selectedIndex !== null) {
       setSelectedIndex((selectedIndex - 1 + images.length) % images.length);
@@ -90,7 +97,7 @@ export function Gallery({ images, className }: GalleryProps) {
       {/* Lightbox */}
       {selectedIndex !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          className={`fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 duration-200 ${isClosing ? "animate-out fade-out" : "animate-in fade-in"}`}
           onClick={handleClose}
         >
           <button

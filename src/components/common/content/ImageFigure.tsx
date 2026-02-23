@@ -86,7 +86,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
   const [exif, setExif] = useState<ExifData | null>(null);
   const mounted = typeof window !== "undefined";
   const imgRef = useRef<HTMLImageElement>(null);
-  const hasCheckedCache = useRef(false);
+  const hasCheckedCacheRef = useRef(false);
 
   const loadExifData = useCallback(async () => {
     if (isSmall || !src)
@@ -132,8 +132,8 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
   }, [loadExifData]);
 
   useEffect(() => {
-    if (!hasCheckedCache.current && imgRef.current?.complete) {
-      hasCheckedCache.current = true;
+    if (!hasCheckedCacheRef.current && imgRef.current?.complete) {
+      hasCheckedCacheRef.current = true;
       queueMicrotask(() => {
         handleImageComplete();
       });
@@ -239,20 +239,28 @@ function LightboxPortal({
   const [isDragging, setIsDragging] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-  const dragStart = useRef({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
-  const lastClickTime = useRef(0);
-  const touchStartDistance = useRef(0);
-  const touchStartScale = useRef(1);
-  const touchStartPos = useRef({ x: 0, y: 0 });
+  const lastClickTimeRef = useRef(0);
+  const touchStartDistanceRef = useRef(0);
+  const touchStartScaleRef = useRef(1);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 200);
+  }, [onClose]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape")
-        onClose();
+        handleClose();
     };
 
     // 阻止背景页面滚动
@@ -271,7 +279,7 @@ function LightboxPortal({
       document.body.removeEventListener("wheel", preventScroll);
       document.body.removeEventListener("touchmove", preventScroll);
     };
-  }, [onClose]);
+  }, [handleClose]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -296,15 +304,15 @@ function LightboxPortal({
     }
 
     const now = Date.now();
-    const timeSinceLastClick = now - lastClickTime.current;
+    const timeSinceLastClick = now - lastClickTimeRef.current;
 
     // 快速双击（250ms内）关闭灯箱
     if (timeSinceLastClick < 250) {
-      onClose();
+      handleClose();
       return;
     }
 
-    lastClickTime.current = now;
+    lastClickTimeRef.current = now;
 
     // 单击切换缩放
     setScale((prev) => {
@@ -314,13 +322,13 @@ function LightboxPortal({
       }
       return 2;
     });
-  }, [hasDragged, onClose]);
+  }, [hasDragged, handleClose]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (scale > 1) {
       setIsDragging(true);
       setHasDragged(false);
-      dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+      dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
       e.preventDefault();
       e.stopPropagation();
     }
@@ -328,8 +336,8 @@ function LightboxPortal({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging && scale > 1) {
-      const deltaX = Math.abs(e.clientX - dragStart.current.x - position.x);
-      const deltaY = Math.abs(e.clientY - dragStart.current.y - position.y);
+      const deltaX = Math.abs(e.clientX - dragStartRef.current.x - position.x);
+      const deltaY = Math.abs(e.clientY - dragStartRef.current.y - position.y);
 
       // 移动超过5px才算拖拽
       if (deltaX > 5 || deltaY > 5) {
@@ -337,8 +345,8 @@ function LightboxPortal({
       }
 
       setPosition({
-        x: e.clientX - dragStart.current.x,
-        y: e.clientY - dragStart.current.y,
+        x: e.clientX - dragStartRef.current.x,
+        y: e.clientY - dragStartRef.current.y,
       });
       e.stopPropagation();
     }
@@ -372,15 +380,15 @@ function LightboxPortal({
     if (e.touches.length === 2) {
       // 双指捏合
       e.preventDefault();
-      touchStartDistance.current = getTouchDistance(e.touches);
-      touchStartScale.current = scale;
-      touchStartPos.current = position;
+      touchStartDistanceRef.current = getTouchDistance(e.touches);
+      touchStartScaleRef.current = scale;
+      touchStartPosRef.current = position;
     } else if (e.touches.length === 1 && scale > 1) {
       // 单指拖拽（仅在放大时）
       setIsDragging(true);
       setHasDragged(false);
       const touch = e.touches[0];
-      dragStart.current = { x: touch.clientX - position.x, y: touch.clientY - position.y };
+      dragStartRef.current = { x: touch.clientX - position.x, y: touch.clientY - position.y };
     }
   };
 
@@ -390,8 +398,8 @@ function LightboxPortal({
       // 双指捏合缩放
       e.preventDefault();
       const currentDistance = getTouchDistance(e.touches);
-      const scaleChange = currentDistance / touchStartDistance.current;
-      const newScale = Math.max(1, Math.min(touchStartScale.current * scaleChange, 5));
+      const scaleChange = currentDistance / touchStartDistanceRef.current;
+      const newScale = Math.max(1, Math.min(touchStartScaleRef.current * scaleChange, 5));
 
       setScale(newScale);
 
@@ -402,16 +410,16 @@ function LightboxPortal({
       // 单指拖拽
       e.preventDefault();
       const touch = e.touches[0];
-      const deltaX = Math.abs(touch.clientX - dragStart.current.x - position.x);
-      const deltaY = Math.abs(touch.clientY - dragStart.current.y - position.y);
+      const deltaX = Math.abs(touch.clientX - dragStartRef.current.x - position.x);
+      const deltaY = Math.abs(touch.clientY - dragStartRef.current.y - position.y);
 
       if (deltaX > 5 || deltaY > 5) {
         setHasDragged(true);
       }
 
       setPosition({
-        x: touch.clientX - dragStart.current.x,
-        y: touch.clientY - dragStart.current.y,
+        x: touch.clientX - dragStartRef.current.x,
+        y: touch.clientY - dragStartRef.current.y,
       });
     }
   };
@@ -420,14 +428,14 @@ function LightboxPortal({
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (e.touches.length === 0) {
       setIsDragging(false);
-      touchStartDistance.current = 0;
+      touchStartDistanceRef.current = 0;
     }
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={onClose}
+      className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/80 backdrop-blur-md duration-200 ${isClosing ? "animate-out fade-out" : "animate-in fade-in"}`}
+      onClick={handleClose}
       onWheel={handleWheel}
     >
       <button
@@ -435,7 +443,7 @@ function LightboxPortal({
         className="absolute top-3 right-3 md:top-5 md:right-5 p-1.5 md:p-2 rounded-full bg-black/20 text-white/70 hover:bg-white/20 hover:text-white transition-colors z-50 cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
-          onClose();
+          handleClose();
         }}
         aria-label="Close"
       >
@@ -493,7 +501,7 @@ function LightboxPortal({
         </div>
 
         {exif && (
-          <p className="text-white/70 text-xs md:text-sm font-light tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
+          <p className="text-white/70 text-xs md:text-sm tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
             {exif.model && <span className="text-accent-300 font-semibold">{exif.model}</span>}
             {exif.model && (exif.focalLength || exif.fNumber || exif.exposureTime || exif.iso) && <span className="mx-1.5 md:mx-2">·</span>}
             {exif.focalLength && <span>{exif.focalLength}</span>}
@@ -511,7 +519,7 @@ function LightboxPortal({
           </p>
         )}
         {alt && (
-          <p className="text-white/70 text-xs md:text-sm font-light tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
+          <p className="text-white/70 text-xs md:text-sm tracking-wide select-none bg-black/30 px-2.5 md:px-3 py-1 rounded-lg backdrop-blur-sm text-center max-w-full overflow-hidden text-ellipsis">
             {alt}
           </p>
         )}
