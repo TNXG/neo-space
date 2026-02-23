@@ -89,6 +89,43 @@ export interface Category {
 }
 
 /**
+ * Search Result Types
+ */
+
+export interface SearchPostResult {
+  id: string;
+  title: string;
+  slug: string;
+  category: { name: string; slug: string } | null;
+  tags: string[];
+  created: number;
+  /** 高亮后的标题 (包含 <mark> 标签) */
+  highlighted_title?: string;
+  /** 正文摘要节选 (包含 <mark> 高亮标签) */
+  content_highlight?: string;
+  /** 相关度评分 0.0 ~ 1.0 */
+  score: number;
+}
+
+export interface SearchNoteResult {
+  id: string;
+  title: string;
+  nid: number;
+  created: number;
+  /** 高亮后的标题 */
+  highlighted_title?: string;
+  /** 正文摘要节选 */
+  content_highlight?: string;
+  /** 相关度评分 0.0 ~ 1.0 */
+  score: number;
+}
+
+export interface SearchResults {
+  posts: SearchPostResult[];
+  notes: SearchNoteResult[];
+}
+
+/**
  * 友链状态
  * - 0: 正常
  * - 1: 待审核

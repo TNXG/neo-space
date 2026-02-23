@@ -7,13 +7,14 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { SearchPanel } from "@/components/common/search/SearchPanel";
 import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useReaderSSE } from "@/hooks/use-reader-sse";
 import { MobileNavDrawer } from "./MobileNavDrawer";
@@ -35,6 +36,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Return to top states
   const [isSpinning, setIsSpinning] = useState(false);
@@ -203,7 +205,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                     <TooltipTrigger asChild>
                       <button
                         onClick={handleScrollToTopAction}
-                        className="w-9 h-9 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
+                        className="w-9 h-9 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                       >
                         <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
@@ -232,6 +234,20 @@ export function FloatingNav({ user }: FloatingNavProps) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <div className={showBackToTop ? "px-1" : "pl-2 pr-1"}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
+                >
+                  <Icon icon="mingcute:search-2-line" className="text-lg" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">搜索</TooltipContent>
+            </Tooltip>
+          </div>
 
           <div className="px-2">
             <ThemeToggle />
@@ -367,7 +383,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleScrollToTopAction}
-                          className="w-10 h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-50 transition-colors cursor-pointer"
+                          className="w-10 h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                         >
                           <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
                             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
@@ -397,12 +413,31 @@ export function FloatingNav({ user }: FloatingNavProps) {
               )}
             </AnimatePresence>
 
+            <div className={showBackToTop ? "px-1" : "pl-3 pr-1"}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setIsSearchOpen(true)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
+                  >
+                    <Icon icon="mingcute:search-2-line" className="text-lg" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">搜索</TooltipContent>
+              </Tooltip>
+            </div>
+
             <div className="px-3">
               <ThemeToggle />
             </div>
           </motion.div>
         </div>
       </div>
+
+      {/* 全局搜索面板 */}
+      <AnimatePresence>
+        <SearchPanel open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+      </AnimatePresence>
     </>
   );
 }

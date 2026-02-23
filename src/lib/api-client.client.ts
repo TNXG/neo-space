@@ -1,6 +1,6 @@
 "use client";
 
-import type { Link, Note, PaginatedResponse, Post } from "@/types/api";
+import type { ApiResponse, Link, Note, PaginatedResponse, Post, SearchResults } from "@/types/api";
 
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
@@ -113,4 +113,23 @@ export async function fetchNotes(page: number, size = 10): Promise<PaginatedResp
 
 export async function fetchLinks(page: number, size = 20): Promise<PaginatedResponse<Link>> {
   return fetcher(`${API_BASE_URL}/links?page=${page}&size=${size}`);
+}
+
+/**
+ * 使用 SWR 进行搜索
+ *
+ * @param query - 搜索关键词（为空时不发起请求）
+ * @param type_ - 搜索类型：'post' | 'note'，不传则搜索全部
+ * @param limit - 每种类型的最大结果数
+ */
+export function useSearch(query: string, type_?: "post" | "note", limit = 10) {
+  const trimmed = query.trim();
+  const key = trimmed
+    ? `${API_BASE_URL}/search?q=${encodeURIComponent(trimmed)}${type_ ? `&type=${type_}` : ""}&limit=${limit}`
+    : null;
+
+  return useSWR<ApiResponse<SearchResults>>(key, fetcher, {
+    revalidateOnFocus: false,
+    keepPreviousData: true,
+  });
 }
