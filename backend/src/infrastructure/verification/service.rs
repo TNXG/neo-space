@@ -3,7 +3,7 @@
 //! 使用内存缓存存储验证码，支持过期时间和验证次数限制
 
 use moka::future::Cache;
-use rand::Rng;
+use rand::RngExt;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -44,7 +44,6 @@ impl VerificationService {
         let mut rng = rand::rng();
         format!("{:06}", rng.random_range(0..1_000_000))
     }
-
     /// 发送验证码（生成并存储）
     pub async fn send_code(&self, email: &str) -> String {
         let code = Self::generate_code();

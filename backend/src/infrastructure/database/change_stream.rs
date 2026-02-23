@@ -290,9 +290,7 @@ impl ChangeStreamService {
             log::info!("✓ 手记数量变化 ({operation_type}) - 已刷新列表页和首页");
         }
 
-        log::info!(
-            "✓ 手记缓存已刷新 - id: {note_id:?}, nid: {nid:?}, tags: {revalidated_tags:?}"
-        );
+        log::info!("✓ 手记缓存已刷新 - id: {note_id:?}, nid: {nid:?}, tags: {revalidated_tags:?}");
     }
 
     /// 处理页面变更

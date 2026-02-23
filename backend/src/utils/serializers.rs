@@ -4,6 +4,9 @@ use bson::oid::ObjectId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serializer};
 
+// Serde 的 serialize_with 要求特定的函数签名，所以需要允许这些 clippy 警告
+#[allow(clippy::trivially_copy_pass_by_ref, clippy::ref_option)]
+
 /// Serialize `ObjectId` as a string
 pub fn serialize_object_id<S>(oid: &ObjectId, serializer: S) -> Result<S::Ok, S::Error>
 where

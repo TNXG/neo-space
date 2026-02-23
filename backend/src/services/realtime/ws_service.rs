@@ -275,8 +275,9 @@ impl OwnerWebSocketService {
         log::info!("封面已保存: {}", filepath.display());
 
         // 生成完整 URL
-        let backend_url = std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
-        let artwork_url = format!("{}/api/static/artworks/{}", backend_url, filename);
+        let backend_url =
+            std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+        let artwork_url = format!("{backend_url}/api/static/artworks/{filename}");
 
         Ok(artwork_url)
     }

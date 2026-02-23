@@ -125,7 +125,7 @@ pub async fn get_link(db: &State<Database>, id: &str) -> Result<Json<ApiResponse
         log::debug!("Invalid ObjectId format: {id}");
         return Err(Status::NotFound);
     }
-    
+
     let object_id = parse_object_id(id)?;
     let collection = db.collection::<Link>("links");
 

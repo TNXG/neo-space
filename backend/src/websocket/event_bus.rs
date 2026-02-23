@@ -57,7 +57,13 @@ impl EventBus {
     /// 更新博主窗口信息
     pub async fn update_owner_window_info(&self, window_info: WindowInfo, updated_at: i64) {
         self.owner_window_cache
-            .insert(CACHE_KEY.to_string(), OwnerWindowState { window_info, updated_at })
+            .insert(
+                CACHE_KEY.to_string(),
+                OwnerWindowState {
+                    window_info,
+                    updated_at,
+                },
+            )
             .await;
     }
 
@@ -69,7 +75,14 @@ impl EventBus {
         updated_at: i64,
     ) {
         self.owner_media_cache
-            .insert(CACHE_KEY.to_string(), OwnerMediaState { metadata, playback_state, updated_at })
+            .insert(
+                CACHE_KEY.to_string(),
+                OwnerMediaState {
+                    metadata,
+                    playback_state,
+                    updated_at,
+                },
+            )
             .await;
     }
 
@@ -84,7 +97,12 @@ impl EventBus {
     }
 
     /// 注册读者客户端
-    pub async fn register_reader(&self, client_id: ClientId, sender: ReaderSender, info: ReaderInfo) {
+    pub async fn register_reader(
+        &self,
+        client_id: ClientId,
+        sender: ReaderSender,
+        info: ReaderInfo,
+    ) {
         let mut clients = self.reader_clients.write().await;
         clients.insert(client_id, (sender, info));
     }
@@ -116,17 +134,22 @@ impl EventBus {
     /// 获取所有正在阅读的内容
     pub async fn get_reading_list(&self) -> Vec<(String, String, Option<String>, usize)> {
         let clients = self.reader_clients.read().await;
-        let mut groups: HashMap<(String, String), (Option<String>, std::collections::HashSet<String>)> = HashMap::new();
+        let mut groups: HashMap<
+            (String, String),
+            (Option<String>, std::collections::HashSet<String>),
+        > = HashMap::new();
 
         for (_, info) in clients.values() {
             if let (Some(pt), Some(pid)) = (&info.page_type, &info.page_id) {
-                let entry = groups.entry((pt.clone(), pid.clone()))
+                let entry = groups
+                    .entry((pt.clone(), pid.clone()))
                     .or_insert((info.page_title.clone(), std::collections::HashSet::new()));
                 entry.1.insert(info.fingerprint.clone());
             }
         }
 
-        groups.into_iter()
+        groups
+            .into_iter()
             .map(|((pt, pid), (title, fps))| (pt, pid, title, fps.len()))
             .collect()
     }

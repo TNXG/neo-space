@@ -95,7 +95,9 @@ impl IdentityService {
 
         self.create_account_record(temp_id, &payload).await?;
 
-        log::info!("[OAuth] 新用户创建完成: temp_id={}, is_first={}, is_new_user=true", temp_id, is_first);
+        log::info!(
+            "[OAuth] 新用户创建完成: temp_id={temp_id}, is_first={is_first}, is_new_user=true"
+        );
 
         Ok((temp_id, is_first, true))
     }

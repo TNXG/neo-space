@@ -60,9 +60,8 @@ pub fn extract_json(response: &str) -> String {
     };
 
     // 2. 寻找第一个 '{'
-    let start_idx = match cleaned.find('{') {
-        Some(idx) => idx,
-        None => return cleaned.to_string(), // 找不到则返回原样供解析器报错
+    let Some(start_idx) = cleaned.find('{') else {
+        return cleaned.to_string(); // 找不到则返回原样供解析器报错
     };
 
     // 3. 寻找匹配的 '}'

@@ -83,9 +83,9 @@ impl<'r> Responder<'r, 'static> for AuthError {
 impl From<crate::utils::jwt::JwtError> for AuthError {
     fn from(err: crate::utils::jwt::JwtError) -> Self {
         match err {
-            crate::utils::jwt::JwtError::InvalidToken => AuthError::InvalidToken,
             crate::utils::jwt::JwtError::TokenExpired => AuthError::ExpiredToken,
-            crate::utils::jwt::JwtError::TokenGenerationFailed(_)
+            crate::utils::jwt::JwtError::InvalidToken
+            | crate::utils::jwt::JwtError::TokenGenerationFailed(_)
             | crate::utils::jwt::JwtError::TokenVerificationFailed(_) => AuthError::InvalidToken,
         }
     }
