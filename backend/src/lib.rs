@@ -93,6 +93,8 @@ pub async fn build_rocket_with_routes() -> rocket::Rocket<rocket::Build> {
                 // AI routes
                 routes::ai::analyze_time_capsule,
                 routes::ai::get_time_capsule,
+                // Search routes
+                routes::search::search,
             ],
         )
 }
