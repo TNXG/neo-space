@@ -6,7 +6,7 @@ import { useOAuthStore } from "@/stores/oauth-store";
 
 /**
  * OAuth 弹窗监听 Hook
- * 
+ *
  * 监听 OAuth 弹窗的关闭状态，当弹窗关闭但没有收到登录回调时，
  * 自动清除 loading 状态并显示提示
  */
