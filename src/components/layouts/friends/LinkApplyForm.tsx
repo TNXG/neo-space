@@ -203,7 +203,7 @@ export function LinkApplyForm() {
               }}
               className={cn(
                 "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 shadow-sm",
-                isActive && "ring-4 ring-accent-100 dark:ring-accent-900/30",
+                isActive && "ring-4 ring-accent-100",
               )}
             >
               <Icon icon={isCompleted ? "mingcute:check-fill" : step.icon} className="w-5 h-5" />
@@ -212,7 +212,7 @@ export function LinkApplyForm() {
               {step.title}
             </span>
             {index < STEPS.length - 1 && (
-              <div className="absolute left-[calc(50%+20px)] top-5 w-[calc(100vw/4-40px)] sm:w-[90px] h-[2px] -z-10 bg-secondary">
+              <div className="absolute left-[calc(50%+20px)] top-5 w-[calc(100vw/4-40px)] sm:w-22.5 h-0.5 -z-10 bg-secondary">
                 <motion.div initial={{ width: "0%" }} animate={{ width: isCompleted ? "100%" : "0%" }} className="h-full bg-accent-500 transition-all duration-500" />
               </div>
             )}
@@ -358,7 +358,7 @@ export function LinkApplyForm() {
             <DialogBody className="px-6 py-4">
               {renderProgressBar()}
               {renderLivePreview()}
-              <div className="min-h-[200px]">{renderStepContent()}</div>
+              <div className="min-h-50">{renderStepContent()}</div>
             </DialogBody>
 
             <DialogFooter className="px-6 py-4 flex-row justify-between">

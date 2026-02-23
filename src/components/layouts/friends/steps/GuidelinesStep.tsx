@@ -18,12 +18,12 @@ interface GuidelinesStepProps {
 export function GuidelinesStep({ register, setValue, checked, error }: GuidelinesStepProps) {
   return (
     <FieldGroup>
-      <div className="p-6 bg-accent-50/50 dark:bg-accent-900/10 border border-accent-100 dark:border-accent-900/30 rounded-2xl">
+      <div className="p-6 bg-accent-50/50 border border-accent-100 rounded-2xl">
         <div className="flex items-start gap-3 mb-4">
           <Icon icon="mingcute:information-line" className="w-6 h-6 text-accent-600 shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-base font-bold text-accent-900 dark:text-accent-100 mb-2">在提交友链之前</h3>
-            <p className="text-sm text-accent-800 dark:text-accent-300 leading-relaxed">
+            <h3 className="text-base font-bold text-accent-900 mb-2">在提交友链之前</h3>
+            <p className="text-sm text-accent-800 leading-relaxed">
               请阅读我们的
               {" "}
               <Link href="/about-site#%E5%8F%8B%E9%93%BE%E7%94%B3%E8%AF%B7%E6%9D%A1%E6%AC%BE" target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">

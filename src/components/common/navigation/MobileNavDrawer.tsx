@@ -47,7 +47,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                   className={cn(
                     "flex items-center gap-4 p-3 rounded-2xl transition-all duration-200 text-left group",
                     isActive
-                      ? "bg-accent-50 text-accent-900 dark:bg-accent-900/20 dark:text-accent-100"
+                      ? "bg-accent-50 text-accent-900"
                       : "hover:bg-secondary/50 text-foreground",
                   )}
                 >
@@ -55,7 +55,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                     className={cn(
                       "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
                       isActive
-                        ? "bg-accent-100 text-accent-600 dark:bg-accent-800/40 dark:text-accent-300"
+                        ? "bg-accent-100 text-accent-600"
                         : "bg-secondary/50 text-muted-foreground group-hover:bg-secondary group-hover:text-foreground",
                     )}
                   >

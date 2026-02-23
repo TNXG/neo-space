@@ -43,7 +43,7 @@ export function DetailsStep({
           <textarea
             {...register("description")}
             placeholder="简单介绍一下你的站点..."
-            className="form-input min-h-[100px] resize-none"
+            className="form-input min-h-25 resize-none"
             autoFocus
           />
           {errors.description && <FieldError>{errors.description}</FieldError>}
@@ -100,7 +100,7 @@ export function DetailsStep({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300 rounded-lg border border-accent-200 dark:border-accent-800"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-accent-50 text-accent-700 rounded-lg border border-accent-200"
                   >
                     {tech}
                     <button

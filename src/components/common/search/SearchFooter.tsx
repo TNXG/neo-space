@@ -23,7 +23,7 @@ export function SearchFooter() {
       </div>
       <div className="flex items-center gap-1.5">
         <span>Powered by</span>
-        <div className="text-neutral-600 dark:text-neutral-300">
+        <div className="text-neutral-600">
           <MeiliSearchIcon
             style={{ height: "14px", width: "84px" }}
             className="transition-colors"

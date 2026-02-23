@@ -198,7 +198,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                     </motion.h2>
                     <div className="flex items-center justify-center gap-1.5 mt-1 text-xs font-mono text-muted-foreground/80">
                       <Icon icon="mingcute:link-2-line" className="w-3.5 h-3.5" />
-                      <span className="truncate max-w-[200px]">
+                      <span className="truncate max-w-50">
                         {new URL(activeItem.url).hostname}
                       </span>
                     </div>
@@ -313,7 +313,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
           {/* 3. Description */}
           <DetailCard
             delay={0.25}
-            className="min-h-[80px] bg-linear-to-br from-card/30 to-secondary/10"
+            className="min-h-20 bg-linear-to-br from-card/30 to-secondary/10"
           >
             <Icon
               icon="mingcute:quote-left-fill"
@@ -381,7 +381,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                       <Icon icon="mingcute:rss-fill" className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex flex-col z-10 flex-1">
-                      <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 group-hover:text-orange-600 transition-colors">
+                      <span className="text-[10px] font-bold text-orange-700 group-hover:text-orange-600 transition-colors">
                         RSS Feed
                       </span>
                       <span className="text-[9px] text-foreground/60 group-hover:text-orange-600 transition-colors flex items-center gap-1">

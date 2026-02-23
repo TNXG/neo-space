@@ -32,7 +32,7 @@ export function VerificationStep({
 }: VerificationStepProps) {
   return (
     <FieldGroup>
-      <div className="p-4 bg-accent-50/50 dark:bg-accent-900/10 border border-accent-100 dark:border-accent-900/30 rounded-xl text-sm text-accent-800 dark:text-accent-300">
+      <div className="p-4 bg-accent-50/50 border border-accent-100 rounded-xl text-sm text-accent-800">
         <div className="flex items-start gap-2">
           <Icon icon="mingcute:safe-flash-line" className="w-5 h-5 shrink-0 mt-0.5" />
           <p>我们需要验证你的邮箱以确保你是站长本人，并用于接收友链申请结果通知。</p>

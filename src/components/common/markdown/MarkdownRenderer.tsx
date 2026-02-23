@@ -128,7 +128,7 @@ const components: Components = {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="px-1.5 py-0.5 mx-0.5 rounded text-[0.85em] font-mono align-middle bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
+        <code className="px-1.5 py-0.5 mx-0.5 rounded text-[0.85em] font-mono align-middle bg-neutral-100 border border-neutral-300 text-neutral-800 whitespace-nowrap">
           {children}
         </code>
       );

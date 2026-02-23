@@ -19,13 +19,13 @@ export default function NotFound() {
       {/* 背景氛围：深邃的星光感 */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* 左上角 - 主色光晕 (移动端缩小尺寸) */}
-        <div className="absolute top-0 left-0 w-[280px] h-[280px] sm:w-[500px] sm:h-[500px] bg-primary-200/30 dark:bg-primary-900/20 rounded-full blur-[80px] sm:blur-[120px] -translate-x-1/3 -translate-y-1/3 mix-blend-multiply dark:mix-blend-screen transition-all duration-1000" />
+        <div className="absolute top-0 left-0 w-70 h-70 sm:w-125 sm:h-125 bg-primary-200/30 rounded-full blur-[80px] sm:blur-[120px] -translate-x-1/3 -translate-y-1/3 mix-blend-multiply transition-all duration-1000" />
         {/* 右下角 - 强调色光晕 (移动端缩小尺寸) */}
-        <div className="absolute bottom-0 right-0 w-[280px] h-[280px] sm:w-[500px] sm:h-[500px] bg-accent-200/20 dark:bg-accent-900/20 rounded-full blur-[80px] sm:blur-[120px] translate-x-1/4 translate-y-1/4 mix-blend-multiply dark:mix-blend-screen transition-all duration-1000" />
+        <div className="absolute bottom-0 right-0 w-70 h-70 sm:w-125 sm:h-125 bg-accent-200/20 rounded-full blur-[80px] sm:blur-[120px] translate-x-1/4 translate-y-1/4 mix-blend-multiply transition-all duration-1000" />
       </div>
 
       <main
-        className={`glass-card relative w-full max-w-[340px] sm:max-w-[520px] transition-all duration-700 ease-out border border-white/20 dark:border-white/5 shadow-glass flex flex-col ${
+        className={`glass-card relative w-full max-w-85 sm:max-w-130 transition-all duration-700 ease-out border border-white/20 shadow-glass flex flex-col ${
           mounted
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-8"
@@ -38,11 +38,11 @@ export default function NotFound() {
         <div className="flex flex-col items-center text-center px-5 py-8 sm:px-8 sm:py-10 grow justify-center">
           {/* 404 数字：移动端显著缩小，避免挤占空间 */}
           <div className="relative mb-6 sm:mb-8 select-none">
-            <h1 className="text-7xl sm:text-8xl md:text-9xl font-bold tracking-tighter leading-none text-primary-200/50 dark:text-primary-800/50 blur-[1px] transition-all duration-500">
+            <h1 className="text-7xl sm:text-8xl md:text-9xl font-bold tracking-tighter leading-none text-primary-200/50 blur-[1px] transition-all duration-500">
               404
             </h1>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm sm:text-xl font-mono text-accent-600/80 dark:text-accent-400 tracking-[0.3em] sm:tracking-[0.5em] uppercase translate-y-1">
+              <span className="text-sm sm:text-xl font-mono text-accent-600/80 tracking-[0.3em] sm:tracking-[0.5em] uppercase translate-y-1">
                 Not Found
               </span>
             </div>
@@ -54,7 +54,7 @@ export default function NotFound() {
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1.5 tracking-tight">
                 迷失在星海
               </h2>
-              <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] sm:tracking-[0.3em] text-accent-600/70 dark:text-accent-400/70 uppercase font-mono">
+              <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] sm:tracking-[0.3em] text-accent-600/70 uppercase font-mono">
                 Lost in Starlight
               </p>
             </div>
@@ -67,7 +67,7 @@ export default function NotFound() {
             </div>
 
             {/* 文案：移动端限制宽度以增加可读性 */}
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-[260px] sm:max-w-none mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-65 sm:max-w-none mx-auto">
               你所寻找的页面似乎飘向了宇宙深处，
               <br className="hidden sm:block" />
               或许它从未存在过。
@@ -93,7 +93,7 @@ export default function NotFound() {
               onClick={() => window.history.back()}
               type="button"
               className="group flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 w-full sm:w-auto rounded-lg border border-border bg-transparent text-foreground font-medium transition-all duration-300
-              hover:bg-secondary hover:border-primary-300 hover:text-accent-700 dark:hover:text-accent-400 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+              hover:bg-secondary hover:border-primary-300 hover:text-accent-700 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
               cursor-pointer select-none text-sm sm:text-base"
             >
               <Icon icon="mingcute:arrow-left-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
@@ -103,7 +103,7 @@ export default function NotFound() {
         </div>
 
         {/* 底部状态栏 */}
-        <div className="h-9 sm:h-10 border-t border-border/50 bg-primary-50/50 dark:bg-primary-950/30 flex items-center justify-between px-4 sm:px-6 text-[10px] font-mono text-muted-foreground uppercase tracking-wider shrink-0 rounded-b-lg">
+        <div className="h-9 sm:h-10 border-t border-border/50 bg-primary-50/50 flex items-center justify-between px-4 sm:px-6 text-[10px] font-mono text-muted-foreground uppercase tracking-wider shrink-0 rounded-b-lg">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>

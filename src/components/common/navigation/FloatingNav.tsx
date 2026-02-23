@@ -179,7 +179,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
             {/* Mobile Hint */}
             <div className="flex pr-3 pl-1 items-center animate-in fade-in zoom-in duration-300">
-              <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700/50 mr-3" />
+              <div className="w-px h-4 bg-neutral-200 mr-3" />
               <Icon icon="mingcute:up-small-line" className="text-neutral-400 text-lg animate-bounce-custom" />
             </div>
           </div>
@@ -208,7 +208,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                         className="w-9 h-9 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                       >
                         <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
-                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 " />
                           <motion.path
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             fill="none"
@@ -306,7 +306,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
               {/* Desktop Menu */}
               <div className="flex items-center overflow-hidden">
                 {/* Fixed Divider */}
-                <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1 shrink-0" />
+                <div className="w-px h-5 bg-neutral-200 mx-1 shrink-0" />
 
                 <div className="relative flex items-center overflow-hidden">
                   {/* Expand Hint Arrow - Show when collapsed */}
@@ -346,7 +346,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                             <Link
                               href={item.href}
                               onClick={e => handleNavClick(e, item)}
-                              className="p-2 rounded-full text-neutral-500 hover:text-accent-600 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors"
+                              className="p-2 rounded-full text-neutral-500 hover:text-accent-600 hover:bg-accent-50 transition-colors"
                             >
                               <Icon icon={item.icon} className="text-lg" />
                             </Link>
@@ -386,7 +386,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                           className="w-10 h-10 rounded-full flex items-center justify-center relative text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                         >
                           <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 dark:text-neutral-700" />
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200 " />
                             <motion.path
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               fill="none"
