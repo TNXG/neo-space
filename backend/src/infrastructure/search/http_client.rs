@@ -1,11 +1,23 @@
 use async_trait::async_trait;
 use meilisearch_sdk::{
-    errors::Error,
+    errors::{Error, MeilisearchCommunicationError},
+    request::{HttpClient, Method, parse_response},
     reqwest::ReaderStream,
-    request::{parse_response, HttpClient, Method},
 };
-use reqwest_meili as reqwest;
-use serde::{de::DeserializeOwned, Serialize};
+use reqwest;
+use serde::{Serialize, de::DeserializeOwned};
+
+/// 将 reqwest (v0.13) 错误转换为 meilisearch-sdk 的 Error
+///
+/// meilisearch-sdk 内部依赖 reqwest v0.12，与项目直接依赖的 reqwest v0.13
+/// 类型不兼容，因此无法通过 `From` trait 自动转换，需要手动桥接。
+fn reqwest_err(e: reqwest::Error, url: &str) -> Error {
+    Error::from(MeilisearchCommunicationError {
+        status_code: e.status().map_or(0, |s| s.as_u16()),
+        message: Some(e.to_string()),
+        url: url.to_string(),
+    })
+}
 
 /// 禁用系统代理的 Meilisearch HTTP 客户端
 ///
@@ -22,7 +34,7 @@ pub struct NoProxyHttpClient {
 
 impl NoProxyHttpClient {
     pub fn new(api_key: Option<&str>) -> Result<Self, Error> {
-        use reqwest::{header, ClientBuilder};
+        use reqwest::{ClientBuilder, header};
 
         let mut headers = header::HeaderMap::new();
 
@@ -43,7 +55,8 @@ impl NoProxyHttpClient {
         let client = ClientBuilder::new()
             .default_headers(headers)
             .no_proxy()
-            .build()?;
+            .build()
+            .map_err(|e| reqwest_err(e, "<client-build>"))?;
 
         Ok(Self { client })
     }
@@ -83,9 +96,13 @@ impl HttpClient for NoProxyHttpClient {
                 .body(body);
         }
 
-        let response = self.client.execute(request.build()?).await?;
+        let response = self
+            .client
+            .execute(request.build().map_err(|e| reqwest_err(e, &url))?)
+            .await
+            .map_err(|e| reqwest_err(e, &url))?;
         let status = response.status().as_u16();
-        let mut body = response.text().await?;
+        let mut body = response.text().await.map_err(|e| reqwest_err(e, &url))?;
 
         if body.is_empty() {
             body = "null".to_string();

@@ -44,7 +44,7 @@ serde_json = "1.0.149"
 tokio = "1.49.0"
 
 # Chrono: 移除 oldtime/clock，保留 serde
-chrono = { version = "0.4.43", default-features = false, features = [
+chrono = { version = "0.4.44", default-features = false, features = [
   "serde",
   "std",
   "clock",
@@ -67,6 +67,8 @@ reqwest = { version = "0.13.2", features = [
   "rustls",
   "multipart",
   "form",
+  "http2",
+  "stream"
 ] }
 
 # Async OpenAI
@@ -129,9 +131,7 @@ tokio-stream = "0.1.18"
 
 # Meilisearch
 meilisearch-sdk = "0.32.0"
-# 与 meilisearch-sdk 内部使用的 reqwest 版本一致，用于构建自定义无代理 HTTP 客户端
-reqwest-meili = { package = "reqwest", version = "0.12", default-features = false, features = ["http2", "stream", "rustls-tls"] }
-yaup = "0.3"
+yaup = "0.3.1"
 
 [dev-dependencies]
 criterion = { version = "0.8.2", features = [ "html_reports" ] }
