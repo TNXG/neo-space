@@ -30,9 +30,6 @@ indexing_slicing = "forbid"
 rocket = { version = "0.5.1", default-features = false, features = [ "json" ] }
 rocket_ws = "0.1.1"
 
-# Rocket Pools
-rocket_db_pools = { version = "0.2.0", default-features = false, features = [ "mongodb", ] }
-
 # MongoDB:
 mongodb = "3.5.1"
 
@@ -73,13 +70,6 @@ reqwest = { version = "0.13.2", features = [
 
 # Async OpenAI
 async-openai = { version = "0.33.0", default-features = false, features = [ "chat-completion", ] }
-
-# Regex
-regex = { version = "1.12.3", default-features = false, features = [
-  "std",
-  "perf",
-  "unicode",
-] }
 
 # Utils & Crypto (移除不需要的默认 features)
 sha1 = { version = "0.10", default-features = false }
