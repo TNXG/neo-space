@@ -1,9 +1,9 @@
 //! 头像更新相关路由
 
 use mongodb::Database;
-use rocket::serde::json::Json;
-use rocket::serde::Deserialize;
 use rocket::State;
+use rocket::serde::Deserialize;
+use rocket::serde::json::Json;
 
 use crate::guards::AuthGuard;
 use crate::models::{ApiResponse, ReaderResponse};

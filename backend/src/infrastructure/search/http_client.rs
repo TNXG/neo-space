@@ -46,10 +46,10 @@ impl NoProxyHttpClient {
             headers.insert(header::USER_AGENT, val);
         }
 
-        if let Some(api_key) = api_key {
-            if let Ok(val) = header::HeaderValue::from_str(&format!("Bearer {api_key}")) {
-                headers.insert(header::AUTHORIZATION, val);
-            }
+        if let Some(api_key) = api_key
+            && let Ok(val) = header::HeaderValue::from_str(&format!("Bearer {api_key}"))
+        {
+            headers.insert(header::AUTHORIZATION, val);
         }
 
         let client = ClientBuilder::new()
@@ -108,7 +108,7 @@ impl HttpClient for NoProxyHttpClient {
             body = "null".to_string();
         }
 
-        parse_response(status, expected_status_code, &body, url.to_string())
+        parse_response(status, expected_status_code, &body, url.clone())
     }
 
     fn is_tokio(&self) -> bool {

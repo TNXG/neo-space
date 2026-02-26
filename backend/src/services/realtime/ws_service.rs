@@ -4,7 +4,7 @@
 use chrono::Utc;
 use futures::{SinkExt, StreamExt};
 use rocket_ws::frame::{CloseCode, CloseFrame};
-use rocket_ws::{stream::DuplexStream, Message};
+use rocket_ws::{Message, stream::DuplexStream};
 
 use crate::models::realtime::{
     OwnerDesktopMessage, ServerToOwnerDesktopMessage, ServerToReaderMessage,

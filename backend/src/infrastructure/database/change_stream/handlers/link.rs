@@ -19,10 +19,10 @@ pub async fn handle_link_change(
     let mut link_name: Option<String> = None;
 
     // 从 document_key 获取 ID
-    if let Some(doc_key) = &event.document_key {
-        if let Ok(id) = doc_key.get_object_id("_id") {
-            link_id = Some(id.to_hex());
-        }
+    if let Some(doc_key) = &event.document_key
+        && let Ok(id) = doc_key.get_object_id("_id")
+    {
+        link_id = Some(id.to_hex());
     }
 
     // 从 full_document 获取状态和名称

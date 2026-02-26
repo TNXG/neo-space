@@ -1,13 +1,13 @@
 use futures::stream::TryStreamExt;
 use log::error;
-use mongodb::bson::{doc, oid::ObjectId};
 use mongodb::Database;
-use rocket::{http::Status, serde::json::Json, State};
+use mongodb::bson::{doc, oid::ObjectId};
+use rocket::{State, http::Status, serde::json::Json};
 
 use crate::db_find_one;
 use crate::infrastructure::send_verification_email;
-use crate::integrations::status::link_health::LinkWithHealth;
 use crate::integrations::LinkHealthService;
+use crate::integrations::status::link_health::LinkWithHealth;
 use crate::models::{ApiResponse, Link, LinkApplyRequest, LinkState, Pagination};
 use crate::services::VerificationService;
 use crate::utils::parse_object_id;

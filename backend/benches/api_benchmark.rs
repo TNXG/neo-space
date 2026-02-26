@@ -3,7 +3,7 @@
 //! 使用 Criterion 进行精确的性能基准测试
 //! 运行: cargo bench
 
-use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use rocket::local::blocking::Client;
 use std::hint::black_box;
 
@@ -35,17 +35,17 @@ fn bench_get_post_by_slug(c: &mut Criterion) {
     let body = list_response.into_string().expect("body");
     let json: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
 
-    if let Some(first_post) = json["data"]["items"].as_array().and_then(|arr| arr.first()) {
-        if let Some(slug) = first_post["slug"].as_str() {
-            let slug = slug.to_string();
+    if let Some(first_post) = json["data"]["items"].as_array().and_then(|arr| arr.first())
+        && let Some(slug) = first_post["slug"].as_str()
+    {
+        let slug = slug.to_string();
 
-            c.bench_function("get_post_by_slug", |b| {
-                b.iter(|| {
-                    let response = client.get(format!("/api/posts/slug/{}", slug)).dispatch();
-                    black_box(response);
-                });
+        c.bench_function("get_post_by_slug", |b| {
+            b.iter(|| {
+                let response = client.get(format!("/api/posts/slug/{slug}")).dispatch();
+                black_box(response);
             });
-        }
+        });
     }
 }
 
@@ -90,11 +90,11 @@ fn bench_pagination_sizes(c: &mut Criterion) {
     let client = create_test_client();
     let mut group = c.benchmark_group("pagination_sizes");
 
-    for size in [10, 20, 50, 100].iter() {
+    for size in &[10, 20, 50, 100] {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &size| {
             b.iter(|| {
                 let response = client
-                    .get(format!("/api/posts?page=1&size={}", size))
+                    .get(format!("/api/posts?page=1&size={size}"))
                     .dispatch();
                 black_box(response);
             });
@@ -109,11 +109,11 @@ fn bench_pagination_pages(c: &mut Criterion) {
     let client = create_test_client();
     let mut group = c.benchmark_group("pagination_pages");
 
-    for page in [1, 5, 10, 20].iter() {
+    for page in &[1, 5, 10, 20] {
         group.bench_with_input(BenchmarkId::from_parameter(page), page, |b, &page| {
             b.iter(|| {
                 let response = client
-                    .get(format!("/api/posts?page={}&size=10", page))
+                    .get(format!("/api/posts?page={page}&size=10"))
                     .dispatch();
                 black_box(response);
             });
@@ -127,7 +127,7 @@ fn bench_pagination_pages(c: &mut Criterion) {
 fn bench_mixed_endpoints(c: &mut Criterion) {
     let client = create_test_client();
 
-    let endpoints = vec![
+    let endpoints = [
         "/api/posts?page=1&size=10",
         "/api/notes?page=1&size=10",
         "/api/categories",

@@ -10,4 +10,4 @@ pub mod services;
 pub use app::{build_rocket, init_app};
 pub use config::load_config;
 pub use database::init_database;
-pub use services::{init_services, AppServices};
+pub use services::{AppServices, init_services};

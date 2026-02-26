@@ -4,8 +4,8 @@
 use chrono::Utc;
 use rocket::response::stream::{Event, EventStream};
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_stream::StreamExt as TokioStreamExt;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
 
 use crate::models::realtime::{ReaderInfo, ReadingItem, ServerToReaderMessage};

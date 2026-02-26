@@ -213,20 +213,20 @@ impl CommentService {
             let mut children = Vec::new();
 
             for comment in comments {
-                if let Some(parent_oid) = &comment.parent {
-                    if parent_oid.to_hex() == parent_id {
-                        let child_id = if let Some(id) = comment.id.as_ref() {
-                            id.to_hex()
-                        } else {
-                            log::error!("comment missing id: {comment:?}");
-                            continue;
-                        };
+                if let Some(parent_oid) = &comment.parent
+                    && parent_oid.to_hex() == parent_id
+                {
+                    let child_id = if let Some(id) = comment.id.as_ref() {
+                        id.to_hex()
+                    } else {
+                        log::error!("comment missing id: {comment:?}");
+                        continue;
+                    };
 
-                        if let Some(mut child_node) = comment_map.get(&child_id).cloned() {
-                            // 递归构建子评论的子评论
-                            child_node.children = build_children(&child_id, comment_map, comments);
-                            children.push(child_node);
-                        }
+                    if let Some(mut child_node) = comment_map.get(&child_id).cloned() {
+                        // 递归构建子评论的子评论
+                        child_node.children = build_children(&child_id, comment_map, comments);
+                        children.push(child_node);
                     }
                 }
             }

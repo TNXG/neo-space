@@ -4,14 +4,14 @@
 
 use chrono::Datelike;
 use lettre::{
-    message::{header::ContentType, Mailbox, MultiPart, SinglePart},
-    transport::smtp::authentication::Credentials,
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
+    message::{Mailbox, MultiPart, SinglePart, header::ContentType},
+    transport::smtp::authentication::Credentials,
 };
 use mongodb::Database;
 use std::error::Error;
 
-use crate::config::{get_email_config, SmtpEncryption};
+use crate::config::{SmtpEncryption, get_email_config};
 
 /// 发送验证码邮件
 pub async fn send_verification_email(

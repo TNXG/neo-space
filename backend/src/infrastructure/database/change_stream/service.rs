@@ -2,10 +2,10 @@
 
 use futures::stream::TryStreamExt;
 use mongodb::{
-    bson::{doc, Document},
+    Database,
+    bson::{Document, doc},
     change_stream::event::ChangeStreamEvent,
     options::{ChangeStreamOptions, ReadConcern},
-    Database,
 };
 use std::time::Duration;
 use tokio::time::sleep;

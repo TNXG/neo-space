@@ -1,6 +1,6 @@
 //! 博文变更处理器
 
-use mongodb::{bson::doc, change_stream::event::ChangeStreamEvent, bson::Document};
+use mongodb::{bson::Document, bson::doc, change_stream::event::ChangeStreamEvent};
 
 use crate::infrastructure::cache::CacheKey;
 use crate::infrastructure::search::service::PostDocument;
@@ -25,17 +25,17 @@ pub async fn handle_post_change(
     let mut post_slug: Option<String> = None;
 
     // 从 document_key 获取 ID
-    if let Some(doc_key) = &event.document_key {
-        if let Ok(id) = doc_key.get_object_id("_id") {
-            post_id = Some(id.to_hex());
-        }
+    if let Some(doc_key) = &event.document_key
+        && let Ok(id) = doc_key.get_object_id("_id")
+    {
+        post_id = Some(id.to_hex());
     }
 
     // 从 full_document 获取 slug
-    if let Some(full_doc) = &event.full_document {
-        if let Ok(slug) = full_doc.get_str("slug") {
-            post_slug = Some(slug.to_string());
-        }
+    if let Some(full_doc) = &event.full_document
+        && let Ok(slug) = full_doc.get_str("slug")
+    {
+        post_slug = Some(slug.to_string());
     }
 
     // 1. 清除本地缓存（仅清除具体文章）
@@ -128,10 +128,10 @@ pub async fn handle_post_change(
                     let is_published = full_doc.get_bool("isPublished").unwrap_or(false);
                     if !is_published {
                         // 未发布则从索引中删除（可能是取消发布）
-                        if let Some(ref id) = post_id {
-                            if let Err(e) = search.delete_post(id).await {
-                                log::error!("从 Meilisearch 删除未发布博文失败: {e}");
-                            }
+                        if let Some(ref id) = post_id
+                            && let Err(e) = search.delete_post(id).await
+                        {
+                            log::error!("从 Meilisearch 删除未发布博文失败: {e}");
                         }
                     } else if let Some(ref id) = post_id {
                         let title = full_doc.get_str("title").unwrap_or_default().to_string();
@@ -151,17 +151,17 @@ pub async fn handle_post_change(
                             .unwrap_or(0);
 
                         // 查找分类信息
-                        let (category, category_name) =
-                            if let Ok(cat_id) = full_doc.get_object_id("categoryId") {
-                                let categories_col =
-                                    service.db.collection::<Category>("categories");
-                                match categories_col.find_one(doc! { "_id": cat_id }).await {
-                                    Ok(Some(cat)) => (Some(cat.slug), Some(cat.name)),
-                                    _ => (None, None),
-                                }
-                            } else {
-                                (None, None)
-                            };
+                        let (category, category_name) = if let Ok(cat_id) =
+                            full_doc.get_object_id("categoryId")
+                        {
+                            let categories_col = service.db.collection::<Category>("categories");
+                            match categories_col.find_one(doc! { "_id": cat_id }).await {
+                                Ok(Some(cat)) => (Some(cat.slug), Some(cat.name)),
+                                _ => (None, None),
+                            }
+                        } else {
+                            (None, None)
+                        };
 
                         let doc = PostDocument {
                             id: id.clone(),

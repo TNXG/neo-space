@@ -3,16 +3,16 @@
 //! 使用 `OpenAI` 兼容 SDK，支持任意 `OpenAI` 兼容的 API 端点
 
 use async_openai::{
+    Client,
     config::OpenAIConfig,
     types::chat::{
         ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
         ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs,
         CreateChatCompletionRequestArgs,
     },
-    Client,
 };
-use mongodb::bson::doc;
 use mongodb::Database;
+use mongodb::bson::doc;
 use serde::Deserialize;
 
 use crate::models::RawOption;

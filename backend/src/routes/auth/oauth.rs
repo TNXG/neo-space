@@ -3,7 +3,7 @@
 use mongodb::Database;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::serde::json::Json;
-use rocket::{response::Redirect, State};
+use rocket::{State, response::Redirect};
 
 use crate::config::OAuthConfig;
 use crate::models::ApiResponse;
@@ -61,7 +61,7 @@ pub async fn oauth_redirect(
         _ => {
             return Err(ApiResponse::bad_request(format!(
                 "不支持的提供商: {provider}"
-            )))
+            )));
         }
     };
 

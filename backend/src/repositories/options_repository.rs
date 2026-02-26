@@ -1,6 +1,6 @@
 //! Options Repository - 从数据库读取配置选项
 
-use mongodb::{bson::doc, Database};
+use mongodb::{Database, bson::doc};
 use serde::{Deserialize, Serialize};
 
 /// OAuth 配置选项（存储在数据库中）

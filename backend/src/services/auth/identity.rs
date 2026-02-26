@@ -68,23 +68,22 @@ impl IdentityService {
         log::info!("[OAuth] 未找到现有账号，尝试邮箱匹配");
 
         // 2. 新用户：尝试通过邮箱自动匹配
-        if let Some(ref email) = payload.email {
-            if let Some(matched_reader) = reader_repo
+        if let Some(ref email) = payload.email
+            && let Some(matched_reader) = reader_repo
                 .find_by_email(email)
                 .await
                 .map_err(|e| e.to_string())?
-            {
-                log::info!(
-                    "[OAuth] 通过邮箱匹配到现有用户: email={}, user_id={}",
-                    email,
-                    matched_reader.id
-                );
-                // 自动绑定到已有 Reader
-                self.create_account_record(matched_reader.id, &payload)
-                    .await?;
-                log::info!("[OAuth] 自动绑定完成: is_new_user=false");
-                return Ok((matched_reader.id, matched_reader.is_owner, false));
-            }
+        {
+            log::info!(
+                "[OAuth] 通过邮箱匹配到现有用户: email={}, user_id={}",
+                email,
+                matched_reader.id
+            );
+            // 自动绑定到已有 Reader
+            self.create_account_record(matched_reader.id, &payload)
+                .await?;
+            log::info!("[OAuth] 自动绑定完成: is_new_user=false");
+            return Ok((matched_reader.id, matched_reader.is_owner, false));
         }
 
         log::info!("[OAuth] 创建新用户");

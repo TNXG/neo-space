@@ -1,9 +1,9 @@
 //! 绑定匿名身份相关路由
 
 use mongodb::Database;
+use rocket::State;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
-use rocket::State;
 
 use crate::config::OAuthConfig;
 use crate::guards::AuthGuard;

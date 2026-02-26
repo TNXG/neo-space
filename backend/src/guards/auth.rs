@@ -2,9 +2,9 @@
 
 use crate::services::auth::JWTVerifier;
 use bson::oid::ObjectId;
+use rocket::State;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
-use rocket::State;
 
 /// 认证守卫 - 从 JWT token 中提取用户信息
 #[derive(Debug, Clone)]

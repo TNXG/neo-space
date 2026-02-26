@@ -1,8 +1,8 @@
 //! AI 相关路由
 
-use mongodb::bson::{doc, oid::ObjectId};
 use mongodb::Database;
-use rocket::{http::Status, serde::json::Json, State};
+use mongodb::bson::{doc, oid::ObjectId};
+use rocket::{State, http::Status, serde::json::Json};
 use sha1::{Digest, Sha1};
 use std::str::FromStr;
 

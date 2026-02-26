@@ -3,7 +3,7 @@
 use crate::models::Account;
 use bson::oid::ObjectId;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{Collection, Database, bson::doc};
 
 /// Account 数据仓库，用于数据库操作
 pub struct AccountRepository {

@@ -3,16 +3,16 @@
 //! 负责所有服务的初始化
 
 use crate::config::OAuthConfig;
-use crate::infrastructure::search::service::{NoteDocument, PostDocument};
 use crate::infrastructure::search::SearchService;
+use crate::infrastructure::search::service::{NoteDocument, PostDocument};
 use crate::integrations::{IpService, LinkHealthService};
 use crate::models::{Category, Note, Post};
 use crate::services::{
-    auth::JWTVerifier, CacheService, ChangeStreamService, RevalidationService, VerificationService,
+    CacheService, ChangeStreamService, RevalidationService, VerificationService, auth::JWTVerifier,
 };
 use futures::stream::TryStreamExt;
-use mongodb::bson::doc;
 use mongodb::Database;
+use mongodb::bson::doc;
 
 /// 所有应用服务的集合
 pub struct AppServices {

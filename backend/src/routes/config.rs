@@ -4,7 +4,7 @@ use crate::models::{ApiResponse, SiteConfig};
 use crate::services;
 use mongodb::Database;
 use rocket::serde::json::Json;
-use rocket::{get, State};
+use rocket::{State, get};
 
 /// Get site configuration (safe for frontend)
 #[utoipa::path(

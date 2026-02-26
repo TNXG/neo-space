@@ -7,12 +7,12 @@
 //! 支持异步审核：先存入数据库，后台异步调用 AI 审核
 
 use mongodb::bson::oid::ObjectId;
-use mongodb::{bson::doc, Database};
+use mongodb::{Database, bson::doc};
 use serde::Deserialize;
 
 use crate::integrations::{AiService, ChatMessage, ChatRole};
 use crate::models::{CommentState, RawOption};
-use crate::utils::detection::{parse_binary_response, parse_score_response, SpamCheckResult};
+use crate::utils::detection::{SpamCheckResult, parse_binary_response, parse_score_response};
 
 /// 评论配置选项
 #[derive(Debug, Clone, Deserialize)]

@@ -1,6 +1,6 @@
 //! Email configuration from database
 
-use mongodb::{bson::doc, Database};
+use mongodb::{Database, bson::doc};
 use std::error::Error;
 
 /// SMTP 加密方式
@@ -55,8 +55,8 @@ pub async fn get_email_config(db: &Database) -> Result<EmailConfig, Box<dyn Erro
         .to_string();
     let from_email = value.get_str("from").unwrap_or(&user).to_string();
 
-    let port = u16::try_from(options.get_i32("port").unwrap_or(587))
-        .map_err(|_| "邮箱端口号无效")?;
+    let port =
+        u16::try_from(options.get_i32("port").unwrap_or(587)).map_err(|_| "邮箱端口号无效")?;
 
     let secure = options.get_bool("secure").unwrap_or(false);
 

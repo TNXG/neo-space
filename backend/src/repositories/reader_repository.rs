@@ -3,7 +3,7 @@
 use crate::models::Reader;
 use bson::oid::ObjectId;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{Collection, Database, bson::doc};
 
 /// Reader 数据仓库，用于数据库操作
 pub struct ReaderRepository {

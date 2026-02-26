@@ -8,8 +8,8 @@
 
 use futures::stream::TryStreamExt;
 use moka::future::Cache;
-use mongodb::bson::doc;
 use mongodb::Database;
+use mongodb::bson::doc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;

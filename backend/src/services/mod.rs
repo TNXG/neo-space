@@ -26,7 +26,7 @@ pub use crate::infrastructure::{
 
 // ===== 重新导出第三方集成服务 =====
 
-pub use crate::integrations::{verify_turnstile, AiService, ChatMessage, ChatRole, IpService};
+pub use crate::integrations::{AiService, ChatMessage, ChatRole, IpService, verify_turnstile};
 
 // ===== 公共导出 =====
 

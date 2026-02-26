@@ -124,15 +124,15 @@ impl RevalidationService {
             "signature": signature,
         });
 
-        if let Some(t) = tag {
-            if let Some(obj) = body.as_object_mut() {
-                obj.insert("tag".to_string(), serde_json::Value::String(t.to_string()));
-            }
+        if let Some(t) = tag
+            && let Some(obj) = body.as_object_mut()
+        {
+            obj.insert("tag".to_string(), serde_json::Value::String(t.to_string()));
         }
-        if let Some(p) = path {
-            if let Some(obj) = body.as_object_mut() {
-                obj.insert("path".to_string(), serde_json::Value::String(p.to_string()));
-            }
+        if let Some(p) = path
+            && let Some(obj) = body.as_object_mut()
+        {
+            obj.insert("path".to_string(), serde_json::Value::String(p.to_string()));
         }
 
         let target = match (tag, path) {

@@ -2,8 +2,8 @@ use crate::guards::AuthGuard;
 use crate::models::{AccountResponse, ApiResponse, ReaderResponse};
 use crate::repositories::{AccountRepository, ReaderRepository};
 use mongodb::Database;
-use rocket::serde::json::Json;
 use rocket::State;
+use rocket::serde::json::Json;
 
 #[get("/me")]
 pub async fn get_current_user(

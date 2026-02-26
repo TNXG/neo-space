@@ -10,7 +10,7 @@ use crate::models::{
     UrlOptions,
 };
 use futures::stream::TryStreamExt;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{Collection, Database, bson::doc};
 
 /// Get a single option by name (internal use only)
 #[allow(unused)]
@@ -91,11 +91,10 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
                     }
 
                     // Get public github client id
-                    if let Ok(public) = doc.get_document("public") {
-                        if let Ok(github) = public.get_document("github") {
-                            oauth.github_client_id =
-                                github.get_str("clientId").ok().map(String::from);
-                        }
+                    if let Ok(public) = doc.get_document("public")
+                        && let Ok(github) = public.get_document("github")
+                    {
+                        oauth.github_client_id = github.get_str("clientId").ok().map(String::from);
                     }
 
                     config.oauth = oauth;

@@ -2,7 +2,7 @@
 //!
 //! 负责数据库连接的初始化
 
-use mongodb::{bson::doc, Client, Database};
+use mongodb::{Client, Database, bson::doc};
 
 /// 初始化 `MongoDB` 连接
 ///

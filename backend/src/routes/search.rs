@@ -4,10 +4,10 @@
 
 use crate::infrastructure::search::SearchService;
 use crate::models::ApiResponse;
+use rocket::State;
 use rocket::get;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use rocket::State;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

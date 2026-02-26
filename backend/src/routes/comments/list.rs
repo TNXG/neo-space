@@ -2,7 +2,7 @@
 
 use futures::stream::TryStreamExt;
 use rocket::serde::json::Json;
-use rocket::{get, http::Status, State};
+use rocket::{State, get, http::Status};
 
 use crate::guards::OptionalAuthGuard;
 use crate::models::{ApiResponse, CommentListResponse};

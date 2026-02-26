@@ -3,5 +3,5 @@
 pub mod email;
 pub mod settings;
 
-pub use email::{get_email_config, SmtpEncryption};
+pub use email::{SmtpEncryption, get_email_config};
 pub use settings::{ConfigError, OAuthConfig};

@@ -139,10 +139,7 @@ impl SearchService {
 
                     // 否则等待后重试
                     let delay = initial_delay_secs * u64::from(attempt);
-                    log::warn!(
-                        "{delay}秒后进行第 {} 次重试...",
-                        attempt + 1
-                    );
+                    log::warn!("{delay}秒后进行第 {} 次重试...", attempt + 1);
                     tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
                 }
             }

@@ -1,9 +1,9 @@
 //! 统一错误处理模块
 
+use rocket::Request;
 use rocket::http::Status;
 use rocket::response::{self, Responder};
 use rocket::serde::json::Json;
-use rocket::Request;
 
 use crate::models::ApiResponse;
 

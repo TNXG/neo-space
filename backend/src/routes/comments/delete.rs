@@ -2,7 +2,7 @@
 
 use mongodb::bson::doc;
 use rocket::serde::json::Json;
-use rocket::{delete, http::Status, State};
+use rocket::{State, delete, http::Status};
 
 use crate::models::{ApiResponse, Comment};
 use crate::utils::db::parse_object_id;

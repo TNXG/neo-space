@@ -1,6 +1,6 @@
-use mongodb::bson::doc;
 use mongodb::Database;
-use rocket::{http::Status, serde::json::Json, State};
+use mongodb::bson::doc;
+use rocket::{State, http::Status, serde::json::Json};
 
 use crate::models::{ApiResponse, Page};
 

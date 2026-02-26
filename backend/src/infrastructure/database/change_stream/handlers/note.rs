@@ -24,17 +24,17 @@ pub async fn handle_note_change(
     let mut nid: Option<i32> = None;
 
     // 从 document_key 获取 ID
-    if let Some(doc_key) = &event.document_key {
-        if let Ok(id) = doc_key.get_object_id("_id") {
-            note_id = Some(id.to_hex());
-        }
+    if let Some(doc_key) = &event.document_key
+        && let Ok(id) = doc_key.get_object_id("_id")
+    {
+        note_id = Some(id.to_hex());
     }
 
     // 从 full_document 获取 nid
-    if let Some(full_doc) = &event.full_document {
-        if let Ok(nid_value) = full_doc.get_i32("nid") {
-            nid = Some(nid_value);
-        }
+    if let Some(full_doc) = &event.full_document
+        && let Ok(nid_value) = full_doc.get_i32("nid")
+    {
+        nid = Some(nid_value);
     }
 
     // 1. 清除本地缓存（仅清除具体手记）
@@ -120,28 +120,28 @@ pub async fn handle_note_change(
             }
             _ => {
                 // 新增/更新：从 full_document 构建搜索文档并索引
-                if let Some(full_doc) = &event.full_document {
-                    if let (Some(id), Some(nid_value)) = (&note_id, nid) {
-                        let title = full_doc.get_str("title").unwrap_or_default().to_string();
-                        let text = full_doc.get_str("text").unwrap_or_default().to_string();
-                        let created = full_doc
-                            .get_datetime("created")
-                            .map(|dt| dt.timestamp_millis() / 1000)
-                            .unwrap_or(0);
+                if let Some(full_doc) = &event.full_document
+                    && let (Some(id), Some(nid_value)) = (&note_id, nid)
+                {
+                    let title = full_doc.get_str("title").unwrap_or_default().to_string();
+                    let text = full_doc.get_str("text").unwrap_or_default().to_string();
+                    let created = full_doc
+                        .get_datetime("created")
+                        .map(|dt| dt.timestamp_millis() / 1000)
+                        .unwrap_or(0);
 
-                        let doc = NoteDocument {
-                            id: id.clone(),
-                            title,
-                            text,
-                            nid: nid_value,
-                            created,
-                        };
+                    let doc = NoteDocument {
+                        id: id.clone(),
+                        title,
+                        text,
+                        nid: nid_value,
+                        created,
+                    };
 
-                        if let Err(e) = search.index_note(doc).await {
-                            log::error!("同步手记到 Meilisearch 失败: {e}");
-                        } else {
-                            log::info!("✓ 已同步手记到 Meilisearch: {id}");
-                        }
+                    if let Err(e) = search.index_note(doc).await {
+                        log::error!("同步手记到 Meilisearch 失败: {e}");
+                    } else {
+                        log::info!("✓ 已同步手记到 Meilisearch: {id}");
                     }
                 }
             }

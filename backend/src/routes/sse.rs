@@ -1,8 +1,8 @@
 //! SSE (Server-Sent Events) 路由
 //! 用于向前端推送实时状态更新
 
-use rocket::response::stream::EventStream;
 use rocket::State;
+use rocket::response::stream::EventStream;
 
 use crate::services::ReaderSSEService;
 use crate::websocket::event_bus::EventBus;

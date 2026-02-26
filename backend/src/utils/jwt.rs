@@ -1,7 +1,7 @@
 //! JWT token generation and verification utilities
 
 use bson::oid::ObjectId;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 
 // 重新导出 JwtClaims 供外部使用
 pub use crate::models::JwtClaims;
