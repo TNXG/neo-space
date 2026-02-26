@@ -1,11 +1,13 @@
 use crate::models::{ApiResponse, Reader, User};
 use crate::repositories::ReaderRepository;
 use bson::oid::ObjectId;
-use mongodb::{Collection, Database};
+use futures::stream::TryStreamExt;
+use mongodb::{Collection, Database, bson};
 use rocket::serde::json::Json;
-use rocket::{get, State};
+use rocket::{State, get};
 
-/// 获取用户资料（非敏感数据）
+/// 获取博主资料（非敏感数据）
+/// 从 `owner_profiles` 和 readers 关联查询获取完整信息
 #[utoipa::path(
     get,
     path = "/api/user/profile",
@@ -18,38 +20,90 @@ use rocket::{get, State};
 )]
 #[get("/user/profile")]
 pub async fn get_user_profile(database: &State<Database>) -> Json<ApiResponse<User>> {
-    let collection: Collection<mongodb::bson::Document> = database.collection("users");
+    // 使用 $lookup 聚合管道，将 owner_profiles 与 readers 一次查询完成，避免两次 DB 往返
+    let owner_collection: Collection<bson::Document> = database.collection("owner_profiles");
 
-    // 只投影非敏感字段
-    let projection = mongodb::bson::doc! {
-        "_id": 1,
-        "username": 1,
-        "name": 1,
-        "introduce": 1,
-        "avatar": 1,
-        "mail": 1,
-        "url": 1,
-        "created": 1,
-        "lastLoginTime": 1,
-        "socialIds": 1
+    let pipeline = vec![
+        bson::doc! {
+            "$lookup": {
+                "from": "readers",
+                "localField": "readerId",
+                "foreignField": "_id",
+                "as": "reader"
+            }
+        },
+        bson::doc! { "$unwind": "$reader" },
+        bson::doc! {
+            "$project": {
+                "_id": 1,
+                "introduce": 1,
+                "mail": 1,
+                "url": 1,
+                "created": 1,
+                "lastLoginTime": 1,
+                "socialIds": 1,
+                "reader.handle": 1,
+                "reader.name": 1,
+                "reader.image": 1,
+            }
+        },
+        bson::doc! { "$limit": 1 },
+    ];
+
+    let mut cursor = match owner_collection.aggregate(pipeline).await {
+        Ok(c) => c,
+        Err(e) => {
+            return ApiResponse::json_error_with_default(500, format!("聚合查询失败: {e}"));
+        }
     };
 
-    let options = mongodb::options::FindOneOptions::builder()
-        .projection(projection)
-        .build();
+    let doc = match cursor.try_next().await {
+        Ok(Some(d)) => d,
+        Ok(None) => {
+            return ApiResponse::json_error_with_default(404, "未找到博主资料".to_string());
+        }
+        Err(e) => {
+            return ApiResponse::json_error_with_default(500, format!("获取博主资料失败: {e}"));
+        }
+    };
 
-    match collection
-        .find_one(mongodb::bson::doc! {})
-        .with_options(options)
-        .await
-    {
-        Ok(Some(doc)) => match mongodb::bson::from_document::<User>(doc) {
-            Ok(user) => Json(ApiResponse::success(user)),
-            Err(e) => ApiResponse::json_error_with_default(500, format!("解析用户数据失败: {e}")),
-        },
-        Ok(None) => ApiResponse::json_error_with_default(404, "未找到用户".to_string()),
-        Err(e) => ApiResponse::json_error_with_default(500, format!("获取用户资料失败: {e}")),
-    }
+    let owner_id = match doc.get_object_id("_id") {
+        Ok(id) => id,
+        Err(_) => {
+            return ApiResponse::json_error_with_default(500, "博主资料缺少 _id".to_string());
+        }
+    };
+
+    let reader_doc = match doc.get_document("reader") {
+        Ok(r) => r,
+        Err(_) => {
+            return ApiResponse::json_error_with_default(500, "未找到关联的读者信息".to_string());
+        }
+    };
+
+    let user = User {
+        id: owner_id,
+        username: reader_doc.get_str("handle").unwrap_or_default().to_string(),
+        name: reader_doc.get_str("name").unwrap_or_default().to_string(),
+        introduce: doc.get_str("introduce").unwrap_or_default().to_string(),
+        avatar: reader_doc.get_str("image").unwrap_or_default().to_string(),
+        mail: doc.get_str("mail").unwrap_or_default().to_string(),
+        url: doc.get_str("url").unwrap_or_default().to_string(),
+        created: doc
+            .get_datetime("created")
+            .cloned()
+            .unwrap_or_else(|_| bson::DateTime::now()),
+        last_login_time: doc
+            .get_datetime("lastLoginTime")
+            .cloned()
+            .unwrap_or_else(|_| bson::DateTime::now()),
+        social_ids: doc
+            .get_document("socialIds")
+            .ok()
+            .and_then(|d| bson::from_document::<crate::models::UserSocialIds>(d.clone()).ok()),
+    };
+
+    Json(ApiResponse::success(user))
 }
 
 /// 获取所有 readers（非敏感数据）
