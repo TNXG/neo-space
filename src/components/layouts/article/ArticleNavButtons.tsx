@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ArrowLeftLine from "~icons/mingcute/arrow-left-line";
-import BanLine from "~icons/mingcute/ban-line";
+import BanLine from "~icons/mingcute/forbid-circle-line";
 import Home2Line from "~icons/mingcute/home-2-line";
 
 import LeftLine from "~icons/mingcute/left-line";

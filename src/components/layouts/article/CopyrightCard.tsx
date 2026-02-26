@@ -2,10 +2,10 @@
 
 import type { ComponentType } from "react";
 import { useState } from "react";
+import EqualLine from "~icons/mingcute/balance-line";
 import CheckLine from "~icons/mingcute/check-line";
 import Copy2Line from "~icons/mingcute/copy-2-line";
-import CurrencyDollarLine from "~icons/mingcute/currency-dollar-line";
-import EqualLine from "~icons/mingcute/equal-line";
+import CurrencyDollarLine from "~icons/mingcute/currency-cny-line";
 import HashtagLine from "~icons/mingcute/hashtag-line";
 import InformationLine from "~icons/mingcute/information-line";
 import Refresh2Line from "~icons/mingcute/refresh-2-line";

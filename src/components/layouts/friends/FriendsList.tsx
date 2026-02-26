@@ -3,13 +3,13 @@
 import type { Link } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
-import ActivityHeartbeatLine from "~icons/mingcute/activity-heartbeat-line";
 import ArrowRightLine from "~icons/mingcute/arrow-right-line";
 import BookmarkLine from "~icons/mingcute/bookmark-line";
 import CodeLine from "~icons/mingcute/code-line";
 import EyeLine from "~icons/mingcute/eye-line";
 import GhostLine from "~icons/mingcute/ghost-line";
 import GroupLine from "~icons/mingcute/group-line";
+import ActivityHeartbeatLine from "~icons/mingcute/heartbeat-line";
 import LightningFill from "~icons/mingcute/lightning-fill";
 import Link2Line from "~icons/mingcute/link-2-line";
 import MouseLine from "~icons/mingcute/mouse-line";

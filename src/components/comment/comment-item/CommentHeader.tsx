@@ -13,16 +13,16 @@ import EyeCloseLine from "~icons/mingcute/eye-close-line";
 import FirefoxFill from "~icons/mingcute/firefox-fill";
 import GithubFill from "~icons/mingcute/github-fill";
 import GlobeLine from "~icons/mingcute/globe-line";
-import IeFill from "~icons/mingcute/ie-fill";
 import LinuxFill from "~icons/mingcute/linux-fill";
 import LocationLine from "~icons/mingcute/location-line";
-import OperaFill from "~icons/mingcute/opera-fill";
 import PinFill from "~icons/mingcute/pin-fill";
 import QqFill from "~icons/mingcute/qq-fill";
 import SafariFill from "~icons/mingcute/safari-fill";
 import TimeLine from "~icons/mingcute/time-line";
 import UserSecurityFill from "~icons/mingcute/user-security-fill";
 import WindowsFill from "~icons/mingcute/windows-fill";
+import IeFill from "~icons/ri/ie-fill";
+import OperaFill from "~icons/ri/opera-fill";
 
 import { SmartDate } from "@/components/common/smart-date";
 import { cn } from "@/lib/utils";

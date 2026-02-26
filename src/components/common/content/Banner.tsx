@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { clsx } from "clsx";
-import AlertTriangleLine from "~icons/mingcute/alert-triangle-line";
+import AlertTriangleLine from "~icons/mingcute/alert-line";
 import CheckCircleLine from "~icons/mingcute/check-circle-line";
 import CloseCircleLine from "~icons/mingcute/close-circle-line";
 import InformationLine from "~icons/mingcute/information-line";
