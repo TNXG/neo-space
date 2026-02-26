@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Icon } from "@iconify/react/offline";
+
+import WarningLine from "~icons/mingcute/warning-line";
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -291,7 +292,7 @@ function FieldError({
       )}
       {...props}
     >
-      <Icon icon="mingcute:warning-line" className="w-4 h-4 mt-0.5 shrink-0" />
+      <WarningLine className="w-4 h-4 mt-0.5 shrink-0" />
       <span>{content}</span>
     </div>
   );

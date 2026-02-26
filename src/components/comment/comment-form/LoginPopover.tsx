@@ -1,8 +1,11 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
-
 import { useState } from "react";
+import CheckCircleLine from "~icons/mingcute/check-circle-line";
+import HeartFill from "~icons/mingcute/heart-fill";
+import LoadingLine from "~icons/mingcute/loading-line";
+
+import User3Line from "~icons/mingcute/user-3-line";
 import { OAuthButtons } from "@/components/comment/auth/OAuthButtons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOAuthPopupMonitor } from "@/hooks/use-oauth-popup-monitor";
@@ -42,7 +45,7 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
           )}
           title="登录"
         >
-          <Icon icon="mingcute:user-3-line" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <User3Line className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -57,7 +60,7 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
         {isLoading
           ? (
               <div className="flex flex-col items-center justify-center py-4 sm:py-6 gap-2 sm:gap-3">
-                <Icon icon="mingcute:loading-line" className="size-6 sm:size-8 text-accent-500 animate-spin" />
+                <LoadingLine className="size-6 sm:size-8 text-accent-500 animate-spin" />
                 <span className="text-[11px] sm:text-xs text-muted-foreground animate-pulse">正在登录...</span>
               </div>
             )
@@ -65,15 +68,15 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
               <div>
                 <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-5 text-[11px] sm:text-xs text-muted-foreground">
                   <li className="flex items-center gap-2 sm:gap-3">
-                    <Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
+                    <CheckCircleLine className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
                     <span>无需进行人机验证</span>
                   </li>
                   <li className="flex items-center gap-2 sm:gap-3">
-                    <Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
+                    <CheckCircleLine className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
                     <span>编辑和删除自己的想法</span>
                   </li>
                   <li className="flex items-center gap-2 sm:gap-3">
-                    <Icon icon="mingcute:heart-fill" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
+                    <HeartFill className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
                     <span>我喜欢你</span>
                   </li>
                 </ul>

@@ -1,7 +1,10 @@
 "use client";
 
 import type { RefObject } from "react";
-import { Icon } from "@iconify/react/offline";
+
+import LoadingLine from "~icons/mingcute/loading-line";
+import Search2Line from "~icons/mingcute/search-2-line";
+import Sparkles2Line from "~icons/mingcute/sparkles-2-line";
 import { KbdShortcut } from "@/components/ui/kbd";
 
 interface SearchInputProps {
@@ -25,10 +28,13 @@ export function SearchInput({
 }: SearchInputProps) {
   return (
     <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30">
-      <Icon
-        icon={isLoading ? "mingcute:loading-line" : "mingcute:search-2-line"}
-        className={`text-xl text-muted-foreground shrink-0 ${isLoading ? "animate-spin" : ""}`}
-      />
+      {isLoading
+        ? (
+            <LoadingLine className="text-xl text-muted-foreground shrink-0 animate-spin" />
+          )
+        : (
+            <Search2Line className="text-xl text-muted-foreground shrink-0" />
+          )}
       <input
         ref={inputRef}
         type="text"
@@ -48,7 +54,7 @@ export function SearchInput({
             : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
         }`}
       >
-        <Icon icon="mingcute:sparkles-2-line" className="text-base" />
+        <Sparkles2Line className="text-base" />
         <span>语义搜索</span>
       </button>
       <KbdShortcut keys={["Esc"]} className="hidden sm:flex" />

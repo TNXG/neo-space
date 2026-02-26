@@ -2,9 +2,11 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react/offline";
-
 import { AnimatePresence, motion } from "motion/react";
+
+import Key2Line from "~icons/mingcute/key-2-line";
+import MailLine from "~icons/mingcute/mail-line";
+import SafeFlashLine from "~icons/mingcute/safe-flash-line";
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -34,14 +36,14 @@ export function VerificationStep({
     <FieldGroup>
       <div className="p-4 bg-accent-50/50 border border-accent-100 rounded-xl text-sm text-accent-800">
         <div className="flex items-start gap-2">
-          <Icon icon="mingcute:safe-flash-line" className="w-5 h-5 shrink-0 mt-0.5" />
+          <SafeFlashLine className="w-5 h-5 shrink-0 mt-0.5" />
           <p>我们需要验证你的邮箱以确保你是站长本人，并用于接收友链申请结果通知。</p>
         </div>
       </div>
 
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:mail-line" className="w-3.5 h-3.5" />
+          <MailLine className="w-3.5 h-3.5" />
           联系邮箱
         </FieldLabel>
         <FieldContent>
@@ -77,7 +79,7 @@ export function VerificationStep({
           >
             <Field>
               <FieldLabel>
-                <Icon icon="mingcute:key-2-line" className="w-3.5 h-3.5" />
+                <Key2Line className="w-3.5 h-3.5" />
                 验证码
               </FieldLabel>
               <FieldContent>

@@ -1,13 +1,24 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import type { ComponentType, SVGProps } from "react";
 import { useTheme } from "next-themes";
+
+import ComputerLine from "~icons/mingcute/computer-line";
+import MoonLine from "~icons/mingcute/moon-line";
+import SunLine from "~icons/mingcute/sun-line";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHasMounted } from "@/hooks/use-has-mounted";
+
+interface ThemeConfig {
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  label: string;
+  next: "light" | "dark" | "system";
+}
 
 /**
  * Theme toggle button component
@@ -24,29 +35,29 @@ export function ThemeToggle() {
         className="p-2 rounded-full shrink-0 transition-colors duration-200 text-neutral-600"
         aria-label="切换主题"
       >
-        <Icon icon="mingcute:sun-line" className="text-[18px]" />
+        <SunLine className="text-[18px]" />
       </button>
     );
   }
 
-  const getThemeConfig = (currentTheme: string | undefined) => {
+  const getThemeConfig = (currentTheme: string | undefined): ThemeConfig => {
     switch (currentTheme) {
       case "light":
         return {
-          icon: "mingcute:sun-line",
+          icon: SunLine,
           label: "亮色模式",
           next: "dark",
         };
       case "dark":
         return {
-          icon: "mingcute:moon-line",
+          icon: MoonLine,
           label: "暗色模式",
           next: "system",
         };
       case "system":
       default:
         return {
-          icon: "mingcute:computer-line",
+          icon: ComputerLine,
           label: "跟随系统",
           next: "light",
         };
@@ -54,6 +65,7 @@ export function ThemeToggle() {
   };
 
   const themeConfig = getThemeConfig(theme);
+  const IconComponent = themeConfig.icon;
 
   const toggleTheme = () => {
     setTheme(themeConfig.next);
@@ -68,7 +80,7 @@ export function ThemeToggle() {
           className="p-2 rounded-full shrink-0 cursor-pointer transition-colors duration-200 hover:bg-accent-100 text-neutral-600"
           aria-label={`当前: ${themeConfig.label}`}
         >
-          <Icon icon={themeConfig.icon} className="text-[18px]" />
+          <IconComponent className="text-[18px]" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top">{themeConfig.label}</TooltipContent>

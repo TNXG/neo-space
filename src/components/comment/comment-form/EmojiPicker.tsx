@@ -1,8 +1,9 @@
 "use client";
 
 import type { OwOItem, OwOResponse } from "./types";
-import { Icon } from "@iconify/react/offline";
+
 import { useState } from "react";
+import EmojiLine from "~icons/mingcute/emoji-line";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +80,7 @@ export function EmojiPicker({
             open && "text-accent-600",
           )}
         >
-          <Icon icon="mingcute:emoji-line" width="18" height="18" className="sm:w-5 sm:h-5" />
+          <EmojiLine width="18" height="18" className="sm:w-5 sm:h-5" />
         </button>
       </PopoverTrigger>
       <PopoverContent

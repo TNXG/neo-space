@@ -1,4 +1,6 @@
 import type { Note } from "@/types/api";
+
+import PenLine from "~icons/mingcute/pen-line";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { NoteItem } from "./NoteItem";
 
@@ -15,7 +17,7 @@ export function NotesSection({ notes }: NotesSectionProps) {
     <section id="notes">
       <SectionHeader
         title="手记"
-        icon="mingcute:pen-line"
+        icon={PenLine}
         linkText="更多记录"
         linkHref="/notes"
       />

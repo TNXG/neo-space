@@ -1,10 +1,12 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import * as React from "react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import CheckLine from "~icons/mingcute/check-line";
+import Copy2Line from "~icons/mingcute/copy-2-line";
 import { useHasMounted } from "@/hooks/use-has-mounted";
+
 import { FileIcon } from "@/lib/file-icons";
 import { cn } from "@/lib/utils";
 
@@ -70,15 +72,13 @@ export function CodeBlock({ children, className, language = "text", filename, st
           aria-label="Copy code"
         >
           <div className="relative h-3.5 w-3.5 md:h-4 md:w-4">
-            <Icon
-              icon="mingcute:copy-2-line"
+            <Copy2Line
               className={cn(
                 "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 transition-all duration-300",
                 copied ? "scale-0 opacity-0" : "scale-100 opacity-100",
               )}
             />
-            <Icon
-              icon="mingcute:check-line"
+            <CheckLine
               className={cn(
                 "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-500 transition-all duration-300",
                 copied ? "scale-100 opacity-100" : "scale-0 opacity-0",

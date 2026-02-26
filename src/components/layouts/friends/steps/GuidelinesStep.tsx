@@ -1,10 +1,10 @@
 "use client";
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
-import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react/offline";
 
+import type { LinkApplyFormData } from "@/lib/validations/link";
 import Link from "next/link";
+import InformationLine from "~icons/mingcute/information-line";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 
@@ -20,7 +20,7 @@ export function GuidelinesStep({ register, setValue, checked, error }: Guideline
     <FieldGroup>
       <div className="p-6 bg-accent-50/50 border border-accent-100 rounded-2xl">
         <div className="flex items-start gap-3 mb-4">
-          <Icon icon="mingcute:information-line" className="w-6 h-6 text-accent-600 shrink-0 mt-0.5" />
+          <InformationLine className="w-6 h-6 text-accent-600 shrink-0 mt-0.5" />
           <div>
             <h3 className="text-base font-bold text-accent-900 mb-2">在提交友链之前</h3>
             <p className="text-sm text-accent-800 leading-relaxed">

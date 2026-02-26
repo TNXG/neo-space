@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -59,7 +58,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                         : "bg-secondary/50 text-muted-foreground group-hover:bg-secondary group-hover:text-foreground",
                     )}
                   >
-                    <Icon icon={item.icon} className="w-5 h-5" />
+                    <item.icon className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col">
                     <span className={cn("font-medium text-base", isActive && "font-semibold")}>

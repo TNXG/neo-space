@@ -1,9 +1,13 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import ExifReader from "exifreader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import CloseLine from "~icons/mingcute/close-line";
+
+import FingerTapLine from "~icons/mingcute/finger-tap-line";
+import LoadingLine from "~icons/mingcute/loading-line";
+import MouseLine from "~icons/mingcute/mouse-line";
 import { KbdShortcut } from "@/components/ui/kbd";
 
 interface ImageFigureProps {
@@ -447,7 +451,7 @@ function LightboxPortal({
         }}
         aria-label="Close"
       >
-        <Icon icon="mingcute:close-line" width={20} height={20} className="md:w-6 md:h-6" />
+        <CloseLine width={20} height={20} className="md:w-6 md:h-6" />
       </button>
 
       <div
@@ -457,7 +461,7 @@ function LightboxPortal({
       >
         {!imgLoaded && (
           <div className="absolute inset-0 flex items-center justify-center text-white/50">
-            <Icon icon="mingcute:loading-line" className="animate-spin" width={32} height={32} />
+            <LoadingLine className="animate-spin" width={32} height={32} />
           </div>
         )}
 
@@ -489,11 +493,11 @@ function LightboxPortal({
       >
         {/* 缩放提示 - 移动端显示捏合，桌面端显示滚轮 */}
         <div className="flex md:hidden items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
-          <Icon icon="mingcute:finger-tap-line" width={14} height={14} />
+          <FingerTapLine width={14} height={14} />
           <span>双指捏合缩放</span>
         </div>
         <div className="hidden md:flex items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
-          <Icon icon="mingcute:mouse-line" width={14} height={14} />
+          <MouseLine width={14} height={14} />
           <span>滚轮缩放</span>
           <span className="mx-1">·</span>
           <KbdShortcut keys={["Esc"]} variant="lightbox" />

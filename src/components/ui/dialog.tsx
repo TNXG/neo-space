@@ -1,8 +1,9 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Icon } from "@iconify/react/offline";
 import * as React from "react";
+
+import CloseLine from "~icons/mingcute/close-line";
 
 import { cn } from "@/lib/utils";
 
@@ -95,7 +96,7 @@ function DialogContent({
               "disabled:pointer-events-none"
             )}
           >
-            <Icon icon="mingcute:close-line" className="w-5 h-5" />
+            <CloseLine className="w-5 h-5" />
             <span className="sr-only">关闭</span>
           </DialogPrimitive.Close>
         )}

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
-import { Icon } from "@iconify/react/offline";
+import MinusLine from "~icons/mingcute/minus-line";
 
 import { cn } from "@/lib/utils";
 
@@ -103,7 +103,7 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
       className="flex items-center justify-center text-muted-foreground/50"
       {...props}
     >
-      <Icon icon="mingcute:minus-line" className="w-4 h-4" />
+      <MinusLine className="w-4 h-4" />
     </div>
   );
 }

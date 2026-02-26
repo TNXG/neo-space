@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
-import { Icon } from "@iconify/react/offline"
+
+import CloseLine from "~icons/mingcute/close-line"
 
 import { cn } from "@/lib/utils"
 
@@ -110,7 +111,7 @@ function DrawerContent({
             "hidden group-data-[vaul-drawer-direction=right]/drawer-content:block group-data-[vaul-drawer-direction=left]/drawer-content:block"
           )}
         >
-          <Icon icon="mingcute:close-line" className="w-5 h-5" />
+          <CloseLine className="w-5 h-5" />
           <span className="sr-only">关闭</span>
         </DrawerPrimitive.Close>
       </DrawerPrimitive.Content>

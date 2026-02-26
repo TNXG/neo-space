@@ -2,14 +2,21 @@
 
 import type { NavItem } from "./nav-config";
 import type { User } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { SearchPanel } from "@/components/common/search/SearchPanel";
-import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
 
+import { useCallback, useEffect, useState } from "react";
+
+import ArrowUpLine from "~icons/mingcute/arrow-up-line";
+import LoadingLine from "~icons/mingcute/loading-line";
+import RightLine from "~icons/mingcute/right-line";
+import Search2Line from "~icons/mingcute/search-2-line";
+import SparklesLine from "~icons/mingcute/sparkles-line";
+import UpSmallLine from "~icons/mingcute/up-small-line";
+import { SearchPanel } from "@/components/common/search/SearchPanel";
+
+import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
 import {
   Tooltip,
   TooltipContent,
@@ -171,7 +178,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                   {user.name}
                 </span>
                 <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
-                  <Icon icon="mingcute:sparkles-line" className="text-[9px]" />
+                  <SparklesLine className="text-[9px]" />
                   {isConnected ? `在线 · ${onlineCount}` : "离线"}
                 </span>
               </div>
@@ -180,7 +187,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
             {/* Mobile Hint */}
             <div className="flex pr-3 pl-1 items-center animate-in fade-in zoom-in duration-300">
               <div className="w-px h-4 bg-neutral-200 mr-3" />
-              <Icon icon="mingcute:up-small-line" className="text-neutral-400 text-lg animate-bounce-custom" />
+              <UpSmallLine className="text-neutral-400 text-lg animate-bounce-custom" />
             </div>
           </div>
         </div>
@@ -221,10 +228,10 @@ export function FloatingNav({ user }: FloatingNavProps) {
                         </svg>
                         {isSpinning
                           ? (
-                              <Icon icon="mingcute:loading-line" className="text-lg animate-spin" />
+                              <LoadingLine className="text-lg animate-spin" />
                             )
                           : (
-                              <Icon icon="mingcute:arrow-up-line" className="text-lg" />
+                              <ArrowUpLine className="text-lg" />
                             )}
                       </button>
                     </TooltipTrigger>
@@ -242,7 +249,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                   onClick={() => setIsSearchOpen(true)}
                   className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                 >
-                  <Icon icon="mingcute:search-2-line" className="text-lg" />
+                  <Search2Line className="text-lg" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top">搜索</TooltipContent>
@@ -297,7 +304,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                     {user.name}
                   </span>
                   <span className="text-accent-600 text-[10px] flex gap-1 whitespace-nowrap items-center leading-none mt-0.5">
-                    <Icon icon="mingcute:sparkles-line" className="text-[9px]" />
+                    <SparklesLine className="text-[9px]" />
                     {isConnected ? `在线 · ${onlineCount}` : "离线"}
                   </span>
                 </div>
@@ -320,8 +327,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                         className="overflow-hidden"
                       >
                         <div className="flex items-center pr-2">
-                          <Icon
-                            icon="mingcute:right-line"
+                          <RightLine
                             className="text-neutral-400 text-base animate-pulse"
                           />
                         </div>
@@ -348,7 +354,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                               onClick={e => handleNavClick(e, item)}
                               className="p-2 rounded-full text-neutral-500 hover:text-accent-600 hover:bg-accent-50 transition-colors"
                             >
-                              <Icon icon={item.icon} className="text-lg" />
+                              <item.icon className="text-lg" />
                             </Link>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs">{item.title}</TooltipContent>
@@ -399,10 +405,10 @@ export function FloatingNav({ user }: FloatingNavProps) {
                           </svg>
                           {isSpinning
                             ? (
-                                <Icon icon="mingcute:loading-line" className="text-lg animate-spin" />
+                                <LoadingLine className="text-lg animate-spin" />
                               )
                             : (
-                                <Icon icon="mingcute:arrow-up-line" className="text-lg" />
+                                <ArrowUpLine className="text-lg" />
                               )}
                         </button>
                       </TooltipTrigger>
@@ -420,7 +426,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                     onClick={() => setIsSearchOpen(true)}
                     className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-accent-100 transition-colors cursor-pointer"
                   >
-                    <Icon icon="mingcute:search-2-line" className="text-lg" />
+                    <Search2Line className="text-lg" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top">搜索</TooltipContent>

@@ -1,5 +1,4 @@
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { getComments } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
@@ -146,7 +145,7 @@ export async function CommentSectionServer({
       {/* 标题 - 服务端渲染 */}
       <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
         <h2 className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold tracking-tight text-primary-900">
-          <Icon icon="mingcute:message-3-line" className="w-5 h-5 sm:w-6 sm:h-6 text-accent-500 shrink-0" />
+          <Message3Line className="w-5 h-5 sm:w-6 sm:h-6 text-accent-500 shrink-0" />
           <span>评论</span>
           <span className="text-sm sm:text-base font-normal text-primary-400 ml-0.5 sm:ml-1">
             (

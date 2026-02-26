@@ -1,11 +1,19 @@
 /* eslint-disable react-hooks-extra/no-direct-set-state-in-use-effect */
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import CheckFill from "~icons/mingcute/check-fill";
+import CloseLine from "~icons/mingcute/close-line";
+import InformationLine from "~icons/mingcute/information-line";
+import Loading3Line from "~icons/mingcute/loading-3-line";
+
+import LoadingLine from "~icons/mingcute/loading-line";
+import MailLine from "~icons/mingcute/mail-line";
+import User3Line from "~icons/mingcute/user-3-line";
+import UserAdd2Line from "~icons/mingcute/user-add-2-line";
 import { bindAnonymousIdentity, skipBind } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
@@ -278,8 +286,7 @@ function AuthCallbackContent() {
               >
                 <div className="relative mb-8">
                   <div className="absolute inset-0 rounded-full blur-md bg-accent-400/30 animate-pulse" />
-                  <Icon
-                    icon="mingcute:loading-3-line"
+                  <Loading3Line
                     className="relative w-12 h-12 text-accent-600 animate-spin"
                   />
                 </div>
@@ -302,7 +309,7 @@ function AuthCallbackContent() {
                 {/* ... 表单内容保持不变 ... */}
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-accent-100 text-accent-600 mb-4 ring-1 ring-accent-200">
-                    <Icon icon="mingcute:user-add-2-line" className="w-6 h-6" />
+                    <UserAdd2Line className="w-6 h-6" />
                   </div>
                   <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
                     关联匿名身份
@@ -317,7 +324,7 @@ function AuthCallbackContent() {
                     {/* 昵称输入框 */}
                     <div className="group relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent-600">
-                        <Icon icon="mingcute:user-3-line" className="w-5 h-5" />
+                        <User3Line className="w-5 h-5" />
                       </div>
                       <input
                         type="text"
@@ -332,7 +339,7 @@ function AuthCallbackContent() {
                     {/* 邮箱输入框 */}
                     <div className="group relative">
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent-600">
-                        <Icon icon="mingcute:mail-line" className="w-5 h-5" />
+                        <MailLine className="w-5 h-5" />
                       </div>
                       <input
                         type="email"
@@ -347,7 +354,7 @@ function AuthCallbackContent() {
 
                   <div className="py-2">
                     <div className="flex gap-3 text-xs text-amber-600 bg-amber-50/50 px-3 py-2.5 rounded-lg border border-amber-200/50">
-                      <Icon icon="mingcute:information-line" className="w-4 h-4 shrink-0 mt-0.5" />
+                      <InformationLine className="w-4 h-4 shrink-0 mt-0.5" />
                       <span>必须与之前的匿名评论完全一致才能绑定成功。</span>
                     </div>
                   </div>
@@ -362,7 +369,7 @@ function AuthCallbackContent() {
                       >
                         {isSkipping
                           ? (
-                              <Icon icon="mingcute:loading-line" className="animate-spin w-4 h-4" />
+                              <LoadingLine className="animate-spin w-4 h-4" />
                             )
                           : (
                               "跳过"
@@ -381,7 +388,7 @@ function AuthCallbackContent() {
                       {isBinding
                         ? (
                             <span className="flex items-center gap-2">
-                              <Icon icon="mingcute:loading-line" className="animate-spin w-4 h-4" />
+                              <LoadingLine className="animate-spin w-4 h-4" />
                               绑定中...
                             </span>
                           )
@@ -411,7 +418,7 @@ function AuthCallbackContent() {
                   transition={{ type: "spring", duration: 0.6, bounce: 0.5 }}
                   className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 ring-8 ring-emerald-50"
                 >
-                  <Icon icon="mingcute:check-fill" className="w-10 h-10" />
+                  <CheckFill className="w-10 h-10" />
                 </motion.div>
                 <h2 className="text-xl font-bold text-foreground">{message}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">窗口即将自动关闭...</p>
@@ -430,7 +437,7 @@ function AuthCallbackContent() {
                 className="flex flex-col items-center justify-center py-4"
               >
                 <div className="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-6">
-                  <Icon icon="mingcute:close-line" className="w-8 h-8" />
+                  <CloseLine className="w-8 h-8" />
                 </div>
                 <h2 className="text-lg font-bold text-red-600">认证失败</h2>
                 <p className="mt-2 text-sm text-muted-foreground text-center max-w-[280px]">
@@ -459,8 +466,7 @@ export default function AuthCallbackPage() {
         <div className="flex flex-col items-center justify-center py-8">
           <div className="relative mb-8">
             <div className="absolute inset-0 rounded-full blur-md bg-accent-400/30 animate-pulse" />
-            <Icon
-              icon="mingcute:loading-3-line"
+            <Loading3Line
               className="relative w-12 h-12 text-accent-600 animate-spin"
             />
           </div>

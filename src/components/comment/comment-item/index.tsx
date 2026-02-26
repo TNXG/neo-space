@@ -1,9 +1,10 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
+
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
+import ShareForwardLine from "~icons/mingcute/share-forward-line";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
@@ -96,7 +97,7 @@ export function CommentItem({
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-1 mb-1.5 sm:mb-1 text-xs sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group/reply"
             >
-              <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
+              <ShareForwardLine className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
               <span>回复</span>
               <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-[80px] sm:max-w-none">
                 @

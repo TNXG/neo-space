@@ -1,9 +1,14 @@
 "use client";
 
 import type { AccountInfo } from "@/lib/api-client";
-import { Icon } from "@iconify/react/offline";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import GithubLine from "~icons/mingcute/github-line";
+import LinkLine from "~icons/mingcute/link-line";
+
+import LoadingLine from "~icons/mingcute/loading-line";
+import QqLine from "~icons/mingcute/qq-line";
+import User4Line from "~icons/mingcute/user-4-line";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { API_BASE_URL, getUserAccounts } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -102,14 +107,14 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <h4 className="text-[11px] sm:text-xs font-semibold text-muted-foreground flex items-center gap-1.5 sm:gap-2">
-                <Icon icon="mingcute:link-line" className="size-3.5 sm:size-4" />
+                <LinkLine className="size-3.5 sm:size-4" />
                 关联账号
               </h4>
             </div>
             {isLoadingAccounts
               ? (
                   <div className="flex items-center justify-center py-2 sm:py-3">
-                    <Icon icon="mingcute:loading-line" className="size-3.5 sm:size-4 text-accent-500 animate-spin" />
+                    <LoadingLine className="size-3.5 sm:size-4 text-accent-500 animate-spin" />
                   </div>
                 )
               : accounts.length > 0
@@ -130,14 +135,13 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
                               )
                             : (
                                 <div className="size-6 sm:size-7 rounded-full bg-muted flex items-center justify-center">
-                                  <Icon
-                                    icon={
-                                      account.provider === "github"
-                                        ? "mingcute:github-line"
-                                        : "mingcute:qq-line"
-                                    }
-                                    className="size-3.5 sm:size-4 text-muted-foreground"
-                                  />
+                                  {account.provider === "github"
+                                    ? (
+                                        <GithubLine className="size-3.5 sm:size-4 text-muted-foreground" />
+                                      )
+                                    : (
+                                        <QqLine className="size-3.5 sm:size-4 text-muted-foreground" />
+                                      )}
                                 </div>
                               )}
                           <div className="flex-1 min-w-0">
@@ -179,7 +183,7 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
                   disabled={accounts.some(acc => acc.provider === "github")}
                   className="flex items-center justify-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icon icon="mingcute:github-line" className="size-3 sm:size-3.5" />
+                  <GithubLine className="size-3 sm:size-3.5" />
                   <span className="text-[10px] sm:text-xs font-medium">GitHub</span>
                 </button>
                 <button
@@ -190,7 +194,7 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
                   disabled={accounts.some(acc => acc.provider === "qq")}
                   className="flex items-center justify-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icon icon="mingcute:qq-line" className="size-3 sm:size-3.5" />
+                  <QqLine className="size-3 sm:size-3.5" />
                   <span className="text-[10px] sm:text-xs font-medium">QQ</span>
                 </button>
               </div>
@@ -201,7 +205,7 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
           {accounts.length > 1 && (
             <div>
               <h4 className="text-[10px] sm:text-xs font-semibold text-muted-foreground flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <Icon icon="mingcute:user-4-line" className="size-3.5 sm:size-4" />
+                <User4Line className="size-3.5 sm:size-4" />
                 更换头像
               </h4>
               <AvatarSelector

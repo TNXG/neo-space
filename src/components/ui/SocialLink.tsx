@@ -1,9 +1,9 @@
-import { Icon } from "@iconify/react/offline";
-import type {IconifyIcon} from "@iconify/react/offline";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { SVGProps } from "react";
+import type { ComponentType } from "react";
 
 interface SocialLinkProps {
-  icon: string | IconifyIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   href: string;
   label?: string;
 }
@@ -11,7 +11,7 @@ interface SocialLinkProps {
 /**
  * Social media link component with icon and tooltip
  */
-export function SocialLink({ icon, href, label }: SocialLinkProps) {
+export function SocialLink({ icon: Icon, href, label }: SocialLinkProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -22,7 +22,7 @@ export function SocialLink({ icon, href, label }: SocialLinkProps) {
           aria-label={label}
           className="transition-colors duration-150 text-muted-foreground hover:text-foreground"
         >
-          <Icon icon={icon} className="text-[20px]" />
+          <Icon className="text-[20px]" />
         </a>
       </TooltipTrigger>
       {label && (

@@ -2,9 +2,12 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react/offline";
-
 import { AnimatePresence, motion } from "motion/react";
+import CloseLine from "~icons/mingcute/close-line";
+
+import CodeLine from "~icons/mingcute/code-line";
+import RssLine from "~icons/mingcute/rss-line";
+import TextLine from "~icons/mingcute/text-line";
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 
@@ -36,7 +39,7 @@ export function DetailsStep({
     <FieldGroup>
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:text-line" className="w-3.5 h-3.5" />
+          <TextLine className="w-3.5 h-3.5" />
           站点描述
         </FieldLabel>
         <FieldContent>
@@ -52,7 +55,7 @@ export function DetailsStep({
 
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:rss-line" className="w-3.5 h-3.5" />
+          <RssLine className="w-3.5 h-3.5" />
           RSS 地址
         </FieldLabel>
         <FieldContent>
@@ -69,7 +72,7 @@ export function DetailsStep({
 
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:code-line" className="w-3.5 h-3.5" />
+          <CodeLine className="w-3.5 h-3.5" />
           技术栈
         </FieldLabel>
         <FieldContent>
@@ -108,7 +111,7 @@ export function DetailsStep({
                       onClick={() => onRemoveTech(tech)}
                       className="text-accent-500 hover:text-red-500 transition-colors cursor-pointer"
                     >
-                      <Icon icon="mingcute:close-line" className="w-3.5 h-3.5" />
+                      <CloseLine className="w-3.5 h-3.5" />
                     </button>
                   </motion.span>
                 ))}

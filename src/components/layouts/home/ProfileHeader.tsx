@@ -1,8 +1,17 @@
 "use client";
 
 import type { User } from "@/types/api";
-
 import { useEffect, useState } from "react";
+import GithubLine from "~icons/mingcute/github-line";
+import MailLine from "~icons/mingcute/mail-line";
+import MusicLine from "~icons/mingcute/music-line";
+import RssLine from "~icons/mingcute/rss-line";
+import TelegramLine from "~icons/mingcute/telegram-line";
+import Tv2Line from "~icons/mingcute/tv-2-line";
+
+import TwitterLine from "~icons/mingcute/twitter-line";
+
+import WorldLine from "~icons/mingcute/world-line";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderSSE } from "@/hooks/use-reader-sse";
@@ -85,56 +94,56 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       <div className="pt-1 md:pt-2 flex gap-4 md:gap-5 flex-wrap">
         {profile.socialIds?.github && (
           <SocialLink
-            icon="mingcute:github-line"
+            icon={GithubLine}
             href={`https://github.com/${profile.socialIds.github}`}
             label="GitHub"
           />
         )}
         {profile.socialIds?.twitter && (
           <SocialLink
-            icon="mingcute:twitter-line"
+            icon={TwitterLine}
             href={`https://twitter.com/${profile.socialIds.twitter}`}
             label="Twitter"
           />
         )}
         {profile.mail && (
           <SocialLink
-            icon="mingcute:mail-line"
+            icon={MailLine}
             href={`mailto:${profile.mail}`}
             label="Email"
           />
         )}
         {profile.socialIds?.bilibili && (
           <SocialLink
-            icon="mingcute:tv-2-line"
+            icon={Tv2Line}
             href={`https://space.bilibili.com/${profile.socialIds.bilibili}`}
             label="Bilibili"
           />
         )}
         {profile.socialIds?.netease && (
           <SocialLink
-            icon="mingcute:music-line"
+            icon={MusicLine}
             href={`https://music.163.com/#/user/home?id=${profile.socialIds.netease}`}
             label="NetEase Music"
           />
         )}
         {profile.socialIds?.telegram && (
           <SocialLink
-            icon="mingcute:telegram-line"
+            icon={TelegramLine}
             href={`https://t.me/${profile.socialIds.telegram}`}
             label="Telegram"
           />
         )}
         {profile.url && (
           <SocialLink
-            icon="mingcute:world-line"
+            icon={WorldLine}
             href={profile.url}
             label="Website"
           />
         )}
         {profile.socialIds?.rss && (
           <SocialLink
-            icon="mingcute:rss-line"
+            icon={RssLine}
             href={profile.socialIds.rss}
             label="RSS"
           />

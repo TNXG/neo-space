@@ -1,8 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
+import AlertTriangleLine from "~icons/mingcute/alert-triangle-line";
+import CheckCircleLine from "~icons/mingcute/check-circle-line";
+import CloseCircleLine from "~icons/mingcute/close-circle-line";
+import InformationLine from "~icons/mingcute/information-line";
 
 interface BannerProps {
   type: "info" | "success" | "warn" | "error";
@@ -13,23 +16,23 @@ interface BannerProps {
 const bannerStyles = {
   info: {
     container: "bg-blue-50/80 border-blue-200",
-    icon: "text-blue-600",
-    iconName: "mingcute:information-line",
+    iconColor: "text-blue-600",
+    Icon: InformationLine,
   },
   success: {
     container: "bg-green-50/80 border-green-200",
-    icon: "text-green-600",
-    iconName: "mingcute:check-circle-line",
+    iconColor: "text-green-600",
+    Icon: CheckCircleLine,
   },
   warn: {
     container: "bg-yellow-50/80 border-yellow-200",
-    icon: "text-yellow-600",
-    iconName: "mingcute:alert-triangle-line",
+    iconColor: "text-yellow-600",
+    Icon: AlertTriangleLine,
   },
   error: {
     container: "bg-red-50/80 border-red-200",
-    icon: "text-red-600",
-    iconName: "mingcute:close-circle-line",
+    iconColor: "text-red-600",
+    Icon: CloseCircleLine,
   },
 };
 
@@ -48,10 +51,7 @@ export function Banner({ type, children, className }: BannerProps) {
       )}
     >
       <div className="shrink-0 mt-0.5">
-        <Icon
-          icon={style.iconName}
-          className={clsx("w-5 h-5", style.icon)}
-        />
+        <style.Icon className={clsx("w-5 h-5", style.iconColor)} />
       </div>
       <div className="flex-1 min-w-0 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
         {children}

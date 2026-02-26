@@ -1,24 +1,28 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import type { ComponentType, SVGProps } from "react";
 import { useMemo } from "react";
+import BilibiliLine from "~icons/mingcute/bilibili-line";
+import GithubLine from "~icons/mingcute/github-line";
+import TelegramLine from "~icons/mingcute/telegram-line";
+import TwitterLine from "~icons/mingcute/twitter-line";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import styles from "./AnimatedLink.module.scss";
 
 // 平台图标配置
-const platformIcons: Record<string, string> = {
-  "github.com": "mingcute:github-line",
-  "twitter.com": "mingcute:twitter-line",
-  "x.com": "mingcute:twitter-line",
-  "bilibili.com": "mingcute:bilibili-line",
-  "t.me": "mingcute:telegram-line",
+const platformIcons: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  "github.com": GithubLine,
+  "twitter.com": TwitterLine,
+  "x.com": TwitterLine,
+  "bilibili.com": BilibiliLine,
+  "t.me": TelegramLine,
 };
 
 /**
  * 获取平台图标
  */
-function getPlatformIcon(href: string): string | null {
+function getPlatformIcon(href: string): ComponentType<SVGProps<SVGSVGElement>> | null {
   try {
     const { hostname } = new URL(href);
     for (const [domain, icon] of Object.entries(platformIcons)) {
@@ -41,6 +45,10 @@ interface AnimatedLinkProps {
   tooltipContentClassName?: string;
 }
 
+function IconRenderer({ icon: Icon }: { icon: ComponentType<SVGProps<SVGSVGElement>> }) {
+  return <Icon />;
+}
+
 export function AnimatedLink({
   href,
   children,
@@ -52,7 +60,7 @@ export function AnimatedLink({
   showTooltip = true,
   tooltipContentClassName = "",
 }: AnimatedLinkProps) {
-  const iconName = useMemo(() => getPlatformIcon(href), [href]);
+  const PlatformIcon = useMemo(() => getPlatformIcon(href), [href]);
 
   const link = (
     <a
@@ -62,11 +70,17 @@ export function AnimatedLink({
       title={title}
       rel={rel}
     >
-      {(customIcon || iconName) && (
-        <span className={styles.icon}>
-          {customIcon || <Icon icon={iconName!} />}
-        </span>
-      )}
+      {customIcon
+        ? (
+            <span className={styles.icon}>{customIcon}</span>
+          )
+        : PlatformIcon
+          ? (
+              <span className={styles.icon}>
+                <IconRenderer icon={PlatformIcon} />
+              </span>
+            )
+          : null}
       <span className={styles.link}>{children || href}</span>
     </a>
   );

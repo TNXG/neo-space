@@ -1,5 +1,19 @@
 declare module "*.css";
 
+declare module "~icons/*/icon-name" {
+  import type { SVGProps } from "react";
+
+  const content: React.FC<SVGProps<SVGSVGElement>>;
+  export default content;
+}
+
+declare module "~icons/*" {
+  import type { SVGProps } from "react";
+
+  const content: React.FC<SVGProps<SVGSVGElement>>;
+  export default content;
+}
+
 declare module "wink-tokenizer" {
   interface Token {
     value: string;

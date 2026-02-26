@@ -1,6 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import LoadingLine from "~icons/mingcute/loading-line";
+import SendPlaneFill from "~icons/mingcute/send-plane-fill";
+
 import { cn } from "@/lib/utils";
 
 interface SubmitButtonProps {
@@ -26,8 +28,8 @@ export function SubmitButton({ onClick, disabled, isPending }: SubmitButtonProps
       )}
     >
       {isPending
-        ? <Icon icon="mingcute:loading-line" className="animate-spin size-4 sm:size-4" />
-        : <Icon icon="mingcute:send-plane-fill" className="size-4 sm:size-4" />}
+        ? <LoadingLine className="animate-spin size-4 sm:size-4" />
+        : <SendPlaneFill className="size-4 sm:size-4" />}
       <span>发送</span>
     </button>
   );

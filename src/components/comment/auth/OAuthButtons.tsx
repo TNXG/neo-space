@@ -1,8 +1,10 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useEffect } from "react";
 import { toast } from "sonner";
+
+import GithubLine from "~icons/mingcute/github-line";
+import QqLine from "~icons/mingcute/qq-line";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOAuthStore } from "@/stores/oauth-store";
@@ -198,7 +200,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
                 <div className="size-4 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
               )
             : (
-                <Icon icon="mingcute:github-line" className="size-4" />
+                <GithubLine className="size-4" />
               )}
           <span>GitHub</span>
         </button>
@@ -215,7 +217,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
                 <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               )
             : (
-                <Icon icon="mingcute:qq-line" className="size-4" />
+                <QqLine className="size-4" />
               )}
           <span>QQ</span>
         </button>
@@ -238,7 +240,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <div className="size-5 animate-spin rounded-full border-2 border-primary-50 border-t-transparent" />
             )
           : (
-              <Icon icon="mingcute:github-line" className="size-5" />
+              <GithubLine className="size-5" />
             )}
         <span className="font-medium">
           {isLoading ? "登录中..." : "使用 GitHub 登录"}
@@ -257,7 +259,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )
           : (
-              <Icon icon="mingcute:qq-line" className="size-5" />
+              <QqLine className="size-5" />
             )}
         <span className="font-medium">
           {isLoading ? "登录中..." : "使用 QQ 登录"}

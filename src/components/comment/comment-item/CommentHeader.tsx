@@ -1,7 +1,29 @@
 "use client";
 
+import type { ComponentType, SVGProps } from "react";
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
+import AndroidFill from "~icons/mingcute/android-fill";
+import AppleFill from "~icons/mingcute/apple-fill";
+import CheckCircleFill from "~icons/mingcute/check-circle-fill";
+import ChromeFill from "~icons/mingcute/chrome-fill";
+import ComputerLine from "~icons/mingcute/computer-line";
+import Delete2Line from "~icons/mingcute/delete-2-line";
+import EdgeFill from "~icons/mingcute/edge-fill";
+import EyeCloseLine from "~icons/mingcute/eye-close-line";
+import FirefoxFill from "~icons/mingcute/firefox-fill";
+import GithubFill from "~icons/mingcute/github-fill";
+import GlobeLine from "~icons/mingcute/globe-line";
+import IeFill from "~icons/mingcute/ie-fill";
+import LinuxFill from "~icons/mingcute/linux-fill";
+import LocationLine from "~icons/mingcute/location-line";
+import OperaFill from "~icons/mingcute/opera-fill";
+import PinFill from "~icons/mingcute/pin-fill";
+import QqFill from "~icons/mingcute/qq-fill";
+import SafariFill from "~icons/mingcute/safari-fill";
+import TimeLine from "~icons/mingcute/time-line";
+import UserSecurityFill from "~icons/mingcute/user-security-fill";
+import WindowsFill from "~icons/mingcute/windows-fill";
+
 import { SmartDate } from "@/components/common/smart-date";
 import { cn } from "@/lib/utils";
 import { CommentState } from "@/types/api";
@@ -13,37 +35,37 @@ interface CommentHeaderProps {
 /**
  * 获取浏览器图标
  */
-function getBrowserIcon(browser: string): string {
+function getBrowserIcon(browser: string): ComponentType<SVGProps<SVGSVGElement>> {
   const name = browser.toLowerCase();
   if (name.includes("edge"))
-    return "mingcute:edge-fill";
+    return EdgeFill;
   if (name.includes("firefox"))
-    return "mingcute:firefox-fill";
+    return FirefoxFill;
   if (name.includes("safari"))
-    return "mingcute:safari-fill";
+    return SafariFill;
   if (name.includes("opera"))
-    return "mingcute:opera-fill";
+    return OperaFill;
   if (name.includes("chrome") || name.includes("chromium"))
-    return "mingcute:chrome-fill";
+    return ChromeFill;
   if (name.includes("ie") || name.includes("internet explorer"))
-    return "mingcute:ie-fill";
-  return "mingcute:globe-line";
+    return IeFill;
+  return GlobeLine;
 }
 
 /**
  * 获取操作系统图标
  */
-function getOSIcon(os: string): string {
+function getOSIcon(os: string): ComponentType<SVGProps<SVGSVGElement>> {
   const name = os.toLowerCase();
   if (name.includes("windows"))
-    return "mingcute:windows-fill";
+    return WindowsFill;
   if (name.includes("mac") || name.includes("ios"))
-    return "mingcute:apple-fill";
+    return AppleFill;
   if (name.includes("android"))
-    return "mingcute:android-fill";
+    return AndroidFill;
   if (name.includes("linux"))
-    return "mingcute:linux-fill";
-  return "mingcute:computer-line";
+    return LinuxFill;
+  return ComputerLine;
 }
 
 /**
@@ -68,33 +90,33 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
           </b>
           {comment.isAdmin && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-green-50 text-green-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="笔者">
-              <Icon icon="mingcute:check-circle-fill" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <CheckCircleFill className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span className="hidden sm:inline">笔者</span>
             </span>
           )}
           <span className="text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-mono shrink-0">
             {comment.key}
           </span>
-          {comment.pin && <Icon icon="mingcute:pin-fill" className="text-red-500 w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />}
+          {comment.pin && <PinFill className="text-red-500 w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />}
 
           {/* 待审核状态 */}
           {comment.state === CommentState.PENDING && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-yellow-50 text-yellow-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="评论正在审核中">
-              <Icon icon="mingcute:time-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <TimeLine className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span className="hidden sm:inline">审核中</span>
             </span>
           )}
           {/* 垃圾评论状态 */}
           {comment.state === CommentState.SPAM && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-red-50 text-red-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="已被标记为垃圾评论">
-              <Icon icon="mingcute:delete-2-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <Delete2Line className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span className="hidden sm:inline">垃圾</span>
             </span>
           )}
           {/* 私密评论 */}
           {comment.isWhispers && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-orange-50 text-orange-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="仅作者和管理员可见">
-              <Icon icon="mingcute:eye-close-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <EyeCloseLine className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span className="hidden sm:inline">私密</span>
             </span>
           )}
@@ -102,19 +124,19 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
           {/* OAuth 来源标识 - 统一 Badge 风格 */}
           {comment.source === "from_oauth_github" && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-medium shrink-0" title="GitHub 登录">
-              <Icon icon="mingcute:github-fill" className="w-3 h-3" />
+              <GithubFill className="w-3 h-3" />
               <span className="hidden sm:inline">GitHub</span>
             </span>
           )}
           {comment.source === "from_oauth_qq" && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-blue-50 text-blue-600 px-1 rounded font-medium shrink-0" title="QQ 登录">
-              <Icon icon="mingcute:qq-fill" className="w-3 h-3" />
+              <QqFill className="w-3 h-3" />
               <span className="hidden sm:inline">QQ</span>
             </span>
           )}
           {comment.source === "from_oauth_both" && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-violet-50 text-violet-600 px-1 rounded font-medium shrink-0" title="多平台绑定">
-              <Icon icon="mingcute:user-security-fill" className="w-3 h-3" />
+              <UserSecurityFill className="w-3 h-3" />
               <span className="hidden sm:inline">ALL</span>
             </span>
           )}
@@ -123,27 +145,31 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
           <SmartDate date={comment.created} className="text-[10px] sm:text-xs text-muted-foreground" />
 
           {/* UA 信息显示 */}
-          {comment.ua && comment.ua.os !== "unknown" && (
-            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`${comment.ua.os} ${comment.ua.osVersion} · ${comment.ua.browser} ${comment.ua.browserVersion}`}>
-              <Icon icon={getOSIcon(comment.ua.os)} className="w-3 h-3" />
-              <span>
-                {comment.ua.os}
-                {" "}
-                {comment.ua.osVersion !== "unknown" && comment.ua.osVersion}
+          {comment.ua && comment.ua.os !== "unknown" && (() => {
+            const OSIcon = getOSIcon(comment.ua.os);
+            const BrowserIcon = getBrowserIcon(comment.ua.browser);
+            return (
+              <span className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`${comment.ua.os} ${comment.ua.osVersion} · ${comment.ua.browser} ${comment.ua.browserVersion}`}>
+                <OSIcon className="w-3 h-3" />
+                <span>
+                  {comment.ua.os}
+                  {" "}
+                  {comment.ua.osVersion !== "unknown" && comment.ua.osVersion}
+                </span>
+                <BrowserIcon className="w-3 h-3" />
+                <span>
+                  {comment.ua.browser}
+                  {" "}
+                  {comment.ua.browserVersion !== "unknown" && comment.ua.browserVersion}
+                </span>
               </span>
-              <Icon icon={getBrowserIcon(comment.ua.browser)} className="w-3 h-3" />
-              <span>
-                {comment.ua.browser}
-                {" "}
-                {comment.ua.browserVersion !== "unknown" && comment.ua.browserVersion}
-              </span>
-            </span>
-          )}
+            );
+          })()}
 
           {/* 地理位置信息 */}
           {comment.location && (
             <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`来自 ${comment.location}`}>
-              <Icon icon="mingcute:location-line" className="w-3 h-3" />
+              <LocationLine className="w-3 h-3" />
               <span>{comment.location}</span>
             </span>
           )}

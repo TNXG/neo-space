@@ -1,9 +1,10 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
+
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import LoadingLine from "~icons/mingcute/loading-line";
 
 // 懒加载整个客户端评论组件
 const CommentSection = dynamic(
@@ -71,7 +72,7 @@ export function CommentSectionLazy({
             <>
               {!isLoaded && (
                 <div className="flex items-center justify-center py-8">
-                  <Icon icon="mingcute:loading-line" className="w-6 h-6 animate-spin text-accent-500" />
+                  <LoadingLine className="w-6 h-6 animate-spin text-accent-500" />
                 </div>
               )}
               <div className={isLoaded ? "opacity-100" : "opacity-0"}>

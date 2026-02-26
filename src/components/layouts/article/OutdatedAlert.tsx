@@ -1,5 +1,4 @@
 import type { TimeCapsuleResponse } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { getTimeCapsule } from "@/lib/api-client";
 
 interface OutdatedAlertProps {
@@ -81,8 +80,7 @@ export async function OutdatedAlert({
         <div className="relative overflow-hidden rounded-lg bg-white/60 border border-primary-200 p-5 md:p-6">
           {/* 背景水印 */}
           <div className="absolute -right-6 -bottom-8 text-primary-400/10 pointer-events-none select-none z-0">
-            <Icon
-              icon="mingcute:sandglass-line"
+            <SandglassLine
               width={160}
               height={160}
               className="transform -rotate-12"
@@ -93,7 +91,7 @@ export async function OutdatedAlert({
             {/* 左侧图标 */}
             <div className="shrink-0">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-200 text-primary-600 border border-primary-300 shadow-sm">
-                <Icon icon="mingcute:sandglass-line" width={24} height={24} />
+                <SandglassLine width={24} height={24} />
               </div>
             </div>
 

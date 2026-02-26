@@ -1,9 +1,11 @@
 "use client";
 
 import type { AccountInfo } from "@/lib/api-client";
-import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
+
 import { toast } from "sonner";
+import DownLine from "~icons/mingcute/down-line";
+import LoadingLine from "~icons/mingcute/loading-line";
 import { updateAvatar } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -133,10 +135,10 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
         <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
           {isUpdating
             ? (
-                <Icon icon="mingcute:loading-line" className="size-3.5 text-muted-foreground animate-spin" />
+                <LoadingLine className="size-3.5 text-muted-foreground animate-spin" />
               )
             : (
-                <Icon icon="mingcute:down-line" className="size-3.5 text-muted-foreground" />
+                <DownLine className="size-3.5 text-muted-foreground" />
               )}
         </div>
       </div>

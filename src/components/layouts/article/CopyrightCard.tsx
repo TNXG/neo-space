@@ -1,7 +1,16 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import type { ComponentType } from "react";
 import { useState } from "react";
+import CheckLine from "~icons/mingcute/check-line";
+import Copy2Line from "~icons/mingcute/copy-2-line";
+import CurrencyDollarLine from "~icons/mingcute/currency-dollar-line";
+import EqualLine from "~icons/mingcute/equal-line";
+import HashtagLine from "~icons/mingcute/hashtag-line";
+import InformationLine from "~icons/mingcute/information-line";
+import Refresh2Line from "~icons/mingcute/refresh-2-line";
+
+import User4Line from "~icons/mingcute/user-4-line";
 
 function CCIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -56,13 +65,13 @@ const LICENSES: Record<string, LicenseConfig> = {
   },
 };
 
-const ATOM_DATA: Record<LicenseAtom, { icon: string; label: string; desc: string }> = {
-  CC: { icon: "custom-cc", label: "CC", desc: "知识共享许可" }, // 标记为 custom 使用您的 SVG
-  BY: { icon: "mingcute:user-4-line", label: "BY", desc: "署名：必须保留原作者署名" },
-  NC: { icon: "mingcute:currency-dollar-line", label: "NC", desc: "非商业：禁止用于商业目的" },
-  ND: { icon: "mingcute:equal-line", label: "ND", desc: "禁止演绎：必须保持原样" },
-  SA: { icon: "mingcute:refresh-2-line", label: "SA", desc: "相同方式共享：以同协议发布" },
-  ZERO: { icon: "mingcute:hashtag-line", label: "CC0", desc: "公有领域：放弃所有权利" },
+const ATOM_DATA: Record<LicenseAtom, { icon: ComponentType<React.SVGProps<SVGSVGElement>>; label: string; desc: string }> = {
+  CC: { icon: CCIcon, label: "CC", desc: "知识共享许可" },
+  BY: { icon: User4Line, label: "BY", desc: "署名：必须保留原作者署名" },
+  NC: { icon: CurrencyDollarLine, label: "NC", desc: "非商业：禁止用于商业目的" },
+  ND: { icon: EqualLine, label: "ND", desc: "禁止演绎：必须保持原样" },
+  SA: { icon: Refresh2Line, label: "SA", desc: "相同方式共享：以同协议发布" },
+  ZERO: { icon: HashtagLine, label: "CC0", desc: "公有领域：放弃所有权利" },
 };
 
 export interface CopyrightCardProps {
@@ -137,10 +146,13 @@ export function CopyrightCard({
     }
               `}
             >
-              <Icon
-                icon={copied ? "mingcute:check-line" : "mingcute:copy-2-line"}
-                className="text-base"
-              />
+              {copied
+                ? (
+                    <CheckLine className="text-base" />
+                  )
+                : (
+                    <Copy2Line className="text-base" />
+                  )}
               <span>{copied ? "已复制" : "复制引用"}</span>
             </button>
           </div>
@@ -167,13 +179,7 @@ export function CopyrightCard({
                   }
                     `}
                   >
-                    {atom === "CC"
-                      ? (
-                          <CCIcon width={20} height={20} />
-                        )
-                      : (
-                          <Icon icon={data.icon} width={20} height={20} />
-                        )}
+                    <data.icon width={20} height={20} />
 
                     {isActive && (
                       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-500" />
@@ -210,7 +216,7 @@ export function CopyrightCard({
                   hoveredAtom ? "opacity-0 pointer-events-none" : "opacity-100"
                 }`}
               >
-                <Icon icon="mingcute:information-line" className="text-base" />
+                <InformationLine className="text-base" />
                 <span>许可协议：</span>
                 <span className="font-semibold underline decoration-dashed decoration-primary-300 underline-offset-4 group-hover:decoration-accent-400">
                   {config.name}

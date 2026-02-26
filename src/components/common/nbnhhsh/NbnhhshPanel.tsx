@@ -1,7 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useEffect } from "react";
+
+import CloseLine from "~icons/mingcute/close-line";
 import { useNbnhhsh } from "./useNbnhhsh";
 
 // 解析含义文本，分离主内容和括号内容
@@ -69,7 +70,7 @@ export function NbnhhshPanel() {
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
             aria-label="关闭"
           >
-            <Icon icon="mingcute:close-line" className="text-[16px]" />
+            <CloseLine className="text-[16px]" />
           </button>
         </div>
 

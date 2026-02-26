@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Icon } from "@iconify/react/offline";
+
 import {
   Children,
   isValidElement,
@@ -9,6 +9,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import RightLine from "~icons/mingcute/right-line";
 import styles from "./Details.module.scss";
 
 export function Details({ children, open = false }: { children: ReactNode; open?: boolean }) {
@@ -64,8 +65,7 @@ export function Details({ children, open = false }: { children: ReactNode; open?
         aria-label={`${isOpen ? "收起" : "展开"}详情`}
       >
         <div className={styles.chevronBox}>
-          <Icon
-            icon="mingcute:right-line"
+          <RightLine
             className={`${styles.icon} ${isOpen ? styles.rotate : ""}`}
           />
         </div>

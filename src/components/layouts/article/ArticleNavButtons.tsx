@@ -1,8 +1,13 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ArrowLeftLine from "~icons/mingcute/arrow-left-line";
+import BanLine from "~icons/mingcute/ban-line";
+import Home2Line from "~icons/mingcute/home-2-line";
+
+import LeftLine from "~icons/mingcute/left-line";
+import RightLine from "~icons/mingcute/right-line";
 
 interface ArticleNavButtonsProps {
   prevLink?: string;
@@ -46,8 +51,7 @@ export function ArticleNavButtons({
             onClick={handleBack}
             className="group flex items-center gap-1.5 px-3 py-1.5 -ml-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 cursor-pointer"
           >
-            <Icon
-              icon="mingcute:arrow-left-line"
+            <ArrowLeftLine
               className="text-lg transition-transform group-hover:-translate-x-0.5"
             />
             <span className="font-medium">返回</span>
@@ -58,8 +62,7 @@ export function ArticleNavButtons({
             className="group flex items-center gap-1.5 px-3 py-1.5 -mr-3 text-muted-foreground hover:text-foreground rounded-lg transition-colors hover:bg-primary-100 cursor-pointer"
           >
             <span className="font-medium">首页</span>
-            <Icon
-              icon="mingcute:home-2-line"
+            <Home2Line
               className="text-lg mb-0.5 transition-transform group-hover:scale-110"
             />
           </Link>
@@ -78,7 +81,7 @@ export function ArticleNavButtons({
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-accent-500 rounded-r-full group-hover:h-10 transition-all duration-300 opacity-0 group-hover:opacity-100" />
 
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground group-hover:text-accent-600 transition-colors uppercase tracking-wider">
-                    <Icon icon="mingcute:left-line" className="text-xs" />
+                    <LeftLine className="text-xs" />
                     <span>Previous</span>
                   </div>
                   <div className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors line-clamp-2 mt-1">
@@ -89,7 +92,7 @@ export function ArticleNavButtons({
             : (
                 <div className="hidden sm:flex flex-col justify-between p-4 min-h-[88px] rounded-xl border border-dashed border-border/40 bg-transparent opacity-40 cursor-not-allowed">
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-                    <Icon icon="mingcute:ban-line" className="text-xs" />
+                    <BanLine className="text-xs" />
                     <span>Previous</span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
@@ -112,7 +115,7 @@ export function ArticleNavButtons({
 
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground group-hover:text-accent-600 transition-colors uppercase tracking-wider">
                     <span>Next</span>
-                    <Icon icon="mingcute:right-line" className="text-xs" />
+                    <RightLine className="text-xs" />
                   </div>
                   <div className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors line-clamp-2 mt-1">
                     {nextTitle || `下一篇${contentType}`}
@@ -123,7 +126,7 @@ export function ArticleNavButtons({
                 <div className="hidden sm:flex flex-col justify-between items-end p-4 min-h-[88px] rounded-xl border border-dashed border-border/40 bg-transparent opacity-40 cursor-not-allowed text-right">
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                     <span>Next</span>
-                    <Icon icon="mingcute:ban-line" className="text-xs" />
+                    <BanLine className="text-xs" />
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">已经是最后一篇了</div>
                 </div>

@@ -1,9 +1,13 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import CheckLine from "~icons/mingcute/check-line";
+
+import CloseLine from "~icons/mingcute/close-line";
+import EmojiLine from "~icons/mingcute/emoji-line";
+import LoadingLine from "~icons/mingcute/loading-line";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
@@ -162,7 +166,7 @@ export function CommentEditForm({
                   showEditEmoji && "text-accent-600",
                 )}
               >
-                <Icon icon="mingcute:emoji-line" width="18" height="18" className="sm:w-5 sm:h-5" />
+                <EmojiLine width="18" height="18" className="sm:w-5 sm:h-5" />
               </button>
               {/* Emoji Popover */}
               <AnimatePresence>
@@ -232,10 +236,10 @@ export function CommentEditForm({
               >
                 {isEditing
                   ? (
-                      <Icon icon="mingcute:loading-line" className="animate-spin size-3.5 sm:size-4" />
+                      <LoadingLine className="animate-spin size-3.5 sm:size-4" />
                     )
                   : (
-                      <Icon icon="mingcute:check-line" className="size-3.5 sm:size-4" />
+                      <CheckLine className="size-3.5 sm:size-4" />
                     )}
                 <span className="hidden sm:inline">{isEditing ? "保存中..." : "保存"}</span>
               </button>
@@ -246,7 +250,7 @@ export function CommentEditForm({
                 disabled={isEditing}
                 className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-sm h-7 sm:h-8 cursor-pointer bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
               >
-                <Icon icon="mingcute:close-line" className="size-3.5 sm:size-4" />
+                <CloseLine className="size-3.5 sm:size-4" />
                 <span className="hidden sm:inline">取消</span>
               </button>
             </div>

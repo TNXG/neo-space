@@ -1,5 +1,4 @@
 import type { Category } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { SmartDate } from "@/components/common/smart-date";
 
@@ -53,7 +52,7 @@ export function ArticleHeader({
         <div className="my-6 pl-4 border-l-4 border-accent-400">
           {isAiSummary && (
             <div className="flex items-center gap-1.5 mb-2">
-              <Icon icon="mingcute:sparkles-line" className="w-4 h-4 text-accent-500" />
+              <SparklesLine className="w-4 h-4 text-accent-500" />
               <span className="text-xs font-medium text-accent-600">
                 AI 摘要
               </span>

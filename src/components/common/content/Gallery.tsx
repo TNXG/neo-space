@@ -1,8 +1,13 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
 import { useEffect, useState } from "react";
+import ArrowLeftLine from "~icons/mingcute/arrow-left-line";
+import ArrowRightLine from "~icons/mingcute/arrow-right-line";
+import CloseLine from "~icons/mingcute/close-line";
+
+import LeftLine from "~icons/mingcute/left-line";
+import RightLine from "~icons/mingcute/right-line";
 import { KbdShortcut } from "@/components/ui/kbd";
 
 interface GalleryImage {
@@ -106,7 +111,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Close"
           >
-            <Icon icon="mingcute:close-line" width={32} height={32} />
+            <CloseLine width={32} height={32} />
           </button>
 
           <button
@@ -118,7 +123,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute left-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Previous"
           >
-            <Icon icon="mingcute:left-line" width={32} height={32} />
+            <LeftLine width={32} height={32} />
           </button>
 
           <button
@@ -130,7 +135,7 @@ export function Gallery({ images, className }: GalleryProps) {
             className="absolute right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
             aria-label="Next"
           >
-            <Icon icon="mingcute:right-line" width={32} height={32} />
+            <RightLine width={32} height={32} />
           </button>
 
           <div className="relative max-w-6xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
@@ -145,8 +150,8 @@ export function Gallery({ images, className }: GalleryProps) {
           {/* 操作提示 */}
           <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 text-white/70 text-xs select-none px-4">
             <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
-              <Icon icon="mingcute:arrow-left-line" width={14} height={14} />
-              <Icon icon="mingcute:arrow-right-line" width={14} height={14} />
+              <ArrowLeftLine width={14} height={14} />
+              <ArrowRightLine width={14} height={14} />
               <span>切换图片</span>
             </div>
             <div className="hidden md:flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">

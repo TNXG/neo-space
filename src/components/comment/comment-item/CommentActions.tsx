@@ -1,9 +1,17 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import DeleteLine from "~icons/mingcute/delete-line";
+import EditLine from "~icons/mingcute/edit-line";
+import EyeCloseLine from "~icons/mingcute/eye-close-line";
+import EyeLine from "~icons/mingcute/eye-line";
+import LoadingLine from "~icons/mingcute/loading-line";
+
+import PinFill from "~icons/mingcute/pin-fill";
+import PinLine from "~icons/mingcute/pin-line";
+import ShareForwardLine from "~icons/mingcute/share-forward-line";
 import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
@@ -166,7 +174,7 @@ export function CommentActions({
               : "text-muted-foreground hover:text-primary",
         )}
       >
-        <Icon icon="mingcute:share-forward-line" className="w-4 h-4 sm:w-4 sm:h-4" />
+        <ShareForwardLine className="w-4 h-4 sm:w-4 sm:h-4" />
         <span>回复</span>
       </motion.button>
 
@@ -186,7 +194,7 @@ export function CommentActions({
                 : "text-muted-foreground hover:text-blue-500",
             )}
           >
-            <Icon icon="mingcute:edit-line" className="w-4 h-4 sm:w-4 sm:h-4" />
+            <EditLine className="w-4 h-4 sm:w-4 sm:h-4" />
             <span>{editView ? "编辑中" : "编辑"}</span>
           </motion.button>
 
@@ -203,7 +211,13 @@ export function CommentActions({
                 : "text-muted-foreground hover:text-red-500 cursor-pointer",
             )}
           >
-            <Icon icon={isDeleting ? "mingcute:loading-line" : "mingcute:delete-line"} className={`w-4 h-4 sm:w-4 sm:h-4${isDeleting ? " animate-spin" : ""}`} />
+            {isDeleting
+              ? (
+                  <LoadingLine className="w-4 h-4 sm:w-4 sm:h-4 animate-spin" />
+                )
+              : (
+                  <DeleteLine className="w-4 h-4 sm:w-4 sm:h-4" />
+                )}
             <span>{isDeleting ? "删除中..." : "删除"}</span>
           </motion.button>
         </>
@@ -227,7 +241,13 @@ export function CommentActions({
                   : "text-muted-foreground hover:text-orange-500",
             )}
           >
-            <Icon icon={comment.isWhispers ? "mingcute:eye-line" : "mingcute:eye-close-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
+            {comment.isWhispers
+              ? (
+                  <EyeLine className="w-4 h-4 sm:w-4 sm:h-4" />
+                )
+              : (
+                  <EyeCloseLine className="w-4 h-4 sm:w-4 sm:h-4" />
+                )}
             <span>{comment.isWhispers ? "显示" : "隐藏"}</span>
           </motion.button>
 
@@ -246,7 +266,13 @@ export function CommentActions({
                   : "text-muted-foreground hover:text-red-500",
             )}
           >
-            <Icon icon={comment.pin ? "mingcute:pin-fill" : "mingcute:pin-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
+            {comment.pin
+              ? (
+                  <PinFill className="w-4 h-4 sm:w-4 sm:h-4" />
+                )
+              : (
+                  <PinLine className="w-4 h-4 sm:w-4 sm:h-4" />
+                )}
             <span>{comment.pin ? "取消置顶" : "置顶"}</span>
           </motion.button>
         </>

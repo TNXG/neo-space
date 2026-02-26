@@ -1,9 +1,23 @@
 "use client";
 
 import type { Link } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
+import ActivityHeartbeatLine from "~icons/mingcute/activity-heartbeat-line";
+import ArrowRightLine from "~icons/mingcute/arrow-right-line";
+import BookmarkLine from "~icons/mingcute/bookmark-line";
+import CodeLine from "~icons/mingcute/code-line";
+import EyeLine from "~icons/mingcute/eye-line";
+import GhostLine from "~icons/mingcute/ghost-line";
+import GroupLine from "~icons/mingcute/group-line";
+import LightningFill from "~icons/mingcute/lightning-fill";
+import Link2Line from "~icons/mingcute/link-2-line";
+import MouseLine from "~icons/mingcute/mouse-line";
+import QuoteLeftFill from "~icons/mingcute/quote-left-fill";
+
+import RssFill from "~icons/mingcute/rss-fill";
+import RssLine from "~icons/mingcute/rss-line";
+import TimeLine from "~icons/mingcute/time-line";
 import { MagneticHoverEffect, MagneticZone } from "@/components/common/magnetic-hover-effect";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icon";
@@ -197,7 +211,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                       {activeItem.name}
                     </motion.h2>
                     <div className="flex items-center justify-center gap-1.5 mt-1 text-xs font-mono text-muted-foreground/80">
-                      <Icon icon="mingcute:link-2-line" className="w-3.5 h-3.5" />
+                      <Link2Line className="w-3.5 h-3.5" />
                       <span className="truncate max-w-50">
                         {new URL(activeItem.url).hostname}
                       </span>
@@ -216,13 +230,12 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                       <span className="text-white/90">
                         访问站点
                       </span>
-                      <Icon
-                        icon="mingcute:arrow-right-line"
+                      <ArrowRightLine
                         className="w-4 h-4 text-white/90"
                       />
 
                       <span className="ml-auto flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/60 backdrop-blur-md border border-white/5">
-                        <Icon icon="mingcute:mouse-line" className="w-3 h-3" />
+                        <MouseLine className="w-3 h-3" />
                         左键直达
                       </span>
                     </span>
@@ -250,8 +263,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                 <span className="text-[10px] font-bold uppercase text-muted-foreground/70 tracking-wider">
                   Health
                 </span>
-                <Icon
-                  icon="mingcute:activity-heartbeat-line"
+                <ActivityHeartbeatLine
                   className={cn("w-4 h-4", statusColor)}
                 />
               </div>
@@ -286,7 +298,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                     {health?.latency_ms ? `${health.latency_ms}ms` : "-"}
                   </span>
                 </div>
-                <Icon icon="mingcute:lightning-fill" className="w-4 h-4 text-yellow-500/80" />
+                <LightningFill className="w-4 h-4 text-yellow-500/80" />
               </DetailCard>
 
               <DetailCard delay={0.2} className="py-2.5 px-3 flex items-center justify-between">
@@ -315,8 +327,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             delay={0.25}
             className="min-h-20 bg-linear-to-br from-card/30 to-secondary/10"
           >
-            <Icon
-              icon="mingcute:quote-left-fill"
+            <QuoteLeftFill
               className="absolute top-2 right-2 text-primary/10 w-12 h-12 -rotate-12 pointer-events-none"
             />
             <div className="relative z-10">
@@ -331,7 +342,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             </div>
             {activeItem.created && (
               <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground/50">
-                <Icon icon="mingcute:time-line" className="w-3 h-3" />
+                <TimeLine className="w-3 h-3" />
                 Joined
                 {" "}
                 {formatDate(activeItem.created)}
@@ -343,7 +354,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
           {activeItem.techstack && activeItem.techstack.length > 0 && (
             <DetailCard delay={0.3} className="bg-transparent border-0 p-0 overflow-visible">
               <div className="flex items-center gap-2 mb-2 px-1">
-                <Icon icon="mingcute:code-line" className="w-3.5 h-3.5 text-muted-foreground" />
+                <CodeLine className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs font-medium text-muted-foreground">Tech Stack</span>
                 <div className="h-px flex-1 bg-border/50" />
               </div>
@@ -378,14 +389,14 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                     className="group relative flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/5 border border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/10 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
                   >
                     <div className="p-1.5 bg-orange-500/10 text-orange-600 rounded-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                      <Icon icon="mingcute:rss-fill" className="w-3.5 h-3.5" />
+                      <RssFill className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex flex-col z-10 flex-1">
                       <span className="text-[10px] font-bold text-orange-700 group-hover:text-orange-600 transition-colors">
                         RSS Feed
                       </span>
                       <span className="text-[9px] text-foreground/60 group-hover:text-orange-600 transition-colors flex items-center gap-1">
-                        <Icon icon="mingcute:mouse-line" className="w-3 h-3" />
+                        <MouseLine className="w-3 h-3" />
                         点击订阅
                       </span>
                     </div>
@@ -393,13 +404,13 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                 )
               : (
                   <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border/60 text-muted-foreground/50 cursor-not-allowed opacity-70">
-                    <Icon icon="mingcute:rss-line" className="w-4 h-4" />
+                    <RssLine className="w-4 h-4" />
                     <span className="text-[10px]">No RSS</span>
                   </div>
                 )}
 
             <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-border/40 bg-card/20 text-muted-foreground/60 text-[10px]">
-              <Icon icon="mingcute:eye-line" className="w-3.5 h-3.5" />
+              <EyeLine className="w-3.5 h-3.5" />
               Last Check:
               {" "}
               {health?.checked_at ? formatTimeAgo(health.checked_at) : "N/A"}
@@ -437,10 +448,13 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                 />
               )}
               <span className="relative z-10 flex items-center gap-2">
-                <Icon
-                  icon={tab === "friends" ? "mingcute:group-line" : "mingcute:bookmark-line"}
-                  className="w-4 h-4"
-                />
+                {tab === "friends"
+                  ? (
+                      <GroupLine className="w-4 h-4" />
+                    )
+                  : (
+                      <BookmarkLine className="w-4 h-4" />
+                    )}
                 {tab === "friends" ? "朋友" : "收藏"}
                 <span className="opacity-40 text-xs font-mono ml-0.5">
                   {tab === "friends" ? friends.length : collections.length}
@@ -462,7 +476,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
               )
             : (
                 <div className="h-64 flex flex-col items-center justify-center text-muted-foreground/40 bg-card/30 rounded-2xl border border-dashed border-border/50">
-                  <Icon icon="mingcute:mouse-line" className="w-6 h-6 mb-2" />
+                  <MouseLine className="w-6 h-6 mb-2" />
                   <span className="text-sm">Hover a friend to view details</span>
                 </div>
               )}
@@ -474,7 +488,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             {items.length === 0
               ? (
                   <div className="col-span-full py-32 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-border/50 rounded-3xl bg-secondary/10">
-                    <Icon icon="mingcute:ghost-line" className="w-16 h-16 mb-4 opacity-40" />
+                    <GhostLine className="w-16 h-16 mb-4 opacity-40" />
                     <p>暂无数据</p>
                   </div>
                 )

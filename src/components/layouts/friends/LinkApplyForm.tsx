@@ -1,13 +1,26 @@
 "use client";
 
+import type { ComponentType, SVGProps } from "react";
 import type { LinkApplyFormData } from "@/lib/validations/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-
 import { toast } from "sonner";
+import AddLine from "~icons/mingcute/add-line";
+import ArrowRightLine from "~icons/mingcute/arrow-right-line";
+import CheckFill from "~icons/mingcute/check-fill";
+import Eye2Line from "~icons/mingcute/eye-2-line";
+import IdcardLine from "~icons/mingcute/idcard-line";
+import InformationLine from "~icons/mingcute/information-line";
+
+import LoadingLine from "~icons/mingcute/loading-line";
+import MonitorLine from "~icons/mingcute/monitor-line";
+import SendPlaneFill from "~icons/mingcute/send-plane-fill";
+import ShieldShapeLine from "~icons/mingcute/shield-shape-line";
+import User3Line from "~icons/mingcute/user-3-line";
+
+import UserAdd2Line from "~icons/mingcute/user-add-2-line";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { applyLink, sendLinkVerificationCode } from "@/lib/api-client";
@@ -25,11 +38,11 @@ import { VerificationStep } from "./steps/VerificationStep";
 
 type Step = "guidelines" | "verification" | "basic" | "details";
 
-const STEPS: { id: Step; title: string; icon: string }[] = [
-  { id: "guidelines", title: "申请须知", icon: "mingcute:information-line" },
-  { id: "verification", title: "身份验证", icon: "mingcute:shield-shape-line" },
-  { id: "basic", title: "基础信息", icon: "mingcute:idcard-line" },
-  { id: "details", title: "站点详情", icon: "mingcute:monitor-line" },
+const STEPS: { id: Step; title: string; icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+  { id: "guidelines", title: "申请须知", icon: InformationLine },
+  { id: "verification", title: "身份验证", icon: ShieldShapeLine },
+  { id: "basic", title: "基础信息", icon: IdcardLine },
+  { id: "details", title: "站点详情", icon: MonitorLine },
 ];
 
 // -----------------------------------------------------------------------------
@@ -206,7 +219,13 @@ export function LinkApplyForm() {
                 isActive && "ring-4 ring-accent-100",
               )}
             >
-              <Icon icon={isCompleted ? "mingcute:check-fill" : step.icon} className="w-5 h-5" />
+              {isCompleted
+                ? (
+                    <CheckFill className="w-5 h-5" />
+                  )
+                : (
+                    <step.icon className="w-5 h-5" />
+                  )}
             </motion.div>
             <span className={cn("text-xs mt-2 font-medium transition-colors duration-300", isActive ? "text-accent-600" : "text-muted-foreground")}>
               {step.title}
@@ -229,7 +248,7 @@ export function LinkApplyForm() {
     return (
       <div className="mb-6 p-4 bg-secondary/20 rounded-2xl border border-dashed border-border/60">
         <div className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
-          <Icon icon="mingcute:eye-2-line" className="w-3.5 h-3.5" />
+          <Eye2Line className="w-3.5 h-3.5" />
           预览效果
         </div>
         <div className="flex items-start gap-3 p-3 bg-card border border-border/50 rounded-xl shadow-sm">
@@ -240,7 +259,7 @@ export function LinkApplyForm() {
                 )
               : (
                   <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground/30">
-                    <Icon icon="mingcute:user-3-line" className="w-6 h-6" />
+                    <User3Line className="w-6 h-6" />
                   </div>
                 )}
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
@@ -336,7 +355,7 @@ export function LinkApplyForm() {
           className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-xl hover:bg-card transition-all duration-300 cursor-pointer"
         >
           <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-300">
-            <Icon icon="mingcute:add-line" className="w-5 h-5" />
+            <AddLine className="w-5 h-5" />
           </div>
           <div className="text-left">
             <div className="text-sm font-bold text-foreground">申请加入友链</div>
@@ -349,7 +368,7 @@ export function LinkApplyForm() {
         <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle className="flex items-center gap-2">
-              <Icon icon="mingcute:user-add-2-line" className="w-5 h-5 text-accent-500" />
+              <UserAdd2Line className="w-5 h-5 text-accent-500" />
               申请友链
             </DialogTitle>
           </DialogHeader>
@@ -372,14 +391,14 @@ export function LinkApplyForm() {
                       {isPending
                         ? (
                             <>
-                              <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
+                              <LoadingLine className="w-4 h-4 animate-spin" />
                               提交中...
                             </>
                           )
                         : (
                             <>
                               提交申请
-                              <Icon icon="mingcute:send-plane-fill" className="w-4 h-4" />
+                              <SendPlaneFill className="w-4 h-4" />
                             </>
                           )}
                     </Button>
@@ -387,7 +406,7 @@ export function LinkApplyForm() {
                 : (
                     <Button type="button" onClick={handleNextStep}>
                       下一步
-                      <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
+                      <ArrowRightLine className="w-4 h-4" />
                     </Button>
                   )}
             </DialogFooter>

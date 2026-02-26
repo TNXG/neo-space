@@ -1,10 +1,10 @@
-import { Icon } from "@iconify/react/offline";
-import type {IconifyIcon} from "@iconify/react/offline" 
 import Link from "next/link";
+import type { SVGProps } from "react";
+import type { ComponentType } from "react";
 
 interface SectionHeaderProps {
   title: string;
-  icon: string | IconifyIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   linkText?: string;
   linkHref?: string;
 }
@@ -12,11 +12,11 @@ interface SectionHeaderProps {
 /**
  * Reusable section header component with icon and optional link
  */
-export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeaderProps) {
+export function SectionHeader({ title, icon: Icon, linkText, linkHref }: SectionHeaderProps) {
   return (
     <div className="mb-6 pb-2 border-b border-border flex items-baseline justify-between">
       <h2 className="text-xl font-semibold flex gap-2 items-center text-foreground">
-        <Icon icon={icon} className="text-[18px] text-muted-foreground" />
+        <Icon className="text-[18px] text-muted-foreground" />
         {title}
       </h2>
       {linkText && linkHref && (
@@ -26,7 +26,6 @@ export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeader
         >
           {linkText}
           <Icon
-            icon={icon}
             className="text-[14px] opacity-0 transition-opacity duration-150 -ml-1 group-hover:ml-0 group-hover:opacity-100"
           />
         </Link>

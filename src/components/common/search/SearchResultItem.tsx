@@ -1,10 +1,13 @@
 "use client";
 
 import type { SearchItem } from "./types";
-
 import type { SearchNoteResult, SearchPostResult } from "@/types/api";
+import ArrowRightUpLine from "~icons/mingcute/arrow-right-up-line";
 
-import { Icon } from "@iconify/react/offline";
+import Document2Line from "~icons/mingcute/document-2-line";
+
+import Edit3Line from "~icons/mingcute/edit-3-line";
+
 import { formatDate, sanitizeHighlight } from "./utils";
 
 interface SearchResultItemProps {
@@ -43,10 +46,13 @@ export function SearchResultItem({
     >
       {/* 类型图标 */}
       <div className="shrink-0 w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mt-0.5">
-        <Icon
-          icon={isPost ? "mingcute:document-2-line" : "mingcute:edit-3-line"}
-          className="text-base text-accent-foreground"
-        />
+        {isPost
+          ? (
+              <Document2Line className="text-base text-accent-foreground" />
+            )
+          : (
+              <Edit3Line className="text-base text-accent-foreground" />
+            )}
       </div>
 
       {/* 内容区 */}
@@ -96,7 +102,7 @@ export function SearchResultItem({
         </div>
       </div>
 
-      <Icon icon="mingcute:arrow-right-up-line" className="text-muted-foreground/40 text-sm shrink-0 mt-1" />
+      <ArrowRightUpLine className="text-muted-foreground/40 text-sm shrink-0 mt-1" />
     </button>
   );
 }

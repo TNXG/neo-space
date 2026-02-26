@@ -1,13 +1,23 @@
 "use client";
 
 import type { Note, Post } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSWRConfig } from "swr";
 import useSWRInfinite from "swr/infinite";
+import ArrowLeftLine from "~icons/mingcute/arrow-left-line";
+import CalendarLine from "~icons/mingcute/calendar-line";
+import CloudLine from "~icons/mingcute/cloud-line";
+
+import Edit2Line from "~icons/mingcute/edit-2-line";
+import EmojiLine from "~icons/mingcute/emoji-line";
+import Folder2Line from "~icons/mingcute/folder-2-line";
+import LoadingLine from "~icons/mingcute/loading-line";
+import LocationLine from "~icons/mingcute/location-line";
+import SparklesFill from "~icons/mingcute/sparkles-fill";
+import TagLine from "~icons/mingcute/tag-line";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
 import { useHasMounted } from "@/hooks/use-has-mounted";
@@ -179,7 +189,7 @@ export function InteractiveList<T extends Item>({
       return (
         <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
           <span className="flex items-center gap-2">
-            <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
+            <ArrowLeftLine className="w-4 h-4" />
             {emptyMessage}
           </span>
         </div>
@@ -199,12 +209,12 @@ export function InteractiveList<T extends Item>({
         >
           <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
             <div className="flex items-center gap-2" title="发布时间">
-              <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
+              <CalendarLine className="w-4 h-4" />
               <span>{formatDate(post.created)}</span>
             </div>
             {post.modified && (
               <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-                <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
+                <Edit2Line className="w-3.5 h-3.5" />
                 <span>{formatDate(post.modified)}</span>
               </div>
             )}
@@ -217,7 +227,7 @@ export function InteractiveList<T extends Item>({
           {post.category && (
             <div className="flex justify-start">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
+                <Folder2Line className="w-3.5 h-3.5" />
                 {post.category.name}
               </span>
             </div>
@@ -226,7 +236,7 @@ export function InteractiveList<T extends Item>({
           <div className="text-primary-600 text-sm leading-7">
             {post.aiSummary && !post.summary && (
               <div className="flex items-center gap-1.5 mb-2">
-                <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
+                <SparklesFill className="w-3.5 h-3.5 text-accent-500" />
                 <span className="text-xs font-medium text-accent-600">AI 摘要</span>
               </div>
             )}
@@ -241,7 +251,7 @@ export function InteractiveList<T extends Item>({
             <div className="flex flex-wrap justify-start gap-2 pt-2">
               {post.tags.map(tag => (
                 <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
-                  <Icon icon="mingcute:tag-line" className="w-3 h-3" />
+                  <TagLine className="w-3 h-3" />
                   {tag}
                 </span>
               ))}
@@ -263,12 +273,12 @@ export function InteractiveList<T extends Item>({
       >
         <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
           <div className="flex items-center gap-2" title="发布时间">
-            <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
+            <CalendarLine className="w-4 h-4" />
             <span>{formatDate(note.created)}</span>
           </div>
           {note.modified && (
             <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-              <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
+              <Edit2Line className="w-3.5 h-3.5" />
               <span>{formatDate(note.modified)}</span>
             </div>
           )}
@@ -281,19 +291,19 @@ export function InteractiveList<T extends Item>({
         <div className="flex flex-wrap justify-start gap-2">
           {note.mood && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
-              <Icon icon="mingcute:emoji-line" className="w-3.5 h-3.5" />
+              <EmojiLine className="w-3.5 h-3.5" />
               {note.mood}
             </span>
           )}
           {note.weather && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-              <Icon icon="mingcute:cloud-line" className="w-3.5 h-3.5" />
+              <CloudLine className="w-3.5 h-3.5" />
               {note.weather}
             </span>
           )}
           {note.location && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              <Icon icon="mingcute:location-line" className="w-3.5 h-3.5" />
+              <LocationLine className="w-3.5 h-3.5" />
               {note.location}
             </span>
           )}
@@ -302,7 +312,7 @@ export function InteractiveList<T extends Item>({
         <div className="text-primary-600 text-sm leading-7">
           {note.aiSummary && (
             <div className="flex items-center gap-1.5 mb-2">
-              <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
+              <SparklesFill className="w-3.5 h-3.5 text-accent-500" />
               <span className="text-xs font-medium text-accent-600">AI 摘要</span>
             </div>
           )}
@@ -421,7 +431,7 @@ export function InteractiveList<T extends Item>({
                   )}
                 >
                   {mounted && (
-                    <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
+                    <LoadingLine className="w-4 h-4 animate-spin" />
                   )}
                   <span>加载中...</span>
                 </div>

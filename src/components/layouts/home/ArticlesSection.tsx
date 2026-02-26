@@ -1,4 +1,6 @@
 import type { Post } from "@/types/api";
+
+import Book2Line from "~icons/mingcute/book-2-line";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ArticlePreview } from "./ArticlePreview";
 
@@ -15,7 +17,7 @@ export function ArticlesSection({ articles }: ArticlesSectionProps) {
     <section id="articles">
       <SectionHeader
         title="文章"
-        icon="mingcute:book-2-line"
+        icon={Book2Line}
         linkText="阅读全部"
         linkHref="/posts"
       />

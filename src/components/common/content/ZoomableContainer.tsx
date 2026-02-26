@@ -1,7 +1,12 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useCallback, useEffect, useRef, useState } from "react";
+import FingerTapLine from "~icons/mingcute/finger-tap-line";
+import FullscreenExitLine from "~icons/mingcute/fullscreen-exit-line";
+import Refresh2Line from "~icons/mingcute/refresh-2-line";
+import ZoomInLine from "~icons/mingcute/zoom-in-line";
+
+import ZoomOutLine from "~icons/mingcute/zoom-out-line";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { cn } from "@/lib/utils";
@@ -272,7 +277,7 @@ export function ZoomableContainer({
           title="放大"
           aria-label="放大"
         >
-          <Icon icon="mingcute:zoom-in-line" width={18} height={18} />
+          <ZoomInLine width={18} height={18} />
         </button>
         <button
           type="button"
@@ -292,7 +297,7 @@ export function ZoomableContainer({
           title="缩小"
           aria-label="缩小"
         >
-          <Icon icon="mingcute:zoom-out-line" width={18} height={18} />
+          <ZoomOutLine width={18} height={18} />
         </button>
         {scale !== initialZoom && (
           <button
@@ -302,7 +307,7 @@ export function ZoomableContainer({
             title="恢复原始大小"
             aria-label="恢复原始大小"
           >
-            <Icon icon="mingcute:fullscreen-exit-line" width={18} height={18} />
+            <FullscreenExitLine width={18} height={18} />
           </button>
         )}
         {(position.x !== 0 || position.y !== 0) && (
@@ -313,7 +318,7 @@ export function ZoomableContainer({
             title="重置位置"
             aria-label="重置位置"
           >
-            <Icon icon="mingcute:refresh-2-line" width={18} height={18} />
+            <Refresh2Line width={18} height={18} />
           </button>
         )}
       </div>
@@ -375,7 +380,7 @@ export function ZoomableContainer({
       {/* 移动端提示 */}
       {isMobile && showHint && (
         <div className="mt-2 text-xs text-muted-foreground/80 text-center animate-in fade-in slide-in-from-bottom-2 duration-300 flex items-center justify-center gap-2 bg-bg-glass backdrop-blur-sm px-3 py-2 rounded-lg border border-primary-200 mx-auto w-fit">
-          <Icon icon="mingcute:finger-tap-line" width={16} height={16} />
+          <FingerTapLine width={16} height={16} />
           <span>双指捏合缩放</span>
           {scale > 1 && <span>• 拖拽移动</span>}
         </div>

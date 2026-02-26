@@ -1,8 +1,9 @@
 "use client";
 
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Icon } from "@iconify/react/offline";
 import * as React from "react";
+
+import CheckFill from "~icons/mingcute/check-fill";
 
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,7 @@ function Checkbox({
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current"
       >
-        <Icon icon="mingcute:check-fill" className="w-3.5 h-3.5" />
+        <CheckFill className="w-3.5 h-3.5" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

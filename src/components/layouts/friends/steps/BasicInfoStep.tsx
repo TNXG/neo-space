@@ -2,8 +2,11 @@
 
 import type { UseFormRegister } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
+import Home3Line from "~icons/mingcute/home-3-line";
 
-import { Icon } from "@iconify/react/offline";
+import LinkLine from "~icons/mingcute/link-line";
+import PicLine from "~icons/mingcute/pic-line";
+
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 interface BasicInfoStepProps {
@@ -20,7 +23,7 @@ export function BasicInfoStep({ register, errors }: BasicInfoStepProps) {
     <FieldGroup>
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:home-3-line" className="w-3.5 h-3.5" />
+          <Home3Line className="w-3.5 h-3.5" />
           站点名称
         </FieldLabel>
         <FieldContent>
@@ -37,7 +40,7 @@ export function BasicInfoStep({ register, errors }: BasicInfoStepProps) {
 
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:link-line" className="w-3.5 h-3.5" />
+          <LinkLine className="w-3.5 h-3.5" />
           站点地址
         </FieldLabel>
         <FieldContent>
@@ -53,7 +56,7 @@ export function BasicInfoStep({ register, errors }: BasicInfoStepProps) {
 
       <Field>
         <FieldLabel>
-          <Icon icon="mingcute:pic-line" className="w-3.5 h-3.5" />
+          <PicLine className="w-3.5 h-3.5" />
           头像地址
         </FieldLabel>
         <FieldContent>
