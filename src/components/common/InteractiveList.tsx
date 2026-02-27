@@ -1,6 +1,7 @@
 "use client";
 
-import type { Note, Post } from "@/types/api";
+import type { ReactNode } from "react";
+import type { Category, Note, Post } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -15,87 +16,135 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
 import { cn } from "@/lib/utils";
 
-type Item = Post | Note;
+// ─── Types ───────────────────────────────────────────────────────────
 
-interface InteractiveListProps<T extends Item> {
-  items: T[];
-  type: "post" | "note";
-  emptyMessage?: string;
-  pageSize?: number;
+export interface InfiniteScrollConfig<T> {
+  pageSize: number;
+  fetcher: (page: number, pageSize: number) => Promise<{ items: T[]; hasNextPage: boolean }>;
+  keyPrefix: string;
 }
 
-export function InteractiveList<T extends Item>({
+export interface ListItemMeta {
+  isActive: boolean;
+  index: number;
+}
+
+interface InteractiveListProps<T> {
+  items: T[];
+  getItemKey: (item: T) => string;
+  getItemUrl: (item: T) => string;
+  renderPreview: (item: T) => ReactNode;
+  renderListItem: (item: T, meta: ListItemMeta) => ReactNode;
+  emptyMessage?: string;
+  previewPosition?: "left" | "right";
+  infiniteScroll?: InfiniteScrollConfig<T>;
+}
+
+// ─── Generic InteractiveList ─────────────────────────────────────────
+
+export function InteractiveList<T>({
   items: initialItems,
-  type,
+  getItemKey,
+  getItemUrl,
+  renderPreview,
+  renderListItem,
   emptyMessage = "选择一项查看详情",
-  pageSize = 10,
+  previewPosition = "left",
+  infiniteScroll,
 }: InteractiveListProps<T>) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const mounted = useHasMounted();
   const isMobile = useIsMobile();
   const router = useRouter();
   const { mutate } = useSWRConfig();
-  const getPageKey = useCallback((pageIndex: number) => {
-    return `${type}-page-${pageIndex + 1}`;
-  }, [type]);
 
-  const getKey = useCallback((pageIndex: number, previousPageData: Awaited<ReturnType<typeof fetchPosts>> | null) => {
-    if (!mounted)
+  // ── SWR Infinite Scroll ──
+  const hasInfiniteScroll = !!infiniteScroll;
+
+  const getKey = useCallback((pageIndex: number, previousPageData: { items: T[]; hasNextPage: boolean } | null) => {
+    if (!mounted || !infiniteScroll)
       return null;
-    if (previousPageData && !previousPageData.data.pagination.has_next_page)
+    if (previousPageData && !previousPageData.hasNextPage)
       return null;
+    return `${infiniteScroll.keyPrefix}-page-${pageIndex + 1}`;
+  }, [mounted, infiniteScroll]);
 
-    return getPageKey(pageIndex);
-  }, [mounted, getPageKey]);
-
-  const fetcher = useCallback(async (key: string) => {
+  const swrFetcher = useCallback(async (key: string) => {
+    if (!infiniteScroll)
+      return { items: [] as T[], hasNextPage: false };
     const page = Number.parseInt(key.split("-").pop() || "1", 10);
-    if (type === "post") {
-      return fetchPosts(page, pageSize);
-    }
-    return fetchNotes(page, pageSize);
-  }, [type, pageSize]);
+    return infiniteScroll.fetcher(page, infiniteScroll.pageSize);
+  }, [infiniteScroll]);
 
   const {
     data: infiniteData,
     size,
     setSize,
     isValidating,
-  } = useSWRInfinite(getKey, fetcher, {
+  } = useSWRInfinite(getKey, swrFetcher, {
     revalidateFirstPage: false,
     revalidateOnFocus: false,
   });
 
-  const items = mounted && infiniteData && infiniteData.length > 0
-    ? infiniteData.flatMap(page => page.data.items as T[])
+  const items: T[] = mounted && hasInfiniteScroll && infiniteData && infiniteData.length > 0
+    ? infiniteData.flatMap(page => page.items)
     : initialItems;
 
-  const hasMore = mounted
-    ? (infiniteData?.[infiniteData.length - 1]?.data.pagination.has_next_page ?? initialItems.length >= pageSize)
-    : initialItems.length >= pageSize;
+  const pageSize = infiniteScroll?.pageSize ?? 10;
+  const hasMore = !hasInfiniteScroll
+    ? false
+    : mounted
+      ? (infiniteData?.[infiniteData.length - 1]?.hasNextPage ?? initialItems.length >= pageSize)
+      : initialItems.length >= pageSize;
 
   const prefetchNextPage = useCallback(() => {
-    if (!mounted || isValidating || !hasMore)
+    if (!mounted || !infiniteScroll || isValidating || !hasMore)
       return;
+    const nextKey = `${infiniteScroll.keyPrefix}-page-${size + 1}`;
+    mutate(nextKey, swrFetcher(nextKey), { populateCache: true, revalidate: false }).catch(() => {});
+  }, [mounted, infiniteScroll, isValidating, hasMore, size, mutate, swrFetcher]);
 
-    const nextKey = getPageKey(size);
+  // ── Active Item Management ──
+  const defaultSelectedId = !isMobile && initialItems.length > 0 ? getItemKey(initialItems[0]) : null;
+  const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
 
-    mutate(
-      nextKey,
-      fetcher(nextKey),
-      {
-        populateCache: true,
-        revalidate: false,
-      },
-    ).catch(() => { });
-  }, [mounted, isValidating, hasMore, size, getPageKey, mutate, fetcher]);
+  const activeItem = !mounted || isMobile
+    ? null
+    : hoveredId
+      ? items.find(item => getItemKey(item) === hoveredId)
+      : (selectedId && items.find(item => getItemKey(item) === selectedId))
+          ? items.find(item => getItemKey(item) === selectedId)
+          : items[0];
 
+  // ── Indicator Bar (Left Preview Only) ──
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRef = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const indicatorRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (previewPosition !== "left" || !indicatorRef.current || !listRef.current)
+      return;
+    if (!activeItem) {
+      indicatorRef.current.style.opacity = "0";
+      return;
+    }
+    const itemEl = itemRef.current.get(getItemKey(activeItem));
+    if (!itemEl) {
+      indicatorRef.current.style.opacity = "0";
+      return;
+    }
+    const listRect = listRef.current.getBoundingClientRect();
+    const itemRect = itemEl.getBoundingClientRect();
+    indicatorRef.current.style.setProperty("--indicator-top", `${itemRect.top - listRect.top}px`);
+    indicatorRef.current.style.setProperty("--indicator-height", `${itemRect.height}px`);
+    indicatorRef.current.style.opacity = "1";
+  }, [activeItem, previewPosition, getItemKey]);
+
+  // ── Infinite Scroll Observer ──
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    if (!mounted || !loadMoreRef.current)
+    if (!mounted || !loadMoreRef.current || !hasInfiniteScroll)
       return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isValidating) {
@@ -104,58 +153,9 @@ export function InteractiveList<T extends Item>({
       },
       { rootMargin: "100px" },
     );
-
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [mounted, hasMore, isValidating, size, setSize]);
-
-  const defaultSelectedId = !isMobile && initialItems.length > 0 ? initialItems[0]._id : null;
-  const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
-
-  const listRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
-  const indicatorRef = useRef<HTMLDivElement>(null);
-
-  const activeItem = !mounted || isMobile
-    ? null
-    : hoveredId
-      ? items.find(item => item._id === hoveredId)
-      : (selectedId && items.find(item => item._id === selectedId))
-          ? items.find(item => item._id === selectedId)
-          : items[0];
-
-  useLayoutEffect(() => {
-    if (!indicatorRef.current || !listRef.current)
-      return;
-
-    if (!activeItem) {
-      indicatorRef.current.style.opacity = "0";
-      return;
-    }
-
-    const itemEl = itemRefs.current.get(activeItem._id);
-    if (!itemEl) {
-      indicatorRef.current.style.opacity = "0";
-      return;
-    }
-
-    const listRect = listRef.current.getBoundingClientRect();
-    const itemRect = itemEl.getBoundingClientRect();
-
-    indicatorRef.current.style.setProperty("--indicator-top", `${itemRect.top - listRect.top}px`);
-    indicatorRef.current.style.setProperty("--indicator-height", `${itemRect.height}px`);
-    indicatorRef.current.style.opacity = "1";
-  }, [activeItem]);
-
-  const getItemUrl = useCallback((item: T): string => {
-    if (type === "post") {
-      const post = item as Post;
-      const categorySlug = post.category?.slug || "default";
-      return `/posts/${categorySlug}/${post.slug}`;
-    }
-    const note = item as Note;
-    return `/notes/${note.nid}`;
-  }, [type]);
+  }, [mounted, hasMore, isValidating, size, setSize, hasInfiniteScroll]);
 
   const handleMouseEnter = (id: string) => {
     if (!mounted || isMobile)
@@ -164,295 +164,523 @@ export function InteractiveList<T extends Item>({
     setSelectedId(id);
   };
 
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hour = String(date.getHours()).padStart(2, "0");
-    const minute = String(date.getMinutes()).padStart(2, "0");
-    return `${year}/${month}/${day} ${hour}:${minute}`;
-  };
+  // ── Render ──
+  const isLeftPreview = previewPosition === "left";
 
-  const renderPreview = () => {
-    if (!activeItem) {
-      return (
-        <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
-          <span className="flex items-center gap-2">
-            <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
-            {emptyMessage}
-          </span>
-        </div>
-      );
-    }
-
-    if (type === "post") {
-      const post = activeItem as Post;
-      return (
-        <motion.div
-          key={post._id}
-          initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="space-y-6"
-        >
-          <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
-            <div className="flex items-center gap-2" title="发布时间">
-              <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
-              <span>{formatDate(post.created)}</span>
-            </div>
-            {post.modified && (
-              <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-                <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
-                <span>{formatDate(post.modified)}</span>
-              </div>
-            )}
-          </div>
-
-          <h2 className="text-3xl font-bold leading-tight text-foreground">
-            {post.title}
-          </h2>
-
-          {post.category && (
-            <div className="flex justify-start">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
-                {post.category.name}
+  const previewContent = (
+    <AnimatePresence mode="wait">
+      {activeItem
+        ? renderPreview(activeItem)
+        : (
+            <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
+              <span className="flex items-center gap-2">
+                <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
+                {emptyMessage}
               </span>
             </div>
           )}
-
-          <div className="text-primary-600 text-sm leading-7">
-            {post.aiSummary && !post.summary && (
-              <div className="flex items-center gap-1.5 mb-2">
-                <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
-                <span className="text-xs font-medium text-accent-600">AI 摘要</span>
-              </div>
-            )}
-            <p className="text-left line-clamp-6">
-              {post.summary || post.aiSummary
-                ? truncateText(stripMarkdown(post.summary || post.aiSummary || ""), 300)
-                : "暂无简介，请点击阅读详情..."}
-            </p>
-          </div>
-
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap justify-start gap-2 pt-2">
-              {post.tags.map(tag => (
-                <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
-                  <Icon icon="mingcute:tag-line" className="w-3 h-3" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      );
-    }
-
-    const note = activeItem as Note;
-    return (
-      <motion.div
-        key={note._id}
-        initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
-        animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="space-y-6"
-      >
-        <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
-          <div className="flex items-center gap-2" title="发布时间">
-            <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
-            <span>{formatDate(note.created)}</span>
-          </div>
-          {note.modified && (
-            <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
-              <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
-              <span>{formatDate(note.modified)}</span>
-            </div>
-          )}
-        </div>
-
-        <h2 className="text-3xl font-bold leading-tight text-foreground">
-          {note.title}
-        </h2>
-
-        <div className="flex flex-wrap justify-start gap-2">
-          {note.mood && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
-              <Icon icon="mingcute:emoji-line" className="w-3.5 h-3.5" />
-              {note.mood}
-            </span>
-          )}
-          {note.weather && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-              <Icon icon="mingcute:cloud-line" className="w-3.5 h-3.5" />
-              {note.weather}
-            </span>
-          )}
-          {note.location && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              <Icon icon="mingcute:location-line" className="w-3.5 h-3.5" />
-              {note.location}
-            </span>
-          )}
-        </div>
-
-        <div className="text-primary-600 text-sm leading-7">
-          {note.aiSummary && (
-            <div className="flex items-center gap-1.5 mb-2">
-              <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
-              <span className="text-xs font-medium text-accent-600">AI 摘要</span>
-            </div>
-          )}
-          <p className="text-left line-clamp-6">
-            {note.aiSummary
-              ? truncateText(stripMarkdown(note.aiSummary), 200)
-              : truncateText(stripMarkdown(note.text), 200)}
-          </p>
-        </div>
-      </motion.div>
-    );
-  };
+    </AnimatePresence>
+  );
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 md:gap-8 relative items-start">
-        <aside className="hidden lg:block sticky top-24 h-fit pr-4 self-start">
-          <AnimatePresence mode="wait">
-            {renderPreview()}
-          </AnimatePresence>
-        </aside>
+      <div className={cn(
+        "grid grid-cols-1 relative items-start",
+        isLeftPreview
+          ? "lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] gap-6 md:gap-8"
+          : "lg:grid-cols-12 gap-8 lg:gap-16",
+      )}
+      >
+        {isLeftPreview && (
+          <aside className="hidden lg:block sticky top-24 h-fit pr-4 self-start">
+            {previewContent}
+          </aside>
+        )}
 
-        <div className="flex flex-col">
+        <div className={cn("flex flex-col", !isLeftPreview && "lg:col-span-5")}>
           <div
             ref={listRef}
-            className="space-y-0 lg:space-y-1 lg:border-l lg:border-border/50 relative"
+            className={cn(
+              "relative",
+              isLeftPreview
+                ? "space-y-0 lg:space-y-1 lg:border-l lg:border-border/50"
+                : "flex flex-col space-y-1",
+            )}
             onMouseLeave={() => setHoveredId(null)}
           >
-            <div
-              ref={indicatorRef}
-              className="hidden lg:block absolute left-0 w-[3px] bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
-              style={{
-                top: "var(--indicator-top, 0)",
-                height: "var(--indicator-height, 0)",
-                opacity: 0,
-              }}
-            />
+            {isLeftPreview && (
+              <div
+                ref={indicatorRef}
+                className="hidden lg:block absolute left-0 w-0.75 bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
+                style={{
+                  top: "var(--indicator-top, 0)",
+                  height: "var(--indicator-height, 0)",
+                  opacity: 0,
+                }}
+              />
+            )}
 
             {items.map((item, index) => {
-              const isActive = mounted && activeItem?._id === item._id;
+              const key = getItemKey(item);
+              const isActive = mounted && activeItem ? getItemKey(activeItem) === key : false;
               const itemUrl = getItemUrl(item);
-
               const isLastFewItems = index >= items.length - 3;
 
               return (
                 <Link
-                  key={item._id}
+                  key={key}
                   ref={(el) => {
                     if (el)
-                      itemRefs.current.set(item._id, el);
+                      itemRef.current.set(key, el);
                   }}
                   href={itemUrl}
                   prefetch={false}
                   onMouseEnter={() => {
                     router.prefetch(itemUrl);
-                    handleMouseEnter(item._id);
-                    if (isLastFewItems)
+                    handleMouseEnter(key);
+                    if (isLastFewItems && hasInfiniteScroll)
                       prefetchNextPage();
                   }}
-                  className="group relative block outline-none border-b border-dashed border-border/30 lg:border-0 last:border-0"
+                  className={cn(
+                    "group relative block outline-none",
+                    isLeftPreview && "border-b border-dashed border-border/30 lg:border-0 last:border-0",
+                  )}
                 >
-                  <motion.div
-                    className="absolute -inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4 rounded-xl -z-10"
-                    animate={{
-                      backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "transparent",
-                    }}
-                    style={{
-                      backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "transparent",
-                    }}
-                  />
-
-                  <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
-                    <h3 className={cn(
-                      "text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
-                      isActive && !isMobile
-                        ? "text-accent-600 font-semibold"
-                        : "text-foreground/80 font-medium",
-                    )}
-                    >
-                      {item.title}
-                    </h3>
-
-                    <div className={cn(
-                      "shrink-0 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm transition-colors min-w-[50px] md:min-w-[60px] justify-end",
-                      isActive && !isMobile ? "text-accent-600/80" : "text-muted-foreground/50",
-                    )}
-                    >
-                      <SmartDate
-                        date={item.created}
-                        modifiedDate={item.modified}
-                        className="font-mono"
-                      />
-                    </div>
-                  </div>
+                  {isLeftPreview && (
+                    <motion.div
+                      className="absolute -inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4 rounded-xl -z-10"
+                      animate={{
+                        backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "transparent",
+                      }}
+                      style={{
+                        backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "transparent",
+                      }}
+                    />
+                  )}
+                  {renderListItem(item, { isActive: isActive && !isMobile, index })}
                 </Link>
               );
             })}
 
-            <div
-              className="relative flex flex-col items-center justify-center py-6 pl-3 md:pl-6 min-h-[80px]"
-              onMouseEnter={prefetchNextPage}
-            >
+            {hasInfiniteScroll && (
               <div
-                ref={loadMoreRef}
-                className="absolute bottom-0 left-0 w-full h-24 pointer-events-none opacity-0 z-[-1]"
-              />
-
-              <div className="relative w-full flex justify-center items-center">
-
-                <div
-                  className={cn(
+                className={cn(
+                  "relative flex flex-col items-center justify-center py-6 min-h-20",
+                  isLeftPreview && "pl-3 md:pl-6",
+                )}
+                onMouseEnter={prefetchNextPage}
+              >
+                <div ref={loadMoreRef} className="absolute bottom-0 left-0 w-full h-24 pointer-events-none opacity-0 z-[-1]" />
+                <div className="relative w-full flex justify-center items-center">
+                  <div className={cn(
                     "flex items-center gap-2 text-sm text-muted-foreground transition-all duration-300 absolute",
-                    mounted && isValidating
-                      ? "opacity-100 translate-y-0 visible"
-                      : "opacity-0 translate-y-2 invisible",
+                    mounted && isValidating ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible",
                   )}
-                >
-                  {mounted && (
-                    <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
-                  )}
-                  <span>加载中...</span>
-                </div>
-                <div
-                  className={cn(
+                  >
+                    {mounted && <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />}
+                    <span>加载中...</span>
+                  </div>
+                  <div className={cn(
                     "text-sm text-muted-foreground/50 transition-all duration-300",
-                    mounted && isValidating
-                      ? "opacity-0 invisible delay-0"
-                      : "opacity-100 visible delay-300",
+                    mounted && isValidating ? "opacity-0 invisible delay-0" : "opacity-100 visible delay-300",
                   )}
-                >
-                  {!hasMore
-                    ? (
-                        <span>
-                          已加载全部
-                          {items.length}
-                          {" "}
-                          条
-                          {type === "post" ? "文章" : "日记"}
-                        </span>
-                      )
-                    : (
-                        <span>向下滚动加载更多</span>
-                      )}
+                  >
+                    {!hasMore
+                      ? (
+                          <span>
+                            已加载全部
+                            {items.length}
+                            {" "}
+                            条
+                          </span>
+                        )
+                      : <span>向下滚动加载更多</span>}
+                  </div>
                 </div>
-
               </div>
-            </div>
+            )}
           </div>
         </div>
+
+        {!isLeftPreview && (
+          <aside className="hidden lg:block lg:col-span-7 sticky top-24">
+            {previewContent}
+          </aside>
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── Shared Internal Components ──────────────────────────────────────
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}/${month}/${day} ${hour}:${minute}`;
+}
+
+function TitleDateListItem({ title, created, modified, isActive }: {
+  title: string;
+  created: string;
+  modified?: string;
+  isActive: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
+      <h3 className={cn(
+        "text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
+        isActive ? "text-accent-600 font-semibold" : "text-foreground/80 font-medium",
+      )}
+      >
+        {title}
+      </h3>
+      <div className={cn(
+        "shrink-0 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm transition-colors min-w-12.5 md:min-w-15 justify-end",
+        isActive ? "text-accent-600/80" : "text-muted-foreground/50",
+      )}
+      >
+        <SmartDate date={created} modifiedDate={modified} className="font-mono" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Post Preview ────────────────────────────────────────────────────
+
+function PostPreview({ post }: { post: Post }) {
+  return (
+    <motion.div
+      key={post._id}
+      initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
+      animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="space-y-6"
+    >
+      <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
+        <div className="flex items-center gap-2" title="发布时间">
+          <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
+          <span>{formatDate(post.created)}</span>
+        </div>
+        {post.modified && (
+          <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
+            <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
+            <span>{formatDate(post.modified)}</span>
+          </div>
+        )}
+      </div>
+
+      <h2 className="text-3xl font-bold leading-tight text-foreground">{post.title}</h2>
+
+      {post.category && (
+        <div className="flex justify-start">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+            <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
+            {post.category.name}
+          </span>
+        </div>
+      )}
+
+      <div className="text-primary-600 text-sm leading-7">
+        {post.aiSummary && !post.summary && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
+            <span className="text-xs font-medium text-accent-600">AI 摘要</span>
+          </div>
+        )}
+        <p className="text-left line-clamp-6">
+          {post.summary || post.aiSummary
+            ? truncateText(stripMarkdown(post.summary || post.aiSummary || ""), 300)
+            : "暂无简介，请点击阅读详情..."}
+        </p>
+      </div>
+
+      {post.tags && post.tags.length > 0 && (
+        <div className="flex flex-wrap justify-start gap-2 pt-2">
+          {post.tags.map(tag => (
+            <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
+              <Icon icon="mingcute:tag-line" className="w-3 h-3" />
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Note Preview ────────────────────────────────────────────────────
+
+function NotePreview({ note }: { note: Note }) {
+  return (
+    <motion.div
+      key={note._id}
+      initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
+      animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="space-y-6"
+    >
+      <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
+        <div className="flex items-center gap-2" title="发布时间">
+          <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
+          <span>{formatDate(note.created)}</span>
+        </div>
+        {note.modified && (
+          <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
+            <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
+            <span>{formatDate(note.modified)}</span>
+          </div>
+        )}
+      </div>
+
+      <h2 className="text-3xl font-bold leading-tight text-foreground">{note.title}</h2>
+
+      <div className="flex flex-wrap justify-start gap-2">
+        {note.mood && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
+            <Icon icon="mingcute:emoji-line" className="w-3.5 h-3.5" />
+            {note.mood}
+          </span>
+        )}
+        {note.weather && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            <Icon icon="mingcute:cloud-line" className="w-3.5 h-3.5" />
+            {note.weather}
+          </span>
+        )}
+        {note.location && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            <Icon icon="mingcute:location-line" className="w-3.5 h-3.5" />
+            {note.location}
+          </span>
+        )}
+      </div>
+
+      <div className="text-primary-600 text-sm leading-7">
+        {note.aiSummary && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
+            <span className="text-xs font-medium text-accent-600">AI 摘要</span>
+          </div>
+        )}
+        <p className="text-left line-clamp-6">
+          {note.aiSummary
+            ? truncateText(stripMarkdown(note.aiSummary), 200)
+            : truncateText(stripMarkdown(note.text), 200)}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Convenience Wrappers ────────────────────────────────────────────
+
+interface PostInteractiveListProps {
+  items: Post[];
+  emptyMessage?: string;
+  staticMode?: boolean;
+  pageSize?: number;
+}
+
+export function PostInteractiveList({
+  items,
+  emptyMessage = "选择一篇文章查看详情",
+  staticMode = false,
+  pageSize = 10,
+}: PostInteractiveListProps) {
+  return (
+    <InteractiveList<Post>
+      items={items}
+      getItemKey={p => p._id}
+      getItemUrl={p => `/posts/${p.category?.slug || "default"}/${p.slug}`}
+      renderPreview={post => <PostPreview post={post} />}
+      renderListItem={(post, { isActive }) => (
+        <TitleDateListItem title={post.title} created={post.created} modified={post.modified} isActive={isActive} />
+      )}
+      emptyMessage={emptyMessage}
+      infiniteScroll={!staticMode
+        ? {
+            pageSize,
+            fetcher: async (page, size) => {
+              const res = await fetchPosts(page, size);
+              return { items: res.data.items as Post[], hasNextPage: res.data.pagination.has_next_page };
+            },
+            keyPrefix: "post",
+          }
+        : undefined}
+    />
+  );
+}
+
+interface NoteInteractiveListProps {
+  items: Note[];
+  emptyMessage?: string;
+  pageSize?: number;
+}
+
+export function NoteInteractiveList({
+  items,
+  emptyMessage = "选择一篇日记查看详情",
+  pageSize = 10,
+}: NoteInteractiveListProps) {
+  return (
+    <InteractiveList<Note>
+      items={items}
+      getItemKey={n => n._id}
+      getItemUrl={n => `/notes/${n.nid}`}
+      renderPreview={note => <NotePreview note={note} />}
+      renderListItem={(note, { isActive }) => (
+        <TitleDateListItem title={note.title} created={note.created} modified={note.modified} isActive={isActive} />
+      )}
+      emptyMessage={emptyMessage}
+      infiniteScroll={{
+        pageSize,
+        fetcher: async (page, size) => {
+          const res = await fetchNotes(page, size);
+          return { items: res.data.items as Note[], hasNextPage: res.data.pagination.has_next_page };
+        },
+        keyPrefix: "note",
+      }}
+    />
+  );
+}
+
+// ─── Category Interactive List ────────────────────────────────────────
+
+interface CategoryInteractiveListProps {
+  items: Category[];
+  allPosts: Post[];
+  countMap: Record<string, number>;
+  latestPostMap: Record<string, Post>;
+  emptyMessage?: string;
+}
+
+export function CategoryInteractiveList({
+  items,
+  allPosts,
+  countMap,
+  latestPostMap,
+  emptyMessage = "选择一个分类查看详情",
+}: CategoryInteractiveListProps) {
+  return (
+    <InteractiveList<Category>
+      items={items}
+      getItemKey={cat => cat.slug}
+      getItemUrl={cat => `/categories/${cat.slug}`}
+
+      emptyMessage={emptyMessage}
+      renderListItem={(category, { isActive }) => {
+        const count = countMap[category.slug] || 0;
+        return (
+          <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
+            <h2 className={cn(
+              "text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
+              isActive ? "text-accent-600 font-semibold" : "text-foreground/80 font-medium",
+            )}
+            >
+              {category.name}
+            </h2>
+            <span className={cn(
+              "shrink-0 font-mono text-xs md:text-sm transition-colors",
+              isActive ? "text-accent-600/80" : "text-muted-foreground/50",
+            )}
+            >
+              {count}
+              {" "}
+              篇
+            </span>
+          </div>
+        );
+      }}
+      renderPreview={(category) => {
+        const latestPost = latestPostMap[category.slug];
+        const count = countMap[category.slug] || 0;
+        const ranking = items.findIndex(c => c.slug === category.slug) + 1;
+        const weight = allPosts.length > 0 ? Math.round((count / allPosts.length) * 100) : 0;
+        return (
+          <motion.div
+            key={category.slug}
+            initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="space-y-6"
+          >
+            <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Icon icon="mingcute:document-line" className="w-4 h-4" />
+                <span>
+                  {count}
+                  {" "}
+                  篇文章
+                </span>
+              </div>
+              {latestPost && (
+                <div className="flex items-center gap-2 text-xs opacity-70">
+                  <Icon icon="mingcute:calendar-line" className="w-3.5 h-3.5" />
+                  <span>
+                    最近更新
+                    {" "}
+                    {formatDate(latestPost.created)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <h2 className="text-3xl font-bold leading-tight text-foreground">{category.name}</h2>
+
+            <div className="flex flex-wrap justify-start gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                <Icon icon="mingcute:bling-line" className="w-3.5 h-3.5" />
+                #
+                {ranking}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                <Icon icon="mingcute:chart-bar-line" className="w-3.5 h-3.5" />
+                占比
+                {" "}
+                {weight}
+                %
+              </span>
+            </div>
+
+            <div className="text-primary-600 text-sm leading-7">
+              {latestPost
+                ? (
+                    <>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Icon icon="mingcute:news-line" className="w-3.5 h-3.5 text-accent-500" />
+                        <span className="text-xs font-medium text-accent-600">最新文章</span>
+                      </div>
+                      <p className="text-left font-medium line-clamp-1">{latestPost.title}</p>
+                      {(latestPost.summary || latestPost.aiSummary) && (
+                        <p className="text-left line-clamp-5 mt-1 opacity-80">
+                          {truncateText(stripMarkdown(latestPost.summary || latestPost.aiSummary || ""), 300)}
+                        </p>
+                      )}
+                    </>
+                  )
+                : (
+                    <p className="text-left opacity-60">暂无文章发布</p>
+                  )}
+            </div>
+
+            <Link
+              href={`/categories/${category.slug}`}
+              className="inline-flex items-center gap-2 text-sm text-accent-600 hover:text-accent-700 font-medium transition-colors"
+            >
+              浏览全部文章
+              <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
+            </Link>
+          </motion.div>
+        );
+      }}
+    />
   );
 }
