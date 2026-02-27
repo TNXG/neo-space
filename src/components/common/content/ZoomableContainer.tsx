@@ -34,12 +34,12 @@ export function ZoomableContainer({
   const contentRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(initialZoom);
   const positionRef = useRef({ x: 0, y: 0 });
-  const [scale, setScaleState] = useState(initialZoom);
+  const [scale, setScale] = useState(initialZoom);
 
   // 同步更新 scale 和 scaleRef
-  const setScale = useCallback((newScale: number) => {
+  const updateScale = useCallback((newScale: number) => {
     scaleRef.current = newScale;
-    setScaleState(newScale);
+    setScale(newScale);
   }, []);
 
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -100,13 +100,13 @@ export function ZoomableContainer({
 
         // 检查是否到达边界
         if (newScale <= minZoom) {
-          setScale(minZoom);
+          updateScale(minZoom);
           triggerBoundaryEffect();
         } else if (newScale >= maxZoom) {
-          setScale(maxZoom);
+          updateScale(maxZoom);
           triggerBoundaryEffect();
         } else {
-          setScale(newScale);
+          updateScale(newScale);
         }
       }
     };
@@ -118,7 +118,7 @@ export function ZoomableContainer({
         clearTimeout(boundaryTimeoutRef.current);
       }
     };
-  }, [scale, minZoom, maxZoom, triggerBoundaryEffect, setScale]);
+  }, [scale, minZoom, maxZoom, triggerBoundaryEffect, updateScale]);
 
   // 处理触摸缩放和拖拽
   useEffect(() => {
@@ -170,13 +170,13 @@ export function ZoomableContainer({
         const newScale = initialScale * adjustedScaleChange;
 
         if (newScale <= minZoom) {
-          setScale(minZoom);
+          updateScale(minZoom);
           triggerBoundaryEffect();
         } else if (newScale >= maxZoom) {
-          setScale(maxZoom);
+          updateScale(maxZoom);
           triggerBoundaryEffect();
         } else {
-          setScale(newScale);
+          updateScale(newScale);
         }
       } else if (e.touches.length === 1 && isTouchDragging && scaleRef.current > 1) {
         // 单指拖拽
@@ -208,7 +208,7 @@ export function ZoomableContainer({
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [minZoom, maxZoom, triggerBoundaryEffect, setScale]);
+  }, [minZoom, maxZoom, triggerBoundaryEffect, updateScale]);
 
   // 处理拖拽
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -235,7 +235,7 @@ export function ZoomableContainer({
 
   // 重置缩放和位置
   const handleReset = () => {
-    setScale(initialZoom);
+    updateScale(initialZoom);
     setPosition({ x: 0, y: 0 });
     positionRef.current = { x: 0, y: 0 };
   };
@@ -261,7 +261,7 @@ export function ZoomableContainer({
             if (newScale >= maxZoom) {
               triggerBoundaryEffect();
             }
-            setScale(newScale);
+            updateScale(newScale);
           }}
           disabled={scale >= maxZoom}
           className={cn(
@@ -281,7 +281,7 @@ export function ZoomableContainer({
             if (newScale <= minZoom) {
               triggerBoundaryEffect();
             }
-            setScale(newScale);
+            updateScale(newScale);
           }}
           disabled={scale <= minZoom}
           className={cn(

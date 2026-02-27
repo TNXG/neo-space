@@ -1,11 +1,27 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useTOCStore } from "@/stores/toc-store";
+
+interface SidebarBreadcrumbItem {
+  label: string;
+  href?: string;
+}
 
 interface ArticleTOCWrapperProps {
   children: ReactNode;
+  breadcrumbs?: SidebarBreadcrumbItem[];
 }
 
 /**
@@ -14,7 +30,7 @@ interface ArticleTOCWrapperProps {
  * - 滚动超出文章区域时：隐藏 TOC（opacity: 0 + pointer-events: none）
  * - 使用 opacity 过渡避免布局抖动
  */
-export function ArticleTOCWrapper({ children }: ArticleTOCWrapperProps) {
+export function ArticleTOCWrapper({ children, breadcrumbs }: ArticleTOCWrapperProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { setAutoScrollEnabled } = useTOCStore();
   const [isVisible, setIsVisible] = useState(true);
@@ -108,6 +124,30 @@ export function ArticleTOCWrapper({ children }: ArticleTOCWrapperProps) {
         pointerEvents: isVisible ? "auto" : "none",
       }}
     >
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <div className="mb-5 px-2">
+          <Breadcrumb>
+            <BreadcrumbList className="text-[10px] flex-nowrap gap-1 sm:gap-1">
+              {breadcrumbs.map((crumb, idx) => (
+                <React.Fragment key={crumb.href ?? crumb.label ?? idx}>
+                  <BreadcrumbItem>
+                    {idx < breadcrumbs.length - 1
+                      ? (
+                          <BreadcrumbLink asChild>
+                            <Link href={crumb.href ?? "#"} className="text-[10px] max-w-16 truncate block">{crumb.label}</Link>
+                          </BreadcrumbLink>
+                        )
+                      : (
+                          <BreadcrumbPage className="text-[10px] max-w-28 truncate block">{crumb.label}</BreadcrumbPage>
+                        )}
+                  </BreadcrumbItem>
+                  {idx < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                </React.Fragment>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      )}
       {children}
     </aside>
   );

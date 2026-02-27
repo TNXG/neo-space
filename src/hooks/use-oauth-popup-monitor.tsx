@@ -13,6 +13,7 @@ import { useOAuthStore } from "@/stores/oauth-store";
 export function useOAuthPopupMonitor() {
   const { isLoading, popup, endLogin } = useOAuthStore();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const checkTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // 只有在 loading 且有 popup 时才启动监听
@@ -28,7 +29,7 @@ export function useOAuthPopupMonitor() {
         }
 
         // 延迟检查状态，确保 messageReceived 已更新
-        setTimeout(() => {
+        checkTimerRef.current = setTimeout(() => {
           const currentState = useOAuthStore.getState();
 
           // 如果还在 loading 且没收到消息，说明用户取消了登录
@@ -44,6 +45,10 @@ export function useOAuthPopupMonitor() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (checkTimerRef.current) {
+        clearTimeout(checkTimerRef.current);
+        checkTimerRef.current = null;
       }
     };
   }, [isLoading, popup, endLogin]);

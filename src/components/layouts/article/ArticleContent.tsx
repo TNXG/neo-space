@@ -18,10 +18,10 @@ interface ArticleContentProps {
 export function ArticleContent({ children, items }: ArticleContentProps) {
   const { setItems, setActiveId } = useTOCStore();
   const contentRef = useRef<HTMLDivElement>(null);
-  const lastScrollY = useRef(0);
-  const scrollDirection = useRef<"down" | "up">("down");
-  const lastActiveId = useRef<string>("");
-  const rafId = useRef<number | null>(null);
+  const lastScrollYRef = useRef(0);
+  const scrollDirectionRef = useRef<"down" | "up">("down");
+  const lastActiveIdRef = useRef<string>("");
+  const rafIdRef = useRef<number | null>(null);
 
   // 初始化 items
   useEffect(() => {
@@ -30,9 +30,9 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 
   // 防抖的 setActiveId，避免快速滚动时抖动
   const debouncedSetActiveId = useCallback((id: string) => {
-    if (id === lastActiveId.current)
+    if (id === lastActiveIdRef.current)
       return;
-    lastActiveId.current = id;
+    lastActiveIdRef.current = id;
     setActiveId(id);
   }, [setActiveId]);
 
@@ -40,8 +40,8 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
-      scrollDirection.current = currentY > lastScrollY.current ? "down" : "up";
-      lastScrollY.current = currentY;
+      scrollDirectionRef.current = currentY > lastScrollYRef.current ? "down" : "up";
+      lastScrollYRef.current = currentY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -69,15 +69,15 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 
       // 使用 scroll 事件来检测标题位置，通过 RAF 节流
       scrollHandler = () => {
-        if (rafId.current)
+        if (rafIdRef.current)
           return;
 
-        rafId.current = requestAnimationFrame(() => {
-          rafId.current = null;
+        rafIdRef.current = requestAnimationFrame(() => {
+          rafIdRef.current = null;
 
           const viewportHeight = window.innerHeight;
           // 30% 触发线：页面下滑时用底部 30%，页面上滑时用顶部 30%
-          const triggerLine = scrollDirection.current === "down"
+          const triggerLine = scrollDirectionRef.current === "down"
             ? viewportHeight * 0.7
             : viewportHeight * 0.3;
 
@@ -116,8 +116,8 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 
     return () => {
       clearTimeout(timer);
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
       }
       if (scrollHandler) {
         window.removeEventListener("scroll", scrollHandler);
