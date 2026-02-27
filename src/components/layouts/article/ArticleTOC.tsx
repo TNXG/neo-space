@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTOCStore } from "@/stores/toc-store";
 
 interface ArticleTOCProps {
@@ -9,7 +10,7 @@ interface ArticleTOCProps {
 }
 
 export function ArticleTOC({ className = "" }: ArticleTOCProps) {
-  const { activeId, items, scrollToCenter, isAutoScrollEnabled } = useTOCStore();
+  const { activeId, items, isInitialized, scrollToCenter, isAutoScrollEnabled } = useTOCStore();
   const tocRef = useRef<HTMLElement>(null);
 
   // 1. 解决 Compiler 警告：移除复杂的条件 return，改为扁平化计算
@@ -135,6 +136,26 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
         clearTimeout(scrollTimeoutRef.current);
     };
   }, [activeId, isAutoScrollEnabled]);
+
+  if (!isInitialized) {
+    // 客户端尚未初始化，显示骨架屏
+    return (
+      <div className={className}>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 px-2">
+          Table of Contents
+        </h4>
+        <div className="space-y-2 px-2">
+          <Skeleton className="h-3.5 w-4/5" />
+          <Skeleton className="h-3 w-3/5 ml-3" style={{ animationDelay: "60ms" }} />
+          <Skeleton className="h-3 w-2/3 ml-3" style={{ animationDelay: "120ms" }} />
+          <Skeleton className="h-3.5 w-3/4 mt-1" style={{ animationDelay: "180ms" }} />
+          <Skeleton className="h-3 w-1/2 ml-3" style={{ animationDelay: "240ms" }} />
+          <Skeleton className="h-3.5 w-4/5 mt-1" style={{ animationDelay: "300ms" }} />
+          <Skeleton className="h-3 w-2/5 ml-3" style={{ animationDelay: "360ms" }} />
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0)
     return null;

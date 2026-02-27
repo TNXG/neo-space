@@ -13,6 +13,11 @@ export interface ArticleNavigation {
   type?: "post" | "note";
 }
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 interface ArticleLayoutProps {
   /** 文章头部（标题、元信息等） */
   header: ReactNode;
@@ -24,6 +29,8 @@ interface ArticleLayoutProps {
   footer?: ReactNode;
   /** 导航数据 */
   navigation?: ArticleNavigation;
+  /** 面包屑路径（首页 → 分类 → 标题） */
+  breadcrumbs?: BreadcrumbItem[];
 }
 
 /**
@@ -37,6 +44,7 @@ export function ArticleLayout({
   toc,
   footer,
   navigation,
+  breadcrumbs,
 }: ArticleLayoutProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -53,7 +61,7 @@ export function ArticleLayout({
           </article>
 
           {/* 右侧 TOC 区 - 使用智能定位包装器 */}
-          <ArticleTOCWrapper>
+          <ArticleTOCWrapper breadcrumbs={breadcrumbs}>
             <ArticleTOC />
             {navigation && <ArticleNavButtons {...navigation} />}
           </ArticleTOCWrapper>

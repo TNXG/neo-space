@@ -4,6 +4,7 @@ import { create } from "zustand";
 interface TOCState {
   activeId: string;
   items: TOCItem[];
+  isInitialized: boolean;
   isAutoScrollEnabled: boolean;
   setActiveId: (id: string) => void;
   setItems: (items: TOCItem[]) => void;
@@ -14,9 +15,10 @@ interface TOCState {
 export const useTOCStore = create<TOCState>(set => ({
   activeId: "",
   items: [],
+  isInitialized: false,
   isAutoScrollEnabled: true,
   setActiveId: (id: string) => set({ activeId: id }),
-  setItems: (items: TOCItem[]) => set({ items }),
+  setItems: (items: TOCItem[]) => set({ items, isInitialized: true }),
   setAutoScrollEnabled: (enabled: boolean) => set({ isAutoScrollEnabled: enabled }),
   scrollToCenter: (id: string) => {
     set({ activeId: id });

@@ -70,7 +70,7 @@ export function ArticleHeader({
         {/* 分类 */}
         {category && (
           <Link
-            href={`/category/${category.slug}`}
+            href={`/categories/${category.slug}`}
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/50 text-accent-foreground hover:bg-accent transition-colors cursor-pointer"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-accent-600" />
