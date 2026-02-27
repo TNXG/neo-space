@@ -50,7 +50,7 @@ const collectionLoaders: Record<string, IconCollectionLoader> = {
 /**
  * 基础 SVG 渲染组件，处理通用样式和属性
  */
-const BaseSvg: React.FC<IconProps & { html?: string }> = ({
+const BaseSvg: React.FC<IconProps & { html?: string; svgViewBox?: string }> = ({
   size = "1em",
   color,
   className,
@@ -58,22 +58,25 @@ const BaseSvg: React.FC<IconProps & { html?: string }> = ({
   html,
   children,
   fill,
+  svgViewBox,
   ...props
 }) => {
   // 优先使用 props 中的 fill，其次 color，最后 currentColor
   const fillColor = fill || color || "currentColor";
 
+  // 如果有 className 中包含尺寸类（h-* w-*），不设置内联尺寸，让 Tailwind 控制
+  const hasClassSize = className && /\b[hw]-/.test(className);
+
   const commonProps = {
     xmlns: "http://www.w3.org/2000/svg",
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
+    width: hasClassSize ? undefined : size,
+    height: hasClassSize ? undefined : size,
+    viewBox: svgViewBox || "0 0 24 24",
     className,
     style: {
-      width: size,
-      height: size,
+      ...(hasClassSize ? {} : { width: size, height: size }),
       flexShrink: 0,
-      overflow: "visible",
+      overflow: "visible" as const,
       color: fillColor, // 使用 color 属性，让内部的 currentColor 继承
       ...style,
     },
@@ -88,6 +91,11 @@ const BaseSvg: React.FC<IconProps & { html?: string }> = ({
   return <svg {...commonProps} fill={fillColor}>{children}</svg>;
 };
 
+interface IconLoaderResult {
+  body: string;
+  viewBox: string;
+}
+
 /**
  * 通用图标加载逻辑 Hook
  */
@@ -95,8 +103,8 @@ function useIconLoader(
   collectionName: string,
   iconKey?: string,
   fallbackKey?: string,
-) {
-  const [svgBody, setSvgBody] = useState<string>("");
+): IconLoaderResult {
+  const [result, setResult] = useState<IconLoaderResult>({ body: "", viewBox: "0 0 24 24" });
 
   useEffect(() => {
     if (!iconKey || !collectionLoaders[collectionName])
@@ -122,8 +130,9 @@ function useIconLoader(
         }
 
         if (iconData && isMounted) {
-          const { body } = iconToSVG(iconData);
-          setSvgBody(body);
+          const rendered = iconToSVG(iconData);
+          const viewBox = rendered.attributes?.viewBox || `0 0 ${iconData.width || 24} ${iconData.height || 24}`;
+          setResult({ body: rendered.body, viewBox });
         }
       } catch (error) {
         console.error(`Failed to load icon ${collectionName}:${iconKey}`, error);
@@ -137,7 +146,7 @@ function useIconLoader(
     };
   }, [collectionName, iconKey, fallbackKey]);
 
-  return svgBody;
+  return result;
 }
 
 function createIconComponent(
@@ -146,10 +155,10 @@ function createIconComponent(
   defaultColor?: string,
 ): React.FC<IconProps> {
   const IconComponent: React.FC<IconProps> = (props) => {
-    const svgBody = useIconLoader(collection, iconKey);
-    if (!svgBody)
+    const { body, viewBox } = useIconLoader(collection, iconKey);
+    if (!body)
       return null;
-    return <BaseSvg {...props} color={props.color || defaultColor} html={svgBody} />;
+    return <BaseSvg {...props} color={props.color || defaultColor} html={body} svgViewBox={viewBox} />;
   };
   IconComponent.displayName = `Icon(${collection}:${iconKey})`;
   return IconComponent;
@@ -163,12 +172,12 @@ export function FileIcon({ extension, ...props }: { extension?: string } & IconP
     return ext2lang[normalizedExt] || normalizedExt;
   }, [extension]);
 
-  const svgBody = useIconLoader("catppuccin", iconKey, "file");
+  const { body, viewBox } = useIconLoader("catppuccin", iconKey, "file");
 
-  if (!extension || !svgBody)
+  if (!extension || !body)
     return null;
 
-  return <BaseSvg {...props} html={svgBody} />;
+  return <BaseSvg {...props} html={body} svgViewBox={viewBox} />;
 }
 
 // 辅助生成函数
