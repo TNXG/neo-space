@@ -257,7 +257,7 @@ function AuthCallbackContent() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, type: "spring" }}
         className={cn(
-          "glass-card w-full max-w-[420px] overflow-hidden shadow-glass relative",
+          "glass-card w-full max-w-105 overflow-hidden shadow-glass relative",
           "bg-card text-card-foreground border-border/50",
         )}
       >
@@ -433,7 +433,7 @@ function AuthCallbackContent() {
                   <Icon icon="mingcute:close-line" className="w-8 h-8" />
                 </div>
                 <h2 className="text-lg font-bold text-red-600">认证失败</h2>
-                <p className="mt-2 text-sm text-muted-foreground text-center max-w-[280px]">
+                <p className="mt-2 text-sm text-muted-foreground text-center max-w-70">
                   {message}
                 </p>
                 <button

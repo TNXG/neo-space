@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { InteractiveList } from "@/components/common/InteractiveList";
+import { PostInteractiveList } from "@/components/common/InteractiveList";
 import { getPosts } from "@/lib/api-client";
 
 export const metadata: Metadata = {
@@ -55,9 +55,8 @@ export default async function PostsPage() {
         </div>
       </header>
 
-      <InteractiveList
+      <PostInteractiveList
         items={data.items}
-        type="post"
         emptyMessage="选择一篇文章查看详情"
       />
     </main>

@@ -107,6 +107,11 @@ export default async function NotePage({ params }: PageProps) {
       <JsonLd data={jsonLd} />
       <ArticleLayout
         toc={toc}
+        breadcrumbs={[
+          { label: "首页", href: "/" },
+          { label: "碎碎念", href: "/notes" },
+          { label: note.title },
+        ]}
         header={(
           <NoteHeader
             title={note.title}

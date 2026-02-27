@@ -121,6 +121,11 @@ export default async function PostPage({ params }: PageProps) {
       <JsonLd data={jsonLd} />
       <ArticleLayout
         toc={toc}
+        breadcrumbs={[
+          { label: "首页", href: "/" },
+          ...(post.category ? [{ label: post.category.name, href: `/categories/${post.category.slug}` }] : []),
+          { label: post.title },
+        ]}
         header={(
           <ArticleHeader
             title={post.title}

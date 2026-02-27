@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { InteractiveList } from "@/components/common/InteractiveList";
+import { NoteInteractiveList } from "@/components/common/InteractiveList";
 import { getNotes } from "@/lib/api-client";
 
 export const metadata: Metadata = {
@@ -55,9 +55,8 @@ export default async function NotesPage() {
         </div>
       </header>
 
-      <InteractiveList
+      <NoteInteractiveList
         items={data.items}
-        type="note"
         emptyMessage="选择一篇日记查看详情"
       />
     </main>
