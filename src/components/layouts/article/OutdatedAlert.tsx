@@ -78,7 +78,7 @@ export async function OutdatedAlert({
       {/* 外层虚线边框容器 */}
       <div className="relative overflow-hidden rounded-xl border border-dashed border-primary-300 bg-primary-100/50 backdrop-blur-sm p-1">
         {/* 内层实线容器 */}
-        <div className="relative overflow-hidden rounded-lg bg-white/60 border border-primary-200 p-5 md:p-6">
+        <div className="relative overflow-hidden rounded-lg bg-white/60 dark:bg-primary-200/60 border border-primary-200 p-5 md:p-6">
           {/* 背景水印 */}
           <div className="absolute -right-6 -bottom-8 text-primary-400/10 pointer-events-none select-none z-0">
             <Icon
@@ -107,10 +107,10 @@ export async function OutdatedAlert({
                 {sensitivityLabel && (
                   <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                     capsule?.sensitivity === "high"
-                      ? "bg-amber-100 text-amber-700"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
                       : capsule?.sensitivity === "low"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-blue-100 text-blue-700"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300"
+                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
                   }`}
                   >
                     {sensitivityLabel}
