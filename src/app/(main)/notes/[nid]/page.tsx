@@ -109,7 +109,7 @@ export default async function NotePage({ params }: PageProps) {
         toc={toc}
         breadcrumbs={[
           { label: "首页", href: "/" },
-          { label: "碎碎念", href: "/notes" },
+          { label: "手记", href: "/notes" },
           { label: note.title },
         ]}
         header={(

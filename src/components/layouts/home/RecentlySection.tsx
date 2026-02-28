@@ -17,7 +17,7 @@ export function RecentlySection({ recently }: RecentlySectionProps) {
         title="碎碎念"
         icon="mingcute:comment-line"
         linkText="查看动态"
-        linkHref="#"
+        linkHref="/thinking"
       />
       <div>
         {recently.map(item => (
