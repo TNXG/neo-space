@@ -1,0 +1,14 @@
+"use server";
+
+import { getRecently } from "@/lib/api-client";
+import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
+
+export async function loadMoreThinkings(page: number, limit: number = 50) {
+  const result = await getRecently(page, limit);
+  const items = result.data.items;
+
+  return {
+    nodes: items.map(item => <ThinkingItem key={item._id} item={item} />),
+    hasNextPage: result.data.pagination.has_next_page,
+  };
+}
