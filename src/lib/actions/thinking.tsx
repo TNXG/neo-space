@@ -4,7 +4,7 @@ import { getRecently } from "@/lib/api-client";
 import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
 
 export async function loadMoreThinkings(page: number, limit: number = 50) {
-  const result = await getRecently(page, limit);
+  const result = await getRecently(limit, page);
   const items = result.data.items;
 
   return {

@@ -258,7 +258,7 @@ export async function sendLinkVerificationCode(email: string): Promise<ApiRespon
 /**
  * Recently API
  */
-export async function getRecently(page = 1, limit = 10): Promise<PaginatedResponse<Recently>> {
+export async function getRecently(limit = 10, page = 1): Promise<PaginatedResponse<Recently>> {
   return apiClient<PaginatedResponse<Recently>>(`/recentlies?page=${page}&size=${limit}`);
 }
 

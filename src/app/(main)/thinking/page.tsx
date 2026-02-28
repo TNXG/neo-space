@@ -17,7 +17,7 @@ export const revalidate = 3600;
 export default async function ThinkingPage() {
   const limit = 50;
   // 获取首屏数据，支持 SSR
-  const initialDataResponse = await getRecently(1, limit);
+  const initialDataResponse = await getRecently(limit);
   const items = initialDataResponse.data.items;
   const initialHasNextPage = initialDataResponse.data.pagination.has_next_page;
   const isEmpty = items.length === 0;
