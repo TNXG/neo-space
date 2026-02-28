@@ -82,6 +82,8 @@ function extractMetadataByPriority(tags: ExifReader.ExpandedTags): ExifData {
 export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageFigureProps) {
   const [isSmall, setIsSmall] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [exif, setExif] = useState<ExifData | null>(null);
   const mounted = typeof window !== "undefined";
@@ -110,6 +112,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
 
   const handleImageComplete = useCallback(() => {
     setIsLoaded(true);
+    setIsError(false);
 
     if (imgRef.current) {
       const { naturalWidth, naturalHeight } = imgRef.current;
@@ -134,34 +137,61 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
   useEffect(() => {
     if (!hasCheckedCacheRef.current && imgRef.current?.complete) {
       hasCheckedCacheRef.current = true;
-      queueMicrotask(() => {
-        handleImageComplete();
-      });
+      if (imgRef.current.naturalWidth === 0) {
+        setIsError(true);
+        setIsLoaded(true);
+      } else {
+        queueMicrotask(() => {
+          handleImageComplete();
+        });
+      }
     }
   }, [handleImageComplete]);
+
+  const handleRetry = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsError(false);
+    setIsLoaded(false);
+    setRetryKey(prev => prev + 1);
+  }, []);
 
   if (isSmall) {
     return (
       <span className={`inline-block align-middle relative group ${className}`}>
         <img
+          key={retryKey}
           ref={imgRef}
           src={src}
           alt={alt}
           onLoad={handleImageComplete}
+          onError={() => {
+            setIsError(true);
+            setIsLoaded(true);
+          }}
           className={`rounded-md mx-1 max-w-full h-auto transition-opacity duration-300 ${
-            isLoaded ? "opacity-100" : "opacity-0"
+            isLoaded && !isError ? "opacity-100" : "opacity-0"
           }`}
           title={alt}
         />
-        <span
+        {isError && (
+          <span 
+            className="absolute inset-0 flex items-center justify-center bg-primary-100 dark:bg-primary-800 rounded-md cursor-pointer text-primary-400 hover:text-primary-500 transition-colors"
+            onClick={handleRetry}
+            title="图片加载失败，点击重试"
+          >
+            <Icon icon="mingcute:close-circle-dash-line" width={16} height={16} />
+          </span>
+        )}
+        {!isError && <span
           className="absolute inset-0 cursor-pointer z-20"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             setIsOpen(true);
           }}
-        />
-        {mounted && isOpen && (
+        />}
+        {mounted && isOpen && !isError && (
           <LightboxPortal src={src} alt={alt} exif={null} onClose={() => setIsOpen(false)} />
         )}
       </span>
@@ -175,23 +205,43 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
   return (
     <>
       <ContainerTag
-        className={`group relative flex flex-col items-center justify-center gap-3 transition-opacity duration-500 ${
-          isLoaded ? "opacity-100" : "opacity-0"
-        } ${className || "my-8"}`}
+        className={`group relative flex flex-col items-center justify-center gap-3 ${className || "my-8"}`}
       >
         <WrapperTag
-          className={`relative w-fit max-w-full overflow-hidden rounded-xl border border-primary-200 bg-transparent shadow-sm transition-all duration-300 hover:shadow-md hover:border-accent-300/50 ${wrapperClassExtra}`}
+          className={`relative max-w-full overflow-hidden rounded-xl border border-primary-200 shadow-sm transition-all duration-300 ${wrapperClassExtra} ${
+            isLoaded && !isError
+              ? "bg-transparent w-fit" 
+              : isBlock 
+                ? `w-full sm:w-[80%] md:w-[70%] lg:w-[600px] aspect-video ${isError ? 'bg-primary-100/50 dark:bg-primary-800/50' : 'bg-primary-200/60 animate-pulse'}`
+                : `w-24 sm:w-32 aspect-video ${isError ? 'bg-primary-100/50 dark:bg-primary-800/50' : 'bg-primary-200/60 animate-pulse'}`
+          }`}
         >
-          <img
+          {!isError && <img
+            key={retryKey}
             ref={imgRef}
             src={src}
             alt={alt}
             onLoad={handleImageComplete}
-            onError={() => setIsLoaded(true)}
-            className="block h-auto w-auto max-w-full max-h-150 object-contain"
+            onError={() => {
+              setIsError(true);
+              setIsLoaded(true);
+            }}
+            className={`block h-auto w-auto max-w-full max-h-150 object-contain transition-opacity duration-500 ${
+              isLoaded ? "opacity-100" : "opacity-0"
+            }`}
             loading="lazy"
-          />
-          <span
+          />}
+          {isError && (
+            <span
+              className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-primary-400/70 cursor-pointer hover:bg-primary-100/50 dark:hover:bg-primary-800/50 transition-colors"
+              onClick={handleRetry}
+              title="图片加载失败，点击重试"
+            >
+              <Icon icon="mingcute:close-circle-dash-line" className={isBlock ? "w-8 h-8 md:w-10 md:h-10" : "w-5 h-5"} />
+              {isBlock && <span className="text-xs md:text-sm font-medium">重新加载</span>}
+            </span>
+          )}
+          {!isError && <span
             className="absolute inset-0 z-20 cursor-pointer block"
             onClick={(e) => {
               e.preventDefault();
@@ -199,8 +249,8 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
               setIsOpen(true);
             }}
             title="点击放大"
-          />
-          {exif && (
+          />}
+          {exif && !isError && (
             <span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-300">
               EXIF
             </span>
@@ -215,7 +265,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
           </>
         )}
       </ContainerTag>
-      {mounted && isOpen && (
+      {mounted && isOpen && !isError && (
         <LightboxPortal src={src} alt={alt} exif={exif} onClose={() => setIsOpen(false)} />
       )}
     </>
