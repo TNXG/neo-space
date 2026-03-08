@@ -59,7 +59,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
               // 3. Key 策略：使用全局计数器确保绝对唯一
               key={`abbr-${spanId}`}
               onClick={e => handleClick(e, token.value)}
-              className="border-b border-dashed border-primary cursor-pointer hover:text-primary hover:border-primary/80 transition-colors relative z-10"
+              className="border-b border-dashed border-primary cursor-pointer hover:text-primary hover:border-primary/80 transition-colors"
               title="点击查询缩写含义"
             >
               {token.value}
@@ -102,6 +102,12 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
 
         // 跳过代码元素（code、pre）的处理，直接返回原节点
         if (element.type === "code" || element.type === "pre") {
+          return node;
+        }
+
+        const href = typeof element.props.href === "string" ? element.props.href : "";
+        const isFootnoteLink = element.props["data-footnote-ref"] || element.props["data-footnote-backref"] || /^#(?:user-content-)?fn/.test(href);
+        if (element.type === "a" && isFootnoteLink) {
           return node;
         }
 

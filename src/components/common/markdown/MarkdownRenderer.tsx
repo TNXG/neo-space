@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
+import { Icon } from "@iconify/react/offline";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -9,6 +10,7 @@ import remarkBreaks from "remark-breaks";
 import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 
 import { DashedSeparator } from "@/components/ui/separator";
@@ -19,17 +21,20 @@ import { CodeBlock } from "../content/CodeBlock";
 import { ContainerBlock } from "../content/ContainerBlock";
 import { Details } from "../content/Details";
 import { EnhancedHeading } from "../content/EnhancedHeading";
+import { FootnoteNavigator } from "../content/Footnote/FootnoteNavigator";
+import { FootnoteReference } from "../content/Footnote/FootnoteReference";
 import { ImageFigure } from "../content/ImageFigure";
 import { KatexStyles } from "../content/KatexStyles";
+
 import { Mark } from "../content/Mark";
-
 import { MermaidDiagram } from "../content/MermaidDiagram";
-import { Spoiler } from "../content/Spoiler";
 
+import { Spoiler } from "../content/Spoiler";
 import { getHighlighter } from "./highlighter";
 import { remarkContainer } from "./plugins/container";
 import { remarkMathDelimiters } from "./plugins/math";
 import { remarkMermaid } from "./plugins/mermaid";
+import { rehypeFootnotes } from "./plugins/rehype-footnotes";
 import { rehypeInlineSyntax } from "./plugins/rehype-inline-syntax";
 import { remarkSpoiler } from "./plugins/spoiler";
 
@@ -49,7 +54,7 @@ const isTextOnlyContent = (node: ReactNode): boolean => {
     return true;
   if (Array.isArray(node))
     return node.every(child => isTextOnlyContent(child));
-  return true;
+  return false;
 };
 
 const components: Components = {
@@ -90,8 +95,40 @@ const components: Components = {
     </EnhancedHeading>
   ),
 
-  a: ({ href, children }) => {
+  a: ({ href, children, ...props }) => {
+    const footnoteRef = (props as any)["data-footnote-ref"];
+    const footnoteBackref = (props as any)["data-footnote-backref"];
     const isInternal = href?.startsWith("/") || href?.startsWith("#");
+
+    // 脚注回跳按钮：使用 iconify 图标替代 ↩
+    if (footnoteBackref) {
+      return (
+        <a
+          data-footnote-backref="true"
+          data-footnote-id={(props as any)["data-footnote-id"]}
+          href={href || "#"}
+          aria-label={(props as any)["aria-label"]}
+        >
+          <Icon icon="mingcute:arrow-left-up-line" className="size-3.5" aria-hidden />
+        </a>
+      );
+    }
+
+    // 正文脚注引用徽标：样式完全由 FootnoteNavigator CSS 选择器控制
+    if (footnoteRef) {
+      return (
+        <FootnoteReference
+          id={(props as any).id}
+          footnoteId={(props as any)["data-footnote-id"]}
+          href={href}
+          ariaLabel={(props as any)["aria-label"]}
+        >
+          {children}
+        </FootnoteReference>
+      );
+    }
+
+    // 普通链接（含脚注正文中的链接）：统一使用 AnimatedLink 保持渲染一致性
     return (
       <AnimatedLink
         href={href || "#"}
@@ -110,13 +147,33 @@ const components: Components = {
     </ul>
   ),
 
-  ol: ({ children }) => (
-    <ol className="list-decimal list-outside ml-5 md:ml-6 mb-5 md:mb-6 space-y-1.5 md:space-y-2 text-primary-700 marker:text-accent-500 font-medium">
-      {children}
-    </ol>
-  ),
+  ol: ({ children, ...props }) => {
+    const isFootnoteList = (props as any).className?.includes?.("footnote-list");
+    return (
+      <ol
+        {...props}
+        className={isFootnoteList
+          ? "footnote-list list-[upper-roman] list-outside ml-5 md:ml-6 mb-5 md:mb-6 space-y-3 text-primary-700 marker:text-accent-500 font-medium"
+          : "list-decimal list-outside ml-5 md:ml-6 mb-5 md:mb-6 space-y-1.5 md:space-y-2 text-primary-700 marker:text-accent-500 font-medium"}
+      >
+        {children}
+      </ol>
+    );
+  },
 
-  li: ({ children }) => <li className="leading-relaxed pl-1 wrap-break-word">{children}</li>,
+  li: ({ children, ...props }) => {
+    const isFootnoteItem = (props as any)["data-footnote-item"];
+    return (
+      <li
+        {...props}
+        className={isFootnoteItem
+          ? "leading-relaxed wrap-break-word text-sm md:text-base"
+          : "leading-relaxed pl-1 wrap-break-word"}
+      >
+        {children}
+      </li>
+    );
+  },
 
   blockquote: ({ children }) => (
     <blockquote className="relative my-6 md:my-8 pl-4 md:pl-6 py-3 md:py-4 pr-3 md:pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word">
@@ -371,15 +428,17 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
   return (
     <>
       {hasMath && <KatexStyles />}
-      <div className={`markdown-body ${className}`}>
-        <ReactMarkdown
-          remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkMermaid, remarkContainer]}
-          rehypePlugins={rehypePlugins}
-          components={components}
-        >
-          {content}
-        </ReactMarkdown>
-      </div>
+      <FootnoteNavigator>
+        <div className={`markdown-body ${className}`}>
+          <ReactMarkdown
+            remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkMermaid, remarkContainer]}
+            rehypePlugins={[...rehypePlugins, rehypeFootnotes]}
+            components={components}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      </FootnoteNavigator>
     </>
   );
 }
