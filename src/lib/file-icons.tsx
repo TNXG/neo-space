@@ -1,15 +1,15 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import type { SVGProps } from "react";
-import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { catppuccinIconsData, mingcuteIconsData, simpleIconsData } from "./icon-data";
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number | string;
   color?: string;
 }
 
-type IconCollectionLoader = () => Promise<any>;
+const CLASS_SIZE_REGEX = /\b[hw]-/;
 
 const ext2lang: Record<string, string> = {
   js: "javascript",
@@ -38,14 +38,14 @@ const ext2lang: Record<string, string> = {
   makefile: "makefile",
 };
 
-// 集中管理动态导入，方便扩展
-const collectionLoaders: Record<string, IconCollectionLoader> = {
-  "simple-icons": () => import("@iconify-json/simple-icons/icons.json"),
-  "mingcute": () => import("@iconify-json/mingcute/icons.json"),
-  "catppuccin": () => import("@iconify-json/catppuccin/icons.json"),
+// 按集合名索引静态数据，方便 createIconComponent 按名查找
+const staticCollections: Record<string, Record<string, { body: string; viewBox: string }>> = {
+  "simple-icons": simpleIconsData,
+  "mingcute": mingcuteIconsData,
+  "catppuccin": catppuccinIconsData,
 };
 
-// --- 通用组件与 Hooks ---
+// --- 通用组件 ---
 
 /**
  * 基础 SVG 渲染组件，处理通用样式和属性
@@ -65,7 +65,7 @@ const BaseSvg: React.FC<IconProps & { html?: string; svgViewBox?: string }> = ({
   const fillColor = fill || color || "currentColor";
 
   // 如果有 className 中包含尺寸类（h-* w-*），不设置内联尺寸，让 Tailwind 控制
-  const hasClassSize = className && /\b[hw]-/.test(className);
+  const hasClassSize = className && CLASS_SIZE_REGEX.test(className);
 
   const commonProps = {
     xmlns: "http://www.w3.org/2000/svg",
@@ -91,62 +91,18 @@ const BaseSvg: React.FC<IconProps & { html?: string; svgViewBox?: string }> = ({
   return <svg {...commonProps} fill={fillColor}>{children}</svg>;
 };
 
-interface IconLoaderResult {
-  body: string;
-  viewBox: string;
-}
-
 /**
- * 通用图标加载逻辑 Hook
+ * 从静态预提取数据中同步读取图标（无运行时 JSON 加载）
  */
-function useIconLoader(
+function getStaticIcon(
   collectionName: string,
   iconKey?: string,
   fallbackKey?: string,
-): IconLoaderResult {
-  const [result, setResult] = useState<IconLoaderResult>({ body: "", viewBox: "0 0 24 24" });
-
-  useEffect(() => {
-    if (!iconKey || !collectionLoaders[collectionName])
-      return;
-
-    let isMounted = true;
-
-    const load = async () => {
-      try {
-        // 并行加载图标数据和工具函数
-        const [iconsModule, utilsModule] = await Promise.all([
-          collectionLoaders[collectionName](),
-          import("@iconify/utils"),
-        ]);
-
-        const icons = iconsModule.default;
-        const { getIconData, iconToSVG } = utilsModule;
-
-        // 尝试获取图标数据，如果不存在则尝试 fallback
-        let iconData = getIconData(icons, iconKey);
-        if (!iconData && fallbackKey) {
-          iconData = getIconData(icons, fallbackKey);
-        }
-
-        if (iconData && isMounted) {
-          const rendered = iconToSVG(iconData);
-          const viewBox = rendered.attributes?.viewBox || `0 0 ${iconData.width || 24} ${iconData.height || 24}`;
-          setResult({ body: rendered.body, viewBox });
-        }
-      } catch (error) {
-        console.error(`Failed to load icon ${collectionName}:${iconKey}`, error);
-      }
-    };
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [collectionName, iconKey, fallbackKey]);
-
-  return result;
+): { body: string; viewBox: string } | null {
+  const collection = staticCollections[collectionName];
+  if (!collection || !iconKey)
+    return null;
+  return collection[iconKey] ?? (fallbackKey ? collection[fallbackKey] ?? null : null);
 }
 
 function createIconComponent(
@@ -154,30 +110,30 @@ function createIconComponent(
   iconKey: string,
   defaultColor?: string,
 ): React.FC<IconProps> {
+  // 在模块初始化时就查好数据，完全避免运行时查找开销
+  const data = getStaticIcon(collection, iconKey);
   const IconComponent: React.FC<IconProps> = (props) => {
-    const { body, viewBox } = useIconLoader(collection, iconKey);
-    if (!body)
+    if (!data)
       return null;
-    return <BaseSvg {...props} color={props.color || defaultColor} html={body} svgViewBox={viewBox} />;
+    return <BaseSvg {...props} color={props.color || defaultColor} html={data.body} svgViewBox={data.viewBox} />;
   };
   IconComponent.displayName = `Icon(${collection}:${iconKey})`;
   return IconComponent;
 }
 
 export function FileIcon({ extension, ...props }: { extension?: string } & IconProps) {
-  const iconKey = useMemo(() => {
+  const data = useMemo(() => {
     if (!extension)
-      return undefined;
+      return null;
     const normalizedExt = extension.toLowerCase();
-    return ext2lang[normalizedExt] || normalizedExt;
+    const iconKey = ext2lang[normalizedExt] || normalizedExt;
+    return getStaticIcon("catppuccin", iconKey, "file");
   }, [extension]);
 
-  const { body, viewBox } = useIconLoader("catppuccin", iconKey, "file");
-
-  if (!extension || !body)
+  if (!extension || !data)
     return null;
 
-  return <BaseSvg {...props} html={body} svgViewBox={viewBox} />;
+  return <BaseSvg {...props} html={data.body} svgViewBox={data.viewBox} />;
 }
 
 // 辅助生成函数
