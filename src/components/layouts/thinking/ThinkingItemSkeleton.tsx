@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 export function ThinkingItemSkeleton() {
   return (
     <article className="relative border-l-2 border-primary-200/50 pl-6 pb-2">

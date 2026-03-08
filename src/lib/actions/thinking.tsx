@@ -1,7 +1,7 @@
 "use server";
 
-import { getRecently } from "@/lib/api-client";
 import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
+import { getRecently } from "@/lib/api-client";
 
 export async function loadMoreThinkings(page: number, limit: number = 50) {
   const result = await getRecently(limit, page);

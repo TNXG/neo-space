@@ -1,8 +1,8 @@
+import type { Recently } from "@/types/api";
 import { Icon } from "@iconify/react/offline";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { SmartDate } from "@/components/common/smart-date/SmartDate";
 import { cn } from "@/lib/utils";
-import type { Recently } from "@/types/api";
 
 interface ThinkingItemProps {
   item: Recently;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { getRecently } from "@/lib/api-client";
-import { ThinkingList } from "@/components/layouts/thinking/ThinkingList";
 import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
+import { ThinkingList } from "@/components/layouts/thinking/ThinkingList";
+import { getRecently } from "@/lib/api-client";
 
 export const metadata: Metadata = {
   title: "碎碎念 | Thinking",
@@ -23,7 +23,7 @@ export default async function ThinkingPage() {
   const isEmpty = items.length === 0;
 
   // 在服务端渲染首屏的节点
-  const initialNodes = items.map((item) => <ThinkingItem key={item._id} item={item} />);
+  const initialNodes = items.map(item => <ThinkingItem key={item._id} item={item} />);
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-4xl">
@@ -53,10 +53,10 @@ export default async function ThinkingPage() {
       </header>
 
       {/* 碎碎念列表客户端组件 */}
-      <ThinkingList 
-        initialNodes={initialNodes} 
-        initialHasNextPage={initialHasNextPage} 
-        isEmpty={isEmpty} 
+      <ThinkingList
+        initialNodes={initialNodes}
+        initialHasNextPage={initialHasNextPage}
+        isEmpty={isEmpty}
       />
     </main>
   );

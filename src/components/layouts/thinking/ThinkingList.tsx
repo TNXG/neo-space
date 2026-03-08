@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition, ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { loadMoreThinkings } from "@/lib/actions/thinking";
 import { ThinkingItemSkeleton } from "./ThinkingItemSkeleton";
 
@@ -24,13 +25,13 @@ export function ThinkingList({ initialNodes, initialHasNextPage, isEmpty }: Thin
           startTransition(async () => {
             const nextPage = page + 1;
             const result = await loadMoreThinkings(nextPage);
-            setNodes((prev) => [...prev, ...result.nodes]);
+            setNodes(prev => [...prev, ...result.nodes]);
             setHasNextPage(result.hasNextPage);
             setPage(nextPage);
           });
         }
       },
-      { rootMargin: "100px" }
+      { rootMargin: "100px" },
     );
 
     const loadMoreTrigger = document.getElementById("load-more-trigger");
