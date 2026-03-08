@@ -65,24 +65,45 @@ const ATOM_DATA: Record<LicenseAtom, { icon: string; label: string; desc: string
   ZERO: { icon: "mingcute:hashtag-line", label: "CC0", desc: "公有领域：放弃所有权利" },
 };
 
-export interface CopyrightCardProps {
+interface CopyrightCardPropsBase {
   licenseType?: keyof typeof LICENSES;
   author: string;
-  year: string;
   postTitle?: string;
   className?: string;
 }
+
+interface CopyrightCardSingleYearProps {
+  year: string;
+  createdYear?: never;
+  modifiedYear?: never;
+}
+
+interface CopyrightCardRangeYearProps {
+  year?: never;
+  createdYear: string;
+  modifiedYear?: string;
+}
+
+export type CopyrightCardProps = CopyrightCardPropsBase & (CopyrightCardSingleYearProps | CopyrightCardRangeYearProps);
 
 export function CopyrightCard({
   licenseType = "BY-NC-SA",
   author,
   year,
+  createdYear,
+  modifiedYear,
   postTitle,
   className = "",
 }: CopyrightCardProps) {
   const config = LICENSES[licenseType] || LICENSES["BY-NC-SA"];
   const [hoveredAtom, setHoveredAtom] = useState<LicenseAtom | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const startYear = createdYear ?? year ?? "";
+  const endYear = modifiedYear ?? createdYear ?? year ?? "";
+  const displayYear = startYear && endYear && startYear !== endYear
+    ? `${startYear} - ${endYear}`
+    : startYear || endYear;
 
   const handleCopy = () => {
     const postLink = typeof window !== "undefined" ? window.location.href : "";
@@ -113,7 +134,7 @@ export function CopyrightCard({
                 <div className="text-lg md:text-xl font-bold text-foreground">
                   ©
                   {" "}
-                  {year}
+                  {displayYear}
                   {" "}
                   {author}
                 </div>

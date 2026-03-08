@@ -101,9 +101,6 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
 
-  // 获取文章发布年份
-  const postYear = new Date(post.created).getFullYear().toString();
-
   // 生成 JSON-LD 结构化数据
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
   const jsonLd = generateArticleJsonLd({
@@ -153,7 +150,8 @@ export default async function PostPage({ params }: PageProps) {
             {post.copyright && (
               <CopyrightCard
                 author={authorName}
-                year={postYear}
+                createdYear={new Date(post.created).getFullYear().toString()}
+                modifiedYear={post.modified ? new Date(post.modified).getFullYear().toString() : undefined}
                 postTitle={post.title}
               />
             )}
