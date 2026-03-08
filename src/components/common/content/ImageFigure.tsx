@@ -138,8 +138,10 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
     if (!hasCheckedCacheRef.current && imgRef.current?.complete) {
       hasCheckedCacheRef.current = true;
       if (imgRef.current.naturalWidth === 0) {
-        setIsError(true);
-        setIsLoaded(true);
+        queueMicrotask(() => {
+          setIsError(true);
+          setIsLoaded(true);
+        });
       } else {
         queueMicrotask(() => {
           handleImageComplete();
@@ -175,7 +177,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
           title={alt}
         />
         {isError && (
-          <span 
+          <span
             className="absolute inset-0 flex items-center justify-center bg-primary-100 dark:bg-primary-800 rounded-md cursor-pointer text-primary-400 hover:text-primary-500 transition-colors"
             onClick={handleRetry}
             title="图片加载失败，点击重试"
@@ -183,14 +185,16 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
             <Icon icon="mingcute:close-circle-dash-line" width={16} height={16} />
           </span>
         )}
-        {!isError && <span
-          className="absolute inset-0 cursor-pointer z-20"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsOpen(true);
-          }}
-        />}
+        {!isError && (
+          <span
+            className="absolute inset-0 cursor-pointer z-20"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsOpen(true);
+            }}
+          />
+        )}
         {mounted && isOpen && !isError && (
           <LightboxPortal src={src} alt={alt} exif={null} onClose={() => setIsOpen(false)} />
         )}
@@ -210,27 +214,29 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
         <WrapperTag
           className={`relative max-w-full overflow-hidden rounded-xl border border-primary-200 shadow-sm transition-all duration-300 ${wrapperClassExtra} ${
             isLoaded && !isError
-              ? "bg-transparent w-fit" 
-              : isBlock 
-                ? `w-full sm:w-[80%] md:w-[70%] lg:w-[600px] aspect-video ${isError ? 'bg-primary-100/50 dark:bg-primary-800/50' : 'bg-primary-200/60 animate-pulse'}`
-                : `w-24 sm:w-32 aspect-video ${isError ? 'bg-primary-100/50 dark:bg-primary-800/50' : 'bg-primary-200/60 animate-pulse'}`
+              ? "bg-transparent w-fit"
+              : isBlock
+                ? `w-full sm:w-[80%] md:w-[70%] lg:w-150 aspect-video ${isError ? "bg-primary-100/50 dark:bg-primary-800/50" : "bg-primary-200/60 animate-pulse"}`
+                : `w-24 sm:w-32 aspect-video ${isError ? "bg-primary-100/50 dark:bg-primary-800/50" : "bg-primary-200/60 animate-pulse"}`
           }`}
         >
-          {!isError && <img
-            key={retryKey}
-            ref={imgRef}
-            src={src}
-            alt={alt}
-            onLoad={handleImageComplete}
-            onError={() => {
-              setIsError(true);
-              setIsLoaded(true);
-            }}
-            className={`block h-auto w-auto max-w-full max-h-150 object-contain transition-opacity duration-500 ${
-              isLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            loading="lazy"
-          />}
+          {!isError && (
+            <img
+              key={retryKey}
+              ref={imgRef}
+              src={src}
+              alt={alt}
+              onLoad={handleImageComplete}
+              onError={() => {
+                setIsError(true);
+                setIsLoaded(true);
+              }}
+              className={`block h-auto w-auto max-w-full max-h-150 object-contain transition-opacity duration-500 ${
+                isLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              loading="lazy"
+            />
+          )}
           {isError && (
             <span
               className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-primary-400/70 cursor-pointer hover:bg-primary-100/50 dark:hover:bg-primary-800/50 transition-colors"
@@ -241,15 +247,17 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
               {isBlock && <span className="text-xs md:text-sm font-medium">重新加载</span>}
             </span>
           )}
-          {!isError && <span
-            className="absolute inset-0 z-20 cursor-pointer block"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsOpen(true);
-            }}
-            title="点击放大"
-          />}
+          {!isError && (
+            <span
+              className="absolute inset-0 z-20 cursor-pointer block"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsOpen(true);
+              }}
+              title="点击放大"
+            />
+          )}
           {exif && !isError && (
             <span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-300">
               EXIF
