@@ -57,3 +57,6 @@ certificates
 
 # Meilisearch data
 backend/data/meilisearch/
+
+# agant
+.claude

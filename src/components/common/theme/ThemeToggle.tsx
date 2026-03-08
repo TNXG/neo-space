@@ -21,7 +21,7 @@ export function ThemeToggle() {
     return (
       <button
         type="button"
-        className="p-2 rounded-full shrink-0 transition-colors duration-200 text-neutral-600"
+        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
         aria-label="切换主题"
       >
         <Icon icon="mingcute:sun-line" className="text-[18px]" />
@@ -65,13 +65,13 @@ export function ThemeToggle() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="p-2 rounded-full shrink-0 cursor-pointer transition-colors duration-200 hover:bg-accent-100 text-neutral-600"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
           aria-label={`当前: ${themeConfig.label}`}
         >
           <Icon icon={themeConfig.icon} className="text-[18px]" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top">{themeConfig.label}</TooltipContent>
+      <TooltipContent side="top" sideOffset={16}>{themeConfig.label}</TooltipContent>
     </Tooltip>
   );
 }
