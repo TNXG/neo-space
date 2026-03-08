@@ -1,9 +1,9 @@
 "use client";
 
 import type { OwOItem, OwOResponse } from "./types";
-import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface EmojiPickerProps {

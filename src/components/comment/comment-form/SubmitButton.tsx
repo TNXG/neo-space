@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface SubmitButtonProps {

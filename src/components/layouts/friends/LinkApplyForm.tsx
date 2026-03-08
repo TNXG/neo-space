@@ -2,15 +2,15 @@
 
 import type { LinkApplyFormData } from "@/lib/validations/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { applyLink, sendLinkVerificationCode } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { linkApplySchema, linkApplyStepSchemas } from "@/lib/validations/link";
 

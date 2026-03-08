@@ -1,10 +1,10 @@
 "use client";
 
 import type { AccountInfo } from "@/lib/api-client";
-import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
 import { toast } from "sonner";
 import { updateAvatar } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 
 interface AvatarSelectorProps {

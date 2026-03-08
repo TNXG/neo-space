@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
-import { Icon } from "@iconify/react/offline";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -10,10 +9,11 @@ import remarkBreaks from "remark-breaks";
 import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 
 import { DashedSeparator } from "@/components/ui/separator";
+
+import { Icon } from "@/lib/inline-icon";
 
 import { AnimatedLink } from "../content/AnimatedLink";
 import { ClientOnlyScript } from "../content/ClientOnlyScript";
@@ -28,17 +28,21 @@ import { KatexStyles } from "../content/KatexStyles";
 
 import { Mark } from "../content/Mark";
 import { MermaidDiagram } from "../content/MermaidDiagram";
-
 import { Spoiler } from "../content/Spoiler";
 import { getHighlighter } from "./highlighter";
 import { remarkContainer } from "./plugins/container";
 import { remarkMathDelimiters } from "./plugins/math";
 import { remarkMermaid } from "./plugins/mermaid";
 import { rehypeFootnotes } from "./plugins/rehype-footnotes";
-import { rehypeInlineSyntax } from "./plugins/rehype-inline-syntax";
-import { remarkSpoiler } from "./plugins/spoiler";
 
+import { rehypeInlineSyntax } from "./plugins/rehype-inline-syntax";
+
+import { remarkSpoiler } from "./plugins/spoiler";
 import { getStandaloneImageProps } from "./utils";
+
+const LANGUAGE_CLASS_REGEX = /language-(\w+)/;
+const MATH_CONTENT_REGEX = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^$\n]+\$|\\\([^)]+?\\\)/;
+const CODE_BLOCK_REGEX = /(?:^|\n)(?:```|~~~)\s*([\w-]+)/g;
 
 interface MarkdownRendererProps {
   content: string;
@@ -204,7 +208,7 @@ const components: Components = {
       const childProps = (children as { props?: { "className"?: string; "data-language"?: string } }).props;
       const codeClassName = childProps?.className;
       if (typeof codeClassName === "string") {
-        const match = codeClassName.match(/language-(\w+)/);
+        const match = codeClassName.match(LANGUAGE_CLASS_REGEX);
         if (match?.[1]) {
           language = match[1];
         }
@@ -317,10 +321,8 @@ const components: Components = {
       return <Spoiler>{children}</Spoiler>;
     }
 
-    const { id: _id, ...restWithoutId } = rest;
-
     return (
-      <span className={className} {...restWithoutId} suppressHydrationWarning>
+      <span className={className} {...rest} suppressHydrationWarning>
         {children}
       </span>
     );
@@ -330,8 +332,23 @@ const components: Components = {
 
   details: ({ children, ...props }) => <Details {...props}>{children}</Details>,
 
-  script: ({ children, ...props }) => {
-    return <ClientOnlyScript {...props}>{children}</ClientOnlyScript>;
+  script: ({ node, ...props }) => {
+    // 从 hast 节点直接提取原始脚本文本（比 React children 更可靠，
+    // 不受 rehype 插件加工影响）
+    const extractText = (n: any): string => {
+      if (!n)
+        return "";
+      if (n.type === "text")
+        return n.value || "";
+      if (n.children)
+        return n.children.map(extractText).join("");
+      return "";
+    };
+    const scriptContent = node ? extractText(node) : undefined;
+
+    // 只传递可序列化的 HTML 属性（过滤 node / children 等 React 内部属性）
+    const { children: _c, className: _cls, ...htmlAttrs } = props as any;
+    return <ClientOnlyScript scriptContent={scriptContent} {...htmlAttrs} />;
   },
 
   p: ({ children }) => {
@@ -360,20 +377,16 @@ const components: Components = {
 
 export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   // Check if content contains math formulas
-  const hasMath = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^$\n]+\$|\\\([^)]+?\\\)/.test(content);
+  const hasMath = MATH_CONTENT_REGEX.test(content);
 
   const usedLanguages = new Set<string>();
 
-  const codeBlockRegex = /(?:^|\n)(?:```|~~~)\s*([\w-]+)/g;
-
-  let match = codeBlockRegex.exec(content);
-  while (match !== null) {
+  for (const match of content.matchAll(CODE_BLOCK_REGEX)) {
     if (match[1])
       usedLanguages.add(match[1].toLowerCase());
-    match = codeBlockRegex.exec(content);
   }
 
-  const highlighter = await getHighlighter(Array.from(usedLanguages));
+  const highlighter = await getHighlighter([...usedLanguages]);
   const rehypePlugins: any[] = [
     rehypeRaw,
     rehypeInlineSyntax,

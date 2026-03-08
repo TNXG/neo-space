@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
+import { Icon } from "@/lib/inline-icon";
 
 interface BannerProps {
   type: "info" | "success" | "warn" | "error";

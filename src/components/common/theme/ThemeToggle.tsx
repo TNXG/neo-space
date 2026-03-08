@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useTheme } from "next-themes";
 import {
   Tooltip,
@@ -8,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHasMounted } from "@/hooks/use-has-mounted";
+import { Icon } from "@/lib/inline-icon";
 
 /**
  * Theme toggle button component
@@ -24,7 +24,7 @@ export function ThemeToggle() {
         className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
         aria-label="切换主题"
       >
-        <Icon icon="mingcute:sun-line" className="text-[18px]" />
+        <Icon icon="mingcute:sun-line" className="text-lg sm:text-xl" />
       </button>
     );
   }
@@ -68,7 +68,7 @@ export function ThemeToggle() {
           className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
           aria-label={`当前: ${themeConfig.label}`}
         >
-          <Icon icon={themeConfig.icon} className="text-[18px]" />
+          <Icon icon={themeConfig.icon} className="text-lg sm:text-xl" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={16}>{themeConfig.label}</TooltipContent>

@@ -1,7 +1,7 @@
 import type { Category } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { SmartDate } from "@/components/common/smart-date";
+import { Icon } from "@/lib/inline-icon";
 
 interface ArticleHeaderProps {
   title: string;

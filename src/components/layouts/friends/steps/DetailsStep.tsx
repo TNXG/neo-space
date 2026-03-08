@@ -2,11 +2,11 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react/offline";
-
 import { AnimatePresence, motion } from "motion/react";
+
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Icon } from "@/lib/inline-icon";
 
 interface DetailsStepProps {
   register: UseFormRegister<LinkApplyFormData>;

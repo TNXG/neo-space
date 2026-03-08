@@ -1,9 +1,8 @@
-import { Icon } from "@iconify/react/offline";
-import type {IconifyIcon} from "@iconify/react/offline";
+import { Icon } from "@/lib/inline-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SocialLinkProps {
-  icon: string | IconifyIcon;
+  icon: string;
   href: string;
   label?: string;
 }

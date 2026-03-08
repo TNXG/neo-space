@@ -1,7 +1,7 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useState } from "react";
+import { Icon } from "@/lib/inline-icon";
 
 function CCIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -113,7 +113,7 @@ export function CopyrightCard({
 
     navigator.clipboard.writeText(citation).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(setCopied, 2000, false);
     });
   };
 

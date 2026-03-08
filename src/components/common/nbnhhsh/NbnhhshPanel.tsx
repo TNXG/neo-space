@@ -1,7 +1,7 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useEffect } from "react";
+import { Icon } from "@/lib/inline-icon";
 import { useNbnhhsh } from "./useNbnhhsh";
 
 // 解析含义文本，分离主内容和括号内容

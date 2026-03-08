@@ -2,7 +2,6 @@
 
 import type { NavItem } from "./nav-config";
 import type { User } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useReaderSSE } from "@/hooks/use-reader-sse";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { NAV_ITEMS } from "./nav-config";
@@ -112,7 +112,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
     // 停止滚动后自动显示
     if (scroll.timer)
       clearTimeout(scroll.timer);
-    scroll.timer = setTimeout(() => setIsNavVisible(true), 2500);
+    scroll.timer = setTimeout(setIsNavVisible, 2500, true);
 
     if (isSpinning && scrollY < 10) {
       setIsSpinning(false);
@@ -131,7 +131,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
   useEffect(() => {
     if (!isSpinning)
       return;
-    const t = setTimeout(() => setIsSpinning(false), 3000);
+    const t = setTimeout(setIsSpinning, 3000, false);
     return () => clearTimeout(t);
   }, [isSpinning]);
 
@@ -225,6 +225,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                         <Link
                           href={item.href}
                           onClick={e => handleNavClick(e, item)}
+                          aria-label={item.title}
                           className={cn(
                             "relative flex items-center justify-center w-11 h-11 rounded-full cursor-pointer active:scale-95 transition-all duration-200",
                             isActive
@@ -246,7 +247,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
               <div className="hidden sm:block w-px h-6 bg-neutral-200/60 mx-2" />
 
               {/* 3. 右侧操作 */}
-              <div className="flex items-center h-full pr-2pl-1 sm:px-2 gap-0.5">
+              <div className="flex items-center h-full pr-2 pl-1 sm:px-2 gap-0.5">
                 <AnimatePresence>
                   {showBackToTop && (
                     <motion.div
@@ -285,7 +286,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
                     >
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button onClick={handleScrollToTopAction} className={cn(ACTION_BTN_CLASS, "relative")}>
+                          <button type="button" onClick={handleScrollToTopAction} aria-label="返回顶部" className={cn(ACTION_BTN_CLASS, "relative")}>
                             <svg className="absolute inset-0 w-full h-full p-1" viewBox="0 0 36 36">
                               <path d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="2" className="text-neutral-200" />
                               <motion.path
@@ -311,16 +312,14 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button onClick={() => setIsSearchOpen(true)} className={ACTION_BTN_CLASS}>
+                    <button type="button" onClick={() => setIsSearchOpen(true)} aria-label="打开搜索" className={ACTION_BTN_CLASS}>
                       <Icon icon="mingcute:search-2-line" className="text-lg sm:text-xl" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" sideOffset={16}>搜索</TooltipContent>
                 </Tooltip>
 
-                <div className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11">
-                  <ThemeToggle />
-                </div>
+                <ThemeToggle />
               </div>
             </motion.nav>
           )}

@@ -1,5 +1,10 @@
 import type { Element, Root, Text } from "hast";
-import { visit } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
+
+/**
+ * 不应处理内联语法的元素：其文本内容为原始代码/脚本，不应被改写。
+ */
+const RAW_CONTENT_ELEMENTS = new Set(["script", "style", "code", "pre"]);
 
 /**
  * Rehype 插件：处理 HTML 元素内部的 ==mark== 和 ||spoiler|| 语法
@@ -7,8 +12,19 @@ import { visit } from "unist-util-visit";
  */
 export const rehypeInlineSyntax = () => {
   return (tree: Root) => {
+    visit(tree, (node) => {
+      // 跳过 script / style / code / pre 及其所有子节点
+      if (node.type === "element" && RAW_CONTENT_ELEMENTS.has((node as Element).tagName)) {
+        return SKIP;
+      }
+    });
+
     visit(tree, "text", (node: Text, index, parent) => {
       if (!parent || typeof node.value !== "string")
+        return;
+
+      // 再次确认父元素不是原始内容元素
+      if (parent.type === "element" && RAW_CONTENT_ELEMENTS.has((parent as Element).tagName))
         return;
 
       const text = node.value;

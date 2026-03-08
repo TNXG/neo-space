@@ -57,7 +57,7 @@ const flattenNodeToArray = (node: ReactNode): ReactNode[] => {
   if (node === null || node === undefined || typeof node === "boolean")
     return [];
   if (Array.isArray(node))
-    return node.reduce<ReactNode[]>((acc, child) => acc.concat(flattenNodeToArray(child)), []);
+    return node.reduce<ReactNode[]>((acc, child) => [...acc, ...flattenNodeToArray(child)], []);
   return [node];
 };
 

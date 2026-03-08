@@ -1,6 +1,6 @@
 import type { TimeCapsuleResponse } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { getTimeCapsule } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 
 interface OutdatedAlertProps {
   /** 文章 ID */

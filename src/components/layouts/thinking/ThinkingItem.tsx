@@ -1,7 +1,7 @@
 import type { Recently } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { SmartDate } from "@/components/common/smart-date/SmartDate";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface ThinkingItemProps {

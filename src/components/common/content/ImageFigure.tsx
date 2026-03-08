@@ -1,10 +1,10 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import ExifReader from "exifreader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KbdShortcut } from "@/components/ui/kbd";
+import { Icon } from "@/lib/inline-icon";
 
 interface ImageFigureProps {
   src: string;

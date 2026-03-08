@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import type { Post } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { CategoryInteractiveList } from "@/components/common/InteractiveList";
 import { getCategories, getPosts } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 
 export const revalidate = 57600;
 
@@ -41,9 +41,7 @@ export default async function CategoriesPage() {
   }
 
   // 按文章数降序排列
-  const sortedCategories = [...categories].sort(
-    (a, b) => (countMap[b.slug] || 0) - (countMap[a.slug] || 0),
-  );
+  const sortedCategories = categories.toSorted((a, b) => (countMap[b.slug] || 0) - (countMap[a.slug] || 0));
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-6xl">

@@ -1,11 +1,11 @@
 "use client";
 
 import type { AccountInfo } from "@/lib/api-client";
-import { Icon } from "@iconify/react/offline";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { API_BASE_URL, getUserAccounts } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 import { AvatarSelector } from "./AvatarSelector";
 

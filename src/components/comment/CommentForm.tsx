@@ -102,7 +102,7 @@ export function CommentForm({
   useEffect(() => {
     if (hasMounted && autoFocus && textareaRef.current) {
       textareaRef.current.focus();
-      const timer = setTimeout(() => setIsFocused(true), 0);
+      const timer = setTimeout(setIsFocused, 0, true);
       return () => clearTimeout(timer);
     }
   }, [hasMounted, autoFocus]);

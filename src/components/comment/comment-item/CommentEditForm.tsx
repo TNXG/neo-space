@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { updateAuthComment } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { OWO_API } from "../constants";
 

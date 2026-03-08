@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks-extra/no-direct-set-state-in-use-effect */
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { bindAnonymousIdentity, skipBind } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 const transition = { type: "spring", stiffness: 300, damping: 30 } as const;

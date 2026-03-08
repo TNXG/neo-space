@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Icon } from "@iconify/react/offline";
 import {
   Children,
   isValidElement,
@@ -9,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { Icon } from "@/lib/inline-icon";
 import styles from "./Details.module.scss";
 
 export function Details({ children, open = false }: { children: ReactNode; open?: boolean }) {
@@ -49,7 +49,7 @@ export function Details({ children, open = false }: { children: ReactNode; open?
 
   // 动画结束后重置状态
   useEffect(() => {
-    const timer = setTimeout(() => setIsAnimating(false), 300);
+    const timer = setTimeout(setIsAnimating, 300, false);
     return () => clearTimeout(timer);
   }, [isOpen]);
 

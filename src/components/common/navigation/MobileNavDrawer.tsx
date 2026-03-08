@@ -1,9 +1,7 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-
 import {
   Drawer,
   DrawerBody,
@@ -12,6 +10,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./nav-config";
 

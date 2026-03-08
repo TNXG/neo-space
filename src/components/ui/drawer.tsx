@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
-import { Icon } from "@iconify/react/offline"
+import { Icon } from "@/lib/inline-icon"
 
 import { cn } from "@/lib/utils"
 

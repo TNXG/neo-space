@@ -40,7 +40,7 @@ function CommentSectionContent({
 
   const displayComments = comments.length > 0 ? comments : initialComments;
 
-  const sortedComments = [...displayComments].sort((a, b) => {
+  const sortedComments = displayComments.toSorted((a, b) => {
     const dateA = new Date(a.created).getTime();
     const dateB = new Date(b.created).getTime();
     return sortBy === "newest" ? dateB - dateA : dateA - dateB;

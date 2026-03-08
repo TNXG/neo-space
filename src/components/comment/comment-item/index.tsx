@@ -1,10 +1,10 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { CommentForm } from "../CommentForm";

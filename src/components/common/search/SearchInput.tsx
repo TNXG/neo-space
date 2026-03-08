@@ -1,8 +1,8 @@
 "use client";
 
 import type { RefObject } from "react";
-import { Icon } from "@iconify/react/offline";
 import { KbdShortcut } from "@/components/ui/kbd";
+import { Icon } from "@/lib/inline-icon";
 
 interface SearchInputProps {
   inputRef: RefObject<HTMLInputElement | null>;

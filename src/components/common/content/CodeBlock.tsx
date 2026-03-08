@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import * as React from "react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { FileIcon } from "@/lib/file-icons";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface CodeBlockProps {
@@ -34,7 +34,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
       await navigator.clipboard.writeText(codeText);
       setCopied(true);
       toast.success("代码已复制到剪贴板");
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(setCopied, 2000, false);
     } catch (err) {
       console.error("Failed to copy:", err);
       toast.error("复制失败");

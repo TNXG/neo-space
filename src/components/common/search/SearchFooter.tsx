@@ -5,8 +5,8 @@ import { MeiliSearchIcon } from "@/lib/file-icons";
 
 export function SearchFooter() {
   return (
-    <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/30 text-xs text-muted-foreground/60">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-end sm:justify-between px-5 py-2.5 border-t border-border/30 text-xs text-muted-foreground/60">
+      <div className="hidden sm:flex items-center gap-3">
         <span className="flex items-center gap-1">
           <KbdShortcut keys={["Up"]} />
           <KbdShortcut keys={["Down"]} />

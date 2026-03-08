@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import type { Category, Note, Post } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +13,7 @@ import { SmartDate } from "@/components/common/smart-date";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ export function InteractiveList<T>({
   const hasMore = !hasInfiniteScroll
     ? false
     : mounted
-      ? (infiniteData?.[infiniteData.length - 1]?.hasNextPage ?? initialItems.length >= pageSize)
+      ? (infiniteData?.at(-1)?.hasNextPage ?? initialItems.length >= pageSize)
       : initialItems.length >= pageSize;
 
   const prefetchNextPage = useCallback(() => {
@@ -112,7 +112,7 @@ export function InteractiveList<T>({
     ? null
     : hoveredId
       ? items.find(item => getItemKey(item) === hoveredId)
-      : (selectedId && items.find(item => getItemKey(item) === selectedId))
+      : (selectedId && items.some(item => getItemKey(item) === selectedId))
           ? items.find(item => getItemKey(item) === selectedId)
           : items[0];
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOAuthStore } from "@/stores/oauth-store";
 

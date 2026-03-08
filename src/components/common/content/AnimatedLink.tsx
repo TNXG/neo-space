@@ -1,8 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import styles from "./AnimatedLink.module.scss";
 

@@ -1,10 +1,9 @@
-import { Icon } from "@iconify/react/offline";
-import type {IconifyIcon} from "@iconify/react/offline" 
+import { Icon } from "@/lib/inline-icon";
 import Link from "next/link";
 
 interface SectionHeaderProps {
   title: string;
-  icon: string | IconifyIcon;
+  icon: string;
   linkText?: string;
   linkHref?: string;
 }

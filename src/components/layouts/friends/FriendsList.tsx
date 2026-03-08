@@ -1,12 +1,12 @@
 "use client";
 
 import type { Link } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { MagneticHoverEffect, MagneticZone } from "@/components/common/magnetic-hover-effect";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icon";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface FriendsListProps {

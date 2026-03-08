@@ -2,11 +2,11 @@
 
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
-import { Icon } from "@iconify/react/offline";
-
 import Link from "next/link";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import { Icon } from "@/lib/inline-icon";
 
 interface GuidelinesStepProps {
   register: UseFormRegister<LinkApplyFormData>;

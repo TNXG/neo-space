@@ -1,8 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/lib/inline-icon";
 
 interface ArticleNavButtonsProps {
   prevLink?: string;

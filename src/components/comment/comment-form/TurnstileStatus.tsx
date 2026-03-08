@@ -1,7 +1,7 @@
 "use client";
 
 import type { TurnstileStatus as TurnstileStatusType } from "./types";
-import { Icon } from "@iconify/react/offline";
+import { Icon } from "@/lib/inline-icon";
 
 interface TurnstileStatusProps {
   status: TurnstileStatusType;

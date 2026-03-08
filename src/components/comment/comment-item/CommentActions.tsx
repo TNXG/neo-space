@@ -1,10 +1,10 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface CommentActionsProps {

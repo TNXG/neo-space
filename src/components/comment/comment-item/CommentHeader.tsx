@@ -1,8 +1,8 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { SmartDate } from "@/components/common/smart-date";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { CommentState } from "@/types/api";
 

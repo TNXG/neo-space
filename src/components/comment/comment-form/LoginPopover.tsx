@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
-
 import { useState } from "react";
+
 import { OAuthButtons } from "@/components/comment/auth/OAuthButtons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOAuthPopupMonitor } from "@/hooks/use-oauth-popup-monitor";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { useOAuthStore } from "@/stores/oauth-store";
 

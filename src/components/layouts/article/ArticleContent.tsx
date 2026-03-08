@@ -61,7 +61,7 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
         return;
 
       // 获取所有标题元素
-      const headings = Array.from(container.querySelectorAll("h1[id], h2[id], h3[id], h4[id]"))
+      const headings = [...container.querySelectorAll("h1[id], h2[id], h3[id], h4[id]")]
         .filter(h => h.id);
 
       if (headings.length === 0)
@@ -94,7 +94,7 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
           // 如果没有找到激活的标题，但最后一个标题已经在视口上方
           // 则保持最后一个标题为激活状态（防止滚动到底部时闪烁）
           if (!activeHeading && headings.length > 0) {
-            const lastHeading = headings[headings.length - 1];
+            const lastHeading = headings.at(-1);
             const lastRect = lastHeading.getBoundingClientRect();
             if (lastRect.top < 0) {
               activeHeading = lastHeading;

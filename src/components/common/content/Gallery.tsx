@@ -1,9 +1,9 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { clsx } from "clsx";
 import { useEffect, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
+import { Icon } from "@/lib/inline-icon";
 
 interface GalleryImage {
   url: string;

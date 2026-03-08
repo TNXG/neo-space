@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import { Toaster } from "sonner";
-import { IconProvider } from "@/components/common/IconProvider";
 import { ThemeProvider } from "@/components/common/theme";
 import { generateWebsiteJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -123,19 +122,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <JsonLd data={jsonLd} />
       </head>
       <body className={`${notoSans.variable} ${jetbrainsMono.variable} selection:bg-accent-500/30 selection:text-primary-900 font-sans`}>
-        <IconProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
-            <TooltipProvider>
-              {children}
-              <Toaster richColors position="top-center" />
-            </TooltipProvider>
-          </ThemeProvider>
-        </IconProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <TooltipProvider>
+            {children}
+            <Toaster richColors position="top-center" />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { getComments } from "@/lib/api-client";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { CommentSectionLazy } from "./CommentSectionLazy";
 
@@ -137,7 +137,7 @@ export async function CommentSectionServer({
   }
 
   // 按时间排序（最新优先）
-  const sortedComments = [...initialComments].sort((a, b) => {
+  const sortedComments = initialComments.toSorted((a, b) => {
     return new Date(b.created).getTime() - new Date(a.created).getTime();
   });
 

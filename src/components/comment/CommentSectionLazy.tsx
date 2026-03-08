@@ -1,9 +1,9 @@
 "use client";
 
 import type { Comment } from "@/types/api";
-import { Icon } from "@iconify/react/offline";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/lib/inline-icon";
 
 // 懒加载整个客户端评论组件
 const CommentSection = dynamic(
@@ -59,7 +59,7 @@ export function CommentSectionLazy({
   useEffect(() => {
     if (isVisible) {
       // 给一点延迟确保组件渲染完成
-      const timer = setTimeout(() => setIsLoaded(true), 100);
+      const timer = setTimeout(setIsLoaded, 100, true);
       return () => clearTimeout(timer);
     }
   }, [isVisible]);

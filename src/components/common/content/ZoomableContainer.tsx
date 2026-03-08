@@ -1,9 +1,9 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface ZoomableContainerProps {
@@ -69,7 +69,7 @@ export function ZoomableContainer({
       hintTimeoutRef.current = setTimeout(() => {
         setShowHint(true);
         // 3秒后自动隐藏
-        hideHintTimeoutRef.current = setTimeout(() => setShowHint(false), 3000);
+        hideHintTimeoutRef.current = setTimeout(setShowHint, 3000, false);
       }, 500);
     }
     return () => {

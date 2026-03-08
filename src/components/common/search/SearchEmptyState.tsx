@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
+import { Icon } from "@/lib/inline-icon";
 
 interface SearchEmptyStateProps {
   hasQuery: boolean;

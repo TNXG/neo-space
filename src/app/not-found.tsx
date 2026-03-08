@@ -1,8 +1,8 @@
 "use client";
 
-import { Icon } from "@iconify/react/offline";
 import Link from "next/link";
 import { useHasMounted } from "@/hooks/use-has-mounted";
+import { Icon } from "@/lib/inline-icon";
 
 /**
  * 404 页面 - 星海迷航版 (移动端优化)

@@ -4,7 +4,7 @@ import type { SearchItem } from "./types";
 
 import type { SearchNoteResult, SearchPostResult } from "@/types/api";
 
-import { Icon } from "@iconify/react/offline";
+import { Icon } from "@/lib/inline-icon";
 import { formatDate, sanitizeHighlight } from "./utils";
 
 interface SearchResultItemProps {
