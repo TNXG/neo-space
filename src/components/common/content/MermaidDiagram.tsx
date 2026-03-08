@@ -1,6 +1,5 @@
 "use client";
 
-import mermaid from "mermaid";
 import { useEffect, useRef, useState } from "react";
 import { ZoomableContainer } from "./ZoomableContainer";
 
@@ -21,17 +20,20 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    // 初始化 Mermaid 配置
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-      securityLevel: "loose",
-      // 使用与全站一致的字体栈
-      fontFamily: "var(--font-noto-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
-    });
-
     const renderDiagram = async () => {
       try {
+        // 动态导入 mermaid，避免将其 Node.js 依赖（langium → @chevrotain/regexp-to-ast）打包到客户端
+        const mermaid = (await import("mermaid")).default;
+
+        // 初始化 Mermaid 配置
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "default",
+          securityLevel: "loose",
+          // 使用与全站一致的字体栈
+          fontFamily: "var(--font-noto-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+        });
+
         // 生成唯一 ID
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
 

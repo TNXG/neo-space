@@ -95,9 +95,11 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
           // 则保持最后一个标题为激活状态（防止滚动到底部时闪烁）
           if (!activeHeading && headings.length > 0) {
             const lastHeading = headings.at(-1);
-            const lastRect = lastHeading.getBoundingClientRect();
-            if (lastRect.top < 0) {
-              activeHeading = lastHeading;
+            if (lastHeading) {
+              const lastRect = lastHeading.getBoundingClientRect();
+              if (lastRect.top < 0) {
+                activeHeading = lastHeading;
+              }
             }
           }
 
