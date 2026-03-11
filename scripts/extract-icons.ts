@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/// <reference types="node" />
 /**
  * 按需提取图标脚本（自动扫描版）
  * 自动扫描 src/ 下所有 .tsx/.ts 文件，收集用到的图标，
@@ -24,7 +25,7 @@ const SRC = resolve(ROOT, "src");
 
 // ─── 递归枚举源文件 ───────────────────────────────────────────────────────────
 
-function walkSrc(dir, files = []) {
+function walkSrc(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = resolve(dir, entry);
     if (statSync(full).isDirectory()) {
@@ -41,9 +42,38 @@ console.log(`🔎 扫描 ${allFiles.length} 个 .tsx/.ts 文件...`);
 
 // ─── 收集 icon="collection:name" 用法 ────────────────────────────────────────
 
+interface IconCollection {
+  icons?: Record<string, Icon>;
+  aliases?: Record<string, Alias>;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
+}
+
+interface Icon {
+  body: string;
+  width?: number;
+  height?: number;
+}
+
+interface Alias {
+  parent?: string;
+  body?: string;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
+}
+
+interface IconData {
+  body: string;
+  viewBox: string;
+}
+
 // 同时匹配 JSX 属性 icon="col:name" 和对象字面量 icon: "col:name"
 const ICON_PROP_RE = /\bicon[=:]\s*["']([\w-]+):([\w.-]+)["']/g;
-const byCollection = {};
+const byCollection: Record<string, Set<string>> = {};
 
 for (const file of allFiles) {
   const src = readFileSync(file, "utf-8");
@@ -79,7 +109,7 @@ for (const m of fileIconsSrc.matchAll(CREATE_MG_RE)) {
 const EXT2LANG_RE = /ext2lang[^=]*=\s*\{([^}]+)\}/;
 const ext2langMatch = fileIconsSrc.match(EXT2LANG_RE);
 if (ext2langMatch) {
-  for (const m of ext2langMatch[1].matchAll(/:\s*["']([\w.-]+)["']/g)) {
+  for (const m of ext2langMatch[1]!.matchAll(/:\s*["']([\w.-]+)["']/g)) {
     if (!byCollection.catppuccin)
       byCollection.catppuccin = new Set();
     byCollection.catppuccin.add(m[1]);
@@ -97,7 +127,7 @@ for (const [col, names] of Object.entries(byCollection)) {
 
 // ─── 从 JSON 提取 SVG 数据 ────────────────────────────────────────────────────
 
-function getIconBody(collection, iconName) {
+function getIconBody(collection: IconCollection, iconName: string): IconData | null {
   const icons = collection.icons || {};
   const aliases = collection.aliases || {};
 
@@ -124,13 +154,13 @@ function getIconBody(collection, iconName) {
   return null;
 }
 
-const COLLECTION_PKG = {
+const COLLECTION_PKG: Record<string, string> = {
   "simple-icons": "@iconify-json/simple-icons/icons.json",
   "mingcute": "@iconify-json/mingcute/icons.json",
   "catppuccin": "@iconify-json/catppuccin/icons.json",
 };
 
-const extracted = {};
+const extracted: Record<string, Record<string, IconData>> = {};
 
 for (const [col, names] of Object.entries(byCollection)) {
   const pkg = COLLECTION_PKG[col];
@@ -138,9 +168,9 @@ for (const [col, names] of Object.entries(byCollection)) {
     console.warn(`⚠️  未知集合 "${col}"，跳过`);
     continue;
   }
-  const json = require(pkg);
+  const json = require(pkg) as IconCollection;
   extracted[col] = {};
-  const missing = [];
+  const missing: string[] = [];
   for (const name of names) {
     const data = getIconBody(json, name);
     if (data)
@@ -154,7 +184,7 @@ for (const [col, names] of Object.entries(byCollection)) {
 
 // ─── 生成 TypeScript 文件 ─────────────────────────────────────────────────────
 
-function toTsRecord(obj) {
+function toTsRecord(obj: Record<string, IconData>): string {
   const entries = Object.entries(obj)
     .map(([k, v]) => `  "${k}": { body: ${JSON.stringify(v.body)}, viewBox: "${v.viewBox}" }`)
     .join(",\n");
@@ -163,17 +193,17 @@ function toTsRecord(obj) {
 
 const totalIcons = Object.values(extracted).reduce((s, m) => s + Object.keys(m).length, 0);
 
-const collectionVarNames = {
+const collectionVarNames: Record<string, string> = {
   "simple-icons": "simpleIconsData",
   "mingcute": "mingcuteIconsData",
   "catppuccin": "catppuccinIconsData",
 };
 
-let tsBody = `// ⚠️  此文件由 scripts/extract-icons.mjs 自动生成，请勿手动编辑。
+let tsBody = `// ⚠️  此文件由 scripts/extract-icons.ts 自动生成，请勿手动编辑。
 // 新增图标只需在组件里写 icon="collection:name" 或 createXxxIcon("key")，
 // 然后重新运行：pnpm icons:extract
 
-export interface IconEntry { body: string; viewBox: string };
+export interface IconEntry { body: string; viewBox: string }
 
 `;
 

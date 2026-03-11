@@ -6,7 +6,7 @@
  *   <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
  *
  * 支持的集合：mingcute · simple-icons · catppuccin
- * 图标数据由 scripts/extract-icons.mjs 自动从源码扫描生成（src/lib/icon-data.ts）。
+ * 图标数据由 scripts/extract-icons.ts 自动从源码扫描生成（src/lib/icon-data.ts）。
  * 新增图标后重新运行 `pnpm icons:extract` 即可。
  */
 
