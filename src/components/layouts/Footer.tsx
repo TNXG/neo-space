@@ -43,7 +43,7 @@ export function Footer({ user }: FooterProps) {
               Neo-Space
             </a>
             <span className="mx-1.5 text-neutral-300">|</span>
-            Built with Next.js & Rocket.rs
+            Built with Next.js & Axum
           </p>
         </div>
       </div>

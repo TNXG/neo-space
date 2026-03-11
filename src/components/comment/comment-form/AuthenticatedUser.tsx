@@ -56,7 +56,7 @@ export function AuthenticatedUser({
           )}
         >
           <img src={user.image} alt={user.name} className="size-5 sm:size-6 rounded-full" />
-          <span className="text-[11px] sm:text-xs font-medium text-foreground max-w-[60px] sm:max-w-[80px] truncate">
+          <span className="text-[11px] sm:text-xs font-medium text-foreground max-w-15 sm:max-w-20 truncate">
             {user.name}
           </span>
         </button>
