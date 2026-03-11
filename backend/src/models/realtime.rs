@@ -1,33 +1,41 @@
-//! 实时通信相关的数据模型
+//! Real-time communication data models
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-// ==================== 共享类型 ====================
+// ==================== Shared Types ====================
 
-/// 窗口信息
+/// Window information
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct WindowInfo {
     pub title: String,
     pub process_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
     pub pid: u32,
 }
 
-/// 媒体元数据
+/// Media metadata
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct MediaMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bundle_identifier: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub artist: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub album: Option<String>,
     pub duration: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub artwork_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_item_identifier: Option<String>,
 }
 
-/// 播放状态
+/// Playback state
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PlaybackState {
     pub playing: bool,
@@ -35,29 +43,33 @@ pub struct PlaybackState {
     pub elapsed_time: f64,
 }
 
-// ==================== SSE 相关 ====================
+// ==================== SSE Related ====================
 
-/// 读者信息
+/// Reader information
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReaderInfo {
     pub fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub page_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub page_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub page_title: Option<String>,
     pub connected_at: i64,
     pub last_heartbeat: i64,
 }
 
-/// 正在阅读的内容项
+/// Reading content item
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReadingItem {
     pub page_type: String,
     pub page_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub page_title: Option<String>,
     pub reader_count: usize,
 }
 
-/// 服务器发送给读者的消息（SSE）
+/// Server-to-reader message (SSE)
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerToReaderMessage {
@@ -94,9 +106,24 @@ impl ServerToReaderMessage {
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(self)
     }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Pong => "pong",
+            Self::Welcome { .. } => "welcome",
+            Self::OnlineCountUpdate { .. } => "online_count_update",
+            Self::PageReaders { .. } => "page_readers",
+            Self::ReadingList { .. } => "reading_list",
+            Self::OwnerWindowInfo { .. } => "owner_window_info",
+            Self::OwnerMediaPlayback { .. } => "owner_media_playback",
+            Self::Error { .. } => "error",
+        }
+    }
 }
 
-/// 博主桌面客户端消息
+// ==================== WebSocket Related ====================
+
+/// Owner desktop client message
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum OwnerDesktopMessage {
@@ -118,7 +145,7 @@ pub enum OwnerDesktopMessage {
     },
 }
 
-/// 服务器发送给博主桌面客户端的消息
+/// Server-to-owner-desktop message
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerToOwnerDesktopMessage {

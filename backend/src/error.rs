@@ -1,106 +1,186 @@
-//! 统一错误处理模块
+//! Unified error handling for the Axum backend
 
-use rocket::Request;
-use rocket::http::Status;
-use rocket::response::{self, Responder};
-use rocket::serde::json::Json;
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Json, Response},
+};
+use serde_json::json;
 
-use crate::models::ApiResponse;
-
-/// 认证错误类型
-#[derive(Debug)]
-#[allow(unused)]
-pub enum AuthError {
-    /// JWT token 无效
+/// Unified application error type
+#[allow(dead_code)]
+pub enum AppError {
+    NotFound(String),
+    BadRequest(String),
+    Unauthorized,
+    Forbidden,
+    Database(String),
+    Internal(String),
+    SpamDetected,
+    OAuthFailed(String),
     InvalidToken,
-    /// JWT token 已过期
-    ExpiredToken,
-    /// 缺少 Authorization header
+    TokenExpired,
     MissingAuthHeader,
-    /// 权限不足（非 Owner）
-    InsufficientPermissions,
-    /// OAuth 提供商不支持
-    UnsupportedProvider(String),
-    /// OAuth 流程失败
-    OAuthFlowFailed(String),
-    /// 数据库操作失败
-    DatabaseError(String),
-    /// 用户不存在
-    UserNotFound,
-    /// 账号已被其他用户绑定
-    AccountAlreadyLinked,
-    /// 配置错误
     ConfigError(String),
 }
 
-impl std::fmt::Display for AuthError {
+impl std::fmt::Debug for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AuthError::InvalidToken => write!(f, "无效的认证令牌"),
-            AuthError::ExpiredToken => write!(f, "认证令牌已过期"),
-            AuthError::MissingAuthHeader => write!(f, "缺少认证信息"),
-            AuthError::InsufficientPermissions => write!(f, "权限不足"),
-            AuthError::UnsupportedProvider(provider) => {
-                write!(f, "不支持的 OAuth 提供商: {provider}")
-            }
-            AuthError::OAuthFlowFailed(msg) => write!(f, "OAuth 认证失败: {msg}"),
-            AuthError::DatabaseError(msg) => write!(f, "数据库错误: {msg}"),
-            AuthError::UserNotFound => write!(f, "用户不存在"),
-            AuthError::AccountAlreadyLinked => write!(f, "该账号已被其他用户绑定"),
-            AuthError::ConfigError(msg) => write!(f, "配置错误: {msg}"),
+            Self::NotFound(msg) => write!(f, "NotFound: {}", msg),
+            Self::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
+            Self::Unauthorized => write!(f, "Unauthorized"),
+            Self::Forbidden => write!(f, "Forbidden"),
+            Self::Database(msg) => write!(f, "Database: {}", msg),
+            Self::Internal(msg) => write!(f, "Internal: {}", msg),
+            Self::SpamDetected => write!(f, "SpamDetected"),
+            Self::OAuthFailed(msg) => write!(f, "OAuthFailed: {}", msg),
+            Self::InvalidToken => write!(f, "InvalidToken"),
+            Self::TokenExpired => write!(f, "TokenExpired"),
+            Self::MissingAuthHeader => write!(f, "MissingAuthHeader"),
+            Self::ConfigError(msg) => write!(f, "ConfigError: {}", msg),
         }
     }
 }
 
-impl std::error::Error for AuthError {}
-
-/// 将 `AuthError` 转换为 HTTP 响应
-impl<'r> Responder<'r, 'static> for AuthError {
-    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
-        let (status, code, message) = match &self {
-            AuthError::InvalidToken | AuthError::ExpiredToken | AuthError::MissingAuthHeader => {
-                (Status::Unauthorized, 401, self.to_string())
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let (status, message) = match &self {
+            Self::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            Self::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            Self::Unauthorized | Self::InvalidToken | Self::MissingAuthHeader => {
+                (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
             }
-            AuthError::InsufficientPermissions => (Status::Forbidden, 403, self.to_string()),
-            AuthError::UserNotFound => (Status::NotFound, 404, self.to_string()),
-            AuthError::UnsupportedProvider(_)
-            | AuthError::AccountAlreadyLinked
-            | AuthError::ConfigError(_) => (Status::BadRequest, 400, self.to_string()),
-            AuthError::OAuthFlowFailed(_) | AuthError::DatabaseError(_) => {
-                (Status::InternalServerError, 500, self.to_string())
+            Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden".to_string()),
+            Self::Database(msg) => {
+                tracing::error!("Database error: {}", msg);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal database error".to_string(),
+                )
             }
+            Self::Internal(msg) => {
+                tracing::error!("Internal error: {}", msg);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error".to_string(),
+                )
+            }
+            Self::SpamDetected => (StatusCode::FORBIDDEN, "Spam detected".to_string()),
+            Self::OAuthFailed(msg) => (StatusCode::BAD_REQUEST, format!("OAuth failed: {}", msg)),
+            Self::TokenExpired => (StatusCode::UNAUTHORIZED, "Token expired".to_string()),
+            Self::ConfigError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Config error: {}", msg),
+            ),
         };
 
-        log::error!("认证错误: {message} (HTTP {code})");
+        tracing::error!("AppError: {} (HTTP {})", message, status.as_u16());
 
-        let response = ApiResponse::<()>::error(code, message);
+        let body = json!({
+            "code": status.as_u16(),
+            "status": "failed",
+            "message": message
+        });
 
-        response::status::Custom(status, Json(response)).respond_to(req)
+        (status, Json(body)).into_response()
     }
 }
 
-/// 从 JWT 错误转换为 `AuthError`
-impl From<crate::utils::jwt::JwtError> for AuthError {
-    fn from(err: crate::utils::jwt::JwtError) -> Self {
-        match err {
-            crate::utils::jwt::JwtError::TokenExpired => AuthError::ExpiredToken,
-            crate::utils::jwt::JwtError::InvalidToken
-            | crate::utils::jwt::JwtError::TokenGenerationFailed(_)
-            | crate::utils::jwt::JwtError::TokenVerificationFailed(_) => AuthError::InvalidToken,
+/// Type alias for Result with AppError
+pub type AppResult<T> = Result<T, AppError>;
+
+// Implement From implementations for common error types
+
+impl From<mongodb::error::Error> for AppError {
+    fn from(err: mongodb::error::Error) -> Self {
+        AppError::Database(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for AppError {
+    fn from(err: serde_json::Error) -> Self {
+        AppError::Internal(format!("JSON error: {}", err))
+    }
+}
+
+// ─── Custom extractors ──────────────────────────────────────────────────────
+
+/// Wrapper around `axum::Json` that returns a JSON error response on rejection
+/// instead of axum's default plain-text 422.
+pub struct AppJson<T>(pub T);
+
+impl<T> std::ops::Deref for AppJson<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T, S> axum::extract::FromRequest<S> for AppJson<T>
+where
+    T: serde::de::DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
+        match axum::Json::<T>::from_request(req, state).await {
+            Ok(axum::Json(value)) => Ok(AppJson(value)),
+            Err(rejection) => {
+                use axum::extract::rejection::JsonRejection;
+                let msg = match &rejection {
+                    JsonRejection::JsonDataError(e) => {
+                        format!("Invalid JSON data: {}", e.body_text())
+                    }
+                    JsonRejection::JsonSyntaxError(e) => {
+                        format!("JSON syntax error: {}", e.body_text())
+                    }
+                    JsonRejection::MissingJsonContentType(_) => {
+                        "Missing Content-Type: application/json header".to_string()
+                    }
+                    _ => format!("Bad request: {}", rejection.body_text()),
+                };
+                Err(AppError::BadRequest(msg))
+            }
         }
     }
 }
 
-/// 从配置错误转换为 `AuthError`
-impl From<crate::config::ConfigError> for AuthError {
-    fn from(err: crate::config::ConfigError) -> Self {
-        AuthError::ConfigError(err.to_string())
+/// Wrapper around `axum::extract::Query` that returns a JSON error response on
+/// rejection instead of axum's default plain-text 400.
+pub struct AppQuery<T>(pub T);
+
+impl<T> std::ops::Deref for AppQuery<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-/// 从 `MongoDB` 错误转换为 `AuthError`
-impl From<mongodb::error::Error> for AuthError {
-    fn from(err: mongodb::error::Error) -> Self {
-        AuthError::DatabaseError(err.to_string())
+impl<T, S> axum::extract::FromRequestParts<S> for AppQuery<T>
+where
+    T: serde::de::DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        match axum::extract::Query::<T>::from_request_parts(parts, state).await {
+            Ok(axum::extract::Query(value)) => Ok(AppQuery(value)),
+            Err(rejection) => Err(AppError::BadRequest(format!(
+                "Invalid query parameters: {}",
+                rejection.body_text()
+            ))),
+        }
     }
+}
+
+// ─── Fallback handler ────────────────────────────────────────────────────────
+
+/// 404 fallback for unmatched routes – always returns JSON.
+pub async fn fallback_404(uri: axum::http::Uri) -> impl axum::response::IntoResponse {
+    AppError::NotFound(format!("Endpoint not found: {}", uri.path()))
 }

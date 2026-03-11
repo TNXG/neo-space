@@ -1,13 +1,12 @@
 //! Account model for OAuth provider linking
 
-use crate::utils::serializers::{
-    deserialize_flexible_datetime, serialize_datetime, serialize_object_id,
-};
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-/// Account model - links OAuth providers to Reader
-/// This is used for `MongoDB` storage - keeps native BSON types
+use super::reader::Reader;
+use super::serializers::{serialize_datetime, serialize_object_id};
+
+/// Account model for OAuth provider linking
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Account {
     #[serde(rename = "_id")]
@@ -15,35 +14,31 @@ pub struct Account {
     #[serde(rename = "userId")]
     pub user_id: ObjectId,
     #[serde(default)]
-    pub provider: String, // "github" or "qq"
+    pub provider: String,
     #[serde(rename = "accountId", default)]
-    pub account_id: String, // GitHub user ID or QQ openid
+    pub account_id: String,
     #[serde(rename = "accessToken", default)]
     pub access_token: String,
     #[serde(default)]
     pub scope: Option<String>,
-    /// OAuth 用户昵称（用于跳过绑定时创建 Reader）
     #[serde(rename = "oauthName", default)]
     pub oauth_name: Option<String>,
-    /// OAuth 用户邮箱（用于跳过绑定时创建 Reader）
     #[serde(rename = "oauthEmail", default)]
     pub oauth_email: Option<String>,
-    /// OAuth 用户头像（用于跳过绑定时创建 Reader）
     #[serde(rename = "oauthAvatar", default)]
     pub oauth_avatar: Option<String>,
-    /// OAuth 用户 handle（用于跳过绑定时创建 Reader）
     #[serde(rename = "oauthHandle", default)]
     pub oauth_handle: Option<String>,
     #[serde(
         rename = "createdAt",
         default = "default_account_datetime",
-        deserialize_with = "deserialize_flexible_datetime"
+        deserialize_with = "crate::models::serializers::deserialize_flexible_datetime"
     )]
     pub created_at: bson::DateTime,
     #[serde(
         rename = "updatedAt",
         default = "default_account_datetime",
-        deserialize_with = "deserialize_flexible_datetime"
+        deserialize_with = "crate::models::serializers::deserialize_flexible_datetime"
     )]
     pub updated_at: bson::DateTime,
 }
@@ -53,7 +48,6 @@ fn default_account_datetime() -> bson::DateTime {
 }
 
 /// Account response model for API responses
-/// This converts BSON types to JSON-friendly strings
 #[derive(Debug, Serialize, Clone)]
 pub struct AccountResponse {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
@@ -63,8 +57,6 @@ pub struct AccountResponse {
     pub provider: String,
     #[serde(rename = "accountId")]
     pub account_id: String,
-    #[serde(rename = "accessToken")]
-    pub access_token: String,
     pub scope: Option<String>,
     #[serde(rename = "createdAt", serialize_with = "serialize_datetime")]
     pub created_at: bson::DateTime,
@@ -79,7 +71,6 @@ impl From<Account> for AccountResponse {
             user_id: account.user_id,
             provider: account.provider,
             account_id: account.account_id,
-            access_token: account.access_token,
             scope: account.scope,
             created_at: account.created_at,
             updated_at: account.updated_at,
@@ -133,7 +124,7 @@ impl Account {
             oauth_name: Some(name.clone()),
             oauth_email: Some(format!("{openid}@qq.oauth")),
             oauth_avatar: Some(avatar),
-            oauth_handle: Some(crate::models::Reader::generate_handle(&name)),
+            oauth_handle: Some(Reader::generate_handle(&name)),
             created_at: bson::DateTime::now(),
             updated_at: bson::DateTime::now(),
         }

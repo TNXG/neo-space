@@ -1,112 +1,80 @@
 [package]
-name = "neo-space-backend"
+name = "neo-space-backend-axum"
 version = "0.1.0"
 edition = "2024"
 
-[profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
-
 [lints.clippy]
-# 1. 基础与启发式建议（设置较低优先级，让具体 lint 可以覆盖）
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-perf = { level = "warn", priority = -1 }
-
-# 禁止显式 panic!
-panic = "forbid"
-# 禁止使用 .unwrap()，强制处理 Result/Option
 unwrap_used = "forbid"
-# 禁止使用 .expect()
 expect_used = "forbid"
-# 禁止使用 arr[i] 这种索引访问，强制使用 .get(i) 以防越界崩溃
 indexing_slicing = "forbid"
 
 [dependencies]
-# Rocket: 仅保留 JSON 功能
-rocket = { version = "0.5.1", default-features = false, features = [ "json" ] }
-rocket_ws = "0.1.1"
+# Core web framework
+axum = { version = "0.8.8", features = [
+  "macros",
+  "multipart",
+  "ws"
+] }
+axum-extra = { version = "0.12.5", features = [
+  "cookie",
+  "typed-header"
+] }
+tower = "0.5.3"
+tower-http = { version = "0.6.8", features = [
+  "cors",
+  "trace",
+  "compression-br",
+  "compression-gzip",
+  "limit"
+] }
+tokio = { version = "1.50.0", features = [ "full" ] }
 
-# MongoDB:
+# Database
 mongodb = "3.5.1"
+bson = { version = "2.13", features = [ "chrono-0_4" ] }
 
-# Serde
+# Serialization
 serde = { version = "1.0.228", features = [ "derive" ] }
 serde_json = "1.0.149"
 
-# Tokio: 极致精简，仅保留后端必要模块
-tokio = "1.49.0"
+# Auth
+jsonwebtoken = "10.3.0"
 
-# Chrono: 移除 oldtime/clock，保留 serde
-chrono = { version = "0.4.44", default-features = false, features = [
-  "serde",
-  "std",
-  "clock",
-] }
-bson = { version = "2.13", default-features = false, features = [ "chrono-0_4" ] }
-
-# Futures
-futures = { version = "0.3.32", default-features = false, features = [
-  "std",
-  "async-await",
-] }
-futures-io = "0.3"
-
-# Async Trait
+# Async
+futures = "0.3.32"
 async-trait = "0.1.89"
+async-stream = "0.3.6"
 
-# Reqwest: 强制使用 rustls，移除默认 TLS 和 Cookie Store
+# HTTP client
 reqwest = { version = "0.13.2", features = [
   "json",
-  "rustls",
-  "multipart",
   "form",
-  "http2",
-  "stream"
+  "rustls"
 ] }
 
-# Async OpenAI
-async-openai = { version = "0.33.0", default-features = false, features = [ "chat-completion", ] }
-
-# Utils & Crypto (移除不需要的默认 features)
-sha1 = { version = "0.10", default-features = false }
-md5 = { version = "0.8.0", default-features = false }
-urlencoding = "2.1"
+# Utilities
+chrono = { version = "0.4.44", features = [ "serde" ] }
+urlencoding = "2.1.3"
+html-escape = "0.2.13"
 dotenv = "0.15.0"
-rocket_cors = { version = "0.6.0", default-features = false }
-
-# OAuth
-jsonwebtoken = { version = "10.3.0", default-features = false, features = [
-  "use_pem",
-  "aws_lc_rs",
-] }
-rand = { version = "0.10.0", default-features = false, features = [
-  "std_rng",
-  "thread_rng"
-] }
-
-# Logging
-log = "0.4"
-env_logger = { version = "0.11.9", default-features = false }
+hmac = "0.12.1"
+sha2 = "0.10.9"
+hex = "0.4.3"
+uuid = { version = "1.22.0", features = [ "v4" ] }
+rand = "0.10.0"
+md5 = "0.8.0"
 
 # Cache
-moka = { version = "0.12.13", default-features = false, features = [ "future" ] }
+moka = { version = "0.12.14", features = [ "future" ] }
 
-# Crypto
-hmac = { version = "0.12.1", default-features = false }
-sha2 = { version = "0.10.9", default-features = false }
-hex = { version = "0.4.3", default-features = false, features = [ "std" ] }
-uuid = { version = "1.21.0", features = [ "v4" ] }
-utoipa = { version = "5.2.0", features = [
-  "rocket_extras",
+# OpenAPI
+utoipa = { version = "5.4.0", features = [
+  "axum_extras",
   "chrono",
   "uuid"
 ] }
 utoipa-swagger-ui = { version = "9.0.2", features = [
-  "rocket",
+  "axum",
   "vendored"
 ] }
 
@@ -115,17 +83,18 @@ lettre = { version = "0.11", default-features = false, features = [
   "tokio1-rustls-tls",
   "smtp-transport",
   "builder",
-  "hostname",
+  "hostname"
 ] }
-tokio-stream = "0.1.18"
 
 # Meilisearch
 meilisearch-sdk = "0.32.0"
-yaup = "0.3.1"
 
-[dev-dependencies]
-criterion = { version = "0.8.2", features = [ "html_reports" ] }
+# OpenAI
+async-openai = "0.33.0"
 
-[[bench]]
-name = "api_benchmark"
-harness = false
+# Stream utilities
+tokio-stream = "0.1.18"
+
+# Logging
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = [ "env-filter" ] }
