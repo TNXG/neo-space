@@ -74,7 +74,6 @@ impl OAuthService {
             .post(token_url)
             .json(&json_body)
             .header("Accept", "application/json")
-            .header("User-Agent", "Neo-Space-Bot/1.0")
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("GitHub token request failed: {}", e)))?;
@@ -102,7 +101,6 @@ impl OAuthService {
                 "Authorization",
                 format!("Bearer {}", token_data.access_token),
             )
-            .header("User-Agent", "Neo-Space-Bot/1.0")
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("GitHub user info request failed: {}", e)))?;

@@ -74,15 +74,23 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
     let (event_bus, _) = broadcast::channel(100);
     tracing::info!("EventBus 初始化完成 - 频道容量: 100");
 
-    // Create HTTP client
-    let http_client = match Client::builder().timeout(Duration::from_secs(30)).build() {
+    // Create HTTP client with default User-Agent
+    let default_user_agent = "Mozilla/5.0 (compatible; MaigoStarlightChecker/1.0; +mailto:tnxg@outlook.jp; ) AppleWebKit/99 (KHTML, like Gecko) Chrome/99 MyGO/5 (KiraKira/DokiDoki; Bananice/Protected) Giraffe/4.11 (Wakarimasu/; Haruhikage/Stop)";
+    let http_client = match Client::builder()
+        .timeout(Duration::from_secs(30))
+        .user_agent(default_user_agent)
+        .build()
+    {
         Ok(client) => {
             tracing::info!("HTTP 客户端初始化完成 - 超时: 30秒");
             client
         }
         Err(e) => {
             tracing::error!("Failed to create HTTP client: {}, using default", e);
-            Client::new()
+            Client::builder()
+                .user_agent(default_user_agent)
+                .build()
+                .unwrap_or_else(|_| Client::new())
         }
     };
 

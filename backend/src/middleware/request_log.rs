@@ -1,6 +1,7 @@
 //! Request logging middleware – one line per request with status, latency, IP, and UA.
 
 use axum::{extract::ConnectInfo, extract::Request, middleware::Next, response::Response};
+use chrono::Utc;
 use std::{net::SocketAddr, time::Instant};
 
 pub async fn log_request(
@@ -40,16 +41,41 @@ pub async fn log_request(
     let latency_ms = start.elapsed().as_millis();
 
     let status = res.status().as_u16();
+    let now = Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string();
 
-    tracing::info!(
-        method  = %method,
-        path    = %path,
-        status,
-        latency_ms,
-        ip      = %ip,
-        ua      = %ua,
-        "access"
-    );
+    if status >= 500 {
+        tracing::error!(
+            method    = %method,
+            path      = %path,
+            status,
+            latency_ms,
+            ip        = %ip,
+            ua        = %ua,
+            timestamp = %now,
+            "request failed (5xx)"
+        );
+    } else if status >= 400 {
+        tracing::warn!(
+            method    = %method,
+            path      = %path,
+            status,
+            latency_ms,
+            ip        = %ip,
+            ua        = %ua,
+            timestamp = %now,
+            "request error (4xx)"
+        );
+    } else {
+        tracing::info!(
+            method    = %method,
+            path      = %path,
+            status,
+            latency_ms,
+            ip        = %ip,
+            ua        = %ua,
+            "access"
+        );
+    }
 
     res
 }

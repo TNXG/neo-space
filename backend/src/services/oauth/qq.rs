@@ -51,7 +51,6 @@ impl OAuthService {
         let token_resp = self
             .http_client
             .get(&token_url)
-            .header("User-Agent", "Neo-Space-Bot/1.0")
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("QQ token request failed: {}", e)))?;
@@ -80,7 +79,6 @@ impl OAuthService {
         let openid_resp = self
             .http_client
             .get(&openid_url)
-            .header("User-Agent", "Neo-Space-Bot/1.0")
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("QQ openid request failed: {}", e)))?;
@@ -115,7 +113,6 @@ impl OAuthService {
         let user_resp = self
             .http_client
             .get(&user_info_url)
-            .header("User-Agent", "Neo-Space-Bot/1.0")
             .send()
             .await
             .map_err(|e| AppError::Internal(format!("QQ user info request failed: {}", e)))?;

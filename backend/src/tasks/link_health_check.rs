@@ -101,7 +101,7 @@ pub async fn perform_health_check(
         };
     }
 
-    let user_agent = "Mozilla/5.0 (compatible; LinkHealthChecker/1.0)";
+    let user_agent = "Mozilla/5.0 (compatible; MaigoStarlightChecker/1.0; +mailto:tnxg@outlook.jp; ) AppleWebKit/99 (KHTML, like Gecko) Chrome/99 MyGO/5 (KiraKira/DokiDoki; Bananice/Protected) Giraffe/4.11 (Wakarimasu/; Haruhikage/Stop)";
 
     match http_client
         .get(url)
