@@ -5,7 +5,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serializer};
 
 #[allow(clippy::trivially_copy_pass_by_ref, clippy::ref_option)]
-
 /// Serialize `ObjectId` as a string
 pub fn serialize_object_id<S>(oid: &ObjectId, serializer: S) -> Result<S::Ok, S::Error>
 where

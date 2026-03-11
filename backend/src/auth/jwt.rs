@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// JWT error types
 #[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum JwtError {
     TokenGenerationFailed(String),
     TokenVerificationFailed(String),

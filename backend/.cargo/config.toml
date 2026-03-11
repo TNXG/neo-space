@@ -1,0 +1,19 @@
+[build]
+# brew install sccache
+# rustc-wrapper = "sccache"
+
+[target.aarch64-apple-darwin]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-ld_new",
+  "-C",
+  "link-arg=-Wl,-dead_strip_dylibs",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+  "-C",
+  "link-arg=-Wl,-ld_new",
+  "-C",
+  "link-arg=-Wl,-dead_strip_dylibs",
+]

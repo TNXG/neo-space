@@ -100,8 +100,9 @@ impl OAuthService {
         let openid_json: serde_json::Value = serde_json::from_str(openid_json_str)
             .map_err(|e| AppError::Internal(format!("Failed to parse QQ openid: {}", e)))?;
 
-        let openid = openid_json["openid"]
-            .as_str()
+        let openid = openid_json
+            .get("openid")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| AppError::Internal("QQ openid missing".to_string()))?
             .to_string();
 
@@ -124,13 +125,15 @@ impl OAuthService {
             .await
             .map_err(|e| AppError::Internal(format!("Failed to parse QQ user info: {}", e)))?;
 
-        let nickname = user_json["nickname"]
-            .as_str()
+        let nickname = user_json
+            .get("nickname")
+            .and_then(|v| v.as_str())
             .unwrap_or("QQ User")
             .to_string();
-        let avatar = user_json["figureurl_qq_2"]
-            .as_str()
-            .or_else(|| user_json["figureurl_qq_1"].as_str())
+        let avatar = user_json
+            .get("figureurl_qq_2")
+            .and_then(|v| v.as_str())
+            .or_else(|| user_json.get("figureurl_qq_1").and_then(|v| v.as_str()))
             .unwrap_or("")
             .to_string();
 
@@ -177,11 +180,12 @@ impl OAuthService {
             let openid = user_info.provider_user_id.clone();
             let access_token = user_info.access_token.clone().unwrap_or_default();
 
+            let handle = Reader::generate_handle(&nickname);
             let new_reader = Reader {
                 id: user_id,
                 email: format!("{}@qq.oauth", openid),
                 name: nickname.clone(),
-                handle: Reader::generate_handle(&nickname),
+                handle: handle.clone(),
                 image: avatar.clone(),
                 is_owner: false,
                 email_verified: Some(false),
@@ -194,8 +198,14 @@ impl OAuthService {
                 .await
                 .map_err(|e| AppError::Database(format!("Failed to create reader: {}", e)))?;
 
+            let profile = crate::models::account::OAuthUserProfile {
+                name: nickname,
+                email: None,
+                avatar,
+                handle,
+            };
             let new_account =
-                Account::new_qq_with_info(user_id, openid, access_token, nickname, avatar);
+                Account::new_qq_with_info(user_id, openid, access_token, profile);
 
             accounts_collection
                 .insert_one(&new_account)

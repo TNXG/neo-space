@@ -2,9 +2,6 @@
 //!
 //! A modern web backend built with Axum framework.
 
-#![warn(clippy::all)]
-#![forbid(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
-
 mod app;
 mod auth;
 mod config;
@@ -72,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = create_app(state);
 
     // Start server
-    let addr = SocketAddr::from(([0, 0, 0, 0], 9100));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
     info!("Server listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

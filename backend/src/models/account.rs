@@ -3,8 +3,16 @@
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
-use super::reader::Reader;
 use super::serializers::{serialize_datetime, serialize_object_id};
+
+/// User profile information from OAuth providers
+#[derive(Debug, Clone)]
+pub struct OAuthUserProfile {
+    pub name: String,
+    pub email: Option<String>,
+    pub avatar: String,
+    pub handle: String,
+}
 
 /// Account model for OAuth provider linking
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -85,10 +93,7 @@ impl Account {
         github_id: u64,
         access_token: String,
         scope: Option<String>,
-        name: String,
-        email: Option<String>,
-        avatar: String,
-        handle: String,
+        profile: OAuthUserProfile,
     ) -> Self {
         Self {
             id: ObjectId::new(),
@@ -97,10 +102,12 @@ impl Account {
             account_id: github_id.to_string(),
             access_token,
             scope,
-            oauth_name: Some(name),
-            oauth_email: email.or_else(|| Some(format!("{github_id}@github.oauth"))),
-            oauth_avatar: Some(avatar),
-            oauth_handle: Some(handle),
+            oauth_name: Some(profile.name),
+            oauth_email: profile
+                .email
+                .or_else(|| Some(format!("{github_id}@github.oauth"))),
+            oauth_avatar: Some(profile.avatar),
+            oauth_handle: Some(profile.handle),
             created_at: bson::DateTime::now(),
             updated_at: bson::DateTime::now(),
         }
@@ -111,8 +118,7 @@ impl Account {
         user_id: ObjectId,
         openid: String,
         access_token: String,
-        name: String,
-        avatar: String,
+        profile: OAuthUserProfile,
     ) -> Self {
         Self {
             id: ObjectId::new(),
@@ -121,10 +127,10 @@ impl Account {
             account_id: openid.clone(),
             access_token,
             scope: None,
-            oauth_name: Some(name.clone()),
+            oauth_name: Some(profile.name.clone()),
             oauth_email: Some(format!("{openid}@qq.oauth")),
-            oauth_avatar: Some(avatar),
-            oauth_handle: Some(Reader::generate_handle(&name)),
+            oauth_avatar: Some(profile.avatar),
+            oauth_handle: Some(profile.handle),
             created_at: bson::DateTime::now(),
             updated_at: bson::DateTime::now(),
         }

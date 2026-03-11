@@ -175,8 +175,12 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
         .await
         .map_err(|e| AppError::Internal(format!("Failed to parse OpenAI response: {}", e)))?;
 
-    let content_str = json["choices"][0]["message"]["content"]
-        .as_str()
+    let content_str = json
+        .get("choices")
+        .and_then(|v| v.get(0))
+        .and_then(|v| v.get("message"))
+        .and_then(|v| v.get("content"))
+        .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("Invalid OpenAI response format".to_string()))?;
 
     // Clean up potential markdown code blocks
@@ -190,15 +194,16 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
     let parsed: serde_json::Value = serde_json::from_str(clean_content)
         .map_err(|e| AppError::Internal(format!("Failed to parse AI JSON response: {}", e)))?;
 
-    let sensitivity = match parsed["sensitivity"].as_str().unwrap_or("medium") {
+    let sensitivity = match parsed.get("sensitivity").and_then(|v| v.as_str()).unwrap_or("medium") {
         "high" => TimeSensitivity::High,
         "low" => TimeSensitivity::Low,
         _ => TimeSensitivity::Medium,
     };
 
-    let reason = parsed["reason"].as_str().unwrap_or("").to_string();
-    let markers: Vec<String> = parsed["markers"]
-        .as_array()
+    let reason = parsed.get("reason").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let markers: Vec<String> = parsed
+        .get("markers")
+        .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
                 .filter_map(|v| v.as_str().map(String::from))

@@ -190,15 +190,18 @@ impl OAuthService {
 
             let handle = Reader::generate_handle(&nickname);
 
+            let profile = crate::models::account::OAuthUserProfile {
+                name: nickname,
+                email,
+                avatar,
+                handle,
+            };
             let new_account = Account::new_github_with_info(
                 user_id,
                 provider_user_id.parse().unwrap_or(0),
                 access_token.unwrap_or_default(),
                 None,
-                nickname,
-                email,
-                avatar,
-                handle,
+                profile,
             );
 
             accounts_collection

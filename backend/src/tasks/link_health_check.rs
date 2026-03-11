@@ -32,10 +32,10 @@ pub enum HostingProvider {
     AliyunCDN,
     Aliyun,
     #[serde(rename = "aws")]
-    AWS,
+    Aws,
     Azure,
     #[serde(rename = "gcp")]
-    GCP,
+    Gcp,
     QuicCloud,
     OpenResty,
     Nginx,

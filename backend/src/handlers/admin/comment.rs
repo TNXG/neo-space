@@ -72,7 +72,7 @@ pub async fn update_comment(
         .build_reader_mappings(vec![updated_comment.mail.clone()])
         .await;
     let comment_trees = comment.build_comment_tree(
-        &[updated_comment.clone()],
+        std::slice::from_ref(&updated_comment),
         &email_to_avatar,
         &email_to_is_owner,
     );

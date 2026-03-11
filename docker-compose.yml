@@ -42,8 +42,6 @@ services:
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
       - QQ_APP_ID=${QQ_APP_ID}
       - QQ_APP_KEY=${QQ_APP_KEY}
-      - ROCKET_ADDRESS=0.0.0.0
-      - ROCKET_PORT=8000
     volumes:
       - backend_cache:/app/cache
     networks:
@@ -52,7 +50,7 @@ services:
       mongodb:
         condition: service_healthy
     healthcheck:
-      test: [CMD, wget, -q, --spider, "http://localhost:8000/api/health"]
+      test: [CMD, wget, -q, --spider, "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

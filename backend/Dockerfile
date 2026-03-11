@@ -1,4 +1,4 @@
-# Neo Space Backend - 仅复制预构建产物
+# Neo Space Backend (Axum) - 仅复制预构建产物
 FROM alpine:3.21
 
 WORKDIR /app
@@ -6,8 +6,8 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tzdata wget && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY neo-space-backend /app/neo-space-backend
-RUN chmod +x /app/neo-space-backend && \
+COPY neo-space-backend-axum /app/neo-space-backend-axum
+RUN chmod +x /app/neo-space-backend-axum && \
     mkdir -p /app/cache/artworks && \
     chown -R appuser:appgroup /app/cache
 
@@ -15,7 +15,6 @@ USER appuser
 
 EXPOSE 8000
 
-ENV ROCKET_ADDRESS=0.0.0.0
-ENV ROCKET_PORT=8000
+ENV RUST_LOG=info
 
-CMD ["/app/neo-space-backend"]
+CMD ["/app/neo-space-backend-axum"]

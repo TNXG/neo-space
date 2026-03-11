@@ -328,7 +328,7 @@ pub async fn create_comment(
 
     // Build comment tree with single node
     let comment_trees = comment.build_comment_tree(
-        &[inserted_comment.clone()],
+        std::slice::from_ref(&inserted_comment),
         &email_to_avatar,
         &email_to_is_owner,
     );
