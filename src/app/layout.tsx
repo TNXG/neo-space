@@ -11,7 +11,8 @@ import "./globals.css";
 const notoSans = Noto_Sans_SC({
   variable: "--font-noto-sans",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
