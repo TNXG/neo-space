@@ -24,6 +24,11 @@ use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Install rustls CryptoProvider (required by jsonwebtoken 10.x and other rustls users)
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls ring CryptoProvider");
+
     // Load .env file if present
     dotenv::dotenv().ok();
 
