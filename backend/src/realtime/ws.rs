@@ -1,7 +1,7 @@
-//! WebSocket for owner desktop client real-time updates
+//! WebSocket for owner desktop client and reader real-time updates
 
 use crate::app::SharedState;
-use crate::models::realtime::*;
+use crate::models::realtime::{ReaderToServerMessage, *};
 use axum::{
     extract::{
         Query, State,
@@ -11,14 +11,49 @@ use axum::{
 };
 use futures::sink::SinkExt;
 use serde::Deserialize;
-use std::collections::hash_map::DefaultHasher;
+use std::collections::{HashMap, hash_map::DefaultHasher};
 use std::hash::{Hash, Hasher};
 use std::path::Path;
+use std::sync::Arc;
+use tokio::sync::{RwLock, mpsc};
+use uuid::Uuid;
 
-/// WebSocket query parameters with token authentication
+/// WebSocket query parameters with token authentication (owner desktop)
 #[derive(Debug, Deserialize)]
 pub struct WsQueryParams {
     pub token: Option<String>,
+}
+
+/// WebSocket query parameters for readers (no authentication)
+#[derive(Debug, Deserialize)]
+pub struct ReaderWsQueryParams {
+    #[serde(rename = "pageType")]
+    pub page_type: Option<String>,
+    #[serde(rename = "pageId")]
+    pub page_id: Option<String>,
+    #[serde(rename = "pageTitle")]
+    pub page_title: Option<String>,
+}
+
+/// Unique connection ID to distinguish different connections
+type ConnectionId = String;
+
+/// Reader connection entry in the registry
+struct ReaderConnection {
+    tx: mpsc::UnboundedSender<ServerToReaderMessage>,
+    info: ReaderInfo,
+    connection_id: ConnectionId, // Unique ID for this specific connection
+}
+
+/// Global reader registry (fingerprint -> connection)
+/// Ensures one connection per fingerprint (deduplicated)
+type ReaderRegistry = Arc<RwLock<HashMap<String, ReaderConnection>>>;
+
+/// Get or initialize the global reader registry
+fn get_reader_registry() -> &'static ReaderRegistry {
+    use std::sync::OnceLock;
+    static REGISTRY: OnceLock<ReaderRegistry> = OnceLock::new();
+    REGISTRY.get_or_init(|| Arc::new(RwLock::new(HashMap::new())))
 }
 
 /// Owner desktop WebSocket endpoint
@@ -122,7 +157,7 @@ fn verify_token(token: Option<String>) -> Result<(), String> {
 /// Handle owner desktop client message
 async fn handle_message(
     text: &str,
-    state: &SharedState,
+    _state: &SharedState,
 ) -> Result<Option<ServerToOwnerDesktopMessage>, String> {
     let desktop_msg: OwnerDesktopMessage =
         serde_json::from_str(text).map_err(|e| format!("Failed to parse message: {}", e))?;
@@ -135,15 +170,16 @@ async fn handle_message(
                 data.process_name,
                 data.app_id
             );
-            // Broadcast to SSE readers
+            // Broadcast to WebSocket readers
             let now = chrono::Utc::now().timestamp();
-            super::sse::broadcast_owner_update(
-                state,
-                ServerToReaderMessage::OwnerWindowInfo {
-                    window_info: data,
-                    updated_at: now,
-                },
-            );
+            tokio::spawn(async move {
+                broadcast_to_all_readers(
+                    ServerToReaderMessage::OwnerWindowInfo {
+                        window_info: data,
+                        updated_at: now,
+                    },
+                ).await;
+            });
             Ok(None)
         }
         OwnerDesktopMessage::MediaPlayback {
@@ -156,16 +192,17 @@ async fn handle_message(
                 metadata.artist,
                 playback_state.playing
             );
-            // Broadcast to SSE readers
+            // Broadcast to WebSocket readers
             let now = chrono::Utc::now().timestamp();
-            super::sse::broadcast_owner_update(
-                state,
-                ServerToReaderMessage::OwnerMediaPlayback {
-                    metadata,
-                    playback_state,
-                    updated_at: now,
-                },
-            );
+            tokio::spawn(async move {
+                broadcast_to_all_readers(
+                    ServerToReaderMessage::OwnerMediaPlayback {
+                        metadata,
+                        playback_state,
+                        updated_at: now,
+                    },
+                ).await;
+            });
             Ok(None)
         }
         OwnerDesktopMessage::UploadArtwork {
@@ -256,4 +293,273 @@ async fn handle_artwork_upload(
     let artwork_url = format!("{}/api/static/artworks/{}", backend_url, filename);
 
     Ok(artwork_url)
+}
+
+/// Reader WebSocket endpoint - for browser readers without authentication
+pub async fn reader_ws(
+    State(state): State<SharedState>,
+    ws: WebSocketUpgrade,
+    Query(params): Query<ReaderWsQueryParams>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_reader_connection(socket, params, state))
+}
+
+/// Handle reader WebSocket connection
+async fn handle_reader_connection(
+    mut socket: WebSocket,
+    params: ReaderWsQueryParams,
+    state: SharedState,
+) {
+    // Unique ID for this specific connection
+    let connection_id = Uuid::new_v4().to_string();
+
+    // Wait for Hello message with fingerprint
+    let fingerprint = loop {
+        match socket.recv().await {
+            Some(Ok(Message::Text(text))) => {
+                match serde_json::from_str::<ReaderToServerMessage>(&text) {
+                    Ok(ReaderToServerMessage::Hello { fingerprint }) => {
+                        tracing::debug!(
+                            "Received Hello from connection {} with fingerprint: {}",
+                            connection_id,
+                            fingerprint
+                        );
+                        break fingerprint;
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to parse Hello message from {}: {}",
+                            connection_id,
+                            e
+                        );
+                        let _ = socket.send(Message::Text(
+                            serde_json::json!({"type": "error", "message": "Invalid Hello message"})
+                                .to_string()
+                                .into(),
+                        )).await;
+                        let _ = socket.close().await;
+                        return;
+                    }
+                }
+            }
+            Some(Ok(Message::Close(_))) => {
+                tracing::debug!("Connection {} closed before sending Hello", connection_id);
+                return;
+            }
+            Some(Ok(_)) => {}
+            Some(Err(e)) => {
+                tracing::error!("WebSocket error for {}: {}", connection_id, e);
+                return;
+            }
+            None => return,
+        }
+    };
+
+    // Create message channel for this reader
+    let (tx, mut rx) = mpsc::unbounded_channel::<ServerToReaderMessage>();
+
+    // Create reader info
+    let now = chrono::Utc::now().timestamp();
+    let reader_info = ReaderInfo {
+        fingerprint: fingerprint.clone(),
+        page_type: params.page_type.clone(),
+        page_id: params.page_id.clone(),
+        page_title: params.page_title.clone(),
+        connected_at: now,
+        last_heartbeat: now,
+    };
+
+    let registry = get_reader_registry().clone();
+
+    // Register reader with fingerprint as key (deduplication)
+    let old_connection = {
+        let mut reg = registry.write().await;
+        reg.insert(
+            fingerprint.clone(),
+            ReaderConnection {
+                tx: tx.clone(),
+                info: reader_info,
+                connection_id: connection_id.clone(),
+            },
+        )
+    };
+
+    // Close old connection if same fingerprint reconnected
+    if let Some(old_conn) = old_connection {
+        tracing::info!(
+            "Replacing existing connection for fingerprint: {} (old: {}, new: {})",
+            fingerprint,
+            old_conn.connection_id,
+            connection_id
+        );
+        drop(old_conn.tx);
+    }
+
+    let online_count = {
+        let reg = registry.read().await;
+        reg.len()
+    };
+
+    tracing::info!(
+        "Reader WebSocket connected | fingerprint: {} | connection_id: {} | page_type: {:?} | page_id: {:?} | online: {}",
+        fingerprint,
+        connection_id,
+        params.page_type,
+        params.page_id,
+        online_count
+    );
+
+    // Send welcome message
+    let welcome = ServerToReaderMessage::Welcome {
+        online_count,
+    };
+    if let Ok(json) = welcome.to_json() {
+        let _ = socket.send(Message::Text(json.into())).await;
+    }
+
+    // Broadcast online count update to all readers
+    broadcast_to_all_readers(
+        ServerToReaderMessage::OnlineCountUpdate {
+            count: online_count,
+        },
+    )
+    .await;
+
+    // Broadcast reading list update
+    broadcast_reading_list(&registry).await;
+
+    // Subscribe to AppState event_bus for owner desktop updates
+    let mut event_rx = state.event_bus.subscribe();
+
+    let fingerprint_clone = fingerprint.clone();
+    let connection_id_clone = connection_id.clone();
+    let registry_clone = registry.clone();
+
+    // Handle messages loop
+    loop {
+        tokio::select! {
+            // Messages specifically for this reader (from registry broadcasts)
+            msg = rx.recv() => {
+                match msg {
+                    Some(server_msg) => {
+                        if let Ok(json) = server_msg.to_json() {
+                            if socket.send(Message::Text(json.into())).await.is_err() {
+                                break;
+                            }
+                        }
+                    }
+                    None => break, // Channel closed (connection was replaced)
+                }
+            }
+            // Events from the global event bus
+            event = event_rx.recv() => {
+                match event {
+                    Ok(_bus_event) => {}
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                        tracing::warn!("Reader {} lagged {} messages", fingerprint_clone, n);
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        break;
+                    }
+                }
+            }
+            // WebSocket messages from client
+            ws_result = socket.recv() => {
+                match ws_result {
+                    Some(Ok(Message::Close(_))) => {
+                        tracing::info!("Reader {} ({}) closed connection", fingerprint_clone, connection_id_clone);
+                        break;
+                    }
+                    Some(Ok(Message::Ping(data))) => {
+                        let _ = socket.send(Message::Pong(data)).await;
+                    }
+                    Some(Ok(_)) => {}
+                    Some(Err(e)) => {
+                        tracing::error!("WebSocket error for {} ({}): {}", fingerprint_clone, connection_id_clone, e);
+                        break;
+                    }
+                    None => break,
+                }
+            }
+        }
+    }
+
+    // Unregister reader - only if still the current connection for this fingerprint
+    let was_current = {
+        let mut reg = registry_clone.write().await;
+        if let Some(conn) = reg.get(&fingerprint_clone) {
+            if conn.connection_id == connection_id_clone {
+                reg.remove(&fingerprint_clone);
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    };
+
+    if was_current {
+        let online_count = {
+            let reg = registry_clone.read().await;
+            reg.len()
+        };
+
+        broadcast_to_all_readers(ServerToReaderMessage::OnlineCountUpdate {
+            count: online_count,
+        }).await;
+
+        broadcast_reading_list(&registry_clone).await;
+
+        tracing::info!(
+            "Reader WebSocket disconnected | fingerprint: {} | connection_id: {} | online: {}",
+            fingerprint_clone,
+            connection_id_clone,
+            online_count
+        );
+    }
+}
+
+/// Broadcast a message to all connected readers via the registry
+async fn broadcast_to_all_readers(message: ServerToReaderMessage) {
+    let registry = get_reader_registry().clone();
+    let reg = registry.read().await;
+    for (_id, conn) in reg.iter() {
+        let _ = conn.tx.send(message.clone());
+    }
+}
+
+/// Build and broadcast the current reading list
+async fn broadcast_reading_list(registry: &ReaderRegistry) {
+    let reg = registry.read().await;
+
+    // Aggregate readers by page
+    let mut page_counts: HashMap<(String, String, Option<String>), usize> = HashMap::new();
+    for conn in reg.values() {
+        if let (Some(page_type), Some(page_id)) = (&conn.info.page_type, &conn.info.page_id) {
+            let key = (
+                page_type.clone(),
+                page_id.clone(),
+                conn.info.page_title.clone(),
+            );
+            *page_counts.entry(key).or_insert(0) += 1;
+        }
+    }
+
+    let items: Vec<ReadingItem> = page_counts
+        .into_iter()
+        .map(
+            |((page_type, page_id, page_title), reader_count)| ReadingItem {
+                page_type,
+                page_id,
+                page_title,
+                reader_count,
+            },
+        )
+        .collect();
+
+    let msg = ServerToReaderMessage::ReadingList { items };
+    for conn in reg.values() {
+        let _ = conn.tx.send(msg.clone());
+    }
 }

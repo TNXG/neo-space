@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
-// --- 类型定义（与后端完全对齐）---
+// --- Type definitions (aligned with backend) ---
 
-/** 窗口信息 */
+/** Window information */
 export interface WindowInfo {
   title: string;
   process_name: string;
@@ -11,7 +11,7 @@ export interface WindowInfo {
   pid: number;
 }
 
-/** 媒体元数据 */
+/** Media metadata */
 export interface MediaMetadata {
   bundle_identifier?: string;
   title?: string;
@@ -22,14 +22,14 @@ export interface MediaMetadata {
   content_item_identifier?: string;
 }
 
-/** 播放状态 */
+/** Playback state */
 export interface PlaybackState {
   playing: boolean;
   playback_rate: number;
   elapsed_time: number;
 }
 
-/** 正在阅读的内容项 */
+/** Reading content item */
 export interface ReadingItem {
   page_type: string;
   page_id: string;
@@ -37,7 +37,7 @@ export interface ReadingItem {
   reader_count: number;
 }
 
-/** 博主状态（前端聚合） */
+/** Owner status (frontend aggregated) */
 export interface OwnerStatus {
   windowInfo?: WindowInfo;
   mediaPlayback?: {
@@ -47,8 +47,8 @@ export interface OwnerStatus {
   updatedAt: number;
 }
 
-/** SSE 状态 */
-interface SSEState {
+/** WebSocket state */
+interface WSState {
   isConnected: boolean;
   onlineCount: number;
   currentPageReaders: number;
@@ -56,8 +56,8 @@ interface SSEState {
   readingList: ReadingItem[];
 }
 
-/** SSE Actions */
-interface SSEActions {
+/** WebSocket Actions */
+interface WSActions {
   setConnected: (connected: boolean) => void;
   setOnlineCount: (count: number) => void;
   setCurrentPageReaders: (count: number) => void;
@@ -71,7 +71,7 @@ interface SSEActions {
   reset: () => void;
 }
 
-const initialState: SSEState = {
+const initialState: WSState = {
   isConnected: false,
   onlineCount: 0,
   currentPageReaders: 0,
@@ -79,7 +79,7 @@ const initialState: SSEState = {
   readingList: [],
 };
 
-export const useSSEStore = create<SSEState & SSEActions>(set => ({
+export const useWSStore = create<WSState & WSActions>(set => ({
   ...initialState,
 
   setConnected: connected => set({ isConnected: connected }),

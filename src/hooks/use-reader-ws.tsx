@@ -5,17 +5,17 @@ import type {
   PlaybackState,
   ReadingItem,
   WindowInfo,
-} from "@/stores/sse-store";
+} from "@/stores/ws-store";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCallback, useEffect, useRef } from "react";
-import { SSE_BASE_URL } from "@/lib/api-client";
-import { useSSEStore } from "@/stores/sse-store";
+import { WS_BASE_URL } from "@/lib/api-client";
+import { useWSStore } from "@/stores/ws-store";
 
-// 导出类型供其他组件使用
+// Export types for other components to use
 export type { MediaMetadata, PlaybackState, ReadingItem, WindowInfo };
-export type { OwnerStatus } from "@/stores/sse-store";
+export type { OwnerStatus } from "@/stores/ws-store";
 
-/** 服务器发送给读者的消息 */
+/** Server message to reader */
 interface ServerToReaderMessage {
   type: string;
   online_count?: number;
@@ -30,7 +30,7 @@ interface ServerToReaderMessage {
   message?: string;
 }
 
-interface UseReaderSSEOptions {
+interface UseReaderWSOptions {
   autoConnect?: boolean;
   pageType?: string;
   pageId?: string;
@@ -41,28 +41,34 @@ interface UseReaderSSEOptions {
   onError?: (error: Event) => void;
 }
 
-// --- SSE 连接管理（模块级单例）---
-let sseInstance: EventSource | null = null;
+// --- WebSocket connection management (module-level singleton) ---
+let wsInstance: WebSocket | null = null;
 let activeSubscribers = 0;
 let disconnectTimeout: NodeJS.Timeout | null = null;
+let reconnectTimeout: NodeJS.Timeout | null = null;
 
-// 缓存 fingerprint，避免重复计算
+// Cached fingerprint to avoid recomputing
 let cachedFingerprint: string | null = null;
 let fingerprintPromise: Promise<string> | null = null;
 
-// 使用 FingerprintJS 生成浏览器指纹
+// Reconnection configuration
+const MAX_RETRIES = 5;
+const BASE_DELAY = 1000;
+let reconnectAttempts = 0;
+
+// Use FingerprintJS to generate browser fingerprint
 async function getFingerprint(): Promise<string> {
-  // 如果已经有缓存，直接返回
+  // If already cached, return directly
   if (cachedFingerprint) {
     return cachedFingerprint;
   }
 
-  // 如果正在计算中，返回同一个 Promise
+  // If currently computing, return the same Promise
   if (fingerprintPromise) {
     return fingerprintPromise;
   }
 
-  // 开始计算指纹
+  // Start computing fingerprint
   fingerprintPromise = (async () => {
     try {
       const fp = await FingerprintJS.load();
@@ -71,7 +77,7 @@ async function getFingerprint(): Promise<string> {
       return cachedFingerprint;
     } catch (error) {
       console.error("Failed to generate fingerprint:", error);
-      // 降级方案：使用 localStorage + 随机数
+      // Fallback: use localStorage + random number
       const STORAGE_KEY = "reader_fingerprint_fallback";
       if (typeof window !== "undefined") {
         let fallback = localStorage.getItem(STORAGE_KEY);
@@ -82,7 +88,7 @@ async function getFingerprint(): Promise<string> {
         cachedFingerprint = fallback;
         return fallback;
       }
-      // SSR 环境兜底
+      // SSR environment fallback
       return `fp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     } finally {
       fingerprintPromise = null;
@@ -92,26 +98,26 @@ async function getFingerprint(): Promise<string> {
   return fingerprintPromise;
 }
 
-export function useReaderSSE(options: UseReaderSSEOptions = {}) {
+export function useReaderWS(options: UseReaderWSOptions = {}) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  // 从 Zustand store 获取状态和 actions
-  const isConnected = useSSEStore(state => state.isConnected);
-  const onlineCount = useSSEStore(state => state.onlineCount);
-  const currentPageReaders = useSSEStore(state => state.currentPageReaders);
-  const ownerStatus = useSSEStore(state => state.ownerStatus);
-  const readingList = useSSEStore(state => state.readingList);
+  // Get state and actions from Zustand store
+  const isConnected = useWSStore(state => state.isConnected);
+  const onlineCount = useWSStore(state => state.onlineCount);
+  const currentPageReaders = useWSStore(state => state.currentPageReaders);
+  const ownerStatus = useWSStore(state => state.ownerStatus);
+  const readingList = useWSStore(state => state.readingList);
 
-  // 获取 actions
-  const setConnected = useSSEStore(state => state.setConnected);
-  const setOnlineCount = useSSEStore(state => state.setOnlineCount);
-  const setCurrentPageReaders = useSSEStore(state => state.setCurrentPageReaders);
-  const setOwnerWindowInfo = useSSEStore(state => state.setOwnerWindowInfo);
-  const setOwnerMediaPlayback = useSSEStore(state => state.setOwnerMediaPlayback);
-  const setReadingList = useSSEStore(state => state.setReadingList);
+  // Get actions
+  const setConnected = useWSStore(state => state.setConnected);
+  const setOnlineCount = useWSStore(state => state.setOnlineCount);
+  const setCurrentPageReaders = useWSStore(state => state.setCurrentPageReaders);
+  const setOwnerWindowInfo = useWSStore(state => state.setOwnerWindowInfo);
+  const setOwnerMediaPlayback = useWSStore(state => state.setOwnerMediaPlayback);
+  const setReadingList = useWSStore(state => state.setReadingList);
 
-  // 消息处理函数
+  // Message handler
   const handleMessage = useCallback((data: ServerToReaderMessage) => {
     const opts = optionsRef.current;
     opts.onMessage?.(data);
@@ -150,7 +156,7 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
         break;
 
       case "error":
-        console.error("SSE Error:", data.message);
+        console.error("WS Error:", data.message);
         break;
 
       case "pong":
@@ -158,18 +164,31 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
     }
   }, [setOnlineCount, setCurrentPageReaders, setReadingList, setOwnerWindowInfo, setOwnerMediaPlayback]);
 
+  const disconnect = useCallback(() => {
+    if (wsInstance) {
+      wsInstance.close();
+      wsInstance = null;
+    }
+    setConnected(false);
+  }, [setConnected]);
+
   const connect = useCallback(async () => {
     if (disconnectTimeout) {
       clearTimeout(disconnectTimeout);
       disconnectTimeout = null;
     }
 
-    if (sseInstance?.readyState === EventSource.OPEN) {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
+
+    if (wsInstance?.readyState === WebSocket.OPEN) {
       queueMicrotask(() => setConnected(true));
       return;
     }
 
-    if (sseInstance?.readyState === EventSource.CONNECTING)
+    if (wsInstance?.readyState === WebSocket.CONNECTING)
       return;
 
     try {
@@ -177,26 +196,37 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
       const opts = optionsRef.current;
 
       if (opts.pageType)
-        params.append("page_type", opts.pageType);
+        params.append("pageType", opts.pageType);
       if (opts.pageId)
-        params.append("page_id", opts.pageId);
+        params.append("pageId", opts.pageId);
       if (opts.pageTitle)
-        params.append("page_title", opts.pageTitle);
+        params.append("pageTitle", opts.pageTitle);
 
-      // 添加 fingerprint 参数（异步获取）
-      const fingerprint = await getFingerprint();
-      params.append("fingerprint", fingerprint);
+      const url = `${WS_BASE_URL}/reader${params.toString() ? `?${params.toString()}` : ""}`;
+      const ws = new WebSocket(url);
+      wsInstance = ws;
 
-      const url = `${SSE_BASE_URL}/reader${params.toString() ? `?${params.toString()}` : ""}`;
-      const sse = new EventSource(url);
-      sseInstance = sse;
+      ws.onopen = async () => {
+        // Send Hello message with fingerprint after connection is established
+        try {
+          const fingerprint = await getFingerprint();
+          const helloMsg = JSON.stringify({
+            type: "hello",
+            fingerprint,
+          });
+          ws.send(helloMsg);
+        } catch (e) {
+          console.error("Failed to send Hello message:", e);
+          ws.close();
+          return;
+        }
 
-      sse.onopen = () => {
         setConnected(true);
+        reconnectAttempts = 0; // Reset retry counter on successful connection
         optionsRef.current.onOpen?.();
       };
 
-      sse.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           let msg = event.data;
           if (typeof msg === "string")
@@ -205,22 +235,36 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
             msg = JSON.parse(msg);
           handleMessage(msg as ServerToReaderMessage);
         } catch (e) {
-          console.error("SSE Parse Error:", e);
+          console.error("WS Parse Error:", e);
         }
       };
 
-      sse.onerror = (e) => {
+      ws.onclose = () => {
+        setConnected(false);
+        optionsRef.current.onClose?.();
+
+        // Auto-reconnect with exponential backoff
+        if (activeSubscribers > 0 && reconnectAttempts < MAX_RETRIES) {
+          const delay = BASE_DELAY * 2 ** reconnectAttempts;
+          reconnectAttempts++;
+          console.log(`WS disconnected, reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RETRIES})`);
+          reconnectTimeout = setTimeout(() => {
+            connect();
+          }, delay);
+        }
+      };
+
+      ws.onerror = (e) => {
         setConnected(false);
         optionsRef.current.onError?.(e);
 
         if (activeSubscribers === 0) {
-          sse.close();
-          sseInstance = null;
-          optionsRef.current.onClose?.();
+          ws.close();
+          wsInstance = null;
         }
       };
     } catch (e) {
-      console.error("SSE Init Error:", e);
+      console.error("WS Init Error:", e);
     }
   }, [handleMessage, setConnected]);
 
@@ -235,20 +279,25 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
       activeSubscribers--;
       if (activeSubscribers === 0) {
         disconnectTimeout = setTimeout(() => {
-          if (activeSubscribers === 0 && sseInstance) {
-            sseInstance.close();
-            sseInstance = null;
+          if (activeSubscribers === 0 && wsInstance) {
+            wsInstance.close();
+            wsInstance = null;
+            setConnected(false);
           }
         }, 2000);
       }
     };
-  }, [connect]);
+  }, [connect, setConnected]);
 
   useEffect(() => {
     return () => {
       if (disconnectTimeout) {
         clearTimeout(disconnectTimeout);
         disconnectTimeout = null;
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
       }
     };
   }, []);
@@ -260,5 +309,6 @@ export function useReaderSSE(options: UseReaderSSEOptions = {}) {
     ownerStatus,
     readingList,
     connect,
+    disconnect,
   };
 }
