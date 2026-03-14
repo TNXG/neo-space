@@ -2,8 +2,21 @@
 
 use crate::models::{Comment, CommentTree};
 use std::collections::HashMap;
+use bson::Bson;
 
 use super::CommentService;
+
+/// Convert Bson ref to string representation
+fn bson_ref_to_string(ref_bson: &Bson) -> String {
+    match ref_bson {
+        Bson::ObjectId(oid) => oid.to_hex(),
+        Bson::String(s) => s.clone(),
+        _ => {
+            tracing::warn!("Unexpected Bson type for ref: {:?}", ref_bson);
+            format!("{:?}", ref_bson)
+        }
+    }
+}
 
 impl CommentService {
     /// Build Reader mappings from emails to avatars and admin status
@@ -79,7 +92,7 @@ impl CommentService {
 
             let tree_node = CommentTree {
                 id: id_str.clone(),
-                r#ref: comment.r#ref.to_hex(),
+                r#ref: bson_ref_to_string(&comment.r#ref),
                 ref_type: comment.ref_type.clone(),
                 author: comment.author.clone(),
                 text: comment.text.clone(),

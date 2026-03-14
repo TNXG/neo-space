@@ -31,7 +31,8 @@ pub struct UAInfo {
 pub struct Comment {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    pub r#ref: ObjectId,
+    /// Reference ID - can be ObjectId (for posts/notes) or String (for custom identifiers like "friends")
+    pub r#ref: bson::Bson,
     #[serde(rename = "refType")]
     pub ref_type: String,
     pub author: String,
@@ -69,7 +70,7 @@ impl Default for Comment {
     fn default() -> Self {
         Self {
             id: None,
-            r#ref: ObjectId::new(),
+            r#ref: bson::Bson::ObjectId(ObjectId::new()),
             ref_type: String::new(),
             author: String::new(),
             mail: String::new(),

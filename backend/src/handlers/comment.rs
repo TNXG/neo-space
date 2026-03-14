@@ -46,14 +46,11 @@ pub async fn list_comments(
         .ref_type
         .ok_or_else(|| AppError::BadRequest("Missing ref_type parameter".to_string()))?;
 
-    let ref_oid = ObjectId::parse_str(&r#ref)
-        .map_err(|_| AppError::BadRequest("Invalid ref ID format".to_string()))?;
-
     let comment = CommentService::new(state.db.clone());
 
     // Build visibility filter based on user role
     let filter = comment
-        .build_visibility_filter(ref_oid, &ref_type, &auth)
+        .build_visibility_filter(&r#ref, &ref_type, &auth)
         .await;
 
     let collection = state.db.collection::<Comment>("comments");
@@ -105,8 +102,12 @@ pub async fn create_comment(
     headers: HeaderMap,
     AppJson(payload): AppJson<CreateCommentRequest>,
 ) -> AppResult<Json<ApiResponse<CommentTree>>> {
-    let ref_oid = ObjectId::parse_str(&payload.r#ref)
-        .map_err(|_| AppError::BadRequest("Invalid ref ID format".to_string()))?;
+    // Convert ref string to Bson (ObjectId if valid, otherwise String)
+    let ref_bson = if let Ok(oid) = ObjectId::parse_str(&payload.r#ref) {
+        bson::Bson::ObjectId(oid)
+    } else {
+        bson::Bson::String(payload.r#ref.clone())
+    };
 
     // Validate ref_type
     if !["post", "note"].contains(&payload.ref_type.as_str()) {
@@ -253,13 +254,13 @@ pub async fn create_comment(
 
     // Generate comment key
     let key = comment
-        .generate_comment_key(ref_oid, &payload.ref_type, parent_oid)
+        .generate_comment_key(&ref_bson, &payload.ref_type, parent_oid)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to generate comment key: {}", e)))?;
 
     // Get comment index
     let comments_index = comment
-        .get_comment_index(ref_oid, &payload.ref_type)
+        .get_comment_index(&ref_bson, &payload.ref_type)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to get comment index: {}", e)))?;
 
@@ -272,7 +273,7 @@ pub async fn create_comment(
 
     let new_comment = Comment {
         id: None,
-        r#ref: ref_oid,
+        r#ref: ref_bson,
         ref_type: payload.ref_type,
         author,
         mail,
@@ -345,7 +346,7 @@ pub async fn create_comment(
         text: inserted_comment.text.clone(),
         email: inserted_comment.mail.clone(),
         ref_type: inserted_comment.ref_type.clone(),
-        ref_id: ref_oid.to_hex(),
+        ref_id: payload.r#ref.clone(),
         ref_title: None, // Will be fetched by notification service
         created: inserted_comment.created,
         is_reply: parent_oid.is_some(),

@@ -35,14 +35,21 @@ impl CommentService {
     /// Build comment visibility filter based on user role
     pub async fn build_visibility_filter(
         &self,
-        ref_oid: ObjectId,
+        ref_id: &str,
         ref_type: &str,
         auth: &OptionalAuth,
     ) -> bson::Document {
+        // Try to parse as ObjectId, fall back to string if invalid
+        let ref_bson = if let Ok(oid) = bson::oid::ObjectId::parse_str(ref_id) {
+            bson::Bson::ObjectId(oid)
+        } else {
+            bson::Bson::String(ref_id.to_string())
+        };
+
         if auth.is_owner {
             tracing::debug!("Admin mode: showing all comments");
             return doc! {
-                "ref": ref_oid,
+                "ref": ref_bson,
                 "refType": ref_type,
             };
         }
@@ -57,7 +64,7 @@ impl CommentService {
                 );
 
                 return doc! {
-                    "ref": ref_oid,
+                    "ref": ref_bson.clone(),
                     "refType": ref_type,
                     "$or": [
                         doc! {
@@ -78,7 +85,7 @@ impl CommentService {
 
             tracing::debug!("User not found, showing only normal public comments");
             return doc! {
-                "ref": ref_oid,
+                "ref": ref_bson.clone(),
                 "refType": ref_type,
                 "state": { "$in": [0, 1] },
                 "isWhispers": false,
@@ -87,7 +94,7 @@ impl CommentService {
 
         tracing::debug!("Anonymous mode: showing only normal public comments");
         doc! {
-            "ref": ref_oid,
+            "ref": ref_bson,
             "refType": ref_type,
             "state": { "$in": [0, 1] },
             "isWhispers": false,

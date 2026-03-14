@@ -1,7 +1,7 @@
 //! Comment key and index generation
 
 use crate::models::Comment;
-use bson::{doc, oid::ObjectId};
+use bson::{doc, oid::ObjectId, Bson};
 
 use super::CommentService;
 
@@ -9,7 +9,7 @@ impl CommentService {
     /// Generate comment key (hierarchical identifier like #1, #1#1, #1#2)
     pub async fn generate_comment_key(
         &self,
-        ref_oid: ObjectId,
+        ref_bson: &Bson,
         ref_type: &str,
         parent_oid: Option<ObjectId>,
     ) -> Result<String, String> {
@@ -27,7 +27,7 @@ impl CommentService {
                 // Parent not found, fall back to root
                 let root_count = collection
                     .count_documents(doc! {
-                        "ref": ref_oid,
+                        "ref": ref_bson,
                         "refType": ref_type,
                         "parent": null
                     })
@@ -39,7 +39,7 @@ impl CommentService {
             // Root comment
             let root_count = collection
                 .count_documents(doc! {
-                    "ref": ref_oid,
+                    "ref": ref_bson,
                     "refType": ref_type,
                     "parent": null
                 })
@@ -54,14 +54,14 @@ impl CommentService {
     /// Get comment index (total count of all comments for this ref)
     pub async fn get_comment_index(
         &self,
-        ref_oid: ObjectId,
+        ref_bson: &Bson,
         ref_type: &str,
     ) -> Result<i32, String> {
         let collection = self.db.collection::<Comment>("comments");
 
         let count = collection
             .count_documents(doc! {
-                "ref": ref_oid,
+                "ref": ref_bson,
                 "refType": ref_type
             })
             .await

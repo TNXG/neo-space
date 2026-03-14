@@ -65,8 +65,16 @@ async fn fetch_content_text(
     ref_id: &str,
     ref_type: &str,
 ) -> Result<String, AppError> {
-    let object_id = ObjectId::parse_str(ref_id)
-        .map_err(|_| AppError::BadRequest("Invalid ref ID format".to_string()))?;
+    // Try to parse as ObjectId, return error if not valid for database entities
+    let object_id = match ObjectId::parse_str(ref_id) {
+        Ok(oid) => oid,
+        Err(_) => {
+            // For non-ObjectIds (like "friends"), the AI feature is not applicable
+            return Err(AppError::BadRequest(
+                "AI time capsule feature is only available for database content".to_string(),
+            ));
+        }
+    };
 
     match ref_type {
         "post" => {
