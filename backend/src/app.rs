@@ -313,8 +313,6 @@ pub fn create_router(state: SharedState) -> axum::Router {
             "/ai/time-capsule/{ref_id}",
             axum::routing::get(handlers::ai::get_time_capsule),
         )
-        // SSE reader endpoint
-        .route("/sse/reader", axum::routing::get(realtime::reader_sse))
         .with_state(state.clone());
 
     // WebSocket routes
@@ -322,6 +320,10 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .route(
             "/ws/owner-desktop",
             axum::routing::get(realtime::owner_desktop_ws),
+        )
+        .route(
+            "/ws/reader",
+            axum::routing::get(realtime::reader_ws),
         )
         .with_state(state.clone());
 
@@ -335,7 +337,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
     axum::Router::new()
         .merge(health_router)
         .nest("/api", api_router)
-        .nest("/api", ws_router)
+        .merge(ws_router)
         .merge(static_router)
         .merge(SwaggerUi::new("/api-docs-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .fallback(crate::error::fallback_404)

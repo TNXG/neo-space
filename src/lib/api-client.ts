@@ -6,11 +6,21 @@ import type { ApiResponse, Category, Comment, CommentListResponse, CreateComment
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog.tnxg.top/api";
 
 /**
- * SSE URL - 从 API_BASE_URL 自动推导（用于接收服务器推送）
- * https://api-blog.tnxg.top/api -> https://api-blog.tnxg.top/api/sse
- * http://localhost:8000/api -> http://localhost:8000/api/sse
+ * WebSocket URL 配置
+ *
+ * 1. 如果设置了 NEXT_PUBLIC_WS_URL，直接使用（适用于 API 和 WS 在不同域的情况）
+ * 2. 否则从 API_BASE_URL 自动推导（适用于同域情况）
+ *    https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/ws
+ *    http://localhost:8000/api -> ws://localhost:8000/ws
  */
-export const SSE_BASE_URL = `${API_BASE_URL}/sse`.replace(/\/api\/api/, "/api");
+function inferWsUrlFromApiUrl(apiUrl: string): string {
+  return apiUrl
+    .replace("https://", "wss://")
+    .replace("http://", "ws://")
+    .replace("/api", "/ws");
+}
+
+export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 
 /**
  * Generic API client with error handling and ISR support
