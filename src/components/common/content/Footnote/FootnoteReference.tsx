@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Static regex patterns to avoid re-compilation
+const WHITESPACE_REGEX = /\s+/g;
+
 interface FootnoteReferenceProps {
   id: string;
   footnoteId: string;
@@ -23,7 +26,7 @@ export function FootnoteReference({ id, footnoteId, href, ariaLabel, children }:
         clone.querySelectorAll("[data-footnote-backref]").forEach(n => n.remove());
         clone.querySelectorAll(".footnote-backref-icon").forEach(n => n.remove());
         clone.querySelectorAll("script").forEach(n => n.remove());
-        setHtml(clone.innerHTML.replace(/\s+/g, " ").trim());
+        setHtml(clone.innerHTML.replace(WHITESPACE_REGEX, " ").trim());
       }
     }
     setOpen(newOpen);

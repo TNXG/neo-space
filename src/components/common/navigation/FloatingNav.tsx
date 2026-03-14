@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { useReaderSSE } from "@/hooks/use-reader-sse";
+import { useReaderWS } from "@/hooks/use-reader-ws";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { MobileNavDrawer } from "./MobileNavDrawer";
@@ -35,7 +35,7 @@ export function FloatingNav({ user }: FloatingNavProps) {
   const isHomePage = pathname === "/";
   const router = useRouter();
   const hasMounted = useHasMounted();
-  const { isConnected, onlineCount } = useReaderSSE();
+  const { isConnected, onlineCount } = useReaderWS();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

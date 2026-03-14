@@ -7,6 +7,9 @@ import { Icon } from "@/lib/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOAuthStore } from "@/stores/oauth-store";
 
+// Static regex patterns to avoid re-compilation
+const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+
 interface OAuthButtonsProps {
   /**
    * 按钮样式变体
@@ -87,7 +90,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
   const handleOAuthLogin = async (provider: "github" | "qq") => {
     try {
       // 检测是否为移动设备
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const isMobile = MOBILE_REGEX.test(navigator.userAgent)
         || window.innerWidth < 768;
 
       // 移动端：直接跳转，使用 sessionStorage 保存当前页面

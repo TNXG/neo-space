@@ -1,8 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getPlatformInfo } from "@/lib/parse"
 import { cn } from "@/lib/utils"
+
+/**
+ * 同步检测是否为 Mac 平台
+ */
+function isMacPlatform(): boolean {
+  if (typeof window === "undefined") return false
+  const platform = navigator.platform.toLowerCase()
+  return platform.includes("mac") || platform.includes("iphone") || platform.includes("ipad") || platform.includes("ipod")
+}
 
 /**
  * 键位映射表：Mac <-> Windows/Linux
@@ -96,8 +104,7 @@ function Kbd({ className, children, platform = "auto", variant = "default", ...p
   useEffect(() => {
     setMounted(true)
     if (platform === "auto") {
-      const { name } = getPlatformInfo()
-      setIsMac(name === "Mac OS" || name === "macOS" || name === "iOS")
+      setIsMac(isMacPlatform())
     } else {
       setIsMac(platform === "mac")
     }
@@ -197,8 +204,7 @@ function KbdShortcut({
   useEffect(() => {
     setMounted(true)
     if (platform === "auto") {
-      const { name } = getPlatformInfo()
-      setIsMac(name === "Mac OS" || name === "macOS" || name === "iOS")
+      setIsMac(isMacPlatform())
     } else {
       setIsMac(platform === "mac")
     }

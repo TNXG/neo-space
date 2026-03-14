@@ -1,6 +1,21 @@
 import type { ReactNode } from "react";
 import { isValidElement } from "react";
 
+// Static regex patterns to avoid re-compilation
+const HEADING_MARKER_REGEX = /^#{1,6}\s+/gm;
+const BOLD_ASTERISK_REGEX = /\*\*(.*?)\*\*/g;
+const ITALIC_ASTERISK_REGEX = /\*(.*?)\*/g;
+const BOLD_UNDERSCORE_REGEX = /__(.*?)__/g;
+const ITALIC_UNDERSCORE_REGEX = /_(.*?)_/g;
+const CODE_BLOCK_REGEX = /```[\s\S]*?```/g;
+const INLINE_CODE_REGEX = /`([^`]+)`/g;
+const LINK_REGEX = /\[([^\]]+)\]\([^)]+\)/g;
+const IMAGE_REGEX = /!\[([^\]]*)\]\([^)]+\)/g;
+const BLOCKQUOTE_REGEX = /^>\s+/gm;
+const UNORDERED_LIST_REGEX = /^\s*[-*+]\s+/gm;
+const ORDERED_LIST_REGEX = /^\s*\d+\.\s+/gm;
+const MULTIPLE_NEWLINES_REGEX = /\n\s*\n/g;
+
 /**
  * 截断文本内容
  */
@@ -17,26 +32,26 @@ export function truncateText(text: string, maxLength: number): string {
 export function stripMarkdown(text: string): string {
   return text
   // 移除标题标记
-    .replace(/^#{1,6}\s+/gm, "")
+    .replace(HEADING_MARKER_REGEX, "")
   // 移除粗体和斜体
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/\*(.*?)\*/g, "$1")
-    .replace(/__(.*?)__/g, "$1")
-    .replace(/_(.*?)_/g, "$1")
+    .replace(BOLD_ASTERISK_REGEX, "$1")
+    .replace(ITALIC_ASTERISK_REGEX, "$1")
+    .replace(BOLD_UNDERSCORE_REGEX, "$1")
+    .replace(ITALIC_UNDERSCORE_REGEX, "$1")
   // 移除代码块
-    .replace(/```[\s\S]*?```/g, "[代码块]")
-    .replace(/`([^`]+)`/g, "$1")
+    .replace(CODE_BLOCK_REGEX, "[代码块]")
+    .replace(INLINE_CODE_REGEX, "$1")
   // 移除链接，保留文本
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(LINK_REGEX, "$1")
   // 移除图片
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "[图片: $1]")
+    .replace(IMAGE_REGEX, "[图片: $1]")
   // 移除引用标记
-    .replace(/^>\s+/gm, "")
+    .replace(BLOCKQUOTE_REGEX, "")
   // 移除列表标记
-    .replace(/^\s*[-*+]\s+/gm, "• ")
-    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(UNORDERED_LIST_REGEX, "• ")
+    .replace(ORDERED_LIST_REGEX, "")
   // 移除多余的空行
-    .replace(/\n\s*\n/g, "\n")
+    .replace(MULTIPLE_NEWLINES_REGEX, "\n")
   // 移除首尾空白
     .trim();
 }

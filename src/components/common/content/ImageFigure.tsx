@@ -6,6 +6,9 @@ import { createPortal } from "react-dom";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Icon } from "@/lib/inline-icon";
 
+// Static regex patterns to avoid re-compilation
+const MM_REGEX = /mm/gi;
+
 interface ImageFigureProps {
   src: string;
   alt?: string;
@@ -70,7 +73,7 @@ function extractMetadataByPriority(tags: ExifReader.ExpandedTags): ExifData {
 
   const model = getValueByPriority(fieldPriorities.model);
   const focalLengthRaw = getValueByPriority(fieldPriorities.focalLength);
-  const focalLength = focalLengthRaw ? `${focalLengthRaw.replace(/mm/gi, "").trim()}mm` : undefined;
+  const focalLength = focalLengthRaw ? `${focalLengthRaw.replace(MM_REGEX, "").trim()}mm` : undefined;
   const fNumber = getValueByPriority(fieldPriorities.fNumber);
   const iso = getValueByPriority(fieldPriorities.iso);
   const exposureTime = getValueByPriority(fieldPriorities.exposureTime);

@@ -9,6 +9,9 @@ import { bindAnonymousIdentity, skipBind } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
+// Static regex patterns to avoid re-compilation
+const EMAIL_REGEX = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
+
 const transition = { type: "spring", stiffness: 300, damping: 30 } as const;
 
 const variants = {
@@ -159,8 +162,7 @@ function AuthCallbackContent() {
     if (!name.trim() || !email.trim())
       return toast.error("请输入昵称和邮箱");
 
-    const emailRegex = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
-    if (!emailRegex.test(email))
+    if (!EMAIL_REGEX.test(email))
       return toast.error("请输入有效的邮箱地址");
 
     setIsBinding(true);

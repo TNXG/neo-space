@@ -1,6 +1,11 @@
 import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
 
+// Static regex patterns to avoid re-compilation
+const CONTAINER_START_REGEX = /^::: *(\w+)(?: *\{([^}]+)\})? *$/;
+const CONTAINER_END_REGEX = /^::: *$/;
+const IMAGE_REGEX = /!\[([^\]]*)\]\(([^)]+)\)/g;
+
 /**
  * Remark 插件：解析自定义容器语法
  *
@@ -24,7 +29,7 @@ export function remarkContainer() {
         return;
 
       const text = firstChild.value;
-      const containerMatch = /^::: *(\w+)(?: *\{([^}]+)\})? *$/.exec(text);
+      const containerMatch = CONTAINER_START_REGEX.exec(text);
 
       if (!containerMatch)
         return;
@@ -56,7 +61,7 @@ export function remarkContainer() {
         if (
           sibling.type === "paragraph"
           && sibling.children[0]?.type === "text"
-          && /^::: *$/.test(sibling.children[0].value)
+          && CONTAINER_END_REGEX.test(sibling.children[0].value)
         ) {
           endIndex = i;
           break;
@@ -152,15 +157,14 @@ export function remarkContainer() {
 
 export function extractImagesFromMarkdown(content: string): Array<{ url: string; alt?: string }> {
   const images: Array<{ url: string; alt?: string }> = [];
-  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
-  let match = imageRegex.exec(content);
+  let match = IMAGE_REGEX.exec(content);
   while (match !== null) {
     images.push({
       url: match[2],
       alt: match[1] || undefined,
     });
-    match = imageRegex.exec(content);
+    match = IMAGE_REGEX.exec(content);
   }
 
   return images;

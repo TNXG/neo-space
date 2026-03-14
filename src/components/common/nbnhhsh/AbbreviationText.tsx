@@ -10,11 +10,15 @@ interface AbbreviationTextProps {
   className?: string;
 }
 
+// Static regex patterns to avoid re-compilation
+const ABBREVIATION_REGEX = /^[a-z]{3,7}$/i;
+const FOOTNOTE_LINK_REGEX = /^#(?:user-content-)?fn/;
+
 // 1. 静态实例放外面，避免重复创建
 const tokenizer = new Tokenizer();
 
 function isAbbreviation(word: string): boolean {
-  return /^[a-z]{3,7}$/i.test(word);
+  return ABBREVIATION_REGEX.test(word);
 }
 
 // 生成唯一ID的计数器（模块级别）
@@ -106,7 +110,7 @@ export function AbbreviationText({ children, className = "" }: AbbreviationTextP
         }
 
         const href = typeof element.props.href === "string" ? element.props.href : "";
-        const isFootnoteLink = element.props["data-footnote-ref"] || element.props["data-footnote-backref"] || /^#(?:user-content-)?fn/.test(href);
+        const isFootnoteLink = element.props["data-footnote-ref"] || element.props["data-footnote-backref"] || FOOTNOTE_LINK_REGEX.test(href);
         if (element.type === "a" && isFootnoteLink) {
           return node;
         }

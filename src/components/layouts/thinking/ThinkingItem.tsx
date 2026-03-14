@@ -4,6 +4,10 @@ import { SmartDate } from "@/components/common/smart-date/SmartDate";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
+// Static regex patterns to avoid re-compilation
+const ICON_PATTERN_REGEX = /^:::(\w+):::/;
+const ICON_PREFIX_REGEX = /^:::\w+:::/;
+
 interface ThinkingItemProps {
   item: Recently;
 }
@@ -14,9 +18,9 @@ interface ThinkingItemProps {
  */
 export async function ThinkingItem({ item }: ThinkingItemProps) {
   // 解析图标（如果有）
-  const iconMatch = item.content.match(/^:::(\w+):::/);
+  const iconMatch = item.content.match(ICON_PATTERN_REGEX);
   const iconName = iconMatch?.[1];
-  const content = iconMatch ? item.content.replace(/^:::\w+:::/, "").trim() : item.content;
+  const content = iconMatch ? item.content.replace(ICON_PREFIX_REGEX, "").trim() : item.content;
 
   return (
     <article

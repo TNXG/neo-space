@@ -7,6 +7,10 @@ import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
+// Static regex patterns to avoid re-compilation
+const NEWLINE_REGEX = /\n/g;
+const OBJECT_ID_REGEX = /^[0-9a-f]{24}$/i;
+
 // ISR 配置：16小时过期
 export const revalidate = 57600;
 
@@ -40,7 +44,7 @@ export async function generateMetadata({ params }: PageProps) {
       return { title: "文章不存在" };
     }
 
-    const description = post.summary || post.text.slice(0, 150).replace(/\n/g, " ");
+    const description = post.summary || post.text.slice(0, 150).replace(NEWLINE_REGEX, " ");
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
     return {
@@ -72,7 +76,7 @@ export default async function PostPage({ params }: PageProps) {
   const { slug, category } = await params;
 
   // 验证 category 不是 ObjectId 格式
-  const isObjectId = /^[0-9a-f]{24}$/i.test(category);
+  const isObjectId = OBJECT_ID_REGEX.test(category);
   if (isObjectId) {
     notFound();
   }
@@ -105,7 +109,7 @@ export default async function PostPage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
   const jsonLd = generateArticleJsonLd({
     title: post.title,
-    description: post.summary || post.text.slice(0, 150).replace(/\n/g, " "),
+    description: post.summary || post.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
     url: `${baseUrl}/posts/${post.category?.slug}/${post.slug}`,
     datePublished: post.created,
     dateModified: post.modified || post.created,

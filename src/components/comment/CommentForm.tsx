@@ -14,7 +14,7 @@ import { createCommentAction } from "@/actions/comment";
 import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
-import { getUAInfo } from "@/lib/parse";
+import { getUAInfo } from "@/lib/ua-parse";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import {
@@ -279,7 +279,7 @@ export function CommentForm({
         <div className="flex flex-col min-h-20 sm:min-h-20 py-3 sm:py-3 px-4 sm:px-4 relative z-0 w-full min-w-0">
           {preview
             ? (
-                <div className="min-h-[60px] sm:min-h-[60px] prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
+                <div className="min-h-15 sm:min-h-15 prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
                   {content.trim()
                     ? <CommentMarkdown content={content} />
                     : <span className="text-muted-foreground/40 italic">预览中...</span>}
@@ -298,7 +298,7 @@ export function CommentForm({
                     }
                   }}
                   placeholder={parentId ? "回复..." : "写下你的想法..."}
-                  className="grow w-full min-w-0 bg-transparent text-base sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[60px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
+                  className="grow w-full min-w-0 bg-transparent text-base sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-15 sm:min-h-15 max-h-75 sm:max-h-100 disabled:opacity-50"
                   spellCheck={false}
                   disabled={isPending}
                 />

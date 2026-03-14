@@ -7,6 +7,9 @@ import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
+// Static regex patterns to avoid re-compilation
+const NEWLINE_REGEX = /\n/g;
+
 // ISR 配置：16小时过期
 export const revalidate = 57600;
 
@@ -36,7 +39,7 @@ export async function generateMetadata({ params }: PageProps) {
 
   try {
     const { data: note } = await getNoteByNid(nidNum);
-    const description = note.text.slice(0, 150).replace(/\n/g, " ");
+    const description = note.text.slice(0, 150).replace(NEWLINE_REGEX, " ");
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
     return {
@@ -95,7 +98,7 @@ export default async function NotePage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
   const jsonLd = generateArticleJsonLd({
     title: note.title,
-    description: note.text.slice(0, 150).replace(/\n/g, " "),
+    description: note.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
     url: `${baseUrl}/notes/${note.nid}`,
     datePublished: note.created,
     dateModified: note.modified || note.created,

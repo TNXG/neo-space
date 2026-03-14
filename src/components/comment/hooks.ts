@@ -1,6 +1,9 @@
 import { use } from "react";
 import { CommentContext } from "./context";
 
+// Static regex patterns to avoid re-compilation
+const OWO_EMOJI_REGEX = /\[([^\s[\]]+)\]/g;
+
 /**
  * 使用评论高亮功能的 Hook
  */
@@ -63,7 +66,7 @@ export function buildOwOEmojiMap(owoData: Record<string, any>): Record<string, s
 export function parseOwOEmojis(content: string, emojiMap: Record<string, string>): string {
   // 匹配 [族名_表情名] 格式
   // 匹配方括号内的非空白、非方括号字符
-  return content.replace(/\[([^\s[\]]+)\]/g, (match, emojiKey) => {
+  return content.replace(OWO_EMOJI_REGEX, (match, emojiKey) => {
     const url = emojiMap[emojiKey];
     if (url) {
       // 提取表情名（去掉族名前缀）用于 alt 文本

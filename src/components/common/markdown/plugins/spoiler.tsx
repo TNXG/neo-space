@@ -1,17 +1,19 @@
 import type { PhrasingContent, Root } from "mdast";
 import { visit } from "unist-util-visit";
 
+// Static regex patterns to avoid re-compilation
+const SPOILER_REGEX = /\|\|(.+?)\|\|/g;
+
 export const remarkSpoiler = () => {
   return (tree: Root) => {
     visit(tree, "text", (node, index, parent) => {
       if (!parent || typeof node.value !== "string")
         return;
 
-      const regex = /\|\|(.+?)\|\|/g;
       const children: Array<PhrasingContent> = [];
       let lastIndex = 0;
 
-      for (let match = regex.exec(node.value); match !== null; match = regex.exec(node.value)) {
+      for (let match = SPOILER_REGEX.exec(node.value); match !== null; match = SPOILER_REGEX.exec(node.value)) {
         if (match.index > lastIndex) {
           children.push({
             type: "text",
@@ -30,7 +32,7 @@ export const remarkSpoiler = () => {
           children: [{ type: "text", value: match[1] }],
         } as any);
 
-        lastIndex = regex.lastIndex;
+        lastIndex = SPOILER_REGEX.lastIndex;
       }
 
       if (children.length === 0)

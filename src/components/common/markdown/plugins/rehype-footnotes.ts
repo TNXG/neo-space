@@ -8,6 +8,11 @@ import {
   resolveFootnoteRefTargetId,
 } from "../../content/Footnote/footnote-utils";
 
+// Static regex patterns to avoid re-compilation
+const WHITESPACE_REGEX = /\s+/;
+const LAST_WORD_REGEX = /(\S+)(\s*)$/;
+const HEADING_TAG_REGEX = /^h\d$/;
+
 function isElement(node: unknown): node is Element {
   return Boolean(node) && typeof node === "object" && (node as Element).type === "element";
 }
@@ -17,7 +22,7 @@ function getClassNames(node: Element) {
   if (Array.isArray(className))
     return className.map(String);
   if (typeof className === "string")
-    return className.split(/\s+/).filter(Boolean);
+    return className.split(WHITESPACE_REGEX).filter(Boolean);
   return [];
 }
 
@@ -46,7 +51,7 @@ function wrapPrecedingWord(parent: Element, refIndex: number) {
 
   const text = prevNode.value;
   // 匹配最后一个非空白词（含汉字、标点前的词）
-  const lastWordMatch = text.match(/(\S+)(\s*)$/);
+  const lastWordMatch = text.match(LAST_WORD_REGEX);
   if (!lastWordMatch)
     return;
 
@@ -87,7 +92,7 @@ export const rehypeFootnotes = () => {
         node.properties["data-footnotes-root"] = "true";
         node.properties["aria-label"] = getProperty(node, "aria-label") || "Footnotes";
 
-        const firstChild = node.children.find(child => isElement(child) && /^h\d$/.test(child.tagName));
+        const firstChild = node.children.find(child => isElement(child) && HEADING_TAG_REGEX.test(child.tagName));
         if (isElement(firstChild)) {
           firstChild.properties.className = ["sr-only"];
           firstChild.properties.id = getProperty(firstChild, "id") || "footnotes-label";

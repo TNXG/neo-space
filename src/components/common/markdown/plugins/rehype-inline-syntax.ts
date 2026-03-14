@@ -6,6 +6,9 @@ import { SKIP, visit } from "unist-util-visit";
  */
 const RAW_CONTENT_ELEMENTS = new Set(["script", "style", "code", "pre"]);
 
+// Static regex patterns to avoid re-compilation
+const INLINE_SYNTAX_REGEX = /==([^=]+)==|\|\|([^|]+)\|\|/g;
+
 /**
  * Rehype 插件：处理 HTML 元素内部的 ==mark== 和 ||spoiler|| 语法
  * 用于处理 <summary>、<details> 等 HTML 标签内的自定义语法
@@ -36,9 +39,8 @@ export const rehypeInlineSyntax = () => {
       const children: (Element | Text)[] = [];
 
       // 使用正则匹配 ==text== 和 ||text||
-      const regex = /==([^=]+)==|\|\|([^|]+)\|\|/g;
       let lastIndex = 0;
-      let match = regex.exec(text);
+      let match = INLINE_SYNTAX_REGEX.exec(text);
 
       while (match !== null) {
         // 添加匹配前的文本

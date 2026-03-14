@@ -10,6 +10,9 @@ import { AbbreviationText } from "@/components/common/nbnhhsh/AbbreviationText";
 import { Mark } from "../content/Mark";
 import { truncateText } from "./utils";
 
+// Static regex patterns to avoid re-compilation
+const LANGUAGE_CLASS_REGEX = /language-(\w+)/;
+
 /**
  * 预览模式的组件样式（简化，图片和代码块用文字替代）
  * 使用中间色调文字确保可读性
@@ -38,7 +41,7 @@ const previewComponents: Components = {
     if (children && typeof children === "object" && "props" in children) {
       const codeProps = (children as any).props;
       const className = codeProps?.className || "";
-      const match = /language-(\w+)/.exec(className);
+      const match = LANGUAGE_CLASS_REGEX.exec(className);
       if (match)
         lang = match[1];
     }

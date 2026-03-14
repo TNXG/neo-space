@@ -1,6 +1,10 @@
 import type { Root } from "mdast";
 import { visit } from "unist-util-visit";
 
+// Static regex patterns to avoid re-compilation
+const BLOCK_MATH_REGEX = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g;
+const INLINE_MATH_REGEX = /\$([^$\n]+)\$|\\\(([^)]+)\\\)/g;
+
 /**
  * Remark plugin to convert LaTeX delimiters to math nodes
  * Supports:
@@ -18,9 +22,9 @@ export function remarkMathDelimiters() {
       let lastIndex = 0;
 
       // Match block math: $$...$$ or \[...\]
-      const blockRegex = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g;
+      const blockRegex = BLOCK_MATH_REGEX;
       // Match inline math: single $ (not $$) or \(...\)
-      const inlineRegex = /\$([^$\n]+)\$|\\\(([^)]+)\\\)/g;
+      const inlineRegex = INLINE_MATH_REGEX;
 
       const allMatches: Array<{ start: number; end: number; content: string; type: "inlineMath" | "math" }> = [];
 

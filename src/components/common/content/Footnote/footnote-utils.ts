@@ -4,6 +4,15 @@ export const FOOTNOTE_TOOLTIP_DELAY = 120;
 const FOOTNOTE_REF_PREFIX = "fnref";
 const FOOTNOTE_ITEM_PREFIX = "fn";
 
+// Static regex patterns to avoid re-compilation
+const HASH_PREFIX_REGEX = /^#/;
+const USER_CONTENT_PREFIX_REGEX = /^user-content-/;
+const FNREF_PREFIX_REGEX = /^fnref-/;
+const FN_PREFIX_REGEX = /^fn-/;
+const SUFFIX_NUMBER_REGEX = /-\d+$/;
+const DIGITS_REGEX = /^\d+$/;
+const FNREF_PATTERN_REGEX = /^fnref-(.+?)(?:-(\d+))?$/;
+
 export function formatFootnoteLabel(index: number, format: "roman-upper" | "roman-lower" | "arabic" = "roman-upper") {
   if (format === "arabic")
     return String(index);
@@ -22,19 +31,19 @@ export function buildFootnoteItemDomId(footnoteId: string) {
 
 export function normalizeFootnoteId(value: string) {
   return value
-    .replace(/^#/, "")
-    .replace(/^user-content-/, "")
-    .replace(/^fnref-/, "")
-    .replace(/^fn-/, "")
-    .replace(/-\d+$/, (match) => {
+    .replace(HASH_PREFIX_REGEX, "")
+    .replace(USER_CONTENT_PREFIX_REGEX, "")
+    .replace(FNREF_PREFIX_REGEX, "")
+    .replace(FN_PREFIX_REGEX, "")
+    .replace(SUFFIX_NUMBER_REGEX, (match) => {
       const suffix = match.slice(1);
-      return /^\d+$/.test(suffix) && value.includes("fnref-") ? "" : match;
+      return DIGITS_REGEX.test(suffix) && value.includes("fnref-") ? "" : match;
     });
 }
 
 export function resolveFootnoteRefTargetId(value: string) {
-  const clean = value.replace(/^#/, "").replace(/^user-content-/, "");
-  const match = clean.match(/^fnref-(.+?)(?:-(\d+))?$/);
+  const clean = value.replace(HASH_PREFIX_REGEX, "").replace(USER_CONTENT_PREFIX_REGEX, "");
+  const match = clean.match(FNREF_PATTERN_REGEX);
 
   if (!match)
     return clean;

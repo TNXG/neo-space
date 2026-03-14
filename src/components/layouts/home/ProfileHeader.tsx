@@ -5,7 +5,7 @@ import type { User } from "@/types/api";
 import { useEffect, useState } from "react";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
-import { useReaderSSE } from "@/hooks/use-reader-sse";
+import { useReaderWS } from "@/hooks/use-reader-ws";
 import { OwnerStatus } from "./OwnerStatus";
 
 interface ProfileHeaderProps {
@@ -17,7 +17,7 @@ interface ProfileHeaderProps {
  * Displays user avatar, name, bio, intro, and social links
  */
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
-  const { isConnected, ownerStatus } = useReaderSSE();
+  const { isConnected, ownerStatus } = useReaderWS();
 
   // 判断博主是否在线
   const STALE_MS = 90_000;

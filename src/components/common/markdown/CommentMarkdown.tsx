@@ -16,6 +16,15 @@ import { Mark } from "../content/Mark";
 import { Spoiler } from "../content/Spoiler";
 import { remarkSpoiler } from "./plugins/spoiler";
 
+// Static regex patterns to avoid re-compilation
+const OWO_PATTERNS = [
+  /cdn\.tnxg\.top\/images\/face/i,
+  /owo\.json/i,
+  /emotion/i,
+  /emoji/i,
+  /face/i,
+] as const;
+
 /**
  * 检查是否为 owo 表情包链接
  * owo 表情包通常来自特定的 CDN 域名
@@ -24,14 +33,7 @@ const isOwoEmoji = (src: string | undefined): boolean => {
   if (!src)
     return false;
   // 匹配常见的 owo 表情包 CDN 域名
-  const owoPatterns = [
-    /cdn\.tnxg\.top\/images\/face/i,
-    /owo\.json/i,
-    /emotion/i,
-    /emoji/i,
-    /face/i,
-  ];
-  return owoPatterns.some(pattern => pattern.test(src));
+  return OWO_PATTERNS.some(pattern => pattern.test(src));
 };
 
 /**

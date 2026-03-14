@@ -1,6 +1,6 @@
 "use client";
 
-import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-sse";
+import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-ws";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
