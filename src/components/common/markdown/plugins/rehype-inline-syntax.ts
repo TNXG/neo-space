@@ -69,8 +69,8 @@ export const rehypeInlineSyntax = () => {
           });
         }
 
-        lastIndex = regex.lastIndex;
-        match = regex.exec(text);
+        lastIndex = INLINE_SYNTAX_REGEX.lastIndex;
+        match = INLINE_SYNTAX_REGEX.exec(text);
       }
 
       if (children.length === 0)

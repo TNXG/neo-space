@@ -106,19 +106,6 @@ impl ServerToReaderMessage {
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(self)
     }
-
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Pong => "pong",
-            Self::Welcome { .. } => "welcome",
-            Self::OnlineCountUpdate { .. } => "online_count_update",
-            Self::PageReaders { .. } => "page_readers",
-            Self::ReadingList { .. } => "reading_list",
-            Self::OwnerWindowInfo { .. } => "owner_window_info",
-            Self::OwnerMediaPlayback { .. } => "owner_media_playback",
-            Self::Error { .. } => "error",
-        }
-    }
 }
 
 // ==================== WebSocket Related ====================
