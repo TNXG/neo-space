@@ -1,24 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CreativeCommonsIcon } from "@/lib/file-icons";
 import { Icon } from "@/lib/inline-icon";
-
-function CCIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      {...props}
-    >
-      <path
-        fill="currentColor"
-        d="M9 8c1.104 0 2.105.448 2.829 1.173l-1.414 1.413a2 2 0 1 0 0 2.828l1.413 1.414A4.001 4.001 0 0 1 5 12c0-2.208 1.792-4 4-4m9.829 1.173A4.001 4.001 0 0 0 12 12a4.001 4.001 0 0 0 6.828 2.828l-1.414-1.414a2 2 0 1 1 0-2.828zM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12m10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16"
-      />
-    </svg>
-  );
-}
 
 type LicenseAtom = "CC" | "BY" | "NC" | "ND" | "SA" | "ZERO";
 
@@ -56,13 +40,40 @@ const LICENSES: Record<string, LicenseConfig> = {
   },
 };
 
-const ATOM_DATA: Record<LicenseAtom, { icon: string; label: string; desc: string }> = {
-  CC: { icon: "custom-cc", label: "CC", desc: "知识共享许可" }, // 标记为 custom 使用您的 SVG
-  BY: { icon: "mingcute:user-4-line", label: "BY", desc: "署名：必须保留原作者署名" },
-  NC: { icon: "mingcute:currency-dollar-line", label: "NC", desc: "非商业：禁止用于商业目的" },
-  ND: { icon: "mingcute:equal-line", label: "ND", desc: "禁止演绎：必须保持原样" },
-  SA: { icon: "mingcute:refresh-2-line", label: "SA", desc: "相同方式共享：以同协议发布" },
-  ZERO: { icon: "mingcute:hashtag-line", label: "CC0", desc: "公有领域：放弃所有权利" },
+const ATOM_DATA: Record<
+  LicenseAtom,
+  { icon: string; label: string; desc: string }
+> = {
+  CC: {
+    icon: "simple-icons:creativecommons",
+    label: "CC",
+    desc: "知识共享许可",
+  },
+  BY: {
+    icon: "mingcute:user-4-line",
+    label: "BY",
+    desc: "署名：必须保留原作者署名",
+  },
+  NC: {
+    icon: "mingcute:currency-dollar-line",
+    label: "NC",
+    desc: "非商业：禁止用于商业目的",
+  },
+  ND: {
+    icon: "mingcute:balance-line",
+    label: "ND",
+    desc: "禁止演绎：必须保持原样",
+  },
+  SA: {
+    icon: "mingcute:refresh-2-line",
+    label: "SA",
+    desc: "相同方式共享：以同协议发布",
+  },
+  ZERO: {
+    icon: "mingcute:hashtag-line",
+    label: "CC0",
+    desc: "公有领域：放弃所有权利",
+  },
 };
 
 interface CopyrightCardPropsBase {
@@ -84,7 +95,8 @@ interface CopyrightCardRangeYearProps {
   modifiedYear?: string;
 }
 
-export type CopyrightCardProps = CopyrightCardPropsBase & (CopyrightCardSingleYearProps | CopyrightCardRangeYearProps);
+export type CopyrightCardProps = CopyrightCardPropsBase
+  & (CopyrightCardSingleYearProps | CopyrightCardRangeYearProps);
 
 export function CopyrightCard({
   licenseType = "BY-NC-SA",
@@ -97,13 +109,41 @@ export function CopyrightCard({
 }: CopyrightCardProps) {
   const config = LICENSES[licenseType] || LICENSES["BY-NC-SA"];
   const [hoveredAtom, setHoveredAtom] = useState<LicenseAtom | null>(null);
+  const [displayedAtom, setDisplayedAtom] = useState<LicenseAtom | null>(null);
   const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 防抖：hoveredAtom 变化后延迟更新 displayedAtom
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    if (hoveredAtom === null) {
+      // 立即隐藏，使用 setTimeout(0) 避免同步更新
+      timeoutRef.current = setTimeout(() => {
+        setDisplayedAtom(null);
+      }, 0);
+    } else {
+      // 延迟显示，等待 a 标签淡出
+      timeoutRef.current = setTimeout(() => {
+        setDisplayedAtom(hoveredAtom);
+      }, 150);
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [hoveredAtom]);
 
   const startYear = createdYear ?? year ?? "";
   const endYear = modifiedYear ?? createdYear ?? year ?? "";
-  const displayYear = startYear && endYear && startYear !== endYear
-    ? `${startYear} - ${endYear}`
-    : startYear || endYear;
+  const displayYear
+    = startYear && endYear && startYear !== endYear
+      ? `${startYear} - ${endYear}`
+      : startYear || endYear;
 
   const handleCopy = () => {
     const postLink = typeof window !== "undefined" ? window.location.href : "";
@@ -121,7 +161,7 @@ export function CopyrightCard({
     <div className={`w-full max-w-3xl mx-auto my-8 ${className}`}>
       <div className="relative overflow-hidden rounded-xl border border-border bg-surface-100/80 backdrop-blur-md shadow-sm">
         <div className="absolute -bottom-6 -right-6 text-foreground/5 pointer-events-none select-none z-0">
-          <CCIcon width={180} height={180} className="transform rotate-12" />
+          <CreativeCommonsIcon size={180} className="transform rotate-12" />
         </div>
         <div className="relative z-10 p-6 flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -152,7 +192,8 @@ export function CopyrightCard({
               onClick={handleCopy}
               className={`
                 shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer
-                ${copied
+                ${
+    copied
       ? "bg-accent-600 border-accent-600 text-white"
       : "bg-surface-100 border-primary-300 text-primary-600 hover:border-accent-400 hover:text-accent-700"
     }
@@ -182,7 +223,8 @@ export function CopyrightCard({
                     onMouseEnter={() => setHoveredAtom(atom)}
                     className={`
                       relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 cursor-help
-                      ${isActive
+                      ${
+                  isActive
                     ? "bg-accent-100 text-accent-700 scale-110 shadow-sm z-20"
                     : "text-primary-400 hover:text-primary-700"
                   }
@@ -190,7 +232,7 @@ export function CopyrightCard({
                   >
                     {atom === "CC"
                       ? (
-                          <CCIcon width={20} height={20} />
+                          <CreativeCommonsIcon size={20} />
                         )
                       : (
                           <Icon icon={data.icon} width={20} height={20} />
@@ -209,7 +251,9 @@ export function CopyrightCard({
                 <div
                   key={atom}
                   className={`text-sm absolute inset-0 flex items-center justify-center sm:justify-start transition-opacity duration-200 ${
-                    hoveredAtom === atom ? "opacity-100" : "opacity-0 pointer-events-none"
+                    displayedAtom === atom
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none"
                   }`}
                 >
                   <div className="flex items-center gap-2">
