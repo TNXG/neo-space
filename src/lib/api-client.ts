@@ -55,6 +55,14 @@ async function apiClient<T>(
     });
 
     if (!response.ok) {
+      // 获取 API 返回的详细错误信息
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        // 无法解析 JSON 则忽略
+      }
+
       // Handle 401 Unauthorized - token expired or invalid
       if (response.status === 401) {
         // Only clear auth on client side
@@ -74,7 +82,7 @@ async function apiClient<T>(
           });
         }
       }
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      throw new Error(errorData?.message || `API Error: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
