@@ -88,21 +88,21 @@ impl EmailService {
             ));
         }
 
-        // Read options sub-document
-        let options = value
-            .get_document("options")
+        // Read smtp sub-document
+        let smtp = value
+            .get_document("smtp")
             .map_err(|_| AppError::Internal("Email options missing".to_string()))?;
 
-        let user = value
+        let user = smtp
             .get_str("user")
             .map_err(|_| AppError::Internal("Email username not configured".to_string()))?
             .to_string();
         let from_email = value.get_str("from").unwrap_or(&user).to_string();
 
-        let port = u16::try_from(options.get_i32("port").unwrap_or(587))
+        let port = u16::try_from(smtp.get_i32("port").unwrap_or(587))
             .map_err(|_| AppError::Internal("Invalid email port".to_string()))?;
 
-        let secure = options.get_bool("secure").unwrap_or(false);
+        let secure = smtp.get_bool("secure").unwrap_or(false);
 
         // Determine encryption type based on port and secure setting
         let encryption = if port == 465 {
@@ -118,13 +118,13 @@ impl EmailService {
         };
 
         Ok(EmailConfig {
-            host: options
+            host: smtp
                 .get_str("host")
                 .map_err(|_| AppError::Internal("SMTP host not configured".to_string()))?
                 .to_string(),
             port,
             user: user.clone(),
-            password: value
+            password: smtp
                 .get_str("pass")
                 .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
                 .to_string(),
