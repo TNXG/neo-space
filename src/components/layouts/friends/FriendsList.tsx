@@ -251,7 +251,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                   Health
                 </span>
                 <Icon
-                  icon="mingcute:activity-heartbeat-line"
+                  icon="mingcute:heartbeat-line"
                   className={cn("w-4 h-4", statusColor)}
                 />
               </div>

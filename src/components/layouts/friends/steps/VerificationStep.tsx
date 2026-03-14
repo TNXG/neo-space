@@ -14,6 +14,7 @@ interface VerificationStepProps {
   setValue: UseFormSetValue<LinkApplyFormData>;
   code: string;
   isCodeSent: boolean;
+  isPending: boolean;
   countdown: number;
   onSendCode: () => void;
   emailError?: string;
@@ -25,6 +26,7 @@ export function VerificationStep({
   setValue,
   code,
   isCodeSent,
+  isPending,
   countdown,
   onSendCode,
   emailError,
@@ -35,7 +37,7 @@ export function VerificationStep({
       <div className="p-4 bg-accent-50/50 border border-accent-100 rounded-xl text-sm text-accent-800">
         <div className="flex items-start gap-2">
           <Icon icon="mingcute:safe-flash-line" className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>我们需要验证你的邮箱以确保你是站长本人，并用于接收友链申请结果通知。</p>
+          <p>我们需要验证您的邮箱，以确认您为本站站长身份，同时用于接收友链申请结果、站点变更等相关通知。</p>
         </div>
       </div>
 
@@ -58,10 +60,16 @@ export function VerificationStep({
               type="button"
               variant={isCodeSent && countdown > 0 ? "secondary" : "default"}
               onClick={onSendCode}
-              disabled={isCodeSent && countdown > 0}
-              className="min-w-[100px] shrink-0"
+              disabled={isPending || (isCodeSent && countdown > 0)}
+              className="min-w-25 shrink-0"
             >
-              {isCodeSent && countdown > 0 ? `${countdown}s` : "发送验证码"}
+              {isPending
+                ? (
+                    <Icon icon="mingcute:loading-3-line" className="w-4 h-4 animate-spin" />
+                  )
+                : isCodeSent && countdown > 0
+                  ? `${countdown}s`
+                  : "发送验证码"}
             </Button>
           </div>
           {emailError && <FieldError>{emailError}</FieldError>}

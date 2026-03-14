@@ -281,6 +281,7 @@ export function LinkApplyForm() {
               setValue={setValue}
               code={formData.code}
               isCodeSent={isCodeSent}
+              isPending={isPending}
               countdown={countdown}
               onSendCode={handleSendCode}
               emailError={errors.email?.message}

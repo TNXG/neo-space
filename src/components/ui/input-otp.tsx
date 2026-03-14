@@ -103,7 +103,7 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
       className="flex items-center justify-center text-muted-foreground/50"
       {...props}
     >
-      <Icon icon="mingcute:minus-line" className="w-4 h-4" />
+      <Icon icon="mingcute:minimize-line" className="w-4 h-4" />
     </div>
   );
 }
