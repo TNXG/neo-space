@@ -26,7 +26,7 @@ export function GuidelinesStep({ register, setValue, checked, error }: Guideline
             <p className="text-sm text-accent-800 leading-relaxed">
               请阅读我们的
               {" "}
-              <Link href="/about-site#%E5%8F%8B%E9%93%BE%E7%94%B3%E8%AF%B7%E6%9D%A1%E6%AC%BE" target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
+              <Link href="/about-site#%E5%85%AB%E3%80%81%E5%8F%8B%E9%93%BE%E7%94%B3%E8%AF%B7%E6%9D%A1%E6%AC%BE" target="_blank" className="underline underline-offset-4 hover:text-accent-600 transition-colors font-medium">
                 友链指南
               </Link>
               。

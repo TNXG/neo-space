@@ -82,6 +82,7 @@ const BaseSvg: React.FC<IconProps & { html?: string; svgViewBox?: string }> = ({
     className,
     style: {
       ...(hasClassSize ? {} : { width: size, height: size }),
+      display: "block",
       flexShrink: 0,
       overflow: "visible" as const,
       color: fillColor, // 使用 color 属性，让内部的 currentColor 继承

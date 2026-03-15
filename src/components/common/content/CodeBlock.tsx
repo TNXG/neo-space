@@ -42,7 +42,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
   };
 
   return (
-    <div className="group relative my-5 md:my-6 overflow-hidden rounded-xl border border-border bg-white/50 dark:bg-primary-100/50 shadow-sm transition-all hover:shadow-md backdrop-blur-sm">
+    <div className="group relative my-5 md:my-6 overflow-hidden rounded-xl border border-border bg-white/50 dark:bg-primary-100/50 shadow-sm backdrop-blur-sm">
       <div className="flex h-10 md:h-11 items-center justify-between border-b border-border/60 bg-zinc-50/50 dark:bg-primary-200/50 px-3 md:px-4">
         <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1 overflow-hidden">
           <div className="hidden sm:flex items-center gap-1.5 opacity-70 transition-opacity group-hover:opacity-100 shrink-0">
@@ -51,8 +51,8 @@ export function CodeBlock({ children, className, language = "text", filename, st
             <div className="h-3 w-3 rounded-full bg-[#28c840] ring-1 ring-inset ring-black/10" />
           </div>
           <div className="flex items-center gap-1.5 md:gap-2 select-none min-w-0 overflow-hidden">
-            <FileIcon extension={language} className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
-            <span className="text-[11px] md:text-xs font-medium text-zinc-600 dark:text-primary-600 truncate">
+            <FileIcon extension={language} size={20} className="shrink-0" />
+            <span className="text-xs font-medium text-zinc-600 dark:text-primary-600 truncate leading-none">
               {filename || language}
             </span>
           </div>

@@ -47,7 +47,7 @@ export const Icon: React.FC<IconProps> = ({
       width={width}
       height={height}
       className={className}
-      style={{ flexShrink: 0, ...style }}
+      style={{ display: "block", flexShrink: 0, ...style }}
       dangerouslySetInnerHTML={{ __html: data.body }}
       {...rest}
     />
