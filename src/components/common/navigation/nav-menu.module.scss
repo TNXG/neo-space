@@ -1,0 +1,78 @@
+/* ===== NavigationMenu Positioner ===== */
+.positioner {
+  outline: none;
+  z-index: 60;
+  width: var(--positioner-width);
+  height: var(--positioner-height);
+  transition:
+    left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    top 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &[data-instant] {
+    transition-duration: 0s;
+  }
+}
+
+/* ===== NavigationMenu Popup ===== */
+.popup {
+  overflow: hidden;
+  transform-origin: var(--transform-origin);
+  width: var(--popup-width);
+  height: var(--popup-height);
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  &[data-starting-style] {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+
+  &[data-ending-style] {
+    opacity: 0;
+    transform: scale(0.98) translateY(-2px);
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+  }
+}
+
+/* ===== NavigationMenu Viewport ===== */
+.viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== NavigationMenu Content ===== */
+.content {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  &[data-starting-style] {
+    opacity: 0;
+  }
+
+  &[data-activation-direction="right"][data-starting-style] {
+    transform: translateX(12px);
+  }
+
+  &[data-activation-direction="left"][data-starting-style] {
+    transform: translateX(-12px);
+  }
+
+  &[data-ending-style] {
+    opacity: 0;
+  }
+
+  &[data-activation-direction="right"][data-ending-style] {
+    transform: translateX(-12px);
+  }
+
+  &[data-activation-direction="left"][data-ending-style] {
+    transform: translateX(12px);
+  }
+}

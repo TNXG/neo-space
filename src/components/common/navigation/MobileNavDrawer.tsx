@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import * as React from "react";
 import {
   Drawer,
   DrawerBody,

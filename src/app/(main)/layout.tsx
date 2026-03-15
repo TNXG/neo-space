@@ -27,11 +27,11 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <PageProvider>
       <NbnhhshProvider>
         <div className="flex flex-col min-h-screen">
-          <main className="flex-1">
+          <FloatingNav user={profileResponse.data} />
+          <main className="flex-1 pt-20">
             {children}
           </main>
           <Footer user={profileResponse.data} />
-          <FloatingNav user={profileResponse.data} />
         </div>
         <NbnhhshPanel />
       </NbnhhshProvider>
