@@ -1,5 +1,8 @@
 //! Real-time features
 
-pub mod ws;
+pub mod common;
+pub mod owner_desktop;
+pub mod reader;
 
-pub use ws::{owner_desktop_ws, reader_ws};
+pub use owner_desktop::owner_desktop_ws;
+pub use reader::reader_ws;

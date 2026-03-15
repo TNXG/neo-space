@@ -71,6 +71,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         link_check_interval
     );
 
+    // Start NetEase now playing polling task
+    tasks::start_netease_now_playing_task(state.clone(), state.ncm_np_service.clone());
+    info!("网易云播放状态轮询任务已启动（间隔: 30秒）");
+
     // Build router
     let app = create_app(state);
 

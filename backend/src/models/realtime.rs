@@ -5,6 +5,24 @@ use utoipa::ToSchema;
 
 // ==================== Shared Types ====================
 
+/// NetEase Cloud Music now playing status
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct NeteaseNowPlaying {
+    pub active: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub song: Option<NeteaseSong>,
+}
+
+/// NetEase Cloud Music song information
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct NeteaseSong {
+    pub id: String,
+    pub name: String,
+    pub artist: String,
+    pub album: String,
+    pub cover: String,
+}
+
 /// Window information
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct WindowInfo {
@@ -95,6 +113,8 @@ pub enum ServerToReaderMessage {
     OwnerMediaPlayback {
         metadata: MediaMetadata,
         playback_state: PlaybackState,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        netease: Option<NeteaseNowPlaying>,
         updated_at: i64,
     },
     Error {

@@ -29,6 +29,21 @@ export interface PlaybackState {
   elapsed_time: number;
 }
 
+/** NetEase Cloud Music song */
+export interface NeteaseSong {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  cover: string;
+}
+
+/** NetEase Cloud Music now playing status */
+export interface NeteaseNowPlaying {
+  active: boolean;
+  song?: NeteaseSong;
+}
+
 /** Reading content item */
 export interface ReadingItem {
   page_type: string;
@@ -44,6 +59,7 @@ export interface OwnerStatus {
     metadata: MediaMetadata;
     playbackState: PlaybackState;
   };
+  netease?: NeteaseNowPlaying;
   updatedAt: number;
 }
 
@@ -65,6 +81,7 @@ interface WSActions {
   setOwnerMediaPlayback: (
     metadata: MediaMetadata,
     playbackState: PlaybackState,
+    netease: NeteaseNowPlaying | undefined,
     updatedAt: number,
   ) => void;
   setReadingList: (items: ReadingItem[]) => void;
@@ -93,15 +110,21 @@ export const useWSStore = create<WSState & WSActions>(set => ({
       ownerStatus: {
         windowInfo,
         mediaPlayback: state.ownerStatus?.mediaPlayback,
+        netease: state.ownerStatus?.netease,
         updatedAt,
       },
     })),
 
-  setOwnerMediaPlayback: (metadata, playbackState, updatedAt) =>
+  setOwnerMediaPlayback: (metadata, playbackState, netease, updatedAt) =>
     set(state => ({
       ownerStatus: {
         windowInfo: state.ownerStatus?.windowInfo,
-        mediaPlayback: { metadata, playbackState },
+        // 只在桌面端有真实数据时更新（避免 NCM 任务的空消息覆盖桌面状态）
+        mediaPlayback: (metadata.title || playbackState.playing)
+          ? { metadata, playbackState }
+          : state.ownerStatus?.mediaPlayback,
+        // netease 有新值则更新，否则保留旧值
+        netease: netease ?? state.ownerStatus?.netease,
         updatedAt,
       },
     })),

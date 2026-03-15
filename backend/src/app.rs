@@ -11,6 +11,7 @@ use crate::config::AppConfig;
 use crate::external::email::EmailService;
 use crate::openapi::ApiDoc;
 use crate::routes;
+use crate::services::ncm_np::NeteaseNowPlayingService;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -29,6 +30,8 @@ pub struct AppState {
     pub http_client: Client,
     /// Shared email service (preserves verification code cache across requests)
     pub email_service: EmailService,
+    /// NetEase Cloud Music now playing service
+    pub ncm_np_service: NeteaseNowPlayingService,
 }
 
 /// Real-time event types
@@ -97,6 +100,10 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
     let email_service = EmailService::new(db.clone());
     tracing::info!("邮件服务初始化完成");
 
+    // Create NetEase now playing service
+    let ncm_np_service = NeteaseNowPlayingService::new(db.clone());
+    tracing::info!("网易云音乐服务初始化完成");
+
     tracing::info!("所有应用服务初始化完成");
 
     Arc::new(AppState {
@@ -106,6 +113,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         event_bus,
         http_client,
         email_service,
+        ncm_np_service,
     })
 }
 
@@ -123,7 +131,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/notes", routes::note::routes())
         .nest("/comments", routes::comment::routes())
         .nest("/links", routes::link::routes())
-        .nest("/users", routes::user::routes())
+        .nest("/user", routes::user::routes())
         .merge(routes::misc::routes());
 
     // WebSocket routes
@@ -137,7 +145,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
         "/api/static/artworks/{filename}",
         axum::routing::get(crate::handlers::artwork::serve_artwork),
     );
-    
+
     // Combine all routes
     axum::Router::new()
         .nest("/api", api_router)

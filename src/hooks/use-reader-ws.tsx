@@ -2,6 +2,7 @@
 
 import type {
   MediaMetadata,
+  NeteaseNowPlaying,
   PlaybackState,
   ReadingItem,
   WindowInfo,
@@ -12,7 +13,7 @@ import { WS_BASE_URL } from "@/lib/api-client";
 import { useWSStore } from "@/stores/ws-store";
 
 // Export types for other components to use
-export type { MediaMetadata, PlaybackState, ReadingItem, WindowInfo };
+export type { MediaMetadata, NeteaseNowPlaying, PlaybackState, ReadingItem, WindowInfo };
 export type { OwnerStatus } from "@/stores/ws-store";
 
 /** Server message to reader */
@@ -26,6 +27,7 @@ interface ServerToReaderMessage {
   window_info?: WindowInfo;
   metadata?: MediaMetadata;
   playback_state?: PlaybackState;
+  netease?: NeteaseNowPlaying;
   updated_at?: number;
   message?: string;
 }
@@ -46,6 +48,9 @@ let wsInstance: WebSocket | null = null;
 let activeSubscribers = 0;
 let disconnectTimeout: NodeJS.Timeout | null = null;
 let reconnectTimeout: NodeJS.Timeout | null = null;
+let heartbeatInterval: NodeJS.Timeout | null = null;
+
+const HEARTBEAT_INTERVAL_MS = 30_000;
 
 // Cached fingerprint to avoid recomputing
 let cachedFingerprint: string | null = null;
@@ -151,7 +156,7 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
 
       case "owner_media_playback":
         if (data.metadata && data.playback_state && data.updated_at !== undefined) {
-          setOwnerMediaPlayback(data.metadata, data.playback_state, data.updated_at);
+          setOwnerMediaPlayback(data.metadata, data.playback_state, data.netease, data.updated_at);
         }
         break;
 
@@ -224,6 +229,12 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
         setConnected(true);
         reconnectAttempts = 0; // Reset retry counter on successful connection
         optionsRef.current.onOpen?.();
+
+        // Start heartbeat
+        heartbeatInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN)
+            ws.send(JSON.stringify({ type: "ping" }));
+        }, HEARTBEAT_INTERVAL_MS);
       };
 
       ws.onmessage = (event) => {
@@ -240,6 +251,10 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
       };
 
       ws.onclose = () => {
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
         setConnected(false);
         optionsRef.current.onClose?.();
 
@@ -255,6 +270,10 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
       };
 
       ws.onerror = (e) => {
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
         setConnected(false);
         optionsRef.current.onError?.(e);
 

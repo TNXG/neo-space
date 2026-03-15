@@ -20,6 +20,7 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
 
   const mediaPlayback = ownerStatus?.mediaPlayback;
   const windowInfo = ownerStatus?.windowInfo;
+  const netease = ownerStatus?.netease;
   const playbackState = mediaPlayback?.playbackState;
   const isPlaying = playbackState?.playing ?? false;
   const updatedAt = ownerStatus?.updatedAt ?? 0;
@@ -28,7 +29,6 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
   const isFresh = updatedAt > 0 && now - updatedAt < STALE_MS;
   const isOwnerOnline = isConnected && isFresh;
 
-  // 获取活动描述
   const getActivityText = () => {
     if (isPlaying && mediaPlayback?.metadata.title) {
       return mediaPlayback.metadata.artist
@@ -37,6 +37,9 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
     }
     if (windowInfo?.title) {
       return `正在使用 ${windowInfo.process_name}`;
+    }
+    if (netease?.active && netease.song) {
+      return `正在听 ${netease.song.name} - ${netease.song.artist}`;
     }
     if (isConnected && !isFresh)
       return "在线 · 暂无活动";
