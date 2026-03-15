@@ -86,6 +86,7 @@ export interface Category {
   slug: string;
   type: number;
   created: string;
+  count?: number;
 }
 
 /**
@@ -276,6 +277,28 @@ export interface Page {
   created: string;
   allowComment: boolean;
   commentsIndex: number;
+}
+
+/**
+ * Nav Top Item - aggregated recent posts + notes for nav hover
+ * Returned by GET /aggregate/nav
+ */
+export interface NavTopItem {
+  type: "post" | "note";
+  id: string;
+  title: string;
+  created: string;
+  /** post only */
+  slug?: string;
+  /** post only */
+  category?: { name: string; slug: string };
+  /** note only */
+  nid?: number;
+}
+
+export interface NavData {
+  recent: NavTopItem[];
+  categories: Category[];
 }
 
 /**
