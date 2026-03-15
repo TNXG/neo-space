@@ -17,6 +17,8 @@ pub fn routes() -> axum::Router<SharedState> {
             "/nbnhhsh/guess",
             axum::routing::post(handlers::misc::nbnhhsh_guess),
         )
+        // Nav hover aggregated feed
+        .route("/aggregate/nav", axum::routing::get(handlers::misc::aggregate_nav))
         // Search
         .route("/search", axum::routing::get(handlers::search::search))
         // AI features
