@@ -9,11 +9,13 @@ import {
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { Icon } from "@/lib/inline-icon";
 
+import { cn } from "@/lib/utils";
+
 /**
  * Theme toggle button component
  * Cycles between light, dark, and system mode
  */
-export function ThemeToggle() {
+export function ThemeToggle({ className, iconClassName }: { className?: string; iconClassName?: string }) {
   const mounted = useHasMounted();
   const { theme, setTheme } = useTheme();
 
@@ -21,10 +23,10 @@ export function ThemeToggle() {
     return (
       <button
         type="button"
-        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200", className)}
         aria-label="切换主题"
       >
-        <Icon icon="mingcute:sun-line" className="text-lg sm:text-xl" />
+        <Icon icon="mingcute:sun-line" className={cn("text-lg sm:text-lg", iconClassName)} />
       </button>
     );
   }
@@ -65,13 +67,13 @@ export function ThemeToggle() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200"
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200", className)}
           aria-label={`当前: ${themeConfig.label}`}
         >
-          <Icon icon={themeConfig.icon} className="text-lg sm:text-xl" />
+          <Icon icon={themeConfig.icon} className={cn("text-lg sm:text-lg", iconClassName)} />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={16}>{themeConfig.label}</TooltipContent>
+      <TooltipContent side="bottom" sideOffset={12}>{themeConfig.label}</TooltipContent>
     </Tooltip>
   );
 }
