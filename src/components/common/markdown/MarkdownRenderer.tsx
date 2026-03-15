@@ -180,7 +180,7 @@ const components: Components = {
   },
 
   blockquote: ({ children }) => (
-    <blockquote className="relative my-6 md:my-8 pl-4 md:pl-6 py-3 md:py-4 pr-3 md:pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word">
+    <blockquote className="relative my-6 md:my-8 pl-4 md:pl-6 py-3 md:py-4 pr-3 md:pr-4 border-l-4 border-accent-500 rounded-r-2xl bg-surface-100/50 backdrop-blur-sm italic text-primary-600 shadow-sm wrap-break-word w-full">
       {children}
     </blockquote>
   ),

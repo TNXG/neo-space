@@ -73,6 +73,9 @@ interface IconData {
 
 // 同时匹配 JSX 属性 icon="col:name" 和对象字面量 icon: "col:name"
 const ICON_PROP_RE = /\bicon[=:]\s*["']([\w-]+):([\w.-]+)["']/g;
+const ICONS_JSON_RE = /icons\.json$/;
+const EXT2LANG_VALUE_RE = /:\s*["']([\w.-]+)["']/g;
+const HYPHEN_RE = /-/g;
 const byCollection: Record<string, Set<string>> = {};
 
 for (const file of allFiles) {
@@ -109,7 +112,7 @@ for (const m of fileIconsSrc.matchAll(CREATE_MG_RE)) {
 const EXT2LANG_RE = /ext2lang[^=]*=\s*\{([^}]+)\}/;
 const ext2langMatch = fileIconsSrc.match(EXT2LANG_RE);
 if (ext2langMatch) {
-  for (const m of ext2langMatch[1]!.matchAll(/:\s*["']([\w.-]+)["']/g)) {
+  for (const m of ext2langMatch[1]!.matchAll(EXT2LANG_VALUE_RE)) {
     if (!byCollection.catppuccin)
       byCollection.catppuccin = new Set();
     byCollection.catppuccin.add(m[1]);
@@ -160,6 +163,20 @@ const COLLECTION_PKG: Record<string, string> = {
   "catppuccin": "@iconify-json/catppuccin/icons.json",
 };
 
+// 从同目录的 info.json 读取集合的默认尺寸（icons.json 中可能缺失）
+function readCollectionInfo(pkgPath: string): { width?: number; height?: number } {
+  try {
+    const infoPath = pkgPath.replace(ICONS_JSON_RE, "info.json");
+    const info = require(infoPath) as Record<string, unknown>;
+    return {
+      width: typeof info.width === "number" ? info.width : typeof info.height === "number" ? info.height : undefined,
+      height: typeof info.height === "number" ? info.height : typeof info.width === "number" ? info.width : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
 const extracted: Record<string, Record<string, IconData>> = {};
 
 for (const [col, names] of Object.entries(byCollection)) {
@@ -169,6 +186,12 @@ for (const [col, names] of Object.entries(byCollection)) {
     continue;
   }
   const json = require(pkg) as IconCollection;
+  // 补充 info.json 中的默认尺寸
+  const info = readCollectionInfo(pkg);
+  if (!json.width && info.width)
+    json.width = info.width;
+  if (!json.height && info.height)
+    json.height = info.height;
   extracted[col] = {};
   const missing: string[] = [];
   for (const name of names) {
@@ -208,14 +231,14 @@ export interface IconEntry { body: string; viewBox: string }
 `;
 
 for (const [col, data] of Object.entries(extracted)) {
-  const varName = collectionVarNames[col] ?? `${col.replace(/-/g, "_")}IconsData`;
+  const varName = collectionVarNames[col] ?? `${col.replace(HYPHEN_RE, "_")}IconsData`;
   tsBody += `export const ${varName}: Record<string, IconEntry> = ${toTsRecord(data)};\n\n`;
 }
 
 // 汇总映射表，供 InlineIcon 按集合名查找
 tsBody += `export const allIconCollections: Record<string, Record<string, IconEntry>> = {\n`;
 for (const col of Object.keys(extracted)) {
-  const varName = collectionVarNames[col] ?? `${col.replace(/-/g, "_")}IconsData`;
+  const varName = collectionVarNames[col] ?? `${col.replace(HYPHEN_RE, "_")}IconsData`;
   tsBody += `  "${col}": ${varName},\n`;
 }
 tsBody += `};\n`;
