@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     // 3. 验证时间戳（防止重放攻击）
     if (!verifyTimestamp(timestamp)) {
       return NextResponse.json(
-        { success: false, message: "时间戳验证失败（可能是重放攻击）" },
+        { success: false, message: "时间戳验证失败" },
         { status: 401 },
       );
     }
