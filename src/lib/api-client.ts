@@ -20,7 +20,8 @@ function inferWsUrlFromApiUrl(apiUrl: string): string {
     .replace("/api", "/ws");
 }
 
-export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
+export const WS_BASE_URL = inferWsUrlFromApiUrl(API_BASE_URL);
+export const WS_FALLBACK_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 
 /**
  * Generic API client with error handling and ISR support

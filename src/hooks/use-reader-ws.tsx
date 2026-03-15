@@ -1,5 +1,6 @@
 "use client";
 
+import type { ConnectionStatus } from "@/lib/ws-connection";
 import type {
   MediaMetadata,
   NeteaseNowPlaying,
@@ -9,7 +10,8 @@ import type {
 } from "@/stores/ws-store";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCallback, useEffect, useRef } from "react";
-import { WS_BASE_URL } from "@/lib/api-client";
+import { WS_BASE_URL, WS_FALLBACK_URL } from "@/lib/api-client";
+import { SmartWebSocket } from "@/lib/ws-connection";
 import { useWSStore } from "@/stores/ws-store";
 
 // Export types for other components to use
@@ -41,25 +43,21 @@ interface UseReaderWSOptions {
   onOpen?: () => void;
   onClose?: () => void;
   onError?: (error: Event) => void;
+  onStatusChange?: (status: ConnectionStatus) => void;
 }
 
 // --- WebSocket connection management (module-level singleton) ---
-let wsInstance: WebSocket | null = null;
+let wsInstance: SmartWebSocket | null = null;
 let activeSubscribers = 0;
 let disconnectTimeout: NodeJS.Timeout | null = null;
-let reconnectTimeout: NodeJS.Timeout | null = null;
 let heartbeatInterval: NodeJS.Timeout | null = null;
+let hasSentHello = false;
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
 // Cached fingerprint to avoid recomputing
 let cachedFingerprint: string | null = null;
 let fingerprintPromise: Promise<string> | null = null;
-
-// Reconnection configuration
-const MAX_RETRIES = 5;
-const BASE_DELAY = 1000;
-let reconnectAttempts = 0;
 
 // Use FingerprintJS to generate browser fingerprint
 async function getFingerprint(): Promise<string> {
@@ -169,77 +167,96 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
     }
   }, [setOnlineCount, setCurrentPageReaders, setReadingList, setOwnerWindowInfo, setOwnerMediaPlayback]);
 
+  // Connection status handler
+  const handleStatusChange = useCallback((status: ConnectionStatus) => {
+    optionsRef.current.onStatusChange?.(status);
+
+    const isNowConnected = status === "connected_primary" || status === "connected_fallback";
+    setConnected(isNowConnected);
+
+    if (isNowConnected && !hasSentHello) {
+      // Send Hello message after connection is established
+      getFingerprint().then((fingerprint) => {
+        if (wsInstance?.send(JSON.stringify({
+          type: "hello",
+          fingerprint,
+        }))) {
+          hasSentHello = true;
+          optionsRef.current.onOpen?.();
+        } else {
+          console.error("Failed to send Hello message");
+          wsInstance?.disconnect();
+        }
+      }).catch((e) => {
+        console.error("Failed to get fingerprint:", e);
+        wsInstance?.disconnect();
+      });
+
+      // Start heartbeat
+      heartbeatInterval = setInterval(() => {
+        wsInstance?.send(JSON.stringify({ type: "ping" }));
+      }, HEARTBEAT_INTERVAL_MS);
+    } else if (!isNowConnected) {
+      // Disconnected
+      hasSentHello = false;
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+      if (status === "disconnected") {
+        optionsRef.current.onClose?.();
+      } else if (status === "error") {
+        optionsRef.current.onError?.(new Event("WebSocket error"));
+      }
+    }
+  }, [setConnected]);
+
   const disconnect = useCallback(() => {
     if (wsInstance) {
-      wsInstance.close();
+      wsInstance.disconnect();
       wsInstance = null;
+    }
+    hasSentHello = false;
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
     }
     setConnected(false);
   }, [setConnected]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(() => {
     if (disconnectTimeout) {
       clearTimeout(disconnectTimeout);
       disconnectTimeout = null;
     }
 
-    if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
-    }
-
-    if (wsInstance?.readyState === WebSocket.OPEN) {
+    if (wsInstance?.getStatus() === "connected_primary" || wsInstance?.getStatus() === "connected_fallback") {
       queueMicrotask(() => setConnected(true));
       return;
     }
 
-    if (wsInstance?.readyState === WebSocket.CONNECTING)
-      return;
+    // Build URL with query parameters
+    const params = new URLSearchParams();
+    const opts = optionsRef.current;
 
-    try {
-      const params = new URLSearchParams();
-      const opts = optionsRef.current;
+    if (opts.pageType)
+      params.append("pageType", opts.pageType);
+    if (opts.pageId)
+      params.append("pageId", opts.pageId);
+    if (opts.pageTitle)
+      params.append("pageTitle", opts.pageTitle);
 
-      if (opts.pageType)
-        params.append("pageType", opts.pageType);
-      if (opts.pageId)
-        params.append("pageId", opts.pageId);
-      if (opts.pageTitle)
-        params.append("pageTitle", opts.pageTitle);
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    const primaryUrl = `${WS_BASE_URL}/reader${queryString}`;
+    const fallbackUrl = `${WS_FALLBACK_URL}/reader${queryString}`;
 
-      const url = `${WS_BASE_URL}/reader${params.toString() ? `?${params.toString()}` : ""}`;
-      const ws = new WebSocket(url);
-      wsInstance = ws;
-
-      ws.onopen = async () => {
-        // Send Hello message with fingerprint after connection is established
+    // Create new SmartWebSocket instance
+    wsInstance = new SmartWebSocket({
+      primaryUrl,
+      fallbackUrl,
+      onMessage: (data) => {
         try {
-          const fingerprint = await getFingerprint();
-          const helloMsg = JSON.stringify({
-            type: "hello",
-            fingerprint,
-          });
-          ws.send(helloMsg);
-        } catch (e) {
-          console.error("Failed to send Hello message:", e);
-          ws.close();
-          return;
-        }
-
-        setConnected(true);
-        reconnectAttempts = 0; // Reset retry counter on successful connection
-        optionsRef.current.onOpen?.();
-
-        // Start heartbeat
-        heartbeatInterval = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN)
-            ws.send(JSON.stringify({ type: "ping" }));
-        }, HEARTBEAT_INTERVAL_MS);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          let msg = event.data;
+          let msg = data;
           if (typeof msg === "string")
             msg = JSON.parse(msg);
           if (typeof msg === "string")
@@ -248,50 +265,20 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
         } catch (e) {
           console.error("WS Parse Error:", e);
         }
-      };
+      },
+      onStatusChange: handleStatusChange,
+      reconnectInterval: 3000,
+      maxReconnectAttempts: 10,
+    });
 
-      ws.onclose = () => {
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-        setConnected(false);
-        optionsRef.current.onClose?.();
-
-        // Auto-reconnect with exponential backoff
-        if (activeSubscribers > 0 && reconnectAttempts < MAX_RETRIES) {
-          const delay = BASE_DELAY * 2 ** reconnectAttempts;
-          reconnectAttempts++;
-          console.log(`WS disconnected, reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RETRIES})`);
-          reconnectTimeout = setTimeout(() => {
-            connect();
-          }, delay);
-        }
-      };
-
-      ws.onerror = (e) => {
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-        setConnected(false);
-        optionsRef.current.onError?.(e);
-
-        if (activeSubscribers === 0) {
-          ws.close();
-          wsInstance = null;
-        }
-      };
-    } catch (e) {
-      console.error("WS Init Error:", e);
-    }
-  }, [handleMessage, setConnected]);
+    wsInstance.connect();
+  }, [handleMessage, handleStatusChange, setConnected]);
 
   useEffect(() => {
     const { autoConnect = true } = optionsRef.current;
     activeSubscribers++;
 
-    if (autoConnect)
+    if (autoConnect && !wsInstance)
       connect();
 
     return () => {
@@ -299,14 +286,12 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
       if (activeSubscribers === 0) {
         disconnectTimeout = setTimeout(() => {
           if (activeSubscribers === 0 && wsInstance) {
-            wsInstance.close();
-            wsInstance = null;
-            setConnected(false);
+            disconnect();
           }
         }, 2000);
       }
     };
-  }, [connect, setConnected]);
+  }, [connect, disconnect]);
 
   useEffect(() => {
     return () => {
@@ -314,9 +299,9 @@ export function useReaderWS(options: UseReaderWSOptions = {}) {
         clearTimeout(disconnectTimeout);
         disconnectTimeout = null;
       }
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = null;
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
       }
     };
   }, []);
