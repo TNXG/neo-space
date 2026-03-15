@@ -2,7 +2,6 @@
 
 import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-ws";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
 
 interface OwnerStatusProps {
   ownerStatus: OwnerStatusType | null;
@@ -10,24 +9,15 @@ interface OwnerStatusProps {
   className?: string;
 }
 
-/**
- * 博主状态组件
- * 显示博主当前活动和正在播放的媒体
- */
 export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatusProps) {
-  const STALE_MS = 90_000;
-  const [now, setNow] = useState(() => Date.now());
-
   const mediaPlayback = ownerStatus?.mediaPlayback;
   const windowInfo = ownerStatus?.windowInfo;
   const netease = ownerStatus?.netease;
-  const playbackState = mediaPlayback?.playbackState;
-  const isPlaying = playbackState?.playing ?? false;
-  const updatedAt = ownerStatus?.updatedAt ?? 0;
+  const isPlaying = mediaPlayback?.playbackState?.playing ?? false;
 
-  // 判断博主是否在线/状态是否新鲜
-  const isFresh = updatedAt > 0 && now - updatedAt < STALE_MS;
-  const isOwnerOnline = isConnected && isFresh;
+  // 通过 ws 中是否有 media 或 window 信息来判断博主在线
+  const hasActivity = Boolean(mediaPlayback || windowInfo || netease?.active);
+  const isOwnerOnline = isConnected && hasActivity;
 
   const getActivityText = () => {
     if (isPlaying && mediaPlayback?.metadata.title) {
@@ -35,26 +25,20 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
         ? `正在听 ${mediaPlayback.metadata.title} - ${mediaPlayback.metadata.artist}`
         : `正在听 ${mediaPlayback.metadata.title}`;
     }
-    if (windowInfo?.title) {
-      return `正在使用 ${windowInfo.process_name}`;
-    }
     if (netease?.active && netease.song) {
       return `正在听 ${netease.song.name} - ${netease.song.artist}`;
     }
-    if (isConnected && !isFresh)
+    if (windowInfo?.title) {
+      return `正在使用 ${windowInfo.process_name}`;
+    }
+    if (isConnected && !hasActivity)
       return "在线 · 暂无活动";
     return isConnected ? "在线" : "离线";
   };
 
-  // 定时刷新相对时间与“新鲜度”判定
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 10_000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <AnimatePresence mode="wait">
-      {(isConnected || updatedAt > 0)
+      {(isConnected || hasActivity)
         ? (
             <motion.div
               key="owner-status"
