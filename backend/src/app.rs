@@ -9,9 +9,8 @@ use tokio::sync::broadcast;
 
 use crate::config::AppConfig;
 use crate::external::email::EmailService;
-use crate::handlers;
 use crate::openapi::ApiDoc;
-use crate::realtime;
+use crate::routes;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -117,228 +116,34 @@ pub fn create_router(state: SharedState) -> axum::Router {
     let cors = cors_layer(&state.config.frontend_url, &state.config.backend_url);
     tracing::info!("CORS 配置完成 - 允许来源: {}", state.config.frontend_url);
 
-    // Health check endpoint (no auth required)
-    let health_router = axum::Router::new().route("/health", axum::routing::get(health_check));
-
-    // API v1 routes
+    // Build API router with nested routes to avoid path conflicts
     let api_router = axum::Router::new()
-        // Auth routes
-        .route(
-            "/auth/me",
-            axum::routing::get(handlers::auth::get_current_user),
-        )
-        .route(
-            "/auth/oauth/github",
-            axum::routing::get(handlers::oauth::github_oauth),
-        )
-        .route(
-            "/auth/oauth/github/callback",
-            axum::routing::get(handlers::oauth::github_callback),
-        )
-        .route(
-            "/auth/oauth/qq",
-            axum::routing::get(handlers::oauth::qq_oauth),
-        )
-        .route(
-            "/auth/oauth/qq/callback",
-            axum::routing::get(handlers::oauth::qq_callback),
-        )
-        .route(
-            "/auth/bindable-identities",
-            axum::routing::get(handlers::oauth::get_bindable_identities),
-        )
-        .route(
-            "/auth/bind-anonymous",
-            axum::routing::post(handlers::oauth::bind_anonymous),
-        )
-        .route(
-            "/auth/skip-bind",
-            axum::routing::post(handlers::oauth::skip_bind),
-        )
-        .route(
-            "/auth/accounts",
-            axum::routing::get(handlers::auth::get_user_accounts),
-        )
-        .route(
-            "/auth/avatar",
-            axum::routing::put(handlers::auth::update_user_avatar),
-        )
-        // Post routes
-        .route("/posts", axum::routing::get(handlers::post::list_posts))
-        .route("/posts/{id}", axum::routing::get(handlers::post::get_post))
-        .route(
-            "/posts/slug/{slug}",
-            axum::routing::get(handlers::post::get_post_by_slug),
-        )
-        .route(
-            "/posts/slug/{slug}/adjacent",
-            axum::routing::get(handlers::post::get_adjacent_posts),
-        )
-        // Note routes
-        .route("/notes", axum::routing::get(handlers::note::list_notes))
-        .route("/notes/{id}", axum::routing::get(handlers::note::get_note))
-        .route(
-            "/notes/nid/{nid}",
-            axum::routing::get(handlers::note::get_note_by_nid),
-        )
-        .route(
-            "/notes/nid/{nid}/adjacent",
-            axum::routing::get(handlers::note::get_adjacent_notes),
-        )
-        // Page routes
-        .route(
-            "/pages/{slug}",
-            axum::routing::get(handlers::page::get_page_by_slug),
-        )
-        // Comment routes
-        .route(
-            "/comments",
-            axum::routing::get(handlers::comment::list_comments),
-        )
-        .route(
-            "/comments",
-            axum::routing::post(handlers::comment::create_comment),
-        )
-        .route(
-            "/comments/{id}",
-            axum::routing::put(handlers::admin::comment::update_comment),
-        )
-        .route(
-            "/comments/{id}",
-            axum::routing::delete(handlers::admin::comment::delete_comment),
-        )
-        .route(
-            "/comments/{id}/hide",
-            axum::routing::patch(handlers::admin::comment::hide_comment),
-        )
-        .route(
-            "/comments/{id}/hide",
-            axum::routing::delete(handlers::admin::comment::unhide_comment),
-        )
-        .route(
-            "/comments/{id}/pin",
-            axum::routing::patch(handlers::admin::comment::pin_comment),
-        )
-        .route(
-            "/comments/{id}/pin",
-            axum::routing::delete(handlers::admin::comment::unpin_comment),
-        )
-        // Link routes
-        .route("/links", axum::routing::get(handlers::link::list_links))
-        .route("/links/{id}", axum::routing::get(handlers::link::get_link))
-        .route(
-            "/links/send-code",
-            axum::routing::post(handlers::link::send_verification_code),
-        )
-        .route(
-            "/links/apply",
-            axum::routing::post(handlers::link::apply_link),
-        )
-        // Artwork route
-        .route(
-            "/artworks/{filename}",
-            axum::routing::get(handlers::artwork::serve_artwork),
-        )
-        // User/readers routes
-        .route(
-            "/user/profile",
-            axum::routing::get(handlers::users::get_owner_profile),
-        )
-        .route(
-            "/readers",
-            axum::routing::get(handlers::users::list_readers_public),
-        )
-        .route(
-            "/readers/{id}",
-            axum::routing::get(handlers::users::get_reader_by_id_public),
-        )
-        .route(
-            "/users",
-            axum::routing::get(handlers::admin::users::list_users),
-        )
-        .route(
-            "/users/handle/check",
-            axum::routing::get(handlers::users::check_handle_availability),
-        )
-        .route(
-            "/users/avatar",
-            axum::routing::post(handlers::users::update_avatar),
-        )
-        .route(
-            "/users/profile",
-            axum::routing::patch(handlers::users::update_user_profile),
-        )
-        .route(
-            "/users/{id}",
-            axum::routing::get(handlers::admin::users::get_user_by_id),
-        )
-        .route(
-            "/users/{id}",
-            axum::routing::delete(handlers::admin::users::delete_user),
-        )
-        .route(
-            "/users/{id}/accounts",
-            axum::routing::get(handlers::admin::users::list_user_accounts),
-        )
-        .route(
-            "/users/{id}/accounts/{account_id}",
-            axum::routing::delete(handlers::admin::users::delete_user_account),
-        )
-        .route(
-            "/users/email/{email}",
-            axum::routing::get(handlers::admin::users::get_user_by_email),
-        )
-        // Config and misc routes
-        .route("/config", axum::routing::get(handlers::misc::get_config))
-        .route(
-            "/recentlies",
-            axum::routing::get(handlers::misc::list_recentlies),
-        )
-        .route(
-            "/categories",
-            axum::routing::get(handlers::misc::list_categories),
-        )
-        .route(
-            "/nbnhhsh/guess",
-            axum::routing::post(handlers::misc::nbnhhsh_guess),
-        )
-        // Search route
-        .route("/search", axum::routing::get(handlers::search::search))
-        // AI routes
-        .route(
-            "/ai/time-capsule",
-            axum::routing::post(handlers::ai::analyze_time_capsule),
-        )
-        .route(
-            "/ai/time-capsule/{ref_id}",
-            axum::routing::get(handlers::ai::get_time_capsule),
-        )
-        .with_state(state.clone());
+        .nest("/auth", routes::auth::routes())
+        .nest("/posts", routes::post::routes())
+        .nest("/notes", routes::note::routes())
+        .nest("/comments", routes::comment::routes())
+        .nest("/links", routes::link::routes())
+        .nest("/users", routes::user::routes())
+        .merge(routes::misc::routes());
 
     // WebSocket routes
-    let ws_router = axum::Router::new()
-        .route(
-            "/ws/owner-desktop",
-            axum::routing::get(realtime::owner_desktop_ws),
-        )
-        .route(
-            "/ws/reader",
-            axum::routing::get(realtime::reader_ws),
-        )
-        .with_state(state.clone());
+    let ws_router = axum::Router::new().nest("/ws", routes::ws::routes());
 
-    // Static files router (no /api prefix)
+    // Health check router (stateless, no /api prefix)
+    let health_router = routes::health::routes();
+
+    // Static files route (no /api prefix)
     let static_router = axum::Router::new().route(
         "/api/static/artworks/{filename}",
-        axum::routing::get(handlers::artwork::serve_artwork),
+        axum::routing::get(crate::handlers::artwork::serve_artwork),
     );
-
+    
     // Combine all routes
     axum::Router::new()
-        .merge(health_router)
         .nest("/api", api_router)
         .merge(ws_router)
         .merge(static_router)
+        .merge(health_router)
         .merge(SwaggerUi::new("/api-docs-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .fallback(crate::error::fallback_404)
         .layer(axum::middleware::from_fn(
@@ -347,20 +152,4 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .layer(tower_http::compression::CompressionLayer::new())
         .layer(cors)
         .with_state(state)
-}
-
-/// Simple health check endpoint
-#[utoipa::path(
-    get,
-    path = "/health",
-    responses(
-        (status = 200, description = "Health check successful")
-    ),
-    tag = "health"
-)]
-pub async fn health_check() -> axum::Json<serde_json::Value> {
-    axum::Json(serde_json::json!({
-        "status": "healthy",
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    }))
 }

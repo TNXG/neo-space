@@ -15,7 +15,7 @@ use utoipa::OpenApi;
     ),
     paths(
         // Health check
-        crate::app::health_check,
+        crate::routes::health::health_check,
     ),
     tags(
         (name = "health", description = "Health check endpoints"),

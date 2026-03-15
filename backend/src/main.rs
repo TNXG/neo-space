@@ -12,6 +12,7 @@ mod middleware;
 mod models;
 mod openapi;
 mod realtime;
+mod routes;
 mod services;
 mod tasks;
 
