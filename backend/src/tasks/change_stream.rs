@@ -38,6 +38,8 @@ pub fn start_change_stream_task(state: SharedState) {
 
 /// Monitor database changes via MongoDB Change Stream
 async fn monitor_changes(state: SharedState) -> Result<(), String> {
+    tracing::info!("正在初始化 MongoDB Change Stream...");
+
     // Watch collections: posts, notes, links
     let posts: Collection<Document> = state.db.collection("posts");
     let notes: Collection<Document> = state.db.collection("notes");
@@ -50,7 +52,14 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
         .full_document(mongodb::options::FullDocumentType::Required)
         .read_concern(mongodb::options::ReadConcern::majority())
         .await
-        .map_err(|e| format!("Failed to create posts change stream: {}", e))?;
+        .map_err(|e| {
+            tracing::error!("创建 posts change stream 失败: {}", e);
+            if e.to_string().contains("The $changeStream stage is only supported on replica sets") {
+                "Change Stream 需要副本集配置！MongoDB 单实例不支持 Change Stream。请配置 MongoDB 为副本集或使用 MongoDB Atlas。".to_string()
+            } else {
+                format!("Failed to create posts change stream: {}", e)
+            }
+        })?;
 
     let notes_stream = notes
         .watch()
@@ -66,7 +75,7 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
         .await
         .map_err(|e| format!("Failed to create links change stream: {}", e))?;
 
-    tracing::info!("Change stream monitoring started for posts, notes, links");
+    tracing::info!("✓ Change stream 监听已启动 - 正在监听: posts, notes, links");
 
     // Spawn separate tasks for each change stream
     let state_posts = state.clone();
