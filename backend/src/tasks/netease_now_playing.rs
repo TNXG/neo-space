@@ -63,6 +63,9 @@ async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool,
     // Get previous cached status for comparison
     let prev_status = service.get_cached().await;
 
+    // Check if the song is expired before fetching
+    let was_expired_before = service.is_song_expired().await;
+
     // Check if status changed: only active state or song ID matters
     let has_changed = match &prev_status {
         None => true,
@@ -72,9 +75,31 @@ async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool,
     // Always update cache to refresh TTL, even when unchanged
     service.update_cache(new_status.clone()).await;
 
-    if has_changed {
+    // Check if expired status has changed after update
+    let is_expired_after = service.is_song_expired().await;
+
+    // Need to broadcast if status changed OR if expiry status changed
+    let should_broadcast = has_changed || (was_expired_before != is_expired_after);
+
+    if should_broadcast {
         // Log status change
-        if new_status.active {
+        if was_expired_before && !is_expired_after && new_status.active {
+            // Was expired but now playing again
+            if let (Some(song_name), Some(artist)) = (&new_status.song_name, &new_status.artist) {
+                tracing::info!("[NetEase] 恢复播放: {} - {}", song_name, artist);
+            }
+        } else if !was_expired_before && is_expired_after {
+            // Just expired
+            if let Some(prev) = &prev_status
+                && let (Some(song_name), Some(artist)) = (&prev.song_name, &prev.artist)
+            {
+                tracing::info!(
+                    "[NetEase] 歌曲过期: {} - {} (超过 5 分钟)",
+                    song_name,
+                    artist
+                );
+            }
+        } else if new_status.active {
             // Switched to playing / changed song
             if let (Some(song_name), Some(artist)) = (&new_status.song_name, &new_status.artist) {
                 let prev_song_name = prev_status.as_ref().and_then(|p| p.song_name.as_ref());
@@ -125,5 +150,5 @@ async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool,
         }
     }
 
-    Ok(has_changed)
+    Ok(should_broadcast)
 }

@@ -11,7 +11,7 @@ use serde::Serialize;
 use serde_json::Value;
 pub type NeteaseError = Box<dyn std::error::Error + Send + Sync>;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 
 const EAPI_KEY: &str = "e82ckenh8dichen8";
@@ -165,7 +165,11 @@ pub(crate) struct CachedNowPlaying {
     pub(crate) artist: Option<String>,
     pub(crate) album: Option<String>,
     pub(crate) cover: Option<String>,
+    pub(crate) last_song_change: Instant, // 记录歌曲 ID 最后变更时间
 }
+
+/// Song expiration timeout (5 minutes)
+const SONG_EXPIRY_DURATION: Duration = Duration::from_secs(5 * 60);
 
 /// NetEase Cloud Music Now Playing Service
 #[derive(Clone)]
@@ -269,6 +273,7 @@ impl NeteaseNowPlayingService {
                 artist,
                 album,
                 cover,
+                last_song_change: Instant::now(), // 新歌曲，记录当前时间
             }
         } else {
             CachedNowPlaying {
@@ -278,6 +283,7 @@ impl NeteaseNowPlayingService {
                 artist: None,
                 album: None,
                 cover: None,
+                last_song_change: Instant::now(), // 停止播放，记录当前时间
             }
         };
 
@@ -287,12 +293,46 @@ impl NeteaseNowPlayingService {
     /// Update cache with new playing status (refreshes TTL)
     pub async fn update_cache(&self, status: CachedNowPlaying) {
         let mut guard = self.cache.write().await;
-        *guard = Some(status);
+
+        // 如果歌曲 ID 发生变化，更新 last_song_change 时间
+        let new_status = if let Some(ref existing) = *guard {
+            if existing.song_id != status.song_id {
+                // 歌曲变更，重置时间
+                CachedNowPlaying {
+                    last_song_change: Instant::now(),
+                    ..status
+                }
+            } else {
+                // 歌曲未变更，保留原有的 last_song_change
+                CachedNowPlaying {
+                    last_song_change: existing.last_song_change,
+                    ..status
+                }
+            }
+        } else {
+            // 首次缓存
+            CachedNowPlaying {
+                last_song_change: Instant::now(),
+                ..status
+            }
+        };
+
+        *guard = Some(new_status);
     }
 
     pub async fn get_cached(&self) -> Option<CachedNowPlaying> {
         let guard = self.cache.read().await;
         guard.clone()
+    }
+
+    /// Check if the current song is expired (for broadcasting inactive status)
+    pub async fn is_song_expired(&self) -> bool {
+        let guard = self.cache.read().await;
+        if let Some(ref cached) = *guard {
+            cached.active && cached.last_song_change.elapsed() > SONG_EXPIRY_DURATION
+        } else {
+            false
+        }
     }
 
     /// Get playing status as NeteaseNowPlaying for WebSocket broadcast
@@ -312,7 +352,19 @@ impl NeteaseNowPlayingService {
             }
         };
 
-        if !cached.active {
+        // 检查歌曲是否过期（超过 5 分钟未更新）
+        let is_expired = cached.active && cached.last_song_change.elapsed() > SONG_EXPIRY_DURATION;
+
+        if is_expired {
+            tracing::debug!(
+                "Song expired: {:?} has been playing for {:?} (> {:?})",
+                cached.song_name,
+                cached.last_song_change.elapsed(),
+                SONG_EXPIRY_DURATION
+            );
+        }
+
+        if !cached.active || is_expired {
             return Some(crate::models::realtime::NeteaseNowPlaying {
                 active: false,
                 song: None,
