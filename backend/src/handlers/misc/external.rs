@@ -2,7 +2,7 @@
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppJson, AppQuery, AppResult},
+    error::{AppError, AppJson, AppResult},
     models::*,
 };
 use axum::{Json, extract::State};
@@ -111,11 +111,6 @@ pub struct NavAggCategory {
     count: i64,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct NavAggParams {
-    nav: Option<bool>,
-}
-
 /// Full nav aggregate response
 #[derive(Debug, Serialize)]
 pub struct NavAggResponse {
@@ -127,7 +122,6 @@ pub struct NavAggResponse {
 /// Returns merged recent posts+notes and all categories with post counts.
 pub async fn aggregate_nav(
     State(state): State<SharedState>,
-    AppQuery(params): AppQuery<NavAggParams>,
 ) -> AppResult<Json<ApiResponse<NavAggResponse>>> {
     const RECENT_SIZE: i64 = 5;
 
