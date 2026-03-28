@@ -2,8 +2,8 @@
 
 import type { FC } from "react";
 import type { ApiResponse, NavData, NavTopItem, Note, PaginatedResponse, Post, User } from "@/types/api";
-
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
+
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { API_BASE_URL } from "@/lib/api-client";
 import { getRelativeTime } from "@/lib/date";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface DropdownPanelProps {
   user?: User;
@@ -85,14 +86,19 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
         <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           最新动态
         </div>
-        {isLoading && (
-          <div className="py-2 text-center text-xs text-muted-foreground">
-            <Icon icon="mingcute:loading-line" className="animate-spin" />
-          </div>
-        )}
-        {recentItems.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {recentItems.map(item => (
+        <div className="flex flex-col gap-1">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl px-2.5 py-2">
+              <div className="flex items-center justify-between gap-1 mb-1.5">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-8" />
+              </div>
+              <Skeleton className="h-3 w-16" />
+            </div>
+          ))
+        ) : recentItems.length > 0 ? (
+            recentItems.map(item => (
               <NavigationMenu.Link
                 key={item.id}
                 closeOnClick
@@ -109,9 +115,9 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
                   {getRelativeTime(item.created)}
                 </div>
               </NavigationMenu.Link>
-            ))}
-          </div>
-        )}
+            ))
+        ) : null}
+        </div>
       </div>
 
       {/* Pages pills */}
@@ -149,7 +155,7 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
 // ============================================================
 export const PostsDropdown: FC<DropdownPanelProps> = () => {
   // SWR deduplicates: same key as HomeDropdown → no extra request
-  const { data: navData } = useSWR<ApiResponse<NavData>>(
+  const { data: navData, isLoading: isNavLoading } = useSWR<ApiResponse<NavData>>(
     `${API_BASE_URL}/aggregate/nav`,
     fetcher,
     { revalidateOnFocus: false },
@@ -159,7 +165,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const activeSlug = hoveredSlug ?? categories[0]?.slug ?? null;
 
-  const { data: postsData } = useSWR<PaginatedResponse<Post>>(
+  const { data: postsData, isLoading: isPostsLoading } = useSWR<PaginatedResponse<Post>>(
     activeSlug ? `${API_BASE_URL}/posts?page=1&size=4&category=${activeSlug}` : null,
     fetcher,
     { revalidateOnFocus: false },
@@ -177,7 +183,14 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
             分类
           </div>
           <div className="flex flex-col gap-0.5">
-            {categories.map(cat => (
+            {isNavLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg px-2.5 py-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-3 w-6" />
+                </div>
+              ))
+            ) : categories.map(cat => (
               <NavigationMenu.Link
                 key={cat._id}
                 closeOnClick
@@ -205,11 +218,6 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                 )}
               </NavigationMenu.Link>
             ))}
-            {categories.length === 0 && (
-              <div className="py-4 text-center text-xs text-muted-foreground">
-                <Icon icon="mingcute:loading-line" className="animate-spin" />
-              </div>
-            )}
           </div>
         </div>
 
@@ -220,7 +228,14 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
             的文章
           </div>
           <div className="flex flex-col gap-1">
-            {recentPosts.map(post => (
+            {isPostsLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl px-2.5 py-2">
+                  <Skeleton className="h-4 w-3/4 mb-1.5" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+              ))
+            ) : recentPosts.map(post => (
               <NavigationMenu.Link
                 key={post._id}
                 closeOnClick
@@ -233,11 +248,6 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                 </div>
               </NavigationMenu.Link>
             ))}
-            {recentPosts.length === 0 && (
-              <div className="py-4 text-center text-xs text-muted-foreground">
-                <Icon icon="mingcute:loading-line" className="animate-spin" />
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -267,7 +277,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
 //  Notes Dropdown — 心情标签（左）+ 最近手记（右）
 // ============================================================
 export const NotesDropdown: FC<DropdownPanelProps> = () => {
-  const { data: notesData } = useSWR<PaginatedResponse<Note>>(
+  const { data: notesData, isLoading } = useSWR<PaginatedResponse<Note>>(
     `${API_BASE_URL}/notes?page=1&size=8`,
     fetcher,
     { revalidateOnFocus: false },
@@ -278,9 +288,9 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
   // Two-column layout when enough mood data is available
-  if (moods.length >= 2) {
+  if (isLoading || moods.length >= 2) {
     const activeMood = selectedMood ?? moods[0];
-    const filteredNotes = allNotes.filter(n => n.mood === activeMood).slice(0, 4);
+    const filteredNotes = isLoading ? [] : allNotes.filter(n => n.mood === activeMood).slice(0, 4);
 
     return (
       <div className="w-90 p-3">
@@ -291,7 +301,13 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
               心情
             </div>
             <div className="flex flex-col gap-0.5">
-              {moods.map(mood => (
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="px-2.5 py-2">
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))
+              ) : moods.map(mood => (
                 <button
                   key={mood}
                   type="button"
@@ -322,7 +338,14 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
               最近手记
             </div>
             <div className="flex flex-col gap-1">
-              {filteredNotes.map(note => (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-xl px-2.5 py-2">
+                    <Skeleton className="h-4 w-3/4 mb-1.5" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                ))
+              ) : filteredNotes.map(note => (
                 <NavigationMenu.Link
                   key={note._id}
                   closeOnClick
@@ -341,7 +364,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
                   </div>
                 </NavigationMenu.Link>
               ))}
-              {filteredNotes.length === 0 && (
+              {!isLoading && filteredNotes.length === 0 && (
                 <div className="py-4 text-center text-xs text-muted-foreground">
                   暂无
                 </div>
@@ -372,7 +395,14 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
         最近手记
       </div>
       <div className="flex flex-col gap-1">
-        {allNotes.slice(0, 4).map(note => (
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl px-2.5 py-2">
+              <Skeleton className="h-4 w-3/4 mb-1.5" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+          ))
+        ) : allNotes.slice(0, 4).map(note => (
           <NavigationMenu.Link
             key={note._id}
             closeOnClick
@@ -394,11 +424,6 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
             </div>
           </NavigationMenu.Link>
         ))}
-        {allNotes.length === 0 && (
-          <div className="py-4 text-center text-xs text-muted-foreground">
-            <Icon icon="mingcute:loading-line" className="animate-spin" />
-          </div>
-        )}
       </div>
 
       <div className="mt-2 border-t border-border/60 pt-2">
