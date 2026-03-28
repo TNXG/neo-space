@@ -177,9 +177,9 @@ pub fn detect_hosting_provider(response: &reqwest::Response) -> HostingProvider 
             .unwrap_or("")
             .to_lowercase()
             .contains("edgeone-pages")
-        {
-            return HostingProvider::TencentEdgeOnePages;
-        }
+    {
+        return HostingProvider::TencentEdgeOnePages;
+    }
 
     if headers.contains_key("x-vercel-id") || headers.contains_key("vercel-id") {
         return HostingProvider::Vercel;
@@ -201,42 +201,40 @@ pub fn detect_hosting_provider(response: &reqwest::Response) -> HostingProvider 
     }
 
     if let Some(server) = headers.get("server")
-        && let Ok(value) = server.to_str() {
-            if value.contains("GitHub") {
-                return HostingProvider::GitHub;
-            }
-            if value.contains("GitLab") {
-                return HostingProvider::GitLab;
-            }
-            if value.contains("Deno") {
-                return HostingProvider::DenoDeploy;
-            }
-            if value.contains("openresty") || value.to_lowercase().contains("openresty") {
-                return HostingProvider::OpenResty;
-            }
-            if value.to_lowercase().contains("tencentcos")
-                || value.to_lowercase().contains("cos cdn")
-            {
-                return HostingProvider::TencentCDN;
-            }
-            if value.to_lowercase().contains("nginx") {
-                return HostingProvider::Nginx;
-            }
-            if value.to_lowercase().contains("apache") {
-                return HostingProvider::Apache;
-            }
-            if value.to_lowercase().contains("caddy") {
-                return HostingProvider::Caddy;
-            }
-            if value.to_lowercase().contains("litespeed") || value.to_lowercase().contains("lsws") {
-                return HostingProvider::LiteSpeed;
-            }
-            if value.to_lowercase().contains("quic.cloud")
-                || value.to_lowercase().contains("quiccloud")
-            {
-                return HostingProvider::QuicCloud;
-            }
+        && let Ok(value) = server.to_str()
+    {
+        if value.contains("GitHub") {
+            return HostingProvider::GitHub;
         }
+        if value.contains("GitLab") {
+            return HostingProvider::GitLab;
+        }
+        if value.contains("Deno") {
+            return HostingProvider::DenoDeploy;
+        }
+        if value.contains("openresty") || value.to_lowercase().contains("openresty") {
+            return HostingProvider::OpenResty;
+        }
+        if value.to_lowercase().contains("tencentcos") || value.to_lowercase().contains("cos cdn") {
+            return HostingProvider::TencentCDN;
+        }
+        if value.to_lowercase().contains("nginx") {
+            return HostingProvider::Nginx;
+        }
+        if value.to_lowercase().contains("apache") {
+            return HostingProvider::Apache;
+        }
+        if value.to_lowercase().contains("caddy") {
+            return HostingProvider::Caddy;
+        }
+        if value.to_lowercase().contains("litespeed") || value.to_lowercase().contains("lsws") {
+            return HostingProvider::LiteSpeed;
+        }
+        if value.to_lowercase().contains("quic.cloud") || value.to_lowercase().contains("quiccloud")
+        {
+            return HostingProvider::QuicCloud;
+        }
+    }
 
     // QuicCloud via `x-qc-*` headers
     if headers.keys().any(|k| k.as_str().starts_with("x-qc-")) {

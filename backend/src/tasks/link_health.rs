@@ -7,8 +7,8 @@ use mongodb::Collection;
 use std::time::Duration;
 use tokio::time::interval;
 
-use super::link_health_check::perform_health_check;
 pub use super::link_health_check::LinkHealthStatus;
+use super::link_health_check::perform_health_check;
 
 /// Start the periodic link health check task
 pub fn start_link_health_task(state: SharedState) {
