@@ -27,7 +27,10 @@ use tracing_subscriber::EnvFilter;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Install rustls CryptoProvider (required by jsonwebtoken 10.x and other rustls users)
     if let Err(_e) = rustls::crypto::ring::default_provider().install_default() {
-        return Err("Failed to install rustls ring CryptoProvider: another provider was already installed".into());
+        return Err(
+            "Failed to install rustls ring CryptoProvider: another provider was already installed"
+                .into(),
+        );
     }
 
     // Load .env file if present

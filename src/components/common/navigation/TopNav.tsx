@@ -89,7 +89,7 @@ export function TopNav({
   );
 
   return (
-    <div className="fixed top-0 inset-x-0 z-50 pointer-events-none pt-4 h-[4.5rem]">
+    <div className="fixed top-0 inset-x-0 z-50 pointer-events-none pt-4 h-18">
       <div className="relative mx-auto flex h-full w-full max-w-[calc(100vw-2rem)] md:max-w-7xl items-center justify-between">
         {/* Left (Mobile trigger) */}
         <div className="flex flex-1 items-center justify-start pointer-events-none">
@@ -116,7 +116,7 @@ export function TopNav({
             className={cn(
               "pointer-events-auto relative flex items-center",
               "h-12 rounded-full",
-              "bg-gradient-to-b from-background/70 to-background/90",
+              "bg-linear-to-b from-background/70 to-background/90",
               "shadow-lg shadow-neutral-900/5 ring-1 ring-neutral-900/5 backdrop-blur-md will-change-transform",
               "group",
               navAnimClass,
@@ -170,7 +170,7 @@ export function TopNav({
                         {isActive && (
                           <motion.span
                             layoutId="active-nav-item"
-                            className="absolute inset-x-1 -bottom-px h-px bg-gradient-to-r from-accent-500/0 via-accent-500/70 to-accent-500/0"
+                            className="absolute inset-x-1 -bottom-px h-px bg-linear-to-r from-accent-500/0 via-accent-500/70 to-accent-500/0"
                           />
                         )}
                       </NavigationMenu.Trigger>
@@ -215,7 +215,7 @@ export function TopNav({
                       {isActive && (
                         <motion.span
                           layoutId="active-nav-item"
-                          className="absolute inset-x-1 -bottom-px h-px bg-gradient-to-r from-accent-500/0 via-accent-500/70 to-accent-500/0"
+                          className="absolute inset-x-1 -bottom-px h-px bg-linear-to-r from-accent-500/0 via-accent-500/70 to-accent-500/0"
                         />
                       )}
                     </NavigationMenu.Link>
