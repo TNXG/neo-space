@@ -202,13 +202,21 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
     let parsed: serde_json::Value = serde_json::from_str(clean_content)
         .map_err(|e| AppError::Internal(format!("Failed to parse AI JSON response: {}", e)))?;
 
-    let sensitivity = match parsed.get("sensitivity").and_then(|v| v.as_str()).unwrap_or("medium") {
+    let sensitivity = match parsed
+        .get("sensitivity")
+        .and_then(|v| v.as_str())
+        .unwrap_or("medium")
+    {
         "high" => TimeSensitivity::High,
         "low" => TimeSensitivity::Low,
         _ => TimeSensitivity::Medium,
     };
 
-    let reason = parsed.get("reason").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let reason = parsed
+        .get("reason")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let markers: Vec<String> = parsed
         .get("markers")
         .and_then(|v| v.as_array())

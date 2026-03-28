@@ -1,7 +1,7 @@
 //! Comment key and index generation
 
 use crate::models::Comment;
-use bson::{doc, oid::ObjectId, Bson};
+use bson::{Bson, doc, oid::ObjectId};
 
 use super::CommentService;
 
@@ -52,11 +52,7 @@ impl CommentService {
     }
 
     /// Get comment index (total count of all comments for this ref)
-    pub async fn get_comment_index(
-        &self,
-        ref_bson: &Bson,
-        ref_type: &str,
-    ) -> Result<i32, String> {
+    pub async fn get_comment_index(&self, ref_bson: &Bson, ref_type: &str) -> Result<i32, String> {
         let collection = self.db.collection::<Comment>("comments");
 
         let count = collection

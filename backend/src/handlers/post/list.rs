@@ -16,6 +16,7 @@ use super::enrich::enrich_posts_with_data;
 pub struct ListPostsParams {
     page: Option<u64>,
     size: Option<u64>,
+    category: Option<String>,
 }
 
 /// List published posts with pagination
@@ -28,7 +29,17 @@ pub async fn list_posts(
     let skip = (page - 1) * size;
 
     let posts_collection = state.db.collection::<Post>("posts");
-    let filter = doc! { "isPublished": true };
+    let mut filter = doc! { "isPublished": true };
+
+    if let Some(category_slug) = &params.category {
+        let cats_collection = state.db.collection::<Category>("categories");
+        if let Ok(Some(cat)) = cats_collection
+            .find_one(doc! { "slug": category_slug })
+            .await
+        {
+            filter.insert("categoryId", cat.id);
+        }
+    }
 
     // Get total count
     let total = posts_collection

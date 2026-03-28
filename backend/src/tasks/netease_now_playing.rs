@@ -6,7 +6,7 @@
 use crate::app::SharedState;
 use crate::models::realtime::ServerToReaderMessage;
 use crate::realtime::common::broadcast_to_all_readers;
-use crate::services::ncm_np::{NeteaseNowPlayingService, NeteaseError};
+use crate::services::ncm_np::{NeteaseError, NeteaseNowPlayingService};
 use std::time::Duration;
 use tokio::time::interval;
 
@@ -14,10 +14,7 @@ use tokio::time::interval;
 const POLL_INTERVAL_SECS: u64 = 5;
 
 /// Start the NetEase now playing polling task
-pub fn start_netease_now_playing_task(
-    _state: SharedState,
-    service: NeteaseNowPlayingService,
-) {
+pub fn start_netease_now_playing_task(_state: SharedState, service: NeteaseNowPlayingService) {
     tokio::spawn(async move {
         // Initial load of owner NetEase ID
         let should_run = match service.load_owner_netease_id().await {
@@ -56,11 +53,12 @@ pub fn start_netease_now_playing_task(
 }
 
 /// Fetch now playing status and broadcast if changed
-async fn fetch_and_broadcast(
-    service: &NeteaseNowPlayingService,
-) -> Result<bool, NeteaseError> {
+async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool, NeteaseError> {
     // Fetch current status from API
-    let new_status = service.fetch_now_playing().await?.ok_or("No data returned")?;
+    let new_status = service
+        .fetch_now_playing()
+        .await?
+        .ok_or("No data returned")?;
 
     // Get previous cached status for comparison
     let prev_status = service.get_cached().await;
@@ -71,10 +69,10 @@ async fn fetch_and_broadcast(
         Some(prev) => prev.song_id != new_status.song_id,
     };
 
-    if has_changed {
-        // Update cache (refreshes TTL)
-        service.update_cache(new_status.clone()).await;
+    // Always update cache to refresh TTL, even when unchanged
+    service.update_cache(new_status.clone()).await;
 
+    if has_changed {
         // Log status change
         if new_status.active {
             // Switched to playing / changed song
@@ -83,7 +81,9 @@ async fn fetch_and_broadcast(
 
                 if prev_song_name.is_some_and(|n| n != song_name) {
                     tracing::info!("[NetEase] 切换歌曲: {} - {}", song_name, artist);
-                } else if prev_status.is_none() || !prev_status.as_ref().map(|p| p.active).unwrap_or(false) {
+                } else if prev_status.is_none()
+                    || !prev_status.as_ref().map(|p| p.active).unwrap_or(false)
+                {
                     tracing::info!("[NetEase] 开始播放: {} - {}", song_name, artist);
                 } else {
                     tracing::info!("[NetEase] 播放状态更新: {} - {}", song_name, artist);

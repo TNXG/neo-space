@@ -74,10 +74,10 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
 
                     // Get public github client id
                     if let Ok(public) = doc.get_document("public")
-                        && let Ok(github) = public.get_document("github") {
-                            oauth.github_client_id =
-                                github.get_str("clientId").ok().map(String::from);
-                        }
+                        && let Ok(github) = public.get_document("github")
+                    {
+                        oauth.github_client_id = github.get_str("clientId").ok().map(String::from);
+                    }
 
                     config.oauth = oauth;
                 }

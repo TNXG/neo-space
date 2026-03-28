@@ -5,7 +5,7 @@ use crate::models::options::SiteConfig;
 use crate::services::options;
 use crate::{
     app::SharedState,
-    error::{AppQuery, AppJson, AppResult},
+    error::{AppQuery, AppResult},
     models::*,
 };
 use axum::{Json, extract::State};

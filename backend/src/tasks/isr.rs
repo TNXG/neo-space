@@ -12,8 +12,7 @@ fn generate_signature(tag: &str, path: &str, timestamp: i64) -> Result<String, S
     let secret = std::env::var("REVALIDATION_SECRET")
         .map_err(|_| "REVALIDATION_SECRET not set".to_string())?;
 
-    let salt = std::env::var("REVALIDATION_SALT")
-        .unwrap_or_else(|_| "default-salt".to_string());
+    let salt = std::env::var("REVALIDATION_SALT").unwrap_or_else(|_| "default-salt".to_string());
 
     // Construct message: secret + timestamp + salt + tag + path
     let message = format!("{}{}{}{}{}", secret, timestamp, salt, tag, path);
@@ -56,7 +55,9 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
         None,
         timestamp,
         &signature,
-    ).await {
+    )
+    .await
+    {
         tracing::warn!("Failed to revalidate tag {}: {}", tag, e);
     } else {
         tracing::info!("ISR revalidation triggered for tag: {}", tag);
@@ -79,7 +80,9 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
             Some(p),
             timestamp,
             &signature,
-        ).await {
+        )
+        .await
+        {
             tracing::warn!("Failed to revalidate path {}: {}", p, e);
         } else {
             tracing::info!("ISR revalidation triggered for path: {}", p);

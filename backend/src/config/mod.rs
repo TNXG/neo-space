@@ -101,7 +101,8 @@ impl AppConfig {
             mongodb_uri,
             mongodb_timeout_secs,
             mongodb_max_pool_size,
-            meilisearch_host: env::var("MEILISEARCH_HOST")
+            meilisearch_host: env::var("MEILISEARCH_URL")
+                .or_else(|_| env::var("MEILISEARCH_HOST"))
                 .unwrap_or_else(|_| "http://localhost:7700".to_string()),
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
             openai_api_key: env::var("OPENAI_API_KEY").unwrap_or_default(),

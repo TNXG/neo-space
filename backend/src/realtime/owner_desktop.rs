@@ -142,12 +142,10 @@ async fn handle_message(
             // Broadcast to WebSocket readers
             let now = chrono::Utc::now().timestamp();
             tokio::spawn(async move {
-                broadcast_to_all_readers(
-                    ServerToReaderMessage::OwnerWindowInfo {
-                        window_info: data,
-                        updated_at: now,
-                    },
-                )
+                broadcast_to_all_readers(ServerToReaderMessage::OwnerWindowInfo {
+                    window_info: data,
+                    updated_at: now,
+                })
                 .await;
             });
             Ok(None)
@@ -166,14 +164,12 @@ async fn handle_message(
             let now = chrono::Utc::now().timestamp();
             let netease = _state.ncm_np_service.get_now_playing().await;
             tokio::spawn(async move {
-                broadcast_to_all_readers(
-                    ServerToReaderMessage::OwnerMediaPlayback {
-                        metadata,
-                        playback_state,
-                        netease,
-                        updated_at: now,
-                    },
-                )
+                broadcast_to_all_readers(ServerToReaderMessage::OwnerMediaPlayback {
+                    metadata,
+                    playback_state,
+                    netease,
+                    updated_at: now,
+                })
                 .await;
             });
             Ok(None)

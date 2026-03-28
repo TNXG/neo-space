@@ -2,7 +2,7 @@
 
 use crate::{
     app::SharedState,
-    error::{AppJson, AppResult, AppError},
+    error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
 };
 use axum::{Json, extract::State};
@@ -111,6 +111,11 @@ pub struct NavAggCategory {
     count: i64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct NavAggParams {
+    nav: Option<bool>,
+}
+
 /// Full nav aggregate response
 #[derive(Debug, Serialize)]
 pub struct NavAggResponse {
@@ -122,6 +127,7 @@ pub struct NavAggResponse {
 /// Returns merged recent posts+notes and all categories with post counts.
 pub async fn aggregate_nav(
     State(state): State<SharedState>,
+    AppQuery(params): AppQuery<NavAggParams>,
 ) -> AppResult<Json<ApiResponse<NavAggResponse>>> {
     const RECENT_SIZE: i64 = 5;
 
@@ -158,8 +164,7 @@ pub async fn aggregate_nav(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let mut count_map: std::collections::HashMap<ObjectId, i64> =
-        std::collections::HashMap::new();
+    let mut count_map: std::collections::HashMap<ObjectId, i64> = std::collections::HashMap::new();
     while let Some(doc) = count_cur
         .try_next()
         .await
@@ -188,6 +193,8 @@ pub async fn aggregate_nav(
         })
         .collect();
     categories.sort_by(|a, b| b.created.cmp(&a.created));
+
+    categories.retain(|c| c.count > 0);
 
     // ── 4. Fetch recent posts ─────────────────────────────────
     let posts_coll = state.db.collection::<NavAggPost>("posts");

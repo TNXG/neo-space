@@ -1,8 +1,8 @@
 //! Comment tree building and reader mappings
 
 use crate::models::{Comment, CommentTree};
-use std::collections::HashMap;
 use bson::Bson;
+use std::collections::HashMap;
 
 use super::CommentService;
 

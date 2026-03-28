@@ -8,7 +8,10 @@ pub fn routes() -> axum::Router<SharedState> {
     axum::Router::new()
         // Config and metadata
         .route("/config", axum::routing::get(handlers::misc::get_config))
-        .route("/recentlies", axum::routing::get(handlers::misc::list_recentlies))
+        .route(
+            "/recentlies",
+            axum::routing::get(handlers::misc::list_recentlies),
+        )
         .route(
             "/categories",
             axum::routing::get(handlers::misc::list_categories),
@@ -18,7 +21,10 @@ pub fn routes() -> axum::Router<SharedState> {
             axum::routing::post(handlers::misc::nbnhhsh_guess),
         )
         // Nav hover aggregated feed
-        .route("/aggregate/nav", axum::routing::get(handlers::misc::aggregate_nav))
+        .route(
+            "/aggregate/nav",
+            axum::routing::get(handlers::misc::aggregate_nav),
+        )
         // Search
         .route("/search", axum::routing::get(handlers::search::search))
         // AI features

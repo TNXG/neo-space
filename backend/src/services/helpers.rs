@@ -79,12 +79,13 @@ pub async fn verify_turnstile(
 /// Extract client IP from request headers (X-Forwarded-For > X-Real-IP > CF-Connecting-IP)
 pub fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
     if let Some(xff) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok())
-        && let Some(first_ip) = xff.split(',').next() {
-            let ip = first_ip.trim().to_string();
-            if !ip.is_empty() {
-                return Some(ip);
-            }
+        && let Some(first_ip) = xff.split(',').next()
+    {
+        let ip = first_ip.trim().to_string();
+        if !ip.is_empty() {
+            return Some(ip);
         }
+    }
     if let Some(real_ip) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
         let ip = real_ip.trim().to_string();
         if !ip.is_empty() {

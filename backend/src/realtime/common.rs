@@ -1,9 +1,9 @@
 //! Common utilities for WebSocket handlers
 
 use crate::models::realtime::{ReadingItem, ServerToReaderMessage};
-use std::sync::Arc;
 use std::collections::HashMap;
-use tokio::sync::{mpsc, RwLock};
+use std::sync::Arc;
+use tokio::sync::{RwLock, mpsc};
 use uuid::Uuid;
 
 /// Unique connection ID to distinguish different connections

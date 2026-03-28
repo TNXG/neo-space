@@ -134,9 +134,7 @@ impl ServerToReaderMessage {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ReaderToServerMessage {
-    Hello {
-        fingerprint: String,
-    },
+    Hello { fingerprint: String },
 }
 
 /// Owner desktop client message

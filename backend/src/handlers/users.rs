@@ -54,22 +54,24 @@ pub async fn update_user_profile(
     let mut update_doc = doc! {};
 
     if let Some(name) = payload.name
-        && !name.is_empty() {
-            update_doc.insert("name", name);
-        }
+        && !name.is_empty()
+    {
+        update_doc.insert("name", name);
+    }
 
     if let Some(handle) = payload.handle
-        && !handle.is_empty() {
-            // Validate handle format (alphanumeric, dash, underscore only)
-            if handle
-                .chars()
-                .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
-            {
-                update_doc.insert("handle", handle);
-            } else {
-                return Err(AppError::BadRequest("Invalid handle format. Only alphanumeric characters, dashes, and underscores are allowed.".to_string()));
-            }
+        && !handle.is_empty()
+    {
+        // Validate handle format (alphanumeric, dash, underscore only)
+        if handle
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        {
+            update_doc.insert("handle", handle);
+        } else {
+            return Err(AppError::BadRequest("Invalid handle format. Only alphanumeric characters, dashes, and underscores are allowed.".to_string()));
         }
+    }
 
     if let Some(image) = payload.image {
         update_doc.insert("image", image);

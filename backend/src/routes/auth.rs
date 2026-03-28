@@ -9,7 +9,10 @@ pub fn routes() -> axum::Router<SharedState> {
         // Current user info
         .route("/me", axum::routing::get(handlers::auth::get_current_user))
         // OAuth routes
-        .route("/oauth/github", axum::routing::get(handlers::oauth::github_oauth))
+        .route(
+            "/oauth/github",
+            axum::routing::get(handlers::oauth::github_oauth),
+        )
         .route(
             "/oauth/github/callback",
             axum::routing::get(handlers::oauth::github_callback),
@@ -28,11 +31,17 @@ pub fn routes() -> axum::Router<SharedState> {
             "/bind-anonymous",
             axum::routing::post(handlers::oauth::bind_anonymous),
         )
-        .route("/skip-bind", axum::routing::post(handlers::oauth::skip_bind))
+        .route(
+            "/skip-bind",
+            axum::routing::post(handlers::oauth::skip_bind),
+        )
         // Account management
         .route(
             "/accounts",
             axum::routing::get(handlers::auth::get_user_accounts),
         )
-        .route("/avatar", axum::routing::put(handlers::auth::update_user_avatar))
+        .route(
+            "/avatar",
+            axum::routing::put(handlers::auth::update_user_avatar),
+        )
 }

@@ -128,21 +128,24 @@ pub async fn create_comment(
         ));
     }
     if let Some(ref author) = payload.author
-        && author.len() > 100 {
-            return Err(AppError::BadRequest(
-                "Author name cannot exceed 100 characters".to_string(),
-            ));
-        }
+        && author.len() > 100
+    {
+        return Err(AppError::BadRequest(
+            "Author name cannot exceed 100 characters".to_string(),
+        ));
+    }
     if let Some(ref mail) = payload.mail
-        && mail.len() > 254 {
-            return Err(AppError::BadRequest(
-                "Email address is too long".to_string(),
-            ));
-        }
+        && mail.len() > 254
+    {
+        return Err(AppError::BadRequest(
+            "Email address is too long".to_string(),
+        ));
+    }
     if let Some(ref url) = payload.url
-        && url.len() > 500 {
-            return Err(AppError::BadRequest("URL is too long".to_string()));
-        }
+        && url.len() > 500
+    {
+        return Err(AppError::BadRequest("URL is too long".to_string()));
+    }
 
     let comment = CommentService::new(state.db.clone());
 

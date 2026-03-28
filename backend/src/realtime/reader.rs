@@ -3,7 +3,9 @@
 //! Handles WebSocket connections from browser readers,
 //! receiving owner desktop updates (window info, media playback).
 
-use super::common::{broadcast_reading_list, broadcast_to_all_readers, generate_connection_id, ReaderConnection};
+use super::common::{
+    ReaderConnection, broadcast_reading_list, broadcast_to_all_readers, generate_connection_id,
+};
 use crate::app::SharedState;
 use crate::models::realtime::{ReaderInfo, ReaderToServerMessage, ServerToReaderMessage};
 use axum::{
@@ -145,9 +147,7 @@ async fn handle_reader_connection(
     );
 
     // Send welcome message
-    let welcome = ServerToReaderMessage::Welcome {
-        online_count,
-    };
+    let welcome = ServerToReaderMessage::Welcome { online_count };
     if let Ok(json) = welcome.to_json() {
         let _ = socket.send(Message::Text(json.into())).await;
     }
@@ -179,11 +179,9 @@ async fn handle_reader_connection(
     }
 
     // Broadcast online count update to all readers
-    broadcast_to_all_readers(
-        ServerToReaderMessage::OnlineCountUpdate {
-            count: online_count,
-        },
-    )
+    broadcast_to_all_readers(ServerToReaderMessage::OnlineCountUpdate {
+        count: online_count,
+    })
     .await;
 
     // Broadcast reading list update
@@ -268,7 +266,8 @@ async fn handle_reader_connection(
 
         broadcast_to_all_readers(ServerToReaderMessage::OnlineCountUpdate {
             count: online_count,
-        }).await;
+        })
+        .await;
 
         broadcast_reading_list(&registry_clone).await;
 

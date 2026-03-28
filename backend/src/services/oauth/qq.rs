@@ -201,8 +201,7 @@ impl OAuthService {
                 avatar,
                 handle,
             };
-            let new_account =
-                Account::new_qq_with_info(user_id, openid, access_token, profile);
+            let new_account = Account::new_qq_with_info(user_id, openid, access_token, profile);
 
             accounts_collection
                 .insert_one(&new_account)

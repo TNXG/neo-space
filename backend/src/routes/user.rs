@@ -16,7 +16,10 @@ pub fn routes() -> axum::Router<SharedState> {
             "/handle/check",
             axum::routing::get(handlers::users::check_handle_availability),
         )
-        .route("/avatar", axum::routing::post(handlers::users::update_avatar))
+        .route(
+            "/avatar",
+            axum::routing::post(handlers::users::update_avatar),
+        )
         // Reader endpoints (public)
         .route(
             "/readers",
@@ -27,10 +30,7 @@ pub fn routes() -> axum::Router<SharedState> {
             axum::routing::get(handlers::users::get_reader_by_id_public),
         )
         // Admin user management endpoints
-        .route(
-            "/",
-            axum::routing::get(handlers::admin::users::list_users),
-        )
+        .route("/", axum::routing::get(handlers::admin::users::list_users))
         .route(
             "/{id}",
             axum::routing::get(handlers::admin::users::get_user_by_id)

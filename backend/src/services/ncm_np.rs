@@ -1,13 +1,12 @@
+use aes::Aes128;
 use aes::cipher::block_padding::Pkcs7;
 use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyInit};
-use aes::Aes128;
 use bson::doc;
 use ecb::{Decryptor, Encryptor};
 use md5;
-use moka::future::Cache;
 use mongodb::Database;
 use rand::RngExt;
-use reqwest::header::{HeaderMap, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, COOKIE, USER_AGENT};
+use reqwest::header::{ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, COOKIE, HeaderMap, USER_AGENT};
 use serde::Serialize;
 use serde_json::Value;
 pub type NeteaseError = Box<dyn std::error::Error + Send + Sync>;
@@ -40,7 +39,7 @@ struct UserStatusDetailReqJson {
 
 pub async fn get_ncm_now_play(user_id: u64) -> Result<Value, NeteaseError> {
     let req_json = create_user_status_detail_req_json(user_id);
-    let encrypted_params = eapi_encrypt(USER_STATUS_DETAIL_API, &req_json);
+    let encrypted_params = eapi_encrypt(USER_STATUS_DETAIL_API, &req_json)?;
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, "application/x-www-form-urlencoded".parse()?);
@@ -111,7 +110,7 @@ fn generate_key(key: &[u8]) -> [u8; 16] {
     gen_key
 }
 
-fn eapi_encrypt(path: &str, data: &str) -> String {
+fn eapi_encrypt(path: &str, data: &str) -> Result<String, &'static str> {
     let nobody_know_this = "36cd479b6b5";
     let text_for_md5 = format!("nobody{}use{}md5forencrypt", path, data);
     let md5_hash = format!("{:x}", md5::compute(text_for_md5.as_bytes()));
@@ -131,9 +130,9 @@ fn eapi_encrypt(path: &str, data: &str) -> String {
     }
     let ciphertext = cipher
         .encrypt_padded_mut::<Pkcs7>(&mut buf, plaintext.len())
-        .expect("Encryption failed: buffer too small"); // This is safe
+        .map_err(|_| "Encryption failed: buffer too small")?;
 
-    format!("params={}", hex::encode(ciphertext).to_uppercase())
+    Ok(format!("params={}", hex::encode(ciphertext).to_uppercase()))
 }
 
 fn create_user_status_detail_req_json(visitor_id: u64) -> String {
@@ -149,7 +148,10 @@ fn choose_user_agent() -> &'static str {
     let mut rng = rand::rng();
     let index = rng.random_range(0..USER_AGENT_LIST.len());
     // Use get for safe indexing
-    USER_AGENT_LIST.get(index).copied().unwrap_or_else(|| USER_AGENT_LIST.first().copied().unwrap_or("Mozilla/5.0"))
+    USER_AGENT_LIST
+        .get(index)
+        .copied()
+        .unwrap_or_else(|| USER_AGENT_LIST.first().copied().unwrap_or("Mozilla/5.0"))
 }
 
 // ==================== Service Layer ====================
@@ -169,22 +171,16 @@ pub(crate) struct CachedNowPlaying {
 #[derive(Clone)]
 pub struct NeteaseNowPlayingService {
     db: Database,
-    cache: Arc<Cache<String, CachedNowPlaying>>,
+    cache: Arc<RwLock<Option<CachedNowPlaying>>>,
     pub owner_netease_id: Arc<RwLock<Option<String>>>,
 }
 
 impl NeteaseNowPlayingService {
     /// Create a new NetEase now playing service
     pub fn new(db: Database) -> Self {
-        // Cache with 5-minute TTL, key = "owner" (single owner)
-        let cache = Cache::builder()
-            .max_capacity(100)
-            .time_to_live(Duration::from_secs(300))
-            .build();
-
         Self {
             db,
-            cache: Arc::new(cache),
+            cache: Arc::new(RwLock::new(None)),
             owner_netease_id: Arc::new(RwLock::new(None)),
         }
     }
@@ -240,8 +236,14 @@ impl NeteaseNowPlayingService {
             .and_then(|s| s.as_object());
 
         let song_data = if let Some(song) = song {
-            let id = song.get("id").and_then(|v| v.as_i64()).map(|v| v.to_string());
-            let name = song.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let id = song
+                .get("id")
+                .and_then(|v| v.as_i64())
+                .map(|v| v.to_string());
+            let name = song
+                .get("name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
             let artist = song
                 .get("artists")
                 .and_then(|v| v.as_array())
@@ -251,8 +253,14 @@ impl NeteaseNowPlayingService {
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
             let album_obj = song.get("album").and_then(|v| v.as_object());
-            let album = album_obj.and_then(|obj| obj.get("name")).and_then(|v| v.as_str()).map(|s| s.to_string());
-            let cover = album_obj.and_then(|obj| obj.get("picUrl")).and_then(|v| v.as_str()).map(|s| s.to_string());
+            let album = album_obj
+                .and_then(|obj| obj.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let cover = album_obj
+                .and_then(|obj| obj.get("picUrl"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
             CachedNowPlaying {
                 active: true,
@@ -278,17 +286,31 @@ impl NeteaseNowPlayingService {
 
     /// Update cache with new playing status (refreshes TTL)
     pub async fn update_cache(&self, status: CachedNowPlaying) {
-        self.cache.insert("owner".to_string(), status).await;
+        let mut guard = self.cache.write().await;
+        *guard = Some(status);
     }
 
-    /// Get cached playing status
     pub async fn get_cached(&self) -> Option<CachedNowPlaying> {
-        self.cache.get("owner").await
+        let guard = self.cache.read().await;
+        guard.clone()
     }
 
     /// Get playing status as NeteaseNowPlaying for WebSocket broadcast
     pub async fn get_now_playing(&self) -> Option<crate::models::realtime::NeteaseNowPlaying> {
-        let cached = self.get_cached().await?;
+        let cached = {
+            let guard = self.cache.read().await;
+            guard.clone()
+        };
+
+        let cached = match cached {
+            Some(c) => c,
+            None => {
+                return Some(crate::models::realtime::NeteaseNowPlaying {
+                    active: false,
+                    song: None,
+                });
+            }
+        };
 
         if !cached.active {
             return Some(crate::models::realtime::NeteaseNowPlaying {
