@@ -71,8 +71,10 @@ interface IconData {
   viewBox: string;
 }
 
-// 同时匹配 JSX 属性 icon="col:name" 和对象字面量 icon: "col:name"
-const ICON_PROP_RE = /\bicon[=:]\s*["']([\w-]+):([\w.-]+)["']/g;
+// 第一步：定位 icon= 或 icon: 出现的位置
+const ICON_START_RE = /\bicon\s*[=:]\s*/g;
+// 第二步：从该位置提取所有 "collection:name" 模式
+const COL_NAME_RE = /["']([\w-]+):([\w.-]+)["']/g;
 const ICONS_JSON_RE = /icons\.json$/;
 const EXT2LANG_VALUE_RE = /:\s*["']([\w.-]+)["']/g;
 const HYPHEN_RE = /-/g;
@@ -80,8 +82,29 @@ const byCollection: Record<string, Set<string>> = {};
 
 for (const file of allFiles) {
   const src = readFileSync(file, "utf-8");
-  for (const m of src.matchAll(ICON_PROP_RE)) {
-    const [, col, name] = m;
+  for (const m of src.matchAll(ICON_START_RE)) {
+    // 从 icon= 位置往后取一行，提取其中的所有 collection:name
+    const nextNewline = src.indexOf("\n", m.index!);
+    const rest = src.slice(m.index!, nextNewline > -1 ? nextNewline : undefined);
+    for (const cn of rest.matchAll(COL_NAME_RE)) {
+      const col = cn[1];
+      const name = cn[2];
+      if (!byCollection[col])
+        byCollection[col] = new Set();
+      byCollection[col].add(name);
+    }
+  }
+}
+
+// ─── 扫描 return "collection:name" 模式 ──────────────────────────────────────
+
+const RETURN_ICON_RE = /return\s+["']([\w-]+):([\w.-]+)["']/g;
+
+for (const file of allFiles) {
+  const src = readFileSync(file, "utf-8");
+  for (const m of src.matchAll(RETURN_ICON_RE)) {
+    const col = m[1];
+    const name = m[2];
     if (!byCollection[col])
       byCollection[col] = new Set();
     byCollection[col].add(name);

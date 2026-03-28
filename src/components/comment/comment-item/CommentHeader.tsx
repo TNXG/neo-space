@@ -22,11 +22,11 @@ function getBrowserIcon(browser: string): string {
   if (name.includes("safari"))
     return "mingcute:safari-fill";
   if (name.includes("opera"))
-    return "mingcute:opera-fill";
+    return "mingcute:globe-2-fill";
   if (name.includes("chrome") || name.includes("chromium"))
     return "mingcute:chrome-fill";
   if (name.includes("ie") || name.includes("internet explorer"))
-    return "mingcute:ie-fill";
+    return "mingcute:globe-fill";
   return "mingcute:globe-line";
 }
 

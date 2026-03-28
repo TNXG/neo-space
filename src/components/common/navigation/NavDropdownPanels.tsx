@@ -4,6 +4,7 @@ import type { FC } from "react";
 import type { ApiResponse, NavData, NavTopItem, Note, PaginatedResponse, Post, User } from "@/types/api";
 
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
@@ -182,13 +183,20 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                 closeOnClick
                 render={<Link href={`/posts?category=${cat.slug}`} />}
                 className={cn(
-                  "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+                  "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors relative z-0",
                   activeSlug === cat.slug
-                    ? "bg-accent-500/10 text-accent-600"
-                    : "hover:bg-accent-500/5 hover:text-accent-600",
+                    ? "text-accent-600"
+                    : "hover:text-accent-600",
                 )}
                 onMouseEnter={() => setHoveredSlug(cat.slug)}
               >
+                {activeSlug === cat.slug && (
+                  <motion.div
+                    layoutId="active-category-bg"
+                    className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
+                    transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                  />
+                )}
                 <span className="truncate">{cat.name}</span>
                 {cat.count !== undefined && (
                   <span className="ml-1 shrink-0 text-[11px] text-muted-foreground">
@@ -288,13 +296,20 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
                   key={mood}
                   type="button"
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-left transition-colors cursor-pointer w-full",
+                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-left transition-colors cursor-pointer w-full relative z-0",
                     activeMood === mood
-                      ? "bg-accent-500/10 text-accent-600"
-                      : "hover:bg-accent-500/5 hover:text-accent-600",
+                      ? "text-accent-600"
+                      : "hover:text-accent-600",
                   )}
                   onMouseEnter={() => setSelectedMood(mood)}
                 >
+                  {activeMood === mood && (
+                    <motion.div
+                      layoutId="active-mood-bg"
+                      className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
+                      transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                    />
+                  )}
                   <span>{mood}</span>
                 </button>
               ))}

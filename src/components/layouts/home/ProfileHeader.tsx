@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderWS } from "@/hooks/use-reader-ws";
+import { cn } from "@/lib/utils";
 
 interface ProfileHeaderProps {
   profile: User;
@@ -28,8 +29,11 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       || null;
 
   // 获取歌曲信息
-  const songName = ownerStatus?.netease?.song?.name || null;
-  const artistName = ownerStatus?.netease?.song?.artist || null;
+  const songName = ownerStatus?.mediaPlayback?.metadata?.title || ownerStatus?.netease?.song?.name || null;
+  const artistName = ownerStatus?.mediaPlayback?.metadata?.artist || ownerStatus?.netease?.song?.artist || null;
+
+  // 播放状态
+  const isPlaying = Boolean(ownerStatus?.mediaPlayback?.playbackState?.playing) || Boolean(ownerStatus?.netease?.active);
 
   return (
     <header className="space-y-4 md:space-y-8">
@@ -90,7 +94,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
 
           {/* 专辑封面 - 代替 OwnerStatus 的"正在听" */}
-          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} />
+          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} isPlaying={isPlaying} />
         </div>
       </div>
 
@@ -144,28 +148,29 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 
         <div className="flex flex-wrap items-center gap-3">
           <SocialLinks profile={profile} />
-          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} />
+          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} isPlaying={isPlaying} />
         </div>
       </div>
     </header>
   );
 }
 
-function AlbumCover({ cover, songName, artistName }: {
+function AlbumCover({ cover, songName, artistName, isPlaying = true }: {
   cover: string | null;
   songName?: string | null;
   artistName?: string | null;
+  isPlaying?: boolean;
 }) {
   // 没有歌曲信息时不显示
   if (!songName || !cover) return null;
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
-        key="album-cover"
+        key={songName || cover}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
+        exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="flex items-center gap-3 mt-2"
       >
