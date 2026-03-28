@@ -97,6 +97,126 @@ impl SearchService {
         self.client.index("notes")
     }
 
+    /// Initialize Meilisearch indexes with proper settings
+    pub async fn init_indexes(&self) -> Result<(), AppError> {
+        tracing::info!("开始初始化 Meilisearch 索引...");
+
+        // Health check with retry
+        for attempt in 1..=5 {
+            match self.client.health().await {
+                Ok(_) => {
+                    tracing::info!("Meilisearch 健康检查通过");
+                    break;
+                }
+                Err(e) => {
+                    if attempt == 5 {
+                        return Err(AppError::Internal(format!(
+                            "Meilisearch 健康检查失败（重试 5 次）: {}",
+                            e
+                        )));
+                    }
+                    tracing::warn!("Meilisearch 健康检查失败（第 {} 次），等待重试...", attempt);
+                    tokio::time::sleep(std::time::Duration::from_secs(3 * attempt as u64)).await;
+                }
+            }
+        }
+
+        // Create posts index
+        match self.client.create_index("posts", Some("id")).await {
+            Ok(task) => {
+                tracing::info!("文章索引创建任务已提交: task_uid={}", task.task_uid);
+            }
+            Err(e) => {
+                let err_str = e.to_string();
+                if err_str.contains("index_already_exists") {
+                    tracing::debug!("文章索引已存在，跳过创建");
+                } else {
+                    tracing::warn!("创建文章索引失败: {}", e);
+                }
+            }
+        }
+
+        // Configure posts index
+        let posts_index = self.posts_index();
+        posts_index
+            .set_searchable_attributes(&["title", "text", "category", "tags"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置文章 searchable 属性失败: {}", e)))?;
+        posts_index
+            .set_filterable_attributes(&["category", "tags", "created"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置文章 filterable 属性失败: {}", e)))?;
+        posts_index
+            .set_sortable_attributes(&["created"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置文章 sortable 属性失败: {}", e)))?;
+        tracing::info!("文章索引配置完成");
+
+        // Create notes index
+        match self.client.create_index("notes", Some("id")).await {
+            Ok(task) => {
+                tracing::info!("笔记索引创建任务已提交: task_uid={}", task.task_uid);
+            }
+            Err(e) => {
+                let err_str = e.to_string();
+                if err_str.contains("index_already_exists") {
+                    tracing::debug!("笔记索引已存在，跳过创建");
+                } else {
+                    tracing::warn!("创建笔记索引失败: {}", e);
+                }
+            }
+        }
+
+        // Configure notes index
+        let notes_index = self.notes_index();
+        notes_index
+            .set_searchable_attributes(&["title", "text"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置笔记 searchable 属性失败: {}", e)))?;
+        notes_index
+            .set_filterable_attributes(&["created"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置笔记 filterable 属性失败: {}", e)))?;
+        notes_index
+            .set_sortable_attributes(&["created"])
+            .await
+            .map_err(|e| AppError::Internal(format!("设置笔记 sortable 属性失败: {}", e)))?;
+        tracing::info!("笔记索引配置完成");
+
+        tracing::info!("Meilisearch 索引初始化完成");
+        Ok(())
+    }
+
+    /// Bulk index post documents
+    pub async fn index_posts(&self, docs: Vec<PostDocument>) -> Result<(), AppError> {
+        if docs.is_empty() {
+            tracing::debug!("没有文章需要索引");
+            return Ok(());
+        }
+        let index = self.posts_index();
+        index
+            .add_documents(&docs, Some("id"))
+            .await
+            .map_err(|e| AppError::Internal(format!("批量索引文章失败: {}", e)))?;
+        tracing::info!("已提交 {} 篇文章到 Meilisearch", docs.len());
+        Ok(())
+    }
+
+    /// Bulk index note documents
+    pub async fn index_notes(&self, docs: Vec<NoteDocument>) -> Result<(), AppError> {
+        if docs.is_empty() {
+            tracing::debug!("没有笔记需要索引");
+            return Ok(());
+        }
+        let index = self.notes_index();
+        index
+            .add_documents(&docs, Some("id"))
+            .await
+            .map_err(|e| AppError::Internal(format!("批量索引笔记失败: {}", e)))?;
+        tracing::info!("已提交 {} 篇笔记到 Meilisearch", docs.len());
+        Ok(())
+    }
+
     /// Search posts with highlighting
     pub async fn search_posts(
         &self,

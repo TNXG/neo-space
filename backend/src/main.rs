@@ -26,9 +26,9 @@ use tracing_subscriber::EnvFilter;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Install rustls CryptoProvider (required by jsonwebtoken 10.x and other rustls users)
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .expect("Failed to install rustls ring CryptoProvider");
+    if let Err(_e) = rustls::crypto::ring::default_provider().install_default() {
+        return Err("Failed to install rustls ring CryptoProvider: another provider was already installed".into());
+    }
 
     // Load .env file if present
     dotenv::dotenv().ok();
@@ -56,6 +56,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start background tasks
     info!("启动后台任务...");
 
+    // Start Meilisearch full sync (background task)
+    {
+        let sync_state = state.clone();
+        tokio::spawn(async move {
+            tasks::full_sync(sync_state).await;
+        });
+    }
+    info!("Meilisearch 全量同步任务已启动（后台任务）");
+
     // Start MongoDB Change Stream monitoring
     tasks::start_change_stream_task(state.clone());
     info!("Change Stream 监听任务已启动（后台任务）");
@@ -73,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Start NetEase now playing polling task
     tasks::start_netease_now_playing_task(state.clone(), state.ncm_np_service.clone());
-    info!("网易云播放状态轮询任务已启动（间隔: 30秒）");
+    info!("网易云播放状态轮询任务已启动");
 
     // Build router
     let app = create_app(state);

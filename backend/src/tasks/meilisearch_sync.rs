@@ -1,6 +1,8 @@
 //! Meilisearch synchronization utilities
 
 use crate::app::SharedState;
+use crate::external::search::{NoteDocument, PostDocument, SearchService};
+use crate::models::{Category, Note, Post};
 use mongodb::bson::Document;
 
 /// Sync post to Meilisearch
@@ -97,8 +99,9 @@ pub(crate) async fn meilisearch_index_document(
     id: &str,
     doc: &serde_json::Value,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let host =
-        std::env::var("MEILISEARCH_HOST").unwrap_or_else(|_| "http://localhost:7700".to_string());
+    let host = std::env::var("MEILISEARCH_URL")
+        .or_else(|_| std::env::var("MEILISEARCH_HOST"))
+        .unwrap_or_else(|_| "http://localhost:7700".to_string());
     let api_key = std::env::var("MEILISEARCH_API_KEY").ok();
 
     let url = format!("{}/indexes/{}/documents", host, index);
@@ -118,4 +121,133 @@ pub(crate) async fn meilisearch_index_document(
 
     tracing::debug!("Indexed document {} in {}", id, index);
     Ok(())
+}
+
+/// Full sync: query all published posts and notes from MongoDB, bulk-index into Meilisearch.
+/// Should be called once at startup.
+pub async fn full_sync(state: SharedState) {
+    tracing::info!("开始 Meilisearch 全量同步...");
+
+    let api_key = if state.config.meilisearch_api_key.is_empty() {
+        None
+    } else {
+        Some(state.config.meilisearch_api_key.clone())
+    };
+
+    let search_service = match SearchService::new(state.config.meilisearch_host.clone(), api_key) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!("全量同步: 创建 SearchService 失败: {:?}", e);
+            return;
+        }
+    };
+
+    // Initialize indexes (create + configure attributes)
+    if let Err(e) = search_service.init_indexes().await {
+        tracing::error!("全量同步: 初始化索引失败: {:?}", e);
+        return;
+    }
+
+    // --- Sync posts ---
+    sync_posts(&state, &search_service).await;
+
+    // --- Sync notes ---
+    sync_notes(&state, &search_service).await;
+
+    tracing::info!("Meilisearch 全量同步完成");
+}
+
+async fn sync_posts(state: &SharedState, search_service: &SearchService) {
+    use futures::TryStreamExt;
+    use mongodb::bson::doc;
+
+    let posts_col = state.db.collection::<Post>("posts");
+    let categories_col = state.db.collection::<Category>("categories");
+
+    let filter = doc! { "isPublished": true };
+    let cursor = match posts_col.find(filter).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("全量同步: 查询文章失败: {}", e);
+            return;
+        }
+    };
+
+    let posts: Vec<Post> = match cursor.try_collect().await {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::error!("全量同步: 读取文章失败: {}", e);
+            return;
+        }
+    };
+
+    let mut docs = Vec::with_capacity(posts.len());
+    for post in posts {
+        // Look up category
+        let category = categories_col
+            .find_one(doc! { "_id": post.category_id })
+            .await
+            .ok()
+            .flatten();
+
+        docs.push(PostDocument {
+            id: post.id.to_hex(),
+            title: post.title,
+            text: post.text,
+            slug: post.slug,
+            category: category.as_ref().map(|c| c.slug.clone()),
+            category_name: category.map(|c| c.name),
+            tags: post.tags,
+            created: post.created.timestamp_millis() / 1000,
+        });
+    }
+
+    let count = docs.len();
+    if let Err(e) = search_service.index_posts(docs).await {
+        tracing::error!("全量同步: 同步文章到 Meilisearch 失败: {:?}", e);
+    } else {
+        tracing::info!("已同步 {} 篇文章到 Meilisearch", count);
+    }
+}
+
+async fn sync_notes(state: &SharedState, search_service: &SearchService) {
+    use futures::TryStreamExt;
+    use mongodb::bson::doc;
+
+    let notes_col = state.db.collection::<Note>("notes");
+
+    let filter = doc! { "isPublished": true };
+    let cursor = match notes_col.find(filter).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("全量同步: 查询笔记失败: {}", e);
+            return;
+        }
+    };
+
+    let notes: Vec<Note> = match cursor.try_collect().await {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::error!("全量同步: 读取笔记失败: {}", e);
+            return;
+        }
+    };
+
+    let docs: Vec<NoteDocument> = notes
+        .into_iter()
+        .map(|note| NoteDocument {
+            id: note.id.to_hex(),
+            title: note.title,
+            text: note.text,
+            nid: note.nid,
+            created: note.created.timestamp_millis() / 1000,
+        })
+        .collect();
+
+    let count = docs.len();
+    if let Err(e) = search_service.index_notes(docs).await {
+        tracing::error!("全量同步: 同步笔记到 Meilisearch 失败: {:?}", e);
+    } else {
+        tracing::info!("已同步 {} 篇笔记到 Meilisearch", count);
+    }
 }
