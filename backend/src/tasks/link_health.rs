@@ -20,6 +20,25 @@ pub fn start_link_health_task(state: SharedState) {
     tokio::spawn(async move {
         let mut timer = interval(Duration::from_secs(check_interval_hours * 3600));
 
+        // 立即执行第一次检查（跳过第一个 tick）
+        timer.tick().await;
+        tracing::info!("开始友链健康检查...");
+
+        match check_all_links(&state).await {
+            Ok(result) => {
+                tracing::info!(
+                    "[LinkHealth] 批量检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
+                    result.total,
+                    result.alive_count,
+                    result.failed_count,
+                    result.duration_ms
+                );
+            }
+            Err(e) => {
+                tracing::error!("友链健康检查失败: {}", e);
+            }
+        }
+
         loop {
             timer.tick().await;
             tracing::info!("开始友链健康检查...");
