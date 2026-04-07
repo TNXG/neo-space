@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createCommentAction } from "@/actions/comment";
-import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
+import { CommentMarkdown } from "@/components/common/markdown";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { createAuthComment } from "@/lib/api-client";
 import { getUAInfo } from "@/lib/ua-parse";
@@ -23,8 +23,8 @@ import {
   GuestActions,
   ToolbarLeft,
 } from "./comment-form";
-import { OWO_API, STORAGE_KEY_DRAFT_PREFIX, STORAGE_KEY_USER } from "./constants";
-import { useCommentRefresh } from "./hooks";
+import { STORAGE_KEY_DRAFT_PREFIX, STORAGE_KEY_USER } from "./constants";
+import { fetchOwOData, useCommentRefresh } from "./hooks";
 import { TurnstileWidget } from "./TurnstileWidget";
 
 export type { CommentFormProps };
@@ -153,7 +153,7 @@ export function CommentForm({
       // 关闭 ProfilePopover
       setActivePopover(null);
       if (!owoData) {
-        fetch(OWO_API).then(r => r.json()).then((d) => {
+        fetchOwOData().then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });

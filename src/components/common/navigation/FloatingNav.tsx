@@ -5,7 +5,7 @@ import type { User } from "@/types/api";
 import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 
-import { SearchPanel } from "@/components/common/search/SearchPanel";
+import { SearchPanel } from "@/components/common/search";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useReaderWS } from "@/hooks/use-reader-ws";
 
@@ -25,8 +25,8 @@ export function FloatingNav({ user }: FloatingNavProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const { readingProgress, showBackToTop, isNavVisible, setIsNavVisible, scrollToTop } =
-    useScrollTracking({ hasMounted });
+  const { readingProgress, showBackToTop, isNavVisible, setIsNavVisible, scrollToTop }
+    = useScrollTracking({ hasMounted });
 
   return (
     <>

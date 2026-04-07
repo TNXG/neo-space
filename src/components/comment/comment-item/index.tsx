@@ -3,7 +3,7 @@
 import type { Comment } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
-import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
+import { CommentMarkdown } from "@/components/common/markdown";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";

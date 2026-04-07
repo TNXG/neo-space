@@ -1,4 +1,4 @@
-import { FloatingNav } from "@/components/common/navigation/FloatingNav";
+import { FloatingNav } from "@/components/common/navigation";
 import { NbnhhshPanel, NbnhhshProvider } from "@/components/common/nbnhhsh";
 import { Footer } from "@/components/layouts/Footer";
 import { PageProvider } from "@/contexts/PageContext";

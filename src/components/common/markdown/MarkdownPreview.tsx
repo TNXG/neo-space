@@ -6,7 +6,7 @@ import remarkBreaks from "remark-breaks";
 import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 
-import { AbbreviationText } from "@/components/common/nbnhhsh/AbbreviationText";
+import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { Mark } from "../content/Mark";
 import { truncateText } from "./utils";
 

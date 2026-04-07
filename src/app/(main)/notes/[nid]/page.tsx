@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
-import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
+import { MarkdownRenderer } from "@/components/common/markdown";
 import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";

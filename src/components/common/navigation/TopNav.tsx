@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
+import { ThemeToggle } from "@/components/common/theme";
 import {
   Tooltip,
   TooltipContent,

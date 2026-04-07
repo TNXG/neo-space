@@ -3,13 +3,13 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { CommentMarkdown } from "@/components/common/markdown/CommentMarkdown";
+import { CommentMarkdown } from "@/components/common/markdown";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { updateAuthComment } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
-import { OWO_API } from "../constants";
+import { fetchOwOData } from "../hooks";
 
 // --- Types for Emoji ---
 interface OwOItem { text: string; icon: string }
@@ -46,7 +46,7 @@ export function CommentEditForm({
   const toggleEditEmoji = () => {
     setShowEditEmoji((prev) => {
       if (!prev && !owoData) {
-        fetch(OWO_API).then(r => r.json()).then((d) => {
+        fetchOwOData().then((d) => {
           setOwoData(d);
           setActivePkg(Object.keys(d)[0]);
         });

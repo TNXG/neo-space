@@ -1,6 +1,6 @@
 "use server";
 
-import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
+import { ThinkingItem } from "@/components/layouts/thinking";
 import { getRecently } from "@/lib/api-client";
 
 export async function loadMoreThinkings(page: number, limit: number = 50) {

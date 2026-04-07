@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { ThinkingItem } from "@/components/layouts/thinking/ThinkingItem";
-import { ThinkingList } from "@/components/layouts/thinking/ThinkingList";
+import { ThinkingItem, ThinkingList } from "@/components/layouts/thinking";
 import { getRecently } from "@/lib/api-client";
 
 export const metadata: Metadata = {

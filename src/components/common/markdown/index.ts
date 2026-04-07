@@ -1,4 +1,5 @@
 export { CodeBlock } from "../content/CodeBlock";
+export { CommentMarkdown } from "./CommentMarkdown";
 export { getHighlighter } from "./highlighter";
 export { MarkdownPreview } from "./MarkdownPreview";
 export { MarkdownRenderer } from "./MarkdownRenderer";

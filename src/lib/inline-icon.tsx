@@ -48,6 +48,7 @@ export const Icon: React.FC<IconProps> = ({
       height={height}
       className={className}
       style={{ display: "block", flexShrink: 0, ...style }}
+      // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
       dangerouslySetInnerHTML={{ __html: data.body }}
       {...rest}
     />
