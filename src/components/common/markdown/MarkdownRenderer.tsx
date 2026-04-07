@@ -204,10 +204,17 @@ const components: Components = {
   pre: ({ children, className: preClassName, ...props }) => {
     let language: string | undefined;
 
+    if (typeof preClassName === "string") {
+      const preMatch = preClassName.match(LANGUAGE_CLASS_REGEX);
+      if (preMatch?.[1]) {
+        language = preMatch[1];
+      }
+    }
+
     if (children && typeof children === "object" && "props" in children) {
       const childProps = (children as { props?: { "className"?: string; "data-language"?: string } }).props;
       const codeClassName = childProps?.className;
-      if (typeof codeClassName === "string") {
+      if (!language && typeof codeClassName === "string") {
         const match = codeClassName.match(LANGUAGE_CLASS_REGEX);
         if (match?.[1]) {
           language = match[1];

@@ -7,6 +7,7 @@ import { useHasMounted } from "@/hooks/use-has-mounted";
 import { FileIcon } from "@/lib/file-icons";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
+import { SpecialCodeBlock } from "./special";
 
 interface CodeBlockProps {
   children: React.ReactNode;
@@ -21,9 +22,14 @@ export function CodeBlock({ children, className, language = "text", filename, st
   const [copied, setCopied] = useState(false);
   const mounted = useHasMounted();
   const preRef = useRef<HTMLPreElement>(null);
+  const rawCode = fallbackText ?? extractTextContent(children);
+
+  if (language === "tokei" || language === "cargo") {
+    return <SpecialCodeBlock language={language} raw={rawCode} />;
+  }
 
   const handleCopy = async () => {
-    const codeText = (preRef.current?.textContent ?? fallbackText ?? extractTextContent(children)).trimEnd();
+    const codeText = (preRef.current?.textContent ?? rawCode).trimEnd();
 
     if (!codeText) {
       toast.error("没有可复制的内容");
@@ -98,7 +104,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
                 )}
                 style={{ ...style, margin: 0 }}
               >
-                <code>{fallbackText || extractTextContent(children)}</code>
+                <code>{rawCode}</code>
               </pre>
             )
           : (
