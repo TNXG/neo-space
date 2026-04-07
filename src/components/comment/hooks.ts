@@ -1,8 +1,51 @@
 import { use } from "react";
+import { OWO_API } from "./constants";
 import { CommentContext } from "./context";
 
 // Static regex patterns to avoid re-compilation
 const OWO_EMOJI_REGEX = /\[([^\s[\]]+)\]/g;
+
+let _owoPromise: Promise<any> | null = null;
+let _owoData: any = null;
+let _owoDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const OWO_FETCH_DEBOUNCE_MS = 200;
+
+export function fetchOwOData() {
+  if (_owoData) {
+    return Promise.resolve(_owoData);
+  }
+
+  if (!_owoPromise) {
+    _owoPromise = new Promise((resolve, reject) => {
+      if (_owoDebounceTimer) {
+        clearTimeout(_owoDebounceTimer);
+      }
+
+      _owoDebounceTimer = setTimeout(() => {
+        _owoDebounceTimer = null;
+
+        fetch(OWO_API)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`Failed to fetch OwO data: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            _owoData = data;
+            resolve(data);
+          })
+          .catch((error) => {
+            _owoPromise = null;
+            reject(error);
+          });
+      }, OWO_FETCH_DEBOUNCE_MS);
+    });
+  }
+
+  return _owoPromise;
+}
 
 /**
  * 使用评论高亮功能的 Hook
