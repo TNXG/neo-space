@@ -9,11 +9,11 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR from "swr";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { API_BASE_URL } from "@/lib/api-client";
 import { getRelativeTime } from "@/lib/date";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export interface DropdownPanelProps {
   user?: User;
@@ -87,36 +87,40 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
           最新动态
         </div>
         <div className="flex flex-col gap-1">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl px-2.5 py-2">
-              <div className="flex items-center justify-between gap-1 mb-1.5">
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-3 w-8" />
-              </div>
-              <Skeleton className="h-3 w-16" />
-            </div>
-          ))
-        ) : recentItems.length > 0 ? (
-            recentItems.map(item => (
-              <NavigationMenu.Link
-                key={item.id}
-                closeOnClick
-                render={<Link href={navItemHref(item)} />}
-                className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <div className="min-w-0 truncate text-[13px] leading-snug">{item.title}</div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
-                    {item.type === "post" ? "文章" : "手记"}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-[10px] text-muted-foreground">
-                  {getRelativeTime(item.created)}
-                </div>
-              </NavigationMenu.Link>
-            ))
-        ) : null}
+          {isLoading
+            ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`recent-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-3 w-8" />
+                    </div>
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))
+              )
+            : recentItems.length > 0
+              ? (
+                  recentItems.map(item => (
+                    <NavigationMenu.Link
+                      key={item.id}
+                      closeOnClick
+                      render={<Link href={navItemHref(item)} />}
+                      className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="min-w-0 truncate text-[13px] leading-snug">{item.title}</div>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {item.type === "post" ? "文章" : "手记"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">
+                        {getRelativeTime(item.created)}
+                      </div>
+                    </NavigationMenu.Link>
+                  ))
+                )
+              : null}
         </div>
       </div>
 
@@ -183,41 +187,43 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
             分类
           </div>
           <div className="flex flex-col gap-0.5">
-            {isNavLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg px-2.5 py-2">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-3 w-6" />
-                </div>
-              ))
-            ) : categories.map(cat => (
-              <NavigationMenu.Link
-                key={cat._id}
-                closeOnClick
-                render={<Link href={`/posts?category=${cat.slug}`} />}
-                className={cn(
-                  "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors relative z-0",
-                  activeSlug === cat.slug
-                    ? "text-accent-600"
-                    : "hover:text-accent-600",
-                )}
-                onMouseEnter={() => setHoveredSlug(cat.slug)}
-              >
-                {activeSlug === cat.slug && (
-                  <motion.div
-                    layoutId="active-category-bg"
-                    className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
-                    transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                  />
-                )}
-                <span className="truncate">{cat.name}</span>
-                {cat.count !== undefined && (
-                  <span className="ml-1 shrink-0 text-[11px] text-muted-foreground">
-                    {cat.count}
-                  </span>
-                )}
-              </NavigationMenu.Link>
-            ))}
+            {isNavLoading
+              ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`cat-skeleton-${i}`} className="flex items-center justify-between rounded-lg px-2.5 py-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-3 w-6" />
+                    </div>
+                  ))
+                )
+              : categories.map(cat => (
+                  <NavigationMenu.Link
+                    key={cat._id}
+                    closeOnClick
+                    render={<Link href={`/posts?category=${cat.slug}`} />}
+                    className={cn(
+                      "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors relative z-0",
+                      activeSlug === cat.slug
+                        ? "text-accent-600"
+                        : "hover:text-accent-600",
+                    )}
+                    onMouseEnter={() => setHoveredSlug(cat.slug)}
+                  >
+                    {activeSlug === cat.slug && (
+                      <motion.div
+                        layoutId="active-category-bg"
+                        className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
+                        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                      />
+                    )}
+                    <span className="truncate">{cat.name}</span>
+                    {cat.count !== undefined && (
+                      <span className="ml-1 shrink-0 text-[11px] text-muted-foreground">
+                        {cat.count}
+                      </span>
+                    )}
+                  </NavigationMenu.Link>
+                ))}
           </div>
         </div>
 
@@ -228,26 +234,28 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
             的文章
           </div>
           <div className="flex flex-col gap-1">
-            {isPostsLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-xl px-2.5 py-2">
-                  <Skeleton className="h-4 w-3/4 mb-1.5" />
-                  <Skeleton className="h-3 w-1/4" />
-                </div>
-              ))
-            ) : recentPosts.map(post => (
-              <NavigationMenu.Link
-                key={post._id}
-                closeOnClick
-                render={<Link href={`/posts/${post.slug}`} />}
-                className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
-              >
-                <div className="truncate text-[13px] leading-snug">{post.title}</div>
-                <div className="mt-0.5 text-[10px] text-muted-foreground">
-                  {getRelativeTime(post.created)}
-                </div>
-              </NavigationMenu.Link>
-            ))}
+            {isPostsLoading
+              ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`posts-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                      <Skeleton className="h-4 w-3/4 mb-1.5" />
+                      <Skeleton className="h-3 w-1/4" />
+                    </div>
+                  ))
+                )
+              : recentPosts.map(post => (
+                  <NavigationMenu.Link
+                    key={post._id}
+                    closeOnClick
+                    render={<Link href={`/posts/${post.slug}`} />}
+                    className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+                  >
+                    <div className="truncate text-[13px] leading-snug">{post.title}</div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">
+                      {getRelativeTime(post.created)}
+                    </div>
+                  </NavigationMenu.Link>
+                ))}
           </div>
         </div>
       </div>
@@ -301,34 +309,36 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
               心情
             </div>
             <div className="flex flex-col gap-0.5">
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="px-2.5 py-2">
-                    <Skeleton className="h-4 w-12" />
-                  </div>
-                ))
-              ) : moods.map(mood => (
-                <button
-                  key={mood}
-                  type="button"
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-left transition-colors cursor-pointer w-full relative z-0",
-                    activeMood === mood
-                      ? "text-accent-600"
-                      : "hover:text-accent-600",
-                  )}
-                  onMouseEnter={() => setSelectedMood(mood)}
-                >
-                  {activeMood === mood && (
-                    <motion.div
-                      layoutId="active-mood-bg"
-                      className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
-                      transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                    />
-                  )}
-                  <span>{mood}</span>
-                </button>
-              ))}
+              {isLoading
+                ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={`mood-skeleton-${i}`} className="px-2.5 py-2">
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                    ))
+                  )
+                : moods.map(mood => (
+                    <button
+                      key={mood}
+                      type="button"
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-left transition-colors cursor-pointer w-full relative z-0",
+                        activeMood === mood
+                          ? "text-accent-600"
+                          : "hover:text-accent-600",
+                      )}
+                      onMouseEnter={() => setSelectedMood(mood)}
+                    >
+                      {activeMood === mood && (
+                        <motion.div
+                          layoutId="active-mood-bg"
+                          className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
+                          transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                        />
+                      )}
+                      <span>{mood}</span>
+                    </button>
+                  ))}
             </div>
           </div>
 
@@ -338,32 +348,34 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
               最近手记
             </div>
             <div className="flex flex-col gap-1">
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="rounded-xl px-2.5 py-2">
-                    <Skeleton className="h-4 w-3/4 mb-1.5" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
-                ))
-              ) : filteredNotes.map(note => (
-                <NavigationMenu.Link
-                  key={note._id}
-                  closeOnClick
-                  render={<Link href={`/notes/${note.nid}`} />}
-                  className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
-                >
-                  <div className="min-w-0 truncate text-[13px] leading-snug">{note.title}</div>
-                  <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>{getRelativeTime(note.created)}</span>
-                    {note.weather && (
-                      <span className="flex items-center gap-0.5">
-                        <Icon icon="mingcute:cloud-line" className="text-[10px]" />
-                        {note.weather}
-                      </span>
-                    )}
-                  </div>
-                </NavigationMenu.Link>
-              ))}
+              {isLoading
+                ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div key={`notes-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                        <Skeleton className="h-4 w-3/4 mb-1.5" />
+                        <Skeleton className="h-3 w-1/3" />
+                      </div>
+                    ))
+                  )
+                : filteredNotes.map(note => (
+                    <NavigationMenu.Link
+                      key={note._id}
+                      closeOnClick
+                      render={<Link href={`/notes/${note.nid}`} />}
+                      className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+                    >
+                      <div className="min-w-0 truncate text-[13px] leading-snug">{note.title}</div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>{getRelativeTime(note.created)}</span>
+                        {note.weather && (
+                          <span className="flex items-center gap-0.5">
+                            <Icon icon="mingcute:cloud-line" className="text-[10px]" />
+                            {note.weather}
+                          </span>
+                        )}
+                      </div>
+                    </NavigationMenu.Link>
+                  ))}
               {!isLoading && filteredNotes.length === 0 && (
                 <div className="py-4 text-center text-xs text-muted-foreground">
                   暂无
@@ -395,35 +407,37 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
         最近手记
       </div>
       <div className="flex flex-col gap-1">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl px-2.5 py-2">
-              <Skeleton className="h-4 w-3/4 mb-1.5" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
-          ))
-        ) : allNotes.slice(0, 4).map(note => (
-          <NavigationMenu.Link
-            key={note._id}
-            closeOnClick
-            render={<Link href={`/notes/${note.nid}`} />}
-            className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
-          >
-            <div className="flex items-center gap-1.5">
-              {note.mood && <span className="text-sm">{note.mood}</span>}
-              <span className="min-w-0 truncate text-[13px] leading-snug">{note.title}</span>
-            </div>
-            <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <span>{getRelativeTime(note.created)}</span>
-              {note.weather && (
-                <span className="flex items-center gap-0.5">
-                  <Icon icon="mingcute:cloud-line" className="text-[10px]" />
-                  {note.weather}
-                </span>
-              )}
-            </div>
-          </NavigationMenu.Link>
-        ))}
+        {isLoading
+          ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={`allnotes-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                  <Skeleton className="h-4 w-3/4 mb-1.5" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              ))
+            )
+          : allNotes.slice(0, 4).map(note => (
+              <NavigationMenu.Link
+                key={note._id}
+                closeOnClick
+                render={<Link href={`/notes/${note.nid}`} />}
+                className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+              >
+                <div className="flex items-center gap-1.5">
+                  {note.mood && <span className="text-sm">{note.mood}</span>}
+                  <span className="min-w-0 truncate text-[13px] leading-snug">{note.title}</span>
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>{getRelativeTime(note.created)}</span>
+                  {note.weather && (
+                    <span className="flex items-center gap-0.5">
+                      <Icon icon="mingcute:cloud-line" className="text-[10px]" />
+                      {note.weather}
+                    </span>
+                  )}
+                </div>
+              </NavigationMenu.Link>
+            ))}
       </div>
 
       <div className="mt-2 border-t border-border/60 pt-2">

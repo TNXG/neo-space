@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderWS } from "@/hooks/use-reader-ws";
-import { cn } from "@/lib/utils";
 
 interface ProfileHeaderProps {
   profile: User;
@@ -31,9 +30,6 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   // 获取歌曲信息
   const songName = ownerStatus?.mediaPlayback?.metadata?.title || ownerStatus?.netease?.song?.name || null;
   const artistName = ownerStatus?.mediaPlayback?.metadata?.artist || ownerStatus?.netease?.song?.artist || null;
-
-  // 播放状态
-  const isPlaying = Boolean(ownerStatus?.mediaPlayback?.playbackState?.playing) || Boolean(ownerStatus?.netease?.active);
 
   return (
     <header className="space-y-4 md:space-y-8">
@@ -79,7 +75,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           <h1 className="text-2xl lg:text-3xl tracking-tight font-bold text-foreground">
             {profile.name}
             <span className="text-muted-foreground font-normal ml-1">
-              @{profile.username}
+              @
+              {profile.username}
             </span>
           </h1>
 
@@ -94,7 +91,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
 
           {/* 专辑封面 - 代替 OwnerStatus 的"正在听" */}
-          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} isPlaying={isPlaying} />
+          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} />
         </div>
       </div>
 
@@ -136,7 +133,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             <h1 className="text-xl tracking-tight font-bold mb-0.5 text-foreground">
               {profile.name}
               <span className="text-muted-foreground font-normal ml-1">
-                @{profile.username}
+                @
+                {profile.username}
               </span>
             </h1>
           </div>
@@ -148,21 +146,21 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 
         <div className="flex flex-wrap items-center gap-3">
           <SocialLinks profile={profile} />
-          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} isPlaying={isPlaying} />
+          <AlbumCover cover={albumCover} songName={songName} artistName={artistName} />
         </div>
       </div>
     </header>
   );
 }
 
-function AlbumCover({ cover, songName, artistName, isPlaying = true }: {
+function AlbumCover({ cover, songName, artistName }: {
   cover: string | null;
   songName?: string | null;
   artistName?: string | null;
-  isPlaying?: boolean;
 }) {
   // 没有歌曲信息时不显示
-  if (!songName || !cover) return null;
+  if (!songName || !cover)
+    return null;
 
   return (
     <AnimatePresence mode="wait">
@@ -186,7 +184,9 @@ function AlbumCover({ cover, songName, artistName, isPlaying = true }: {
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-medium text-foreground">
-            正在听 {songName}
+            正在听
+            {" "}
+            {songName}
           </span>
           {artistName && (
             <span className="text-xs text-muted-foreground">

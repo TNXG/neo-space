@@ -27,13 +27,15 @@ export function BackToTopFab({ readingProgress, scrollToTop }: BackToTopFabProps
 
   const handleScrollToTopAction = useCallback((e?: React.MouseEvent) => {
     e?.preventDefault();
-    if (window.scrollY > 100) setIsSpinning(true);
+    if (window.scrollY > 100)
+      setIsSpinning(true);
     scrollToTop();
   }, [scrollToTop]);
 
   useEffect(() => {
-    if (!isSpinning) return;
-    const t = setTimeout(() => setIsSpinning(false), 3000);
+    if (!isSpinning)
+      return;
+    const t = setTimeout(setIsSpinning, 3000, false);
     return () => clearTimeout(t);
   }, [isSpinning]);
 
@@ -73,11 +75,13 @@ export function BackToTopFab({ readingProgress, scrollToTop }: BackToTopFabProps
                 />
               </svg>
               <div className="relative z-10">
-                {isSpinning ? (
-                  <Icon icon="mingcute:loading-line" className="text-xl animate-spin" />
-                ) : (
-                  <Icon icon="mingcute:arrow-up-line" className="text-xl" />
-                )}
+                {isSpinning
+                  ? (
+                      <Icon icon="mingcute:loading-line" className="text-xl animate-spin" />
+                    )
+                  : (
+                      <Icon icon="mingcute:arrow-up-line" className="text-xl" />
+                    )}
               </div>
             </button>
           </TooltipTrigger>

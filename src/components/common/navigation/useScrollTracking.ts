@@ -32,7 +32,8 @@ export function useScrollTracking({
   }, []);
 
   const handleScroll = useCallback(() => {
-    if (!hasMounted) return;
+    if (!hasMounted)
+      return;
 
     const scrollY = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -68,12 +69,14 @@ export function useScrollTracking({
 
     scroll.lastY = scrollY;
 
-    if (scroll.timer) clearTimeout(scroll.timer);
+    if (scroll.timer)
+      clearTimeout(scroll.timer);
     scroll.timer = setTimeout(setIsNavVisible, 2500, true);
   }, [hasMounted, scroll]);
 
   useEffect(() => {
-    if (!hasMounted) return;
+    if (!hasMounted)
+      return;
     requestAnimationFrame(() => handleScroll());
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
