@@ -20,6 +20,11 @@ pub fn routes() -> axum::Router<SharedState> {
             "/nbnhhsh/guess",
             axum::routing::post(handlers::misc::nbnhhsh_guess),
         )
+        .route("/crates/{name}", axum::routing::get(handlers::misc::get_crate_info))
+        .route(
+            "/crates/{name}/{version}",
+            axum::routing::get(handlers::misc::get_crate_info_with_version),
+        )
         // Nav hover aggregated feed
         .route(
             "/aggregate/nav",
