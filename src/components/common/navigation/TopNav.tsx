@@ -1,3 +1,5 @@
+"use client";
+
 import type { NavItem } from "./nav-config";
 import type { User } from "@/types/api";
 
@@ -40,6 +42,7 @@ interface TopNavProps {
 export function TopNav({
   user,
   isNavVisible,
+  setIsNavVisible: _setIsNavVisible,
   setIsDrawerOpen,
   setIsSearchOpen,
   isConnected,
