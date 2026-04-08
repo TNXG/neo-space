@@ -2,8 +2,9 @@
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppResult},
+    error::{AppError, AppQuery, AppResult},
     models::*,
+    services::helpers::get_ai_translation,
 };
 use axum::{
     extract::{Path, State},
@@ -40,12 +41,19 @@ struct MinimalPost {
     pub created: bson::DateTime,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AdjacentPostParams {
+    pub lang: Option<String>,
+}
+
 /// Get adjacent posts (previous and next) by slug
 pub async fn get_adjacent_posts(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
+    AppQuery(params): AppQuery<AdjacentPostParams>,
 ) -> AppResult<Json<ApiResponse<AdjacentPosts>>> {
     let posts_collection = state.db.collection::<MinimalPost>("posts");
+    let lang = params.lang.as_deref().unwrap_or("zh");
 
     // Get current post to find its creation date
     let current_post = posts_collection
@@ -55,8 +63,8 @@ pub async fn get_adjacent_posts(
         .ok_or(AppError::NotFound("Post not found".to_string()))?;
 
     // Find previous and next posts
-    let prev = find_adjacent_post(&state, &current_post, true).await?;
-    let next = find_adjacent_post(&state, &current_post, false).await?;
+    let prev = find_adjacent_post(&state, &current_post, true, lang).await?;
+    let next = find_adjacent_post(&state, &current_post, false, lang).await?;
 
     Ok(Json(ApiResponse::success(AdjacentPosts { prev, next })))
 }
@@ -66,6 +74,7 @@ async fn find_adjacent_post(
     state: &SharedState,
     current_post: &MinimalPost,
     find_previous: bool,
+    lang: &str,
 ) -> AppResult<Option<AdjacentPost>> {
     let posts_collection = state.db.collection::<MinimalPost>("posts");
 
@@ -96,9 +105,17 @@ async fn find_adjacent_post(
         Some(post) => {
             let category = fetch_category_by_id(state, post.category_id).await?;
             if let Some(cat) = category {
+                let title = if let Some(translation) =
+                    get_ai_translation(state, &post.id.to_hex(), "posts", lang).await
+                {
+                    translation.title.unwrap_or(post.title)
+                } else {
+                    post.title
+                };
+
                 Ok(Some(AdjacentPost {
                     slug: post.slug,
-                    title: post.title,
+                    title,
                     category_slug: cat.slug,
                 }))
             } else {

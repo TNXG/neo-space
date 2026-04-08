@@ -2,8 +2,9 @@
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppJson, AppResult},
+    error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    services::helpers::get_ai_translation,
 };
 use axum::{Json, extract::State};
 use bson::{doc, oid::ObjectId};
@@ -118,12 +119,19 @@ pub struct NavAggResponse {
     categories: Vec<NavAggCategory>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AggregateNavParams {
+    pub lang: Option<String>,
+}
+
 /// GET /aggregate/nav
 /// Returns merged recent posts+notes and all categories with post counts.
 pub async fn aggregate_nav(
     State(state): State<SharedState>,
+    AppQuery(params): AppQuery<AggregateNavParams>,
 ) -> AppResult<Json<ApiResponse<NavAggResponse>>> {
     const RECENT_SIZE: i64 = 5;
+    let lang = params.lang.as_deref().unwrap_or("zh");
 
     // ── 1. Fetch all categories ──────────────────────────────
     let cats_coll = state.db.collection::<crate::models::Category>("categories");
@@ -211,10 +219,17 @@ pub async fn aggregate_nav(
         .map_err(|e| AppError::Database(e.to_string()))?
     {
         let cat = cat_map.get(&post.category_id);
+        let title = if let Some(translation) =
+            get_ai_translation(&state, &post.id.to_hex(), "posts", lang).await
+        {
+            translation.title.unwrap_or(post.title)
+        } else {
+            post.title
+        };
         recent.push(NavAggItem {
             item_type: "post".to_string(),
             id: post.id.to_hex(),
-            title: post.title,
+            title,
             created: post.created.to_chrono().to_rfc3339(),
             slug: Some(post.slug),
             category: cat.map(|c| NavAggItemCategory {
@@ -244,10 +259,17 @@ pub async fn aggregate_nav(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
     {
+        let title = if let Some(translation) =
+            get_ai_translation(&state, &note.id.to_hex(), "notes", lang).await
+        {
+            translation.title.unwrap_or(note.title)
+        } else {
+            note.title
+        };
         recent.push(NavAggItem {
             item_type: "note".to_string(),
             id: note.id.to_hex(),
-            title: note.title,
+            title,
             created: note.created.to_chrono().to_rfc3339(),
             slug: None,
             category: None,

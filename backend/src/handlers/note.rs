@@ -248,8 +248,10 @@ pub async fn get_note_by_nid(
 pub async fn get_adjacent_notes(
     State(state): State<SharedState>,
     Path(nid): Path<i32>,
+    AppQuery(params): AppQuery<DetailNoteParams>,
 ) -> AppResult<Json<ApiResponse<AdjacentNotes>>> {
     let collection = state.db.collection::<MinimalNote>("notes");
+    let lang = params.lang.as_deref().unwrap_or("zh");
 
     // Find previous note (smaller nid, get the largest one)
     let prev_filter = doc! {
@@ -282,14 +284,38 @@ pub async fn get_adjacent_notes(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     let adjacent = AdjacentNotes {
-        prev: prev_note.map(|note| AdjacentNote {
-            nid: note.nid,
-            title: note.title,
-        }),
-        next: next_note.map(|note| AdjacentNote {
-            nid: note.nid,
-            title: note.title,
-        }),
+        prev: match prev_note {
+            Some(note) => {
+                let title = if let Some(translation) =
+                    get_ai_translation(&state, &note.id.to_hex(), "notes", lang).await
+                {
+                    translation.title.unwrap_or(note.title)
+                } else {
+                    note.title
+                };
+                Some(AdjacentNote {
+                    nid: note.nid,
+                    title,
+                })
+            }
+            None => None,
+        },
+        next: match next_note {
+            Some(note) => {
+                let title = if let Some(translation) =
+                    get_ai_translation(&state, &note.id.to_hex(), "notes", lang).await
+                {
+                    translation.title.unwrap_or(note.title)
+                } else {
+                    note.title
+                };
+                Some(AdjacentNote {
+                    nid: note.nid,
+                    title,
+                })
+            }
+            None => None,
+        },
     };
 
     Ok(Json(ApiResponse {

@@ -80,7 +80,7 @@ export default async function NotePage({ params }: PageProps) {
     // 并行获取手记内容、相邻手记信息和站点配置
     const [noteResponse, adjacentResponse, configResponse] = await Promise.all([
       getNoteByNid(nidNum, locale),
-      getAdjacentNotes(nidNum),
+      getAdjacentNotes(nidNum, locale),
       getSiteConfig().catch(() => null),
     ]);
 

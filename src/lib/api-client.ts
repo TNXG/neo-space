@@ -213,8 +213,8 @@ export interface AdjacentNotes {
   next: AdjacentNote | null;
 }
 
-export async function getAdjacentNotes(nid: number): Promise<ApiResponse<AdjacentNotes>> {
-  return apiClient<ApiResponse<AdjacentNotes>>(`/notes/nid/${nid}/adjacent`, {
+export async function getAdjacentNotes(nid: number, lang?: string): Promise<ApiResponse<AdjacentNotes>> {
+  return apiClient<ApiResponse<AdjacentNotes>>(withLangParam(`/notes/nid/${nid}/adjacent`, lang), {
     tags: ["notes"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
@@ -234,8 +234,8 @@ export interface AdjacentPosts {
   next: AdjacentPost | null;
 }
 
-export async function getAdjacentPosts(slug: string): Promise<ApiResponse<AdjacentPosts>> {
-  return apiClient<ApiResponse<AdjacentPosts>>(`/posts/slug/${slug}/adjacent`, {
+export async function getAdjacentPosts(slug: string, lang?: string): Promise<ApiResponse<AdjacentPosts>> {
+  return apiClient<ApiResponse<AdjacentPosts>>(withLangParam(`/posts/slug/${slug}/adjacent`, lang), {
     tags: ["posts"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });

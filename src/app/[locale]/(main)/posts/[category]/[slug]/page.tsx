@@ -91,7 +91,7 @@ export default async function PostPage({ params }: PageProps) {
     const [{ data }, { data: user }, adjacentResponse] = await Promise.all([
       getPostBySlug(slug, locale),
       getUserProfile(),
-      getAdjacentPosts(slug),
+      getAdjacentPosts(slug, locale),
     ]);
     post = data;
     authorName = user.name;

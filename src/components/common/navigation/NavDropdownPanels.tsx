@@ -5,7 +5,7 @@ import type { ApiResponse, NavData, NavTopItem, Note, PaginatedResponse, Post, U
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 
 import { motion } from "motion/react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -29,18 +29,30 @@ async function fetcher<T>(url: string): Promise<T> {
   return response.json();
 }
 
+function withLangParam(url: string, lang?: string) {
+  if (!lang || lang === "zh") {
+    return url;
+  }
+
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}lang=${encodeURIComponent(lang)}`;
+}
+
 // ============================================================
 //  Home Dropdown — 用户卡片 + 最新动态 + 快捷页面
 // ============================================================
 
 function navItemHref(item: NavTopItem) {
-  return item.type === "post" ? `/posts/${item.slug}` : `/notes/${item.nid}`;
+  return item.type === "post"
+    ? `/posts/${item.category?.slug ?? "default"}/${item.slug}`
+    : `/notes/${item.nid}`;
 }
 
 export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
   const t = useTranslations();
+  const locale = useLocale();
   const { data, isLoading } = useSWR<ApiResponse<NavData>>(
-    `${API_BASE_URL}/aggregate/nav`,
+    withLangParam(`${API_BASE_URL}/aggregate/nav`, locale),
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -161,9 +173,10 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
 // ============================================================
 export const PostsDropdown: FC<DropdownPanelProps> = () => {
   const t = useTranslations();
+  const locale = useLocale();
   // SWR deduplicates: same key as HomeDropdown → no extra request
   const { data: navData, isLoading: isNavLoading } = useSWR<ApiResponse<NavData>>(
-    `${API_BASE_URL}/aggregate/nav`,
+    withLangParam(`${API_BASE_URL}/aggregate/nav`, locale),
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -173,7 +186,9 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
   const activeSlug = hoveredSlug ?? categories[0]?.slug ?? null;
 
   const { data: postsData, isLoading: isPostsLoading } = useSWR<PaginatedResponse<Post>>(
-    activeSlug ? `${API_BASE_URL}/posts?page=1&size=4&category=${activeSlug}` : null,
+    activeSlug
+      ? withLangParam(`${API_BASE_URL}/posts?page=1&size=4&category=${activeSlug}`, locale)
+      : null,
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -203,7 +218,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                   <NavigationMenu.Link
                     key={cat._id}
                     closeOnClick
-                    render={<Link href={`/posts?category=${cat.slug}`} />}
+                    render={<Link href={`/categories/${cat.slug}`} />}
                     className={cn(
                       "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] transition-colors relative z-0",
                       activeSlug === cat.slug
@@ -249,7 +264,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                   <NavigationMenu.Link
                     key={post._id}
                     closeOnClick
-                    render={<Link href={`/posts/${post.slug}`} />}
+                    render={<Link href={`/posts/${post.category?.slug ?? "default"}/${post.slug}`} />}
                     className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
                   >
                     <div className="truncate text-[13px] leading-snug">{post.title}</div>
@@ -287,8 +302,9 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
 // ============================================================
 export const NotesDropdown: FC<DropdownPanelProps> = () => {
   const t = useTranslations();
+  const locale = useLocale();
   const { data: notesData, isLoading } = useSWR<PaginatedResponse<Note>>(
-    `${API_BASE_URL}/notes?page=1&size=8`,
+    withLangParam(`${API_BASE_URL}/notes?page=1&size=8`, locale),
     fetcher,
     { revalidateOnFocus: false },
   );
