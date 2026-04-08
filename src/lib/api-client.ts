@@ -8,19 +8,33 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-blog
 /**
  * WebSocket URL 配置
  *
- * 1. 如果设置了 NEXT_PUBLIC_WS_URL，直接使用（适用于 API 和 WS 在不同域的情况）
- * 2. 否则从 API_BASE_URL 自动推导（适用于同域情况）
- *    https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/ws
- *    http://localhost:8000/api -> ws://localhost:8000/ws
+ * 优先使用 NEXT_PUBLIC_WS_URL 环境变量，否则从 API_BASE_URL 推导。
+ *
+ * 推导规则：
+ * 1. https://api-blog.tnxg.top/api -> wss://api-blog.tnxg.top/ws
+ * 2. https://api-blog.tnxg.top -> wss://api-blog.tnxg.top/ws
+ * 3. http://localhost:8000/api -> ws://localhost:8000/ws
+ *
+ * 具体业务路径由调用方再拼接，例如 `/reader`。
  */
+const API_SUFFIX_REGEX = /\/api\/?$/;
+const TRAILING_SLASH_REGEX = /\/$/;
+
 function inferWsUrlFromApiUrl(apiUrl: string): string {
-  return apiUrl
+  let wsUrl = apiUrl
     .replace("https://", "wss://")
     .replace("http://", "ws://")
-    .replace("/api", "/ws");
+    .replace(API_SUFFIX_REGEX, "")
+    .replace(TRAILING_SLASH_REGEX, "");
+  
+  if (!wsUrl.endsWith("/ws")) {
+    wsUrl += "/ws";
+  }
+  
+  return wsUrl;
 }
 
-export const WS_BASE_URL = inferWsUrlFromApiUrl(API_BASE_URL);
+export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 export const WS_FALLBACK_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 
 /**
