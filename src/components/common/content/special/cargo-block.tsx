@@ -1,25 +1,20 @@
 "use client";
 
-import type { CargoDepInfo, CargoInfo, PointerTooltipPosition } from "./types";
+import type { CargoDepInfo, CargoInfo } from "./types";
 import * as d3 from "d3";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { API_BASE_URL } from "@/lib/api-client";
 import {
   CargoLink,
   CargoLoadingSkeleton,
-  CargoPopoverBody,
   InvalidBlock,
   Metric,
   SpecialBlockHeader,
 } from "./components";
 import {
   CRATE_PALETTE,
+  KIND_COLORS,
   TREEMAP_LABEL_FONT,
   TREEMAP_LABEL_LINE_HEIGHT,
   TREEMAP_META_FONT,
@@ -32,6 +27,12 @@ import {
   layoutTreemapText,
   parseCargoSpec,
 } from "./utils";
+
+interface CargoTooltipState {
+  x: number;
+  y: number;
+  dep: CargoDepInfo;
+}
 
 export function CargoBlock({ raw }: { raw: string }) {
   const [view, setView] = useState<"treemap" | "table">("treemap");
@@ -124,31 +125,45 @@ export function CargoBlock({ raw }: { raw: string }) {
             )}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-border/60 bg-zinc-50/70 px-4 py-3 text-sm dark:bg-primary-200/50 md:flex-row md:items-center md:justify-between md:px-5">
-        <div className="flex flex-wrap gap-3 text-primary-700 dark:text-primary-700">
-          {featureCount > 0 && (
-            <Metric label="Features" value={String(featureCount)} />
-          )}
-          <Metric
-            label="Deps"
-            value={`${directCount}+${Math.max(0, data.deps.length - directCount)}`}
-          />
-          <Metric label="Size" value={formatBytes(data.total_dep_size)} />
-          {data.rust_version && (
-            <Metric label="MSRV" value={data.rust_version} />
-          )}
+      <div className="flex flex-col gap-4 border-t border-border/60 bg-zinc-50/70 px-4 py-4 text-sm dark:bg-primary-200/50 md:px-5">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-primary-500 dark:text-primary-500">
+          {(["normal", "optional", "dev", "build"] as const).map(kind => (
+            <span key={kind} className="inline-flex items-center gap-1.5">
+              <span
+                className="size-2 rounded-full"
+                style={{ backgroundColor: KIND_COLORS[kind] }}
+              />
+              <span className="capitalize">{kind}</span>
+            </span>
+          ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <CargoLink
-            href={`https://crates.io/crates/${data.name}`}
-            label="crates.io"
-          />
-          <CargoLink
-            href={`https://lib.rs/crates/${data.name}`}
-            label="lib.rs"
-          />
-          <CargoLink href={`https://docs.rs/${data.name}`} label="docs.rs" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-primary-700 dark:text-primary-700">
+            {featureCount > 0 && (
+              <Metric label="Features" value={String(featureCount)} />
+            )}
+            <Metric
+              label="Deps"
+              value={`${directCount} + ${Math.max(0, data.deps.length - directCount)}`}
+            />
+            <Metric label="Size" value={formatBytes(data.total_dep_size)} />
+            {data.rust_version && (
+              <Metric label="MSRV" value={data.rust_version} />
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <CargoLink
+              href={`https://crates.io/crates/${data.name}`}
+              label="crates.io"
+            />
+            <CargoLink
+              href={`https://lib.rs/crates/${data.name}`}
+              label="lib.rs"
+            />
+            <CargoLink href={`https://docs.rs/${data.name}`} label="docs.rs" />
+          </div>
         </div>
       </div>
     </section>
@@ -156,11 +171,11 @@ export function CargoBlock({ raw }: { raw: string }) {
 }
 
 function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [tooltip, setTooltip] = useState<{
-    position: PointerTooltipPosition;
-    dep: CargoDepInfo;
-  } | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<CargoTooltipState | null>(null);
+  const tooltipSizeRef = useRef({ width: 320, height: 180 });
   const sizedDeps = useMemo(
     () => data.filter(dep => (dep.crate_size ?? 0) > 0),
     [data],
@@ -203,6 +218,8 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
       const blockHeight = node.y1 - node.y0;
       const fill = CRATE_PALETTE[index % CRATE_PALETTE.length];
       const group = svg.append("g");
+
+      group.attr("data-crate", dep.name);
 
       const baseOpacity = dep.depth === 0 ? 0.88 : 0.7;
 
@@ -288,24 +305,32 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
       }
 
       group
-        .on("mouseenter", function (event) {
+        .on("mouseenter", function (event: MouseEvent) {
           if (!isMobile) {
-            d3.select(this)
-              .select("rect")
+            const rect = d3.select(this).select<SVGRectElement>("rect");
+            rect
               .attr("opacity", 1)
               .style("filter", "brightness(1.15)");
-            setTooltip({
-              position: { clientX: event.clientX, clientY: event.clientY },
-              dep,
-            });
+            const containerRect = containerRef.current?.getBoundingClientRect();
+            if (containerRect) {
+              setTooltip({
+                x: event.clientX - containerRect.left,
+                y: event.clientY - containerRect.top,
+                dep,
+              });
+            }
           }
         })
-        .on("mousemove", (event) => {
+        .on("mousemove", (event: MouseEvent) => {
           if (!isMobile) {
-            setTooltip({
-              position: { clientX: event.clientX, clientY: event.clientY },
-              dep,
-            });
+            const containerRect = containerRef.current?.getBoundingClientRect();
+            if (containerRect) {
+              setTooltip({
+                x: event.clientX - containerRect.left,
+                y: event.clientY - containerRect.top,
+                dep,
+              });
+            }
           }
         })
         .on("mouseleave", function () {
@@ -318,7 +343,19 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
           }
         });
     });
+    svg.on("mouseleave", () => setTooltip(null));
   }, [sizedDeps, isMobile]);
+
+  useLayoutEffect(() => {
+    if (!tooltip || !tooltipRef.current) {
+      return;
+    }
+
+    tooltipSizeRef.current = {
+      width: tooltipRef.current.offsetWidth,
+      height: tooltipRef.current.offsetHeight,
+    };
+  }, [tooltip]);
 
   if (sizedDeps.length === 0) {
     return (
@@ -328,46 +365,83 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
     );
   }
 
+  const tooltipPosition = tooltip
+    ? getTooltipPosition(
+        tooltip.x,
+        tooltip.y,
+        tooltipSizeRef.current,
+        containerRef.current?.getBoundingClientRect(),
+      )
+    : null;
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative" onMouseLeave={() => setTooltip(null)}>
       <svg ref={svgRef} width="100%" className="min-h-65" />
-      {!isMobile && (
-        <Popover
-          open={Boolean(tooltip)}
-          onOpenChange={open => !open && setTooltip(null)}
+      {!isMobile && tooltipPosition && tooltip && (
+        <div
+          ref={tooltipRef}
+          className="pointer-events-none absolute z-20 min-w-56 max-w-[min(24rem,calc(100%-1rem))] rounded-xl border border-border/60 bg-popover/95 p-3 text-xs text-popover-foreground shadow-glass backdrop-blur-xl"
+          style={{
+            left: tooltipPosition.left,
+            top: tooltipPosition.top,
+          }}
         >
-          {tooltip && (
-            <PopoverAnchor asChild>
-              <span
-                aria-hidden
-                className="pointer-events-none fixed h-0 w-0"
-                style={{
-                  left: clampNumber(
-                    tooltip.position.clientX + 12,
-                    16,
-                    Math.max(16, window.innerWidth - 16),
-                  ),
-                  top: clampNumber(
-                    tooltip.position.clientY - 8,
-                    16,
-                    Math.max(16, window.innerHeight - 16),
-                  ),
-                }}
-              />
-            </PopoverAnchor>
-          )}
-          <PopoverContent
-            side="right"
-            align="start"
-            sideOffset={0}
-            className="pointer-events-none min-w-56 max-w-[min(24rem,calc(100vw-2rem))] p-3 text-xs"
-          >
-            {tooltip && <CargoPopoverBody dep={tooltip.dep} />}
-          </PopoverContent>
-        </Popover>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="font-semibold text-primary-900 dark:text-primary-900">
+              {tooltip.dep.name}
+            </span>
+            <span className="text-primary-600 dark:text-primary-600">
+              {tooltip.dep.version}
+            </span>
+          </div>
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-primary-700 dark:text-primary-700">
+            <span>Kind</span>
+            <span>{tooltip.dep.optional ? `${tooltip.dep.kind} (optional)` : tooltip.dep.kind}</span>
+            <span>Size</span>
+            <span>
+              {tooltip.dep.crate_size != null ? formatBytes(tooltip.dep.crate_size) : "unknown"}
+            </span>
+            <span>Depth</span>
+            <span>{tooltip.dep.depth === 0 ? "direct" : `transitive (${tooltip.dep.depth})`}</span>
+            {tooltip.dep.target && (
+              <>
+                <span>Target</span>
+                <span>{tooltip.dep.target}</span>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
+}
+
+function getTooltipPosition(
+  x: number,
+  y: number,
+  tooltipSize: { width: number; height: number },
+  containerRect?: DOMRect,
+): { left: number; top: number } {
+  const gap = 12;
+  const padding = 8;
+  const containerWidth = containerRect?.width ?? 720;
+  const containerHeight = containerRect?.height ?? 420;
+  const preferredLeft = x + gap;
+  const preferredTop = y + gap;
+  const fallbackLeft = x - tooltipSize.width - gap;
+  const fallbackTop = y - tooltipSize.height - gap;
+  return {
+    left: clampNumber(
+      preferredLeft + tooltipSize.width > containerWidth - padding ? fallbackLeft : preferredLeft,
+      padding,
+      Math.max(padding, containerWidth - tooltipSize.width - padding),
+    ),
+    top: clampNumber(
+      preferredTop + tooltipSize.height > containerHeight - padding ? fallbackTop : preferredTop,
+      padding,
+      Math.max(padding, containerHeight - tooltipSize.height - padding),
+    ),
+  };
 }
 
 function CargoTable({ data }: { data: CargoDepInfo[] }) {

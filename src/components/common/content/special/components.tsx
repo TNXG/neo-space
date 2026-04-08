@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { FUNCTION_COLORS } from "./constants";
-import { formatBytes, formatFull, getLanguageColor, percentage } from "./utils";
+import { percentage } from "./utils";
 
 export function SpecialBlockHeader<T extends string>({
   title,
@@ -154,73 +154,5 @@ export function InvalidBlock({ title, raw }: { title: string; raw: string }) {
         <code>{raw}</code>
       </pre>
     </section>
-  );
-}
-
-export function TokeiPopoverBody({ stat }: { stat: { lang: string; files: number; lines: number; code: number; comments: number; blanks: number } }) {
-  return (
-    <>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 font-semibold text-primary-900 dark:text-primary-900">
-          <span
-            className="size-2.5 rounded-full"
-            style={{ backgroundColor: getLanguageColor(stat.lang) }}
-          />
-          {stat.lang}
-        </span>
-        <span className="text-primary-600 dark:text-primary-600">
-          {formatFull(stat.lines)}
-          {" "}
-          lines
-        </span>
-      </div>
-      <StackBar
-        code={stat.code}
-        comments={stat.comments}
-        blanks={stat.blanks}
-        total={stat.lines}
-      />
-      <div className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-primary-700 dark:text-primary-700">
-        <span>Files</span>
-        <span>{formatFull(stat.files)}</span>
-        <span>Code</span>
-        <span>{formatFull(stat.code)}</span>
-        <span>Comments</span>
-        <span>{formatFull(stat.comments)}</span>
-        <span>Blanks</span>
-        <span>{formatFull(stat.blanks)}</span>
-      </div>
-    </>
-  );
-}
-
-export function CargoPopoverBody({ dep }: { dep: { name: string; version: string; kind: string; optional: boolean; crate_size: number | null; depth: number; target: string | null } }) {
-  return (
-    <>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="font-semibold text-primary-900 dark:text-primary-900">
-          {dep.name}
-        </span>
-        <span className="text-primary-600 dark:text-primary-600">
-          {dep.version}
-        </span>
-      </div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-primary-700 dark:text-primary-700">
-        <span>Kind</span>
-        <span>{dep.optional ? `${dep.kind} (optional)` : dep.kind}</span>
-        <span>Size</span>
-        <span>
-          {dep.crate_size != null ? formatBytes(dep.crate_size) : "unknown"}
-        </span>
-        <span>Depth</span>
-        <span>{dep.depth === 0 ? "direct" : `transitive (${dep.depth})`}</span>
-        {dep.target && (
-          <>
-            <span>Target</span>
-            <span>{dep.target}</span>
-          </>
-        )}
-      </div>
-    </>
   );
 }
