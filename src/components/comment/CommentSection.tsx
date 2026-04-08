@@ -1,6 +1,7 @@
 "use client";
 
 import type { Comment } from "@/types/api";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useComments } from "@/hooks/use-comments";
 import { CommentProvider } from "./CommentContext";
@@ -23,6 +24,7 @@ function CommentSectionContent({
   initialComments = EMPTY_COMMENTS,
   initialCount = 0,
 }: CommentSectionProps) {
+  const t = useTranslations();
   const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
 
   // 将初始数据传递给 SWR，避免 hydration 不匹配
@@ -58,7 +60,7 @@ function CommentSectionContent({
               sortBy === "newest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
             }`}
           >
-            最新
+            {t("comment.sortNewest")}
           </button>
           <button
             type="button"
@@ -67,7 +69,7 @@ function CommentSectionContent({
               sortBy === "oldest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
             }`}
           >
-            最早
+            {t("comment.sortOldest")}
           </button>
         </div>
       </div>

@@ -29,22 +29,23 @@ export async function generateStaticParams() {
 
 interface PageProps {
   params: Promise<{
+    locale: string;
     slug: string;
     category: string;
   }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug, category } = await params;
+  const { slug, category, locale } = await params;
 
   try {
-    const { data: post } = await getPostBySlug(slug);
+    const { data: post } = await getPostBySlug(slug, locale);
 
     if (post.category?.slug !== category) {
       return { title: "文章不存在" };
     }
 
-    const description = post.summary || post.text.slice(0, 150).replace(NEWLINE_REGEX, " ");
+    const description = (post.aiSummary || post.summary || post.text.slice(0, 150)).replace(NEWLINE_REGEX, " ");
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
     return {
@@ -73,7 +74,7 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function PostPage({ params }: PageProps) {
-  const { slug, category } = await params;
+  const { slug, category, locale } = await params;
 
   // 验证 category 不是 ObjectId 格式
   const isObjectId = OBJECT_ID_REGEX.test(category);
@@ -88,7 +89,7 @@ export default async function PostPage({ params }: PageProps) {
 
   try {
     const [{ data }, { data: user }, adjacentResponse] = await Promise.all([
-      getPostBySlug(slug),
+      getPostBySlug(slug, locale),
       getUserProfile(),
       getAdjacentPosts(slug),
     ]);
@@ -109,7 +110,7 @@ export default async function PostPage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
   const jsonLd = generateArticleJsonLd({
     title: post.title,
-    description: post.summary || post.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
+    description: (post.aiSummary || post.summary || post.text.slice(0, 150)).replace(NEWLINE_REGEX, " "),
     url: `${baseUrl}/posts/${post.category?.slug}/${post.slug}`,
     datePublished: post.created,
     dateModified: post.modified || post.created,
@@ -134,6 +135,9 @@ export default async function PostPage({ params }: PageProps) {
             tags={post.tags}
             created={post.created}
             modified={post.modified}
+            lang={post.lang}
+            sourceLang={post.sourceLang}
+            isAiTranslated={post.isAiTranslated}
             summary={post.summary}
             aiSummary={post.aiSummary}
             typeLabel="Article"
@@ -144,6 +148,7 @@ export default async function PostPage({ params }: PageProps) {
             <OutdatedAlert
               refId={post._id}
               refType="post"
+              lang={post.lang}
               lastUpdated={post.modified || post.created}
             />
             <MarkdownRenderer content={post.text} />

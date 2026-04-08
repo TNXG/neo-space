@@ -4,10 +4,11 @@ use crate::{
     app::SharedState,
     error::{AppError, AppResult},
     models::*,
-    services::helpers::get_ai_summary,
+    services::helpers::{apply_translation_to_post, get_ai_summary, get_ai_translation},
 };
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
+use std::collections::{HashMap, HashSet};
 
 /// Fetch category by ID
 pub async fn fetch_category_by_id(
@@ -26,13 +27,18 @@ pub async fn enrich_single_post(
     state: &SharedState,
     post: Post,
     post_id: &str,
+    lang: &str,
 ) -> AppResult<PostWithCategory> {
     let category = fetch_category_by_id(state, post.category_id).await?;
-    let ai_summary = get_ai_summary(state, post_id, "zh").await;
+    let ai_summary = get_ai_summary(state, post_id, lang).await;
 
     let mut post_with_category = PostWithCategory::from(post);
     post_with_category.category = category;
     post_with_category.ai_summary = ai_summary;
+
+    if let Some(translation) = get_ai_translation(state, post_id, "posts", lang).await {
+        apply_translation_to_post(&mut post_with_category, &translation);
+    }
 
     Ok(post_with_category)
 }
@@ -41,6 +47,7 @@ pub async fn enrich_single_post(
 pub async fn enrich_posts_with_data(
     state: &SharedState,
     posts: Vec<Post>,
+    lang: &str,
 ) -> AppResult<Vec<PostWithCategory>> {
     if posts.is_empty() {
         return Ok(Vec::new());
@@ -50,13 +57,13 @@ pub async fn enrich_posts_with_data(
     let category_ids: Vec<ObjectId> = posts
         .iter()
         .map(|p| p.category_id)
-        .collect::<std::collections::HashSet<_>>()
+        .collect::<HashSet<_>>()
         .into_iter()
         .collect();
 
     // Fetch all categories at once
     let categories_collection = state.db.collection::<Category>("categories");
-    let mut category_map = std::collections::HashMap::new();
+    let mut category_map = HashMap::new();
 
     if !category_ids.is_empty() {
         let filter = doc! { "_id": { "$in": category_ids } };
@@ -77,12 +84,17 @@ pub async fn enrich_posts_with_data(
 
     // Fetch all AI summaries at once
     let ai_summaries_collection = state.db.collection::<AiSummary>("ai_summaries");
-    let mut ai_summary_map = std::collections::HashMap::new();
+    let mut ai_summary_map = HashMap::new();
 
     if !post_ids.is_empty() {
-        let filter = doc! { "refId": { "$in": &post_ids }, "lang": "zh" };
+        let summary_langs = if lang == "zh" {
+            vec!["zh"]
+        } else {
+            vec![lang, "zh"]
+        };
+        let filter = doc! { "refId": { "$in": &post_ids }, "lang": { "$in": &summary_langs } };
         let find_options = mongodb::options::FindOptions::builder()
-            .sort(doc! { "created": -1 })
+            .sort(doc! { "refId": 1, "created": -1 })
             .build();
 
         match ai_summaries_collection
@@ -91,15 +103,58 @@ pub async fn enrich_posts_with_data(
             .await
         {
             Ok(mut cursor) => {
+                let mut zh_fallback_map = HashMap::new();
                 while let Ok(Some(summary)) = cursor.try_next().await {
-                    // Only keep the first (latest) summary for each refId
-                    ai_summary_map
-                        .entry(summary.ref_id.clone())
-                        .or_insert(summary.summary);
+                    if summary.lang == lang {
+                        ai_summary_map
+                            .entry(summary.ref_id.clone())
+                            .or_insert(summary.summary.clone());
+                        continue;
+                    }
+
+                    if summary.lang == "zh" {
+                        zh_fallback_map
+                            .entry(summary.ref_id.clone())
+                            .or_insert(summary.summary);
+                    }
+                }
+
+                for (ref_id, summary) in zh_fallback_map {
+                    ai_summary_map.entry(ref_id).or_insert(summary);
                 }
             }
             Err(e) => {
                 tracing::error!("Failed to fetch AI summaries: {}", e);
+            }
+        }
+    }
+
+    let mut translation_map = HashMap::new();
+    if lang != "zh" && !post_ids.is_empty() {
+        let translations_collection = state.db.collection::<AiTranslation>("ai_translations");
+        let translation_filter = doc! {
+            "refId": { "$in": &post_ids },
+            "refType": "posts",
+            "lang": lang
+        };
+        let translation_options = mongodb::options::FindOptions::builder()
+            .sort(doc! { "refId": 1, "created": -1 })
+            .build();
+
+        match translations_collection
+            .find(translation_filter)
+            .with_options(translation_options)
+            .await
+        {
+            Ok(mut cursor) => {
+                while let Ok(Some(translation)) = cursor.try_next().await {
+                    translation_map
+                        .entry(translation.ref_id.clone())
+                        .or_insert(translation);
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to fetch AI translations: {}", e);
             }
         }
     }
@@ -114,6 +169,9 @@ pub async fn enrich_posts_with_data(
         let mut post_with_category = PostWithCategory::from(post);
         post_with_category.category = category;
         post_with_category.ai_summary = ai_summary;
+        if let Some(translation) = translation_map.get(&post_id) {
+            apply_translation_to_post(&mut post_with_category, translation);
+        }
         enriched_posts.push(post_with_category);
     }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Comment } from "@/types/api";
+import { useTranslations } from "next-intl";
 import { SmartDate } from "@/components/common/smart-date";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ function getOSIcon(os: string): string {
  * 评论头部组件 - 显示头像、用户名、标签和时间
  */
 export function CommentHeader({ comment }: CommentHeaderProps) {
+  const t = useTranslations();
   return (
     <div className="flex items-start sm:items-center gap-2 relative z-10">
       <img
@@ -67,9 +69,9 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
             {comment.author}
           </b>
           {comment.isAdmin && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-green-50 text-green-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="笔者">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-green-50 text-green-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title={t("comment.byAuthor")}>
               <Icon icon="mingcute:check-circle-fill" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">笔者</span>
+              <span className="hidden sm:inline">{t("comment.byAuthor")}</span>
             </span>
           )}
           <span className="text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-mono shrink-0">
@@ -79,41 +81,41 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
 
           {/* 待审核状态 */}
           {comment.state === CommentState.PENDING && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-yellow-50 text-yellow-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="评论正在审核中">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-yellow-50 text-yellow-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title={t("comment.pendingTitle")}>
               <Icon icon="mingcute:time-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">审核中</span>
+              <span className="hidden sm:inline">{t("comment.pending")}</span>
             </span>
           )}
           {/* 垃圾评论状态 */}
           {comment.state === CommentState.SPAM && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-red-50 text-red-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="已被标记为垃圾评论">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-red-50 text-red-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title={t("comment.spamTitle")}>
               <Icon icon="mingcute:delete-2-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">垃圾</span>
+              <span className="hidden sm:inline">{t("comment.spam")}</span>
             </span>
           )}
           {/* 私密评论 */}
           {comment.isWhispers && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-orange-50 text-orange-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title="仅作者和管理员可见">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-orange-50 text-orange-700 px-1 sm:px-1.5 py-0.5 rounded font-medium shrink-0" title={t("comment.privateTitle")}>
               <Icon icon="mingcute:eye-close-line" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden sm:inline">私密</span>
+              <span className="hidden sm:inline">{t("comment.private")}</span>
             </span>
           )}
 
           {/* OAuth 来源标识 - 统一 Badge 风格 */}
           {comment.source === "from_oauth_github" && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-medium shrink-0" title="GitHub 登录">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-muted text-muted-foreground px-1 rounded font-medium shrink-0" title={t("comment.githubLogin")}>
               <Icon icon="mingcute:github-fill" className="w-3 h-3" />
               <span className="hidden sm:inline">GitHub</span>
             </span>
           )}
           {comment.source === "from_oauth_qq" && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-blue-50 text-blue-600 px-1 rounded font-medium shrink-0" title="QQ 登录">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-blue-50 text-blue-600 px-1 rounded font-medium shrink-0" title={t("comment.qqLogin")}>
               <Icon icon="mingcute:qq-fill" className="w-3 h-3" />
               <span className="hidden sm:inline">QQ</span>
             </span>
           )}
           {comment.source === "from_oauth_both" && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-violet-50 text-violet-600 px-1 rounded font-medium shrink-0" title="多平台绑定">
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-violet-50 text-violet-600 px-1 rounded font-medium shrink-0" title={t("comment.multiPlatform")}>
               <Icon icon="mingcute:user-security-fill" className="w-3 h-3" />
               <span className="hidden sm:inline">ALL</span>
             </span>
@@ -142,7 +144,7 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
 
           {/* 地理位置信息 */}
           {comment.location && (
-            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground/70" title={`来自 ${comment.location}`}>
+            <span className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground/70" title={t("comment.fromLocation", { location: comment.location })}>
               <Icon icon="mingcute:location-line" className="w-3 h-3" />
               <span>{comment.location}</span>
             </span>

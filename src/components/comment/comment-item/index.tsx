@@ -2,6 +2,7 @@
 
 import type { Comment } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { CommentMarkdown } from "@/components/common/markdown";
 import { Icon } from "@/lib/inline-icon";
@@ -34,6 +35,7 @@ export function CommentItem({
   parentAuthor,
   parentId,
 }: CommentItemProps) {
+  const t = useTranslations();
   const [replyView, setReplyView] = useState(false);
   const [editView, setEditView] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -97,7 +99,7 @@ export function CommentItem({
               className="flex items-center gap-1 mb-1.5 sm:mb-1 text-xs sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group/reply"
             >
               <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
-              <span>回复</span>
+              <span>{t("comment.reply")}</span>
               <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-[80px] sm:max-w-none">
                 @
                 {parentAuthor}

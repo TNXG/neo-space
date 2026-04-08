@@ -1,5 +1,5 @@
 import { Icon } from "@/lib/inline-icon";
-import Link from "next/link";
+import { Link } from "@/locales/navigation";
 
 interface SectionHeaderProps {
   title: string;

@@ -2,6 +2,7 @@
 
 import type { OwnerStatus as OwnerStatusType } from "@/hooks/use-reader-ws";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 
 interface OwnerStatusProps {
   ownerStatus: OwnerStatusType | null;
@@ -10,6 +11,7 @@ interface OwnerStatusProps {
 }
 
 export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatusProps) {
+  const t = useTranslations();
   const mediaPlayback = ownerStatus?.mediaPlayback;
   const windowInfo = ownerStatus?.windowInfo;
   const netease = ownerStatus?.netease;
@@ -22,18 +24,18 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
   const getActivityText = () => {
     if (isPlaying && mediaPlayback?.metadata.title) {
       return mediaPlayback.metadata.artist
-        ? `正在听 ${mediaPlayback.metadata.title} - ${mediaPlayback.metadata.artist}`
-        : `正在听 ${mediaPlayback.metadata.title}`;
+        ? t("home.status.listeningWithArtist", { title: mediaPlayback.metadata.title, artist: mediaPlayback.metadata.artist })
+        : t("home.status.listening", { title: mediaPlayback.metadata.title });
     }
     if (netease?.active && netease.song) {
-      return `正在听 ${netease.song.name} - ${netease.song.artist}`;
+      return t("home.status.listeningWithArtist", { title: netease.song.name, artist: netease.song.artist });
     }
     if (windowInfo?.title) {
-      return `正在使用 ${windowInfo.process_name}`;
+      return t("home.status.using", { name: windowInfo.process_name });
     }
     if (isConnected && !hasActivity)
-      return "在线 · 暂无活动";
-    return isConnected ? "在线" : "离线";
+      return t("home.status.onlineIdle");
+    return isConnected ? t("nav.online") : t("nav.offline");
   };
 
   return (

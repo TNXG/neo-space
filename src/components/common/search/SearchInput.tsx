@@ -1,6 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
+import { useTranslations } from "next-intl";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Icon } from "@/lib/inline-icon";
 
@@ -23,6 +24,8 @@ export function SearchInput({
   onSemanticChange,
   onKeyDown,
 }: SearchInputProps) {
+  const t = useTranslations();
+
   return (
     <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30">
       <Icon
@@ -35,13 +38,13 @@ export function SearchInput({
         value={query}
         onChange={e => onQueryChange(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder={semantic ? "语义搜索文章和笔记..." : "搜索文章和笔记..."}
+        placeholder={semantic ? t("search.placeholder.semantic") : t("search.placeholder.default")}
         className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-base"
       />
       <button
         type="button"
         onClick={() => onSemanticChange(!semantic)}
-        title={semantic ? "关闭语义搜索" : "开启语义搜索"}
+        title={semantic ? t("search.semantic.disable") : t("search.semantic.enable")}
         className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer text-sm font-medium ${
           semantic
             ? "bg-primary/10 text-primary"
@@ -49,7 +52,7 @@ export function SearchInput({
         }`}
       >
         <Icon icon="mingcute:sparkles-2-line" className="text-base" />
-        <span>语义搜索</span>
+        <span>{t("search.semantic.label")}</span>
       </button>
       <KbdShortcut keys={["Esc"]} className="hidden sm:flex" />
     </div>

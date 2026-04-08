@@ -1,6 +1,6 @@
 //! Note handlers
 
-use crate::services::helpers::get_ai_summary;
+use crate::services::helpers::{apply_translation_to_note, get_ai_summary, get_ai_translation};
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
@@ -18,6 +18,12 @@ use serde::{Deserialize, Serialize};
 pub struct ListNotesParams {
     page: Option<u64>,
     size: Option<u64>,
+    lang: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DetailNoteParams {
+    lang: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -48,6 +54,7 @@ pub async fn list_notes(
 ) -> AppResult<Json<ApiResponse<PaginatedData<Note>>>> {
     let page = params.page.unwrap_or(1).max(1);
     let size = params.size.unwrap_or(10).clamp(1, 100);
+    let lang = params.lang.as_deref().unwrap_or("zh");
     let skip = (page - 1) * size;
 
     let collection = state.db.collection::<Note>("notes");
@@ -83,24 +90,77 @@ pub async fn list_notes(
     if !items.is_empty() {
         let note_ids: Vec<String> = items.iter().map(|n| n.id.to_hex()).collect();
         let ai_collection = state.db.collection::<AiSummary>("ai_summaries");
+        let summary_langs = if lang == "zh" {
+            vec!["zh"]
+        } else {
+            vec![lang, "zh"]
+        };
         let ai_filter = doc! {
             "refId": { "$in": &note_ids },
-            "lang": "zh"
+            "lang": { "$in": &summary_langs }
         };
         let ai_options = mongodb::options::FindOptions::builder()
-            .sort(doc! { "created": -1 })
+            .sort(doc! { "refId": 1, "created": -1 })
             .build();
 
         if let Ok(mut ai_cursor) = ai_collection.find(ai_filter).with_options(ai_options).await {
             let mut summary_map: std::collections::HashMap<String, String> =
                 std::collections::HashMap::new();
+            let mut zh_fallback_map: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
             while let Ok(Some(ai_summary)) = ai_cursor.try_next().await {
-                summary_map
-                    .entry(ai_summary.ref_id.clone())
-                    .or_insert(ai_summary.summary);
+                if ai_summary.lang == lang {
+                    summary_map
+                        .entry(ai_summary.ref_id.clone())
+                        .or_insert(ai_summary.summary.clone());
+                    continue;
+                }
+
+                if ai_summary.lang == "zh" {
+                    zh_fallback_map
+                        .entry(ai_summary.ref_id.clone())
+                        .or_insert(ai_summary.summary);
+                }
+            }
+
+            for (ref_id, summary) in zh_fallback_map {
+                summary_map.entry(ref_id).or_insert(summary);
             }
             for note in &mut items {
                 note.ai_summary = summary_map.get(&note.id.to_hex()).cloned();
+            }
+        }
+    }
+
+    if lang != "zh" && !items.is_empty() {
+        let note_ids: Vec<String> = items.iter().map(|n| n.id.to_hex()).collect();
+        let translations_collection = state.db.collection::<AiTranslation>("ai_translations");
+        let translation_filter = doc! {
+            "refId": { "$in": &note_ids },
+            "refType": "notes",
+            "lang": lang
+        };
+        let translation_options = mongodb::options::FindOptions::builder()
+            .sort(doc! { "refId": 1, "created": -1 })
+            .build();
+
+        if let Ok(mut translation_cursor) = translations_collection
+            .find(translation_filter)
+            .with_options(translation_options)
+            .await
+        {
+            let mut translation_map: std::collections::HashMap<String, AiTranslation> =
+                std::collections::HashMap::new();
+            while let Ok(Some(translation)) = translation_cursor.try_next().await {
+                translation_map
+                    .entry(translation.ref_id.clone())
+                    .or_insert(translation);
+            }
+
+            for note in &mut items {
+                if let Some(translation) = translation_map.get(&note.id.to_hex()) {
+                    apply_translation_to_note(note, translation);
+                }
             }
         }
     }
@@ -127,6 +187,7 @@ pub async fn list_notes(
 pub async fn get_note(
     State(state): State<SharedState>,
     Path(id): Path<String>,
+    AppQuery(params): AppQuery<DetailNoteParams>,
 ) -> AppResult<Json<ApiResponse<Note>>> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| AppError::BadRequest("Invalid ID format".to_string()))?;
@@ -138,8 +199,13 @@ pub async fn get_note(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Note not found".to_string()))?;
 
-    // Fetch AI summary (default to Chinese)
-    note.ai_summary = get_ai_summary(&state, &note.id.to_hex(), "zh").await;
+    let note_id = note.id.to_hex();
+    let lang = params.lang.as_deref().unwrap_or("zh");
+
+    note.ai_summary = get_ai_summary(&state, &note_id, lang).await;
+    if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
+        apply_translation_to_note(&mut note, &translation);
+    }
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -153,6 +219,7 @@ pub async fn get_note(
 pub async fn get_note_by_nid(
     State(state): State<SharedState>,
     Path(nid): Path<i32>,
+    AppQuery(params): AppQuery<DetailNoteParams>,
 ) -> AppResult<Json<ApiResponse<Note>>> {
     let collection = state.db.collection::<Note>("notes");
     let mut note = collection
@@ -161,8 +228,13 @@ pub async fn get_note_by_nid(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Note not found".to_string()))?;
 
-    // Fetch AI summary (default to Chinese)
-    note.ai_summary = get_ai_summary(&state, &note.id.to_hex(), "zh").await;
+    let note_id = note.id.to_hex();
+    let lang = params.lang.as_deref().unwrap_or("zh");
+
+    note.ai_summary = get_ai_summary(&state, &note_id, lang).await;
+    if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
+        apply_translation_to_note(&mut note, &translation);
+    }
 
     Ok(Json(ApiResponse {
         code: 200,

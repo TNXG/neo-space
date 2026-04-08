@@ -5,8 +5,7 @@ import type { User } from "@/types/api";
 
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { motion, useMotionTemplate, useMotionValue } from "motion/react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 
 import { ThemeToggle } from "@/components/common/theme";
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
+import { Link, usePathname, useRouter } from "@/locales/navigation";
 
 import { NAV_ITEMS } from "./nav-config";
 import styles from "./nav-menu.module.scss";
@@ -48,6 +48,7 @@ export function TopNav({
   isConnected,
   onlineCount,
 }: TopNavProps) {
+  const t = useTranslations();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const router = useRouter();
@@ -138,6 +139,7 @@ export function TopNav({
               {NAV_ITEMS.map((item) => {
                 const isActive
                   = item.href === "/" ? isHomePage : pathname.startsWith(item.href);
+                const itemTitle = t(`nav.${item.id}`);
                 const DropdownPanel = item.dropdownType
                   ? dropdownPanelMap[item.dropdownType]
                   : undefined;
@@ -167,7 +169,7 @@ export function TopNav({
                               <Icon icon={item.icon} className="text-sm" />
                             </motion.span>
                           )}
-                          <motion.span layout>{item.title}</motion.span>
+                          <motion.span layout>{itemTitle}</motion.span>
                         </span>
 
                         {isActive && (
@@ -213,7 +215,7 @@ export function TopNav({
                             <Icon icon={item.icon} className="text-sm" />
                           </motion.span>
                         )}
-                        <motion.span layout>{item.title}</motion.span>
+                        <motion.span layout>{itemTitle}</motion.span>
                       </span>
                       {isActive && (
                         <motion.span
@@ -257,13 +259,13 @@ export function TopNav({
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(true)}
-                aria-label="打开搜索"
+                aria-label={t("nav.openSearch")}
                 className={cn("pointer-events-auto", ACTION_BTN_CLASS, navAnimClass)}
               >
                 <Icon icon="mingcute:search-2-line" className="text-lg md:text-xl" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={12}>搜索</TooltipContent>
+            <TooltipContent side="bottom" sideOffset={12}>{t("nav.search")}</TooltipContent>
           </Tooltip>
 
           {/* Theme toggle */}

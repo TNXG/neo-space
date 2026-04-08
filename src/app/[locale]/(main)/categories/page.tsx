@@ -1,20 +1,32 @@
 import type { Metadata } from "next";
 import type { Post } from "@/types/api";
+import { getTranslations } from "next-intl/server";
 import { CategoryInteractiveList } from "@/components/common/InteractiveList";
 import { getCategories, getPosts } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
 
 export const revalidate = 57600;
 
-export const metadata: Metadata = {
-  title: "分类",
-  description: "按分类浏览所有文章",
-};
+interface CategoriesPageProps {
+  params: Promise<{ locale: string }>;
+}
 
-export default async function CategoriesPage() {
+export async function generateMetadata({ params }: CategoriesPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+
+  return {
+    title: t("category.meta.title"),
+    description: t("category.meta.description"),
+  };
+}
+
+export default async function CategoriesPage({ params }: CategoriesPageProps) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
   const [categoriesRes, postsRes] = await Promise.all([
     getCategories(),
-    getPosts(1, 100),
+    getPosts(1, 100, locale),
   ]);
 
   const categories = categoriesRes.data ?? [];
@@ -48,7 +60,7 @@ export default async function CategoriesPage() {
       <header className="mb-12 md:mb-20 md:text-center max-w-2xl mx-auto flex flex-col items-center">
         <div className="mb-4 md:mb-6 flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-linear-to-r from-primary-800 to-accent-600 bg-clip-text text-transparent leading-tight py-2 select-none">
-            分 类
+            {t("category.title")}
           </h1>
           <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-accent-600/60 uppercase mt-1 font-mono">
             Categories
@@ -59,12 +71,7 @@ export default async function CategoriesPage() {
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70" />
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-base md:text-lg lg:text-xl tracking-wide text-primary-700">
-              {categories.length}
-              {" "}
-              个分类，
-              {allPosts.length}
-              {" "}
-              篇文章
+              {t("category.summary", { categories: categories.length, posts: allPosts.length })}
             </span>
             <span className="text-[11px] md:text-xs lg:text-sm text-primary-400/80 font-normal italic tracking-wide mt-0.5 md:mt-1 font-serif">
               Organized by topics
@@ -78,8 +85,8 @@ export default async function CategoriesPage() {
         ? (
             <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-dashed border-primary-200 dark:border-primary-800">
               <Icon icon="mingcute:ghost-line" className="w-10 h-10 text-primary-400 dark:text-primary-500 mb-3" />
-              <h3 className="text-sm font-medium text-primary-600 dark:text-primary-300 mb-1">暂无分类</h3>
-              <p className="text-xs text-primary-400 dark:text-primary-500">目前还没有创建任何分类</p>
+              <h3 className="text-sm font-medium text-primary-600 dark:text-primary-300 mb-1">{t("category.emptyTitle")}</h3>
+              <p className="text-xs text-primary-400 dark:text-primary-500">{t("category.emptyDescription")}</p>
             </div>
           )
         : (

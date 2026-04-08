@@ -17,6 +17,7 @@ pub struct ListPostsParams {
     page: Option<u64>,
     size: Option<u64>,
     category: Option<String>,
+    lang: Option<String>,
 }
 
 /// List published posts with pagination
@@ -26,6 +27,7 @@ pub async fn list_posts(
 ) -> AppResult<Json<ApiResponse<PaginatedData<PostWithCategory>>>> {
     let page = params.page.unwrap_or(1).max(1);
     let size = params.size.unwrap_or(10).clamp(1, 100);
+    let lang = params.lang.as_deref().unwrap_or("zh");
     let skip = (page - 1) * size;
 
     let posts_collection = state.db.collection::<Post>("posts");
@@ -70,7 +72,7 @@ pub async fn list_posts(
     }
 
     // Enrich posts with category and AI summary
-    let items = enrich_posts_with_data(&state, posts).await?;
+    let items = enrich_posts_with_data(&state, posts, lang).await?;
 
     let total_page = ((total as f64) / (size as f64)).ceil() as i64;
     let pagination = Pagination {

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { Icon } from "@/lib/inline-icon";
+import { Link } from "@/locales/navigation";
 
 /**
  * 404 页面 - 星海迷航版 (移动端优化)
@@ -13,6 +13,22 @@ import { Icon } from "@/lib/inline-icon";
  */
 export default function NotFound() {
   const mounted = useHasMounted();
+  const isJapanese = typeof window !== "undefined" && window.location.pathname.startsWith("/ja");
+  const copy = isJapanese
+    ? {
+        title: "星の海で道に迷いました",
+        description: "お探しのページは宇宙の奥へ漂っていったようです。もともと存在しなかったのかもしれません。",
+        home: "ホームへ戻る",
+        back: "前のページへ戻る",
+        signalLost: "Signal Lost",
+      }
+    : {
+        title: "迷失在星海",
+        description: "你所寻找的页面似乎飘向了宇宙深处，或许它从未存在过。",
+        home: "返回首页",
+        back: "返回上页",
+        signalLost: "Signal Lost",
+      };
 
   return (
     <div className="fixed inset-0 z-50 font-sans w-full flex items-center justify-center bg-background text-foreground overflow-hidden p-4 sm:p-6">
@@ -52,7 +68,7 @@ export default function NotFound() {
           <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 w-full relative z-10">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1.5 tracking-tight">
-                迷失在星海
+                {copy.title}
               </h2>
               <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] sm:tracking-[0.3em] text-accent-600/70 uppercase font-mono">
                 Lost in Starlight
@@ -68,9 +84,7 @@ export default function NotFound() {
 
             {/* 文案：移动端限制宽度以增加可读性 */}
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-65 sm:max-w-none mx-auto">
-              你所寻找的页面似乎飘向了宇宙深处，
-              <br className="hidden sm:block" />
-              或许它从未存在过。
+              {copy.description}
             </p>
           </div>
 
@@ -86,7 +100,7 @@ export default function NotFound() {
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
               </div>
               <Icon icon="mingcute:home-3-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>返回首页</span>
+              <span>{copy.home}</span>
             </Link>
 
             <button
@@ -97,7 +111,7 @@ export default function NotFound() {
               cursor-pointer select-none text-sm sm:text-base"
             >
               <Icon icon="mingcute:arrow-left-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>返回上页</span>
+              <span>{copy.back}</span>
             </button>
           </div>
         </div>
@@ -109,7 +123,7 @@ export default function NotFound() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
             </span>
-            <span>Signal Lost</span>
+            <span>{copy.signalLost}</span>
           </div>
           <div>ERR: 404</div>
         </div>

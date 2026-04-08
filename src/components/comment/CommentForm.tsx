@@ -8,6 +8,7 @@ import type {
   TurnstileStatusType,
 } from "./comment-form";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createCommentAction } from "@/actions/comment";
@@ -37,6 +38,7 @@ export function CommentForm({
   onCancel: _onCancel,
   autoFocus = false,
 }: CommentFormProps) {
+  const t = useTranslations();
   const hasMounted = useHasMounted();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLFieldSetElement>(null);
@@ -183,20 +185,20 @@ export function CommentForm({
     if (!content.trim())
       return;
     if (!finalName) {
-      toast.error("请填写昵称");
+      toast.error(t("comment.fillNickname"));
       return;
     }
 
     // 非登录用户必须完成人机验证
     if (!isAuthenticated && !turnstileToken) {
       if (turnstileStatus === "loading") {
-        toast.error("正在加载验证组件，请稍候...");
+        toast.error(t("comment.turnstile.loading"));
       } else if (turnstileStatus === "verifying") {
-        toast.error("正在进行安全验证，请稍候...");
+        toast.error(t("comment.turnstile.verifying"));
       } else if (turnstileStatus === "error") {
-        toast.error("安全验证失败，请刷新页面重试");
+        toast.error(t("comment.turnstile.error"));
       } else {
-        toast.error("请等待安全验证完成");
+        toast.error(t("comment.turnstile.pending"));
       }
       return;
     }
@@ -234,16 +236,16 @@ export function CommentForm({
         }
 
         if (result && "code" in result && (result.code === 200 || result.code === 201)) {
-          const message = (result && "message" in result ? result.message : undefined) || "评论发布成功";
+          const message = (result && "message" in result ? result.message : undefined) || t("comment.submitSuccess");
           const isPendingReview = message.includes("审核");
 
           if (isPendingReview) {
-            toast.success("评论已提交，正在审核中", {
-              description: "审核通过后将自动显示",
+            toast.success(t("comment.pendingReview"), {
+              description: t("comment.pendingReviewDescription"),
               duration: 4000,
             });
           } else {
-            toast.success("评论发布成功");
+            toast.success(t("comment.submitSuccess"));
           }
 
           setContent("");
@@ -252,10 +254,10 @@ export function CommentForm({
           setIsFocused(false);
           onSuccess?.();
         } else {
-          throw new Error((result && "message" in result ? result.message : undefined) || "发布失败");
+          throw new Error((result && "message" in result ? result.message : undefined) || t("comment.publishFailed"));
         }
       } catch (e: any) {
-        toast.error(e.message || "发布失败");
+        toast.error(e.message || t("comment.publishFailed"));
         resetTurnstile();
       }
     });
@@ -282,7 +284,7 @@ export function CommentForm({
                 <div className="min-h-15 sm:min-h-15 prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
                   {content.trim()
                     ? <CommentMarkdown content={content} />
-                    : <span className="text-muted-foreground/40 italic">预览中...</span>}
+                    : <span className="text-muted-foreground/40 italic">{t("comment.previewing")}</span>}
                 </div>
               )
             : (
@@ -297,7 +299,7 @@ export function CommentForm({
                       handleSubmit();
                     }
                   }}
-                  placeholder={parentId ? "回复..." : "写下你的想法..."}
+                  placeholder={parentId ? t("comment.replyPlaceholder") : t("comment.placeholder")}
                   className="grow w-full min-w-0 bg-transparent text-base sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-15 sm:min-h-15 max-h-75 sm:max-h-100 disabled:opacity-50"
                   spellCheck={false}
                   disabled={isPending}

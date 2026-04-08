@@ -3,8 +3,7 @@
 import type { ReactNode } from "react";
 import type { Category, Note, Post } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSWRConfig } from "swr";
 import useSWRInfinite from "swr/infinite";
@@ -14,6 +13,7 @@ import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
 import { Icon } from "@/lib/inline-icon";
+import { Link, useRouter } from "@/locales/navigation";
 import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -48,10 +48,11 @@ export function InteractiveList<T>({
   getItemUrl,
   renderPreview,
   renderListItem,
-  emptyMessage = "选择一项查看详情",
+  emptyMessage,
   previewPosition = "left",
   infiniteScroll,
 }: InteractiveListProps<T>) {
+  const t = useTranslations();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const mounted = useHasMounted();
   const isMobile = useIsMobile();
@@ -175,7 +176,7 @@ export function InteractiveList<T>({
             <div className="h-40 flex items-center justify-start text-muted-foreground opacity-50">
               <span className="flex items-center gap-2">
                 <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
-                {emptyMessage}
+                {emptyMessage ?? t("interactive.empty.item")}
               </span>
             </div>
           )}
@@ -250,10 +251,10 @@ export function InteractiveList<T>({
                     <motion.div
                       className="absolute -inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4 rounded-xl -z-10"
                       animate={{
-                        backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "transparent",
+                        backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "rgba(0,0,0,0)",
                       }}
                       style={{
-                        backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "transparent",
+                        backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "rgba(0,0,0,0)",
                       }}
                     />
                   )}
@@ -278,7 +279,7 @@ export function InteractiveList<T>({
                   )}
                   >
                     {mounted && <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />}
-                    <span>加载中...</span>
+                    <span>{t("interactive.loading")}</span>
                   </div>
                   <div className={cn(
                     "text-sm text-muted-foreground/50 transition-all duration-300",
@@ -287,14 +288,9 @@ export function InteractiveList<T>({
                   >
                     {!hasMore
                       ? (
-                          <span>
-                            已加载全部
-                            {items.length}
-                            {" "}
-                            条
-                          </span>
+                          <span>{t("interactive.loadedAll", { count: items.length })}</span>
                         )
-                      : <span>向下滚动加载更多</span>}
+                      : <span>{t("interactive.scrollToLoadMore")}</span>}
                   </div>
                 </div>
               </div>
@@ -353,6 +349,8 @@ function TitleDateListItem({ title, created, modified, isActive }: {
 // ─── Post Preview ────────────────────────────────────────────────────
 
 function PostPreview({ post }: { post: Post }) {
+  const t = useTranslations();
+
   return (
     <motion.div
       key={post._id}
@@ -363,12 +361,12 @@ function PostPreview({ post }: { post: Post }) {
       className="space-y-6"
     >
       <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
-        <div className="flex items-center gap-2" title="发布时间">
+        <div className="flex items-center gap-2" title={t("interactive.post.publishedAt")}>
           <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
           <span>{formatDate(post.created)}</span>
         </div>
         {post.modified && (
-          <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
+          <div className="flex items-center gap-2 text-xs opacity-70" title={t("interactive.post.modifiedAt")}>
             <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
             <span>{formatDate(post.modified)}</span>
           </div>
@@ -390,13 +388,13 @@ function PostPreview({ post }: { post: Post }) {
         {post.aiSummary && !post.summary && (
           <div className="flex items-center gap-1.5 mb-2">
             <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
-            <span className="text-xs font-medium text-accent-600">AI 摘要</span>
+            <span className="text-xs font-medium text-accent-600">{t("interactive.post.aiSummary")}</span>
           </div>
         )}
         <p className="text-left line-clamp-6">
-          {post.summary || post.aiSummary
-            ? truncateText(stripMarkdown(post.summary || post.aiSummary || ""), 300)
-            : "暂无简介，请点击阅读详情..."}
+          {post.aiSummary || post.summary
+            ? truncateText(stripMarkdown(post.aiSummary || post.summary || ""), 300)
+            : t("interactive.post.noSummary")}
         </p>
       </div>
 
@@ -417,6 +415,8 @@ function PostPreview({ post }: { post: Post }) {
 // ─── Note Preview ────────────────────────────────────────────────────
 
 function NotePreview({ note }: { note: Note }) {
+  const t = useTranslations();
+
   return (
     <motion.div
       key={note._id}
@@ -427,12 +427,12 @@ function NotePreview({ note }: { note: Note }) {
       className="space-y-6"
     >
       <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
-        <div className="flex items-center gap-2" title="发布时间">
+        <div className="flex items-center gap-2" title={t("interactive.post.publishedAt")}>
           <Icon icon="mingcute:calendar-line" className="w-4 h-4" />
           <span>{formatDate(note.created)}</span>
         </div>
         {note.modified && (
-          <div className="flex items-center gap-2 text-xs opacity-70" title="修改时间">
+          <div className="flex items-center gap-2 text-xs opacity-70" title={t("interactive.post.modifiedAt")}>
             <Icon icon="mingcute:edit-2-line" className="w-3.5 h-3.5" />
             <span>{formatDate(note.modified)}</span>
           </div>
@@ -466,7 +466,7 @@ function NotePreview({ note }: { note: Note }) {
         {note.aiSummary && (
           <div className="flex items-center gap-1.5 mb-2">
             <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
-            <span className="text-xs font-medium text-accent-600">AI 摘要</span>
+            <span className="text-xs font-medium text-accent-600">{t("interactive.post.aiSummary")}</span>
           </div>
         )}
         <p className="text-left line-clamp-6">
@@ -490,10 +490,13 @@ interface PostInteractiveListProps {
 
 export function PostInteractiveList({
   items,
-  emptyMessage = "选择一篇文章查看详情",
+  emptyMessage,
   staticMode = false,
   pageSize = 10,
 }: PostInteractiveListProps) {
+  const t = useTranslations();
+  const locale = useLocale();
+
   return (
     <InteractiveList<Post>
       items={items}
@@ -503,12 +506,12 @@ export function PostInteractiveList({
       renderListItem={(post, { isActive }) => (
         <TitleDateListItem title={post.title} created={post.created} modified={post.modified} isActive={isActive} />
       )}
-      emptyMessage={emptyMessage}
+      emptyMessage={emptyMessage ?? t("interactive.empty.post")}
       infiniteScroll={!staticMode
         ? {
             pageSize,
             fetcher: async (page, size) => {
-              const res = await fetchPosts(page, size);
+              const res = await fetchPosts(page, size, locale);
               return { items: res.data.items as Post[], hasNextPage: res.data.pagination.has_next_page };
             },
             keyPrefix: "post",
@@ -526,9 +529,12 @@ interface NoteInteractiveListProps {
 
 export function NoteInteractiveList({
   items,
-  emptyMessage = "选择一篇日记查看详情",
+  emptyMessage,
   pageSize = 10,
 }: NoteInteractiveListProps) {
+  const t = useTranslations();
+  const locale = useLocale();
+
   return (
     <InteractiveList<Note>
       items={items}
@@ -538,11 +544,11 @@ export function NoteInteractiveList({
       renderListItem={(note, { isActive }) => (
         <TitleDateListItem title={note.title} created={note.created} modified={note.modified} isActive={isActive} />
       )}
-      emptyMessage={emptyMessage}
+      emptyMessage={emptyMessage ?? t("interactive.empty.note")}
       infiniteScroll={{
         pageSize,
         fetcher: async (page, size) => {
-          const res = await fetchNotes(page, size);
+          const res = await fetchNotes(page, size, locale);
           return { items: res.data.items as Note[], hasNextPage: res.data.pagination.has_next_page };
         },
         keyPrefix: "note",
@@ -566,15 +572,17 @@ export function CategoryInteractiveList({
   allPosts,
   countMap,
   latestPostMap,
-  emptyMessage = "选择一个分类查看详情",
+  emptyMessage,
 }: CategoryInteractiveListProps) {
+  const t = useTranslations();
+
   return (
     <InteractiveList<Category>
       items={items}
       getItemKey={cat => cat.slug}
       getItemUrl={cat => `/categories/${cat.slug}`}
 
-      emptyMessage={emptyMessage}
+      emptyMessage={emptyMessage ?? t("interactive.empty.category")}
       renderListItem={(category, { isActive }) => {
         const count = countMap[category.slug] || 0;
         return (
@@ -592,8 +600,7 @@ export function CategoryInteractiveList({
             )}
             >
               {count}
-              {" "}
-              篇
+              {t("nav.postsUnit")}
             </span>
           </div>
         );
@@ -616,18 +623,14 @@ export function CategoryInteractiveList({
               <div className="flex items-center gap-2">
                 <Icon icon="mingcute:document-line" className="w-4 h-4" />
                 <span>
-                  {count}
-                  {" "}
-                  篇文章
+                  {t("interactive.category.postsCount", { count })}
                 </span>
               </div>
               {latestPost && (
                 <div className="flex items-center gap-2 text-xs opacity-70">
                   <Icon icon="mingcute:calendar-line" className="w-3.5 h-3.5" />
                   <span>
-                    最近更新
-                    {" "}
-                    {formatDate(latestPost.created)}
+                    {t("interactive.category.latestUpdate", { date: formatDate(latestPost.created) })}
                   </span>
                 </div>
               )}
@@ -643,10 +646,7 @@ export function CategoryInteractiveList({
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
                 <Icon icon="mingcute:chart-bar-line" className="w-3.5 h-3.5" />
-                占比
-                {" "}
-                {weight}
-                %
+                {t("interactive.category.proportion", { value: weight })}
               </span>
             </div>
 
@@ -656,18 +656,18 @@ export function CategoryInteractiveList({
                     <>
                       <div className="flex items-center gap-1.5 mb-2">
                         <Icon icon="mingcute:news-line" className="w-3.5 h-3.5 text-accent-500" />
-                        <span className="text-xs font-medium text-accent-600">最新文章</span>
+                        <span className="text-xs font-medium text-accent-600">{t("interactive.category.latestPost")}</span>
                       </div>
                       <p className="text-left font-medium line-clamp-1">{latestPost.title}</p>
-                      {(latestPost.summary || latestPost.aiSummary) && (
+                      {(latestPost.aiSummary || latestPost.summary) && (
                         <p className="text-left line-clamp-5 mt-1 opacity-80">
-                          {truncateText(stripMarkdown(latestPost.summary || latestPost.aiSummary || ""), 300)}
+                          {truncateText(stripMarkdown(latestPost.aiSummary || latestPost.summary || ""), 300)}
                         </p>
                       )}
                     </>
                   )
                 : (
-                    <p className="text-left opacity-60">暂无文章发布</p>
+                    <p className="text-left opacity-60">{t("interactive.category.noPosts")}</p>
                   )}
             </div>
 
@@ -675,7 +675,7 @@ export function CategoryInteractiveList({
               href={`/categories/${category.slug}`}
               className="inline-flex items-center gap-2 text-sm text-accent-600 hover:text-accent-700 font-medium transition-colors"
             >
-              浏览全部文章
+              {t("interactive.category.browseAll")}
               <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
             </Link>
           </motion.div>

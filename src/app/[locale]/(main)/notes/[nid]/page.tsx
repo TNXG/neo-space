@@ -27,18 +27,19 @@ export async function generateStaticParams() {
 
 interface PageProps {
   params: Promise<{
+    locale: string;
     nid: string;
   }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { nid } = await params;
+  const { nid, locale } = await params;
   const nidNum = Number.parseInt(nid, 10);
   if (Number.isNaN(nidNum))
     return { title: "日记不存在" };
 
   try {
-    const { data: note } = await getNoteByNid(nidNum);
+    const { data: note } = await getNoteByNid(nidNum, locale);
     const description = note.text.slice(0, 150).replace(NEWLINE_REGEX, " ");
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
@@ -65,7 +66,7 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function NotePage({ params }: PageProps) {
-  const { nid } = await params;
+  const { nid, locale } = await params;
   const nidNum = Number.parseInt(nid, 10);
   if (Number.isNaN(nidNum))
     notFound();
@@ -78,7 +79,7 @@ export default async function NotePage({ params }: PageProps) {
   try {
     // 并行获取手记内容、相邻手记信息和站点配置
     const [noteResponse, adjacentResponse, configResponse] = await Promise.all([
-      getNoteByNid(nidNum),
+      getNoteByNid(nidNum, locale),
       getAdjacentNotes(nidNum),
       getSiteConfig().catch(() => null),
     ]);
@@ -121,6 +122,9 @@ export default async function NotePage({ params }: PageProps) {
             nid={note.nid}
             created={note.created}
             modified={note.modified}
+            lang={note.lang}
+            sourceLang={note.sourceLang}
+            isAiTranslated={note.isAiTranslated}
             mood={note.mood}
             weather={note.weather}
             location={note.location}
@@ -131,6 +135,7 @@ export default async function NotePage({ params }: PageProps) {
             <OutdatedAlert
               refId={note._id}
               refType="note"
+              lang={note.lang}
               lastUpdated={note.modified || note.created}
             />
             <MarkdownRenderer content={note.text} />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Link } from "@/types/api";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { FriendsList } from "@/components/layouts/friends/FriendsList";
@@ -7,10 +8,19 @@ import { LinkApplyForm } from "@/components/layouts/friends/LinkApplyForm";
 import { getLinks } from "@/lib/api-client";
 import { LinkType } from "@/types/api";
 
-export const metadata: Metadata = {
-  title: "Constellation | 友链",
-  description: "星座图谱，连接志同道合的朋友",
-};
+interface FriendsPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: FriendsPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+
+  return {
+    title: t("friends.meta.title"),
+    description: t("friends.meta.description"),
+  };
+}
 
 export const revalidate = 57600;
 export const dynamicParams = true;
@@ -42,7 +52,9 @@ async function getAllLinks(): Promise<Link[]> {
 /**
  * 友链页面
  */
-export default async function FriendsPage() {
+export default async function FriendsPage({ params }: FriendsPageProps) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
   const allLinks = await getAllLinks();
 
   // 按类型分组
@@ -55,7 +67,7 @@ export default async function FriendsPage() {
       <header className="mb-12 md:mb-20 md:text-center max-w-2xl mx-auto flex flex-col items-center">
         <div className="mb-4 md:mb-6 flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-linear-to-r from-primary-800 to-accent-600 bg-clip-text text-transparent leading-tight py-2 select-none">
-            星 座
+            {t("friends.title")}
           </h1>
           <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-accent-600/60 uppercase mt-1 font-mono">
             Constellation
@@ -66,7 +78,7 @@ export default async function FriendsPage() {
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70"></span>
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-base md:text-lg lg:text-xl tracking-wide text-primary-700">
-              以光为线，连接彼此
+              {t("friends.subtitle")}
             </span>
             <span className="text-[11px] md:text-xs lg:text-sm text-primary-400/80 font-normal italic tracking-wide mt-0.5 md:mt-1 font-serif">
               Connected by starlight

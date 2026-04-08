@@ -14,7 +14,7 @@ pub mod user;
 // Re-export commonly used types
 pub use comment::{Comment, CommentState, CommentTree, UpdateCommentRequest};
 pub use common::{ApiResponse, PaginatedData, Pagination, ResponseStatus};
-pub use content::{AiSummary, Category, Note, Page, Post, PostWithCategory, Recently};
+pub use content::{AiSummary, AiTranslation, Category, Note, Page, Post, PostWithCategory, Recently};
 pub use link::{
     Link, LinkApplyRequest, LinkHealthStatus, LinkState, LinkType, LinkWithHealth, SendCodeRequest,
 };

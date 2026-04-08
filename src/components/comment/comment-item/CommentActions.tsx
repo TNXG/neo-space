@@ -2,6 +2,7 @@
 
 import type { Comment } from "@/types/api";
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
@@ -37,34 +38,35 @@ export function CommentActions({
   setIsDeleting,
   onRefresh,
 }: CommentActionsProps) {
+  const t = useTranslations();
   // 处理删除评论
   const handleDelete = () => {
     if (!token)
       return;
 
-    toast("确定要删除这条评论吗？", {
+    toast(t("comment.deleteConfirm"), {
       action: {
-        label: "确认删除",
+        label: t("comment.confirmDelete"),
         onClick: async () => {
           setIsDeleting(true);
           try {
             const result = await deleteAuthComment(comment._id, token);
             if (result.code === 200) {
-              toast.success("评论删除成功");
+              toast.success(t("comment.deleteSuccess"));
               onRefresh();
             } else {
-              toast.error(result.message || "删除失败");
+              toast.error(result.message || t("comment.deleteFailed"));
             }
           } catch (error) {
             console.error("Failed to delete comment:", error);
-            toast.error("删除失败，请稍后重试");
+            toast.error(t("comment.deleteRetry"));
           } finally {
             setIsDeleting(false);
           }
         },
       },
       cancel: {
-        label: "取消",
+        label: t("comment.cancel"),
         onClick: () => {},
       },
     });
@@ -82,10 +84,10 @@ export function CommentActions({
     if (!token || !isCurrentUserAdmin)
       return;
 
-    const action = comment.isWhispers ? "显示" : "隐藏";
-    toast(`确定要${action}这条评论吗？`, {
+    const action = comment.isWhispers ? t("comment.show") : t("comment.hide");
+    toast(t("comment.toggleCommentConfirm", { action }), {
       action: {
-        label: `确认${action}`,
+        label: t("comment.confirmAction", { action }),
         onClick: async () => {
           try {
             const result = comment.isWhispers
@@ -93,19 +95,19 @@ export function CommentActions({
               : await hideComment(comment._id, token);
 
             if (result.code === 200) {
-              toast.success(`评论${action}成功`);
+              toast.success(t("comment.actionSuccess", { action }));
               onRefresh();
             } else {
-              toast.error(result.message || `${action}失败`);
+              toast.error(result.message || t("comment.actionFailed", { action }));
             }
           } catch (error) {
             console.error(`Failed to ${action} comment:`, error);
-            toast.error(`${action}失败，请稍后重试`);
+            toast.error(t("comment.actionRetry", { action }));
           }
         },
       },
       cancel: {
-        label: "取消",
+        label: t("comment.cancel"),
         onClick: () => {},
       },
     });
@@ -116,10 +118,10 @@ export function CommentActions({
     if (!token || !isCurrentUserAdmin)
       return;
 
-    const action = comment.pin ? "取消置顶" : "置顶";
-    toast(`确定要${action}这条评论吗？`, {
+    const action = comment.pin ? t("comment.unpin") : t("comment.pin");
+    toast(t("comment.toggleCommentConfirm", { action }), {
       action: {
-        label: `确认${action}`,
+        label: t("comment.confirmAction", { action }),
         onClick: async () => {
           try {
             const result = comment.pin
@@ -127,19 +129,19 @@ export function CommentActions({
               : await pinComment(comment._id, token);
 
             if (result.code === 200) {
-              toast.success(`评论${action}成功`);
+              toast.success(t("comment.actionSuccess", { action }));
               onRefresh();
             } else {
-              toast.error(result.message || `${action}失败`);
+              toast.error(result.message || t("comment.actionFailed", { action }));
             }
           } catch (error) {
             console.error(`Failed to ${action} comment:`, error);
-            toast.error(`${action}失败，请稍后重试`);
+            toast.error(t("comment.actionRetry", { action }));
           }
         },
       },
       cancel: {
-        label: "取消",
+        label: t("comment.cancel"),
         onClick: () => {},
       },
     });
@@ -167,7 +169,7 @@ export function CommentActions({
         )}
       >
         <Icon icon="mingcute:share-forward-line" className="w-4 h-4 sm:w-4 sm:h-4" />
-        <span>回复</span>
+        <span>{t("comment.reply")}</span>
       </motion.button>
 
       {/* 当前用户的评论显示删除/编辑按钮 */}
@@ -187,7 +189,7 @@ export function CommentActions({
             )}
           >
             <Icon icon="mingcute:edit-line" className="w-4 h-4 sm:w-4 sm:h-4" />
-            <span>{editView ? "编辑中" : "编辑"}</span>
+            <span>{editView ? t("comment.editing") : t("comment.edit")}</span>
           </motion.button>
 
           <motion.button
@@ -204,7 +206,7 @@ export function CommentActions({
             )}
           >
             <Icon icon={isDeleting ? "mingcute:loading-line" : "mingcute:delete-line"} className={`w-4 h-4 sm:w-4 sm:h-4${isDeleting ? " animate-spin" : ""}`} />
-            <span>{isDeleting ? "删除中..." : "删除"}</span>
+            <span>{isDeleting ? t("comment.deleting") : t("comment.delete")}</span>
           </motion.button>
         </>
       )}
@@ -228,7 +230,7 @@ export function CommentActions({
             )}
           >
             <Icon icon={comment.isWhispers ? "mingcute:eye-line" : "mingcute:eye-close-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
-            <span>{comment.isWhispers ? "显示" : "隐藏"}</span>
+            <span>{comment.isWhispers ? t("comment.show") : t("comment.hide")}</span>
           </motion.button>
 
           <motion.button
@@ -247,7 +249,7 @@ export function CommentActions({
             )}
           >
             <Icon icon={comment.pin ? "mingcute:pin-fill" : "mingcute:pin-line"} className="w-4 h-4 sm:w-4 sm:h-4" />
-            <span>{comment.pin ? "取消置顶" : "置顶"}</span>
+            <span>{comment.pin ? t("comment.unpin") : t("comment.pin")}</span>
           </motion.button>
         </>
       )}

@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -12,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Link } from "@/locales/navigation";
 import { useTOCStore } from "@/stores/toc-store";
 
 interface SidebarBreadcrumbItem {

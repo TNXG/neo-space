@@ -1,7 +1,7 @@
 import type { Note } from "@/types/api";
-import Link from "next/link";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SmartDate } from "@/components/common/smart-date";
+import { Link } from "@/locales/navigation";
 
 interface NoteItemProps {
   note: Note;

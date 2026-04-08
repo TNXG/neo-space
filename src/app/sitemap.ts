@@ -1,5 +1,19 @@
 import type { MetadataRoute } from "next";
 import { getNotes, getPosts } from "@/lib/api-client";
+import { routing } from "@/locales";
+
+function localizePath(path: string, locale: string) {
+  return locale === routing.defaultLocale ? path : `/${locale}${path}`;
+}
+
+function createLocalizedEntries(path: string, priority: number, lastModified: Date): MetadataRoute.Sitemap {
+  return routing.locales.map(locale => ({
+    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe"}${localizePath(path, locale)}`,
+    lastModified,
+    changeFrequency: "weekly" as const,
+    priority: locale === routing.defaultLocale ? priority : Math.max(priority - 0.1, 0.1),
+  }));
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
@@ -12,47 +26,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const notes = notesResponse.data.items;
 
     // 生成文章页面的 sitemap 条目
-    const postEntries: MetadataRoute.Sitemap = posts.map(post => ({
-      url: `${baseUrl}/posts/${post.category?.slug || "default"}/${post.slug}`,
-      lastModified: post.modified ? new Date(post.modified) : new Date(post.created),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    }));
+    const postEntries: MetadataRoute.Sitemap = posts.flatMap(post => createLocalizedEntries(
+      `/posts/${post.category?.slug || "default"}/${post.slug}`,
+      0.8,
+      post.modified ? new Date(post.modified) : new Date(post.created),
+    ));
 
-    // 生成日记页面的 sitemap 条目
-    const noteEntries: MetadataRoute.Sitemap = notes.map(note => ({
-      url: `${baseUrl}/notes/${note.nid}`,
-      lastModified: note.modified ? new Date(note.modified) : new Date(note.created),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    }));
+    const noteEntries: MetadataRoute.Sitemap = notes.flatMap(note => createLocalizedEntries(
+      `/notes/${note.nid}`,
+      0.7,
+      note.modified ? new Date(note.modified) : new Date(note.created),
+    ));
 
-    // 静态页面
+    const now = new Date();
     const staticPages: MetadataRoute.Sitemap = [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: "daily",
-        priority: 1,
-      },
-      {
-        url: `${baseUrl}/posts`,
-        lastModified: new Date(),
-        changeFrequency: "daily",
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/notes`,
-        lastModified: new Date(),
-        changeFrequency: "daily",
-        priority: 0.9,
-      },
-      {
-        url: `${baseUrl}/friends`,
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.7,
-      },
+      ...createLocalizedEntries("/", 1, now),
+      ...createLocalizedEntries("/posts", 0.9, now),
+      ...createLocalizedEntries("/notes", 0.9, now),
+      ...createLocalizedEntries("/friends", 0.7, now),
+      ...createLocalizedEntries("/categories", 0.7, now),
+      ...createLocalizedEntries("/thinking", 0.7, now),
     ];
 
     return [...staticPages, ...postEntries, ...noteEntries];

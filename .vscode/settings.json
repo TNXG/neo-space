@@ -48,5 +48,7 @@
     "pcss",
     "postcss"
   ],
-  "typescript.autoClosingTags": false
+  "i18n-ally.localesPaths": [
+    "src/locales"
+  ]
 }

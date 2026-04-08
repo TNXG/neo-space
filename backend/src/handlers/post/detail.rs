@@ -2,7 +2,7 @@
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppResult},
+    error::{AppError, AppQuery, AppResult},
     models::*,
 };
 use axum::{
@@ -13,10 +13,16 @@ use bson::{doc, oid::ObjectId};
 
 use super::enrich::enrich_single_post;
 
+#[derive(Debug, serde::Deserialize)]
+pub struct DetailPostParams {
+    pub lang: Option<String>,
+}
+
 /// Get a post by ID
 pub async fn get_post(
     State(state): State<SharedState>,
     Path(id): Path<String>,
+    AppQuery(params): AppQuery<DetailPostParams>,
 ) -> AppResult<Json<ApiResponse<PostWithCategory>>> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| AppError::BadRequest("Invalid ID format".to_string()))?;
@@ -28,7 +34,8 @@ pub async fn get_post(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Post not found".to_string()))?;
 
-    let enriched = enrich_single_post(&state, post, &id).await?;
+    let lang = params.lang.as_deref().unwrap_or("zh");
+    let enriched = enrich_single_post(&state, post, &id, lang).await?;
     Ok(Json(ApiResponse::success(enriched)))
 }
 
@@ -36,6 +43,7 @@ pub async fn get_post(
 pub async fn get_post_by_slug(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
+    AppQuery(params): AppQuery<DetailPostParams>,
 ) -> AppResult<Json<ApiResponse<PostWithCategory>>> {
     let posts_collection = state.db.collection::<Post>("posts");
 
@@ -46,6 +54,7 @@ pub async fn get_post_by_slug(
         .ok_or(AppError::NotFound("Post not found".to_string()))?;
 
     let post_id = post.id.to_hex();
-    let enriched = enrich_single_post(&state, post, &post_id).await?;
+    let lang = params.lang.as_deref().unwrap_or("zh");
+    let enriched = enrich_single_post(&state, post, &post_id, lang).await?;
     Ok(Json(ApiResponse::success(enriched)))
 }

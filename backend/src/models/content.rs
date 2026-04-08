@@ -9,6 +9,10 @@ use super::serializers::{
     serialize_optional_object_id,
 };
 
+fn default_language_code() -> String {
+    "zh".to_string()
+}
+
 // ==================== AI Summary ====================
 
 /// AI Summary model
@@ -21,6 +25,39 @@ pub struct AiSummary {
     pub summary: String,
     pub lang: String,
     pub hash: String,
+    #[serde(serialize_with = "serialize_datetime")]
+    pub created: bson::DateTime,
+}
+
+/// AI Translation model
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AiTranslation {
+    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
+    pub id: ObjectId,
+    pub hash: String,
+    #[serde(rename = "refId")]
+    pub ref_id: String,
+    #[serde(rename = "refType")]
+    pub ref_type: String,
+    pub lang: String,
+    #[serde(rename = "sourceLang")]
+    pub source_lang: String,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub text: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(
+        rename = "sourceModified",
+        default,
+        serialize_with = "serialize_optional_datetime"
+    )]
+    pub source_modified: Option<bson::DateTime>,
+    #[serde(rename = "aiModel", default)]
+    pub ai_model: Option<String>,
+    #[serde(rename = "aiProvider", default)]
+    pub ai_provider: Option<String>,
     #[serde(serialize_with = "serialize_datetime")]
     pub created: bson::DateTime,
 }
@@ -76,6 +113,12 @@ pub struct Post {
     pub meta: Option<String>,
     #[serde(default)]
     pub images: Vec<PostImage>,
+    #[serde(default = "default_language_code")]
+    pub lang: String,
+    #[serde(rename = "sourceLang", default = "default_language_code")]
+    pub source_lang: String,
+    #[serde(rename = "isAiTranslated", default)]
+    pub is_ai_translated: bool,
 }
 
 /// Post with populated category information
@@ -113,10 +156,19 @@ pub struct PostWithCategory {
     pub meta: Option<String>,
     #[serde(default)]
     pub images: Vec<PostImage>,
+    #[serde(default = "default_language_code")]
+    pub lang: String,
+    #[serde(rename = "sourceLang", default = "default_language_code")]
+    pub source_lang: String,
+    #[serde(rename = "isAiTranslated", default)]
+    pub is_ai_translated: bool,
 }
 
 impl From<Post> for PostWithCategory {
     fn from(post: Post) -> Self {
+        let lang = post.lang.clone();
+        let source_lang = post.source_lang.clone();
+
         Self {
             id: post.id,
             title: post.title,
@@ -134,6 +186,9 @@ impl From<Post> for PostWithCategory {
             copyright: post.copyright,
             meta: post.meta,
             images: post.images,
+            lang,
+            source_lang,
+            is_ai_translated: false,
         }
     }
 }
@@ -196,6 +251,12 @@ pub struct Note {
     pub count: Option<NoteCount>,
     #[serde(default, rename = "aiSummary", skip_serializing_if = "Option::is_none")]
     pub ai_summary: Option<String>,
+    #[serde(default = "default_language_code")]
+    pub lang: String,
+    #[serde(rename = "sourceLang", default = "default_language_code")]
+    pub source_lang: String,
+    #[serde(rename = "isAiTranslated", default)]
+    pub is_ai_translated: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]

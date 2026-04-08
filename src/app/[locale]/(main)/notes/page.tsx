@@ -13,11 +13,16 @@ export const revalidate = 57600;
  * 默认显示第一页
  * 不携带任何参数，完全静态化
  */
-export default async function NotesPage() {
+export default async function NotesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const page = 1;
   const pageSize = 10;
 
-  const { data } = await getNotes(page, pageSize);
+  const { data } = await getNotes(page, pageSize, locale);
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-6xl">

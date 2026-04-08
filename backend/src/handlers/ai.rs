@@ -2,8 +2,8 @@
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppJson, AppResult},
-    models::*,
+    error::{AppError, AppJson, AppQuery, AppResult},
+    models::{AiTranslation, *},
 };
 use axum::{
     Json,
@@ -42,6 +42,10 @@ pub struct TimeCapsule {
     pub ref_id: String,
     #[serde(rename = "refType")]
     pub ref_type: String,
+    #[serde(default = "default_language_code")]
+    pub lang: String,
+    #[serde(rename = "sourceLang", default = "default_language_code")]
+    pub source_lang: String,
     pub hash: String,
     pub sensitivity: String,
     pub reason: String,
@@ -57,6 +61,28 @@ pub struct TimeCapsuleRequest {
     pub ref_id: String,
     #[serde(rename = "refType")]
     pub ref_type: String,
+    #[serde(default = "default_language_code")]
+    pub lang: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetTimeCapsuleParams {
+    #[serde(rename = "refType")]
+    pub ref_type: Option<String>,
+    pub lang: Option<String>,
+}
+
+fn default_language_code() -> String {
+    "zh".to_string()
+}
+
+fn to_translation_ref_type(ref_type: &str) -> Option<&'static str> {
+    match ref_type {
+        "post" => Some("posts"),
+        "note" => Some("notes"),
+        "page" => Some("pages"),
+        _ => None,
+    }
 }
 
 /// Fetch content text for AI analysis
@@ -64,7 +90,8 @@ async fn fetch_content_text(
     state: &SharedState,
     ref_id: &str,
     ref_type: &str,
-) -> Result<String, AppError> {
+    lang: &str,
+) -> Result<(String, String, String), AppError> {
     // Try to parse as ObjectId, return error if not valid for database entities
     let object_id = match ObjectId::parse_str(ref_id) {
         Ok(oid) => oid,
@@ -76,7 +103,7 @@ async fn fetch_content_text(
         }
     };
 
-    match ref_type {
+    let original_content = match ref_type {
         "post" => {
             let col = state.db.collection::<Post>("posts");
             let doc = col
@@ -84,7 +111,7 @@ async fn fetch_content_text(
                 .await
                 .map_err(|e| AppError::Database(e.to_string()))?
                 .ok_or_else(|| AppError::NotFound("Post not found".to_string()))?;
-            Ok(format!("{}\n\n{}", doc.title, doc.text))
+            format!("{}\n\n{}", doc.title, doc.text)
         }
         "note" => {
             let col = state.db.collection::<Note>("notes");
@@ -93,7 +120,7 @@ async fn fetch_content_text(
                 .await
                 .map_err(|e| AppError::Database(e.to_string()))?
                 .ok_or_else(|| AppError::NotFound("Note not found".to_string()))?;
-            Ok(format!("{}\n\n{}", doc.title, doc.text))
+            format!("{}\n\n{}", doc.title, doc.text)
         }
         "page" => {
             let col = state.db.collection::<Page>("pages");
@@ -102,13 +129,86 @@ async fn fetch_content_text(
                 .await
                 .map_err(|e| AppError::Database(e.to_string()))?
                 .ok_or_else(|| AppError::NotFound("Page not found".to_string()))?;
-            Ok(format!("{}\n\n{}", doc.title, doc.text))
+            format!("{}\n\n{}", doc.title, doc.text)
         }
-        _ => Err(AppError::BadRequest(format!(
-            "Invalid ref type: {}",
-            ref_type
-        ))),
+        _ => {
+            return Err(AppError::BadRequest(format!(
+                "Invalid ref type: {}",
+                ref_type
+            )));
+        }
+    };
+
+    if lang == "zh" {
+        return Ok((original_content, "zh".to_string(), "zh".to_string()));
     }
+
+    let Some(translation_ref_type) = to_translation_ref_type(ref_type) else {
+        return Ok((original_content, "zh".to_string(), "zh".to_string()));
+    };
+
+    let translations_collection = state.db.collection::<AiTranslation>("ai_translations");
+    let translation = translations_collection
+        .find_one(doc! {
+            "refId": ref_id,
+            "refType": translation_ref_type,
+            "lang": lang
+        })
+        .with_options(
+            mongodb::options::FindOneOptions::builder()
+                .sort(doc! { "created": -1 })
+                .build(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if let Some(translation) = translation
+        && let (Some(title), Some(text)) = (translation.title, translation.text)
+    {
+        return Ok((
+            format!("{}\n\n{}", title, text),
+            translation.lang,
+            translation.source_lang,
+        ));
+    }
+
+    Ok((original_content, "zh".to_string(), "zh".to_string()))
+}
+
+fn capsule_language_filter(ref_id: &str, ref_type: &str, lang: &str) -> bson::Document {
+    if lang == "zh" {
+        doc! {
+            "refId": ref_id,
+            "refType": ref_type,
+            "$or": [
+                { "lang": "zh" },
+                { "lang": { "$exists": false } }
+            ]
+        }
+    } else {
+        doc! {
+            "refId": ref_id,
+            "refType": ref_type,
+            "lang": lang
+        }
+    }
+}
+
+async fn load_cached_capsule(
+    collection: &mongodb::Collection<TimeCapsule>,
+    ref_id: &str,
+    ref_type: &str,
+    lang: &str,
+) -> Result<Option<TimeCapsule>, AppError> {
+    collection
+        .find_one(capsule_language_filter(ref_id, ref_type, lang))
+        .with_options(
+            mongodb::options::FindOneOptions::builder()
+                .sort(doc! { "created": -1 })
+                .build(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))
 }
 
 /// Hash content for cache invalidation
@@ -122,6 +222,7 @@ fn hash_content(content: &str) -> String {
 async fn analyze_with_openai(
     state: &SharedState,
     content: &str,
+    lang: &str,
 ) -> Result<TimeCapsuleResult, AppError> {
     let api_key = &state.config.openai_api_key;
     if api_key.is_empty() {
@@ -129,6 +230,12 @@ async fn analyze_with_openai(
             "OpenAI API key not configured".to_string(),
         ));
     }
+
+    let response_language_instruction = match lang {
+        "ja" => "Respond in Japanese.",
+        "en" => "Respond in English.",
+        _ => "Respond in Chinese.",
+    };
 
     let prompt = format!(
         r#"Analyze the following article for time sensitivity. Determine if it contains:
@@ -138,8 +245,10 @@ async fn analyze_with_openai(
 
 Respond with a JSON object with these fields:
 - sensitivity: "high", "medium", or "low"
-- reason: brief explanation in Chinese (1-2 sentences)
-- markers: array of specific phrases/terms that indicate time sensitivity
+- reason: brief explanation in the requested language (1-2 sentences)
+- markers: array of specific phrases or terms that indicate time sensitivity, also in the requested language
+
+{}
 
 Article content:
 ---
@@ -147,6 +256,7 @@ Article content:
 ---
 
 Respond with ONLY valid JSON, no markdown or explanations."#,
+        response_language_instruction,
         &content[..content.len().min(3000)]
     );
 
@@ -235,26 +345,94 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
     })
 }
 
+async fn analyze_and_cache_time_capsule(
+    state: &SharedState,
+    collection: &mongodb::Collection<TimeCapsule>,
+    ref_id: &str,
+    ref_type: &str,
+    lang: &str,
+) -> Result<TimeCapsuleResult, AppError> {
+    let (content, effective_lang, source_lang) =
+        fetch_content_text(state, ref_id, ref_type, lang).await?;
+    let content_hash = hash_content(&content);
+
+    if let Some(cached) = load_cached_capsule(collection, ref_id, ref_type, &effective_lang).await?
+        && cached.hash == content_hash
+    {
+        let sensitivity = match cached.sensitivity.as_str() {
+            "high" => TimeSensitivity::High,
+            "low" => TimeSensitivity::Low,
+            _ => TimeSensitivity::Medium,
+        };
+
+        return Ok(TimeCapsuleResult {
+            sensitivity,
+            reason: cached.reason,
+            markers: cached.markers,
+            is_new: false,
+        });
+    }
+
+    if state.config.openai_api_key.is_empty() {
+        return Err(AppError::Internal("AI service not configured".to_string()));
+    }
+
+    let result = analyze_with_openai(state, &content, &effective_lang).await?;
+    let sensitivity_str = match &result.sensitivity {
+        TimeSensitivity::High => "high",
+        TimeSensitivity::Medium => "medium",
+        TimeSensitivity::Low => "low",
+    };
+
+    let new_capsule = TimeCapsule {
+        id: ObjectId::new(),
+        ref_id: ref_id.to_string(),
+        ref_type: ref_type.to_string(),
+        lang: effective_lang,
+        source_lang,
+        hash: content_hash,
+        sensitivity: sensitivity_str.to_string(),
+        reason: result.reason.clone(),
+        markers: result.markers.clone(),
+        created: bson::DateTime::now(),
+    };
+
+    if let Err(e) = collection.insert_one(&new_capsule).await {
+        tracing::error!("Failed to insert time capsule: {}", e);
+    }
+
+    Ok(result)
+}
+
 /// Analyze content time sensitivity and cache result
 pub async fn analyze_time_capsule(
     State(state): State<SharedState>,
     AppJson(payload): AppJson<TimeCapsuleRequest>,
 ) -> AppResult<Json<ApiResponse<TimeCapsuleResult>>> {
-    let content = fetch_content_text(&state, &payload.ref_id, &payload.ref_type).await?;
-    let content_hash = hash_content(&content);
-
     let collection = state.db.collection::<TimeCapsule>("time_capsules");
+    let result = analyze_and_cache_time_capsule(
+        &state,
+        &collection,
+        &payload.ref_id,
+        &payload.ref_type,
+        &payload.lang,
+    )
+    .await?;
 
-    // Check cache: find existing analysis with same content hash
-    if let Ok(Some(cached)) = collection
-        .find_one(doc! { "refId": &payload.ref_id, "hash": &content_hash })
-        .with_options(
-            mongodb::options::FindOneOptions::builder()
-                .sort(doc! { "created": -1 })
-                .build(),
-        )
-        .await
-    {
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Get cached time capsule analysis by ref ID
+pub async fn get_time_capsule(
+    State(state): State<SharedState>,
+    Path(ref_id): Path<String>,
+    AppQuery(params): AppQuery<GetTimeCapsuleParams>,
+) -> AppResult<Json<ApiResponse<TimeCapsuleResult>>> {
+    let collection = state.db.collection::<TimeCapsule>("time_capsules");
+    let ref_type = params.ref_type.unwrap_or_else(|| "post".to_string());
+    let lang = params.lang.unwrap_or_else(default_language_code);
+
+    if let Some(cached) = load_cached_capsule(&collection, &ref_id, &ref_type, &lang).await? {
         let sensitivity = match cached.sensitivity.as_str() {
             "high" => TimeSensitivity::High,
             "low" => TimeSensitivity::Low,
@@ -269,66 +447,8 @@ pub async fn analyze_time_capsule(
         })));
     }
 
-    // Perform AI analysis
-    if state.config.openai_api_key.is_empty() {
-        return Err(AppError::Internal("AI service not configured".to_string()));
-    }
-
-    let result = analyze_with_openai(&state, &content).await?;
-
-    // Store in database
-    let sensitivity_str = match &result.sensitivity {
-        TimeSensitivity::High => "high",
-        TimeSensitivity::Medium => "medium",
-        TimeSensitivity::Low => "low",
-    };
-
-    let new_capsule = TimeCapsule {
-        id: ObjectId::new(),
-        ref_id: payload.ref_id.clone(),
-        ref_type: payload.ref_type.clone(),
-        hash: content_hash,
-        sensitivity: sensitivity_str.to_string(),
-        reason: result.reason.clone(),
-        markers: result.markers.clone(),
-        created: bson::DateTime::now(),
-    };
-
-    if let Err(e) = collection.insert_one(&new_capsule).await {
-        tracing::error!("Failed to insert time capsule: {}", e);
-    }
+    let result = analyze_and_cache_time_capsule(&state, &collection, &ref_id, &ref_type, &lang)
+        .await?;
 
     Ok(Json(ApiResponse::success(result)))
-}
-
-/// Get cached time capsule analysis by ref ID
-pub async fn get_time_capsule(
-    State(state): State<SharedState>,
-    Path(ref_id): Path<String>,
-) -> AppResult<Json<ApiResponse<TimeCapsuleResult>>> {
-    let collection = state.db.collection::<TimeCapsule>("time_capsules");
-
-    let cached = collection
-        .find_one(doc! { "refId": &ref_id })
-        .with_options(
-            mongodb::options::FindOneOptions::builder()
-                .sort(doc! { "created": -1 })
-                .build(),
-        )
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound("Time capsule analysis not found".to_string()))?;
-
-    let sensitivity = match cached.sensitivity.as_str() {
-        "high" => TimeSensitivity::High,
-        "low" => TimeSensitivity::Low,
-        _ => TimeSensitivity::Medium,
-    };
-
-    Ok(Json(ApiResponse::success(TimeCapsuleResult {
-        sensitivity,
-        reason: cached.reason,
-        markers: cached.markers,
-        is_new: false,
-    })))
 }

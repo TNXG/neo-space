@@ -4,6 +4,7 @@ import type { SearchItem } from "./types";
 
 import type { SearchNoteResult, SearchPostResult } from "@/types/api";
 
+import { useTranslations } from "next-intl";
 import { Icon } from "@/lib/inline-icon";
 import { formatDate, sanitizeHighlight } from "./utils";
 
@@ -22,6 +23,7 @@ export function SearchResultItem({
   onClick,
   onMouseEnter,
 }: SearchResultItemProps) {
+  const t = useTranslations();
   const isPost = item.type === "post";
   const post = isPost ? (item.data as SearchPostResult) : null;
   const note = !isPost ? (item.data as SearchNoteResult) : null;
@@ -81,7 +83,7 @@ export function SearchResultItem({
               : "bg-teal-500/8 text-teal-600/70"
           }`}
           >
-            {isPost ? "文章" : "笔记"}
+            {isPost ? t("search.result.post") : t("search.result.note")}
           </span>
           {post?.category && (
             <span className="text-muted-foreground/80">{post.category.name}</span>

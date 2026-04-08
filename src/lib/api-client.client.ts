@@ -13,6 +13,15 @@ import { API_BASE_URL } from "./api-client";
  */
 export { API_BASE_URL };
 
+function withLangParam(url: string, lang?: string): string {
+  if (!lang || lang === "zh") {
+    return url;
+  }
+
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}lang=${encodeURIComponent(lang)}`;
+}
+
 /**
  * 通用 fetcher
  */
@@ -27,9 +36,9 @@ async function fetcher<T>(url: string): Promise<T> {
 /**
  * 使用 SWR 获取文章列表（单页）
  */
-export function usePosts(page: number, size = 10) {
+export function usePosts(page: number, size = 10, lang?: string) {
   return useSWR<PaginatedResponse<Post>>(
-    `${API_BASE_URL}/posts?page=${page}&size=${size}`,
+    withLangParam(`${API_BASE_URL}/posts?page=${page}&size=${size}`, lang),
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -38,12 +47,12 @@ export function usePosts(page: number, size = 10) {
 /**
  * 使用 SWR Infinite 获取文章列表（无限滚动）
  */
-export function usePostsInfinite(pageSize = 10) {
+export function usePostsInfinite(pageSize = 10, lang?: string) {
   return useSWRInfinite<PaginatedResponse<Post>>(
     (pageIndex, previousPageData) => {
       if (previousPageData && !previousPageData.data.pagination.has_next_page)
         return null;
-      return `${API_BASE_URL}/posts?page=${pageIndex + 1}&size=${pageSize}`;
+      return withLangParam(`${API_BASE_URL}/posts?page=${pageIndex + 1}&size=${pageSize}`, lang);
     },
     fetcher,
     { revalidateFirstPage: false, revalidateOnFocus: false },
@@ -53,9 +62,9 @@ export function usePostsInfinite(pageSize = 10) {
 /**
  * 使用 SWR 获取日记列表（单页）
  */
-export function useNotes(page: number, size = 10) {
+export function useNotes(page: number, size = 10, lang?: string) {
   return useSWR<PaginatedResponse<Note>>(
-    `${API_BASE_URL}/notes?page=${page}&size=${size}`,
+    withLangParam(`${API_BASE_URL}/notes?page=${page}&size=${size}`, lang),
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -64,12 +73,12 @@ export function useNotes(page: number, size = 10) {
 /**
  * 使用 SWR Infinite 获取日记列表（无限滚动）
  */
-export function useNotesInfinite(pageSize = 10) {
+export function useNotesInfinite(pageSize = 10, lang?: string) {
   return useSWRInfinite<PaginatedResponse<Note>>(
     (pageIndex, previousPageData) => {
       if (previousPageData && !previousPageData.data.pagination.has_next_page)
         return null;
-      return `${API_BASE_URL}/notes?page=${pageIndex + 1}&size=${pageSize}`;
+      return withLangParam(`${API_BASE_URL}/notes?page=${pageIndex + 1}&size=${pageSize}`, lang);
     },
     fetcher,
     { revalidateFirstPage: false, revalidateOnFocus: false },
@@ -103,12 +112,12 @@ export function useLinksInfinite(pageSize = 20) {
 }
 
 // 保留原有的 fetch 函数供 SWR fetcher 使用
-export async function fetchPosts(page: number, size = 10): Promise<PaginatedResponse<Post>> {
-  return fetcher(`${API_BASE_URL}/posts?page=${page}&size=${size}`);
+export async function fetchPosts(page: number, size = 10, lang?: string): Promise<PaginatedResponse<Post>> {
+  return fetcher(withLangParam(`${API_BASE_URL}/posts?page=${page}&size=${size}`, lang));
 }
 
-export async function fetchNotes(page: number, size = 10): Promise<PaginatedResponse<Note>> {
-  return fetcher(`${API_BASE_URL}/notes?page=${page}&size=${size}`);
+export async function fetchNotes(page: number, size = 10, lang?: string): Promise<PaginatedResponse<Note>> {
+  return fetcher(withLangParam(`${API_BASE_URL}/notes?page=${page}&size=${size}`, lang));
 }
 
 export async function fetchLinks(page: number, size = 20): Promise<PaginatedResponse<Link>> {

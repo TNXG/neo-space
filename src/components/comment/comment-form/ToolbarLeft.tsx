@@ -1,6 +1,7 @@
 "use client";
 
 import type { OwOItem, OwOResponse, TurnstileStatus as TurnstileStatusType } from "./types";
+import { useTranslations } from "next-intl";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function ToolbarLeft({
   showTurnstile,
   turnstileStatus,
 }: ToolbarLeftProps) {
+  const t = useTranslations();
   return (
     <div className="flex items-center gap-3 sm:gap-4">
       {/* 表情选择器 */}
@@ -61,13 +63,13 @@ export function ToolbarLeft({
           size="sm"
           className="cursor-pointer"
         />
-        <span className="text-[11px] sm:text-xs text-muted-foreground select-none">预览</span>
+        <span className="text-[11px] sm:text-xs text-muted-foreground select-none">{t("comment.preview")}</span>
       </div>
 
       {/* 快捷键提示 */}
       <div className="hidden md:flex items-center gap-1.5">
         <KbdShortcut keys={["Ctrl", "Enter"]} />
-        <span className="text-[11px] text-muted-foreground select-none">快速发送</span>
+        <span className="text-[11px] text-muted-foreground select-none">{t("comment.quickSend")}</span>
       </div>
 
       {/* 字数统计 */}

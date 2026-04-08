@@ -1,4 +1,5 @@
 import type { Comment } from "@/types/api";
+import { getTranslations } from "next-intl/server";
 import { CommentMarkdown } from "@/components/common/markdown";
 import { getComments } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
@@ -92,11 +93,11 @@ function StaticCommentItem({
  * 静态评论列表组件
  * 服务端渲染，用于 SEO
  */
-function StaticCommentList({ comments }: { comments: Comment[] }) {
+function StaticCommentList({ comments, emptyLabel }: { comments: Comment[]; emptyLabel: string }) {
   if (comments.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        暂无评论，来抢沙发吧~
+        {emptyLabel}
       </div>
     );
   }
@@ -122,6 +123,7 @@ export async function CommentSectionServer({
   refId,
   refType,
 }: CommentSectionServerProps) {
+  const t = await getTranslations();
   let initialComments: Comment[] = [];
   let initialCount = 0;
 
@@ -147,7 +149,7 @@ export async function CommentSectionServer({
       <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
         <h2 className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold tracking-tight text-primary-900">
           <Icon icon="mingcute:message-3-line" className="w-5 h-5 sm:w-6 sm:h-6 text-accent-500 shrink-0" />
-          <span>评论</span>
+          <span>{t("comment.title")}</span>
           <span className="text-sm sm:text-base font-normal text-primary-400 ml-0.5 sm:ml-1">
             (
             {initialCount}
@@ -174,7 +176,7 @@ export async function CommentSectionServer({
         使用 CSS 隐藏，但保留在 DOM 中供 SEO
       */}
       <div className="hidden" suppressHydrationWarning>
-        <StaticCommentList comments={sortedComments} />
+        <StaticCommentList comments={sortedComments} emptyLabel={t("comment.empty")} />
       </div>
     </section>
   );

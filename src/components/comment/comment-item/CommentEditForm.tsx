@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CommentMarkdown } from "@/components/common/markdown";
@@ -34,6 +35,7 @@ export function CommentEditForm({
   onSave,
   onCancel,
 }: CommentEditFormProps) {
+  const t = useTranslations();
   const [editPreview, setEditPreview] = useState(false);
   const [showEditEmoji, setShowEditEmoji] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -79,14 +81,14 @@ export function CommentEditForm({
     try {
       const result = await updateAuthComment(commentId, { text: editContent.trim() }, token);
       if (result.code === 200) {
-        toast.success("评论更新成功");
+        toast.success(t("comment.updateSuccess"));
         onSave();
       } else {
-        toast.error(result.message || "更新失败");
+        toast.error(result.message || t("comment.updateFailed"));
       }
     } catch (error) {
       console.error("Failed to update comment:", error);
-      toast.error("更新失败，请稍后重试");
+      toast.error(t("comment.updateRetry"));
     } finally {
       setIsEditing(false);
     }
@@ -95,13 +97,13 @@ export function CommentEditForm({
   // 处理取消编辑
   const handleCancelEdit = () => {
     if (editContent.trim() !== originalText.trim()) {
-      toast("确定要取消编辑吗？未保存的更改将丢失。", {
+      toast(t("comment.cancelEditConfirm"), {
         action: {
-          label: "确定取消",
+          label: t("comment.confirmCancel"),
           onClick: onCancel,
         },
         cancel: {
-          label: "继续编辑",
+          label: t("comment.keepEditing"),
           onClick: () => {},
         },
       });
@@ -124,7 +126,7 @@ export function CommentEditForm({
           {editPreview
             ? (
                 <div className="min-h-[50px] sm:min-h-[60px] prose prose-sm prose-stone w-full min-w-0 animate-fade-in overflow-wrap-anywhere">
-                  {editContent.trim() ? <CommentMarkdown content={editContent} /> : <span className="text-muted-foreground/40 italic">预览中...</span>}
+                  {editContent.trim() ? <CommentMarkdown content={editContent} /> : <span className="text-muted-foreground/40 italic">{t("comment.previewing")}</span>}
                 </div>
               )
             : (
@@ -141,7 +143,7 @@ export function CommentEditForm({
                     }
                   }}
                   className="grow w-full min-w-0 bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 outline-none resize-y min-h-[50px] sm:min-h-[60px] max-h-[300px] sm:max-h-[400px] disabled:opacity-50"
-                  placeholder="编辑你的评论..."
+                  placeholder={t("comment.editPlaceholder")}
                   disabled={isEditing}
                   autoFocus
                   spellCheck={false}
@@ -197,7 +199,7 @@ export function CommentEditForm({
 
             <div className="flex items-center gap-1.5 sm:gap-2">
               <VerticalSlider checked={editPreview} onChange={setEditPreview} size="sm" className="cursor-pointer" />
-              <span className="text-[11px] sm:text-xs text-muted-foreground select-none">预览</span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground select-none">{t("comment.preview")}</span>
             </div>
           </div>
 
@@ -209,9 +211,9 @@ export function CommentEditForm({
               <Kbd>Ctrl</Kbd>
               <span className="text-primary-400 text-[10px]">+</span>
               <Kbd>Enter</Kbd>
-              <span className="text-muted-foreground/60 text-[10px] sm:text-xs mx-1">保存</span>
+              <span className="text-muted-foreground/60 text-[10px] sm:text-xs mx-1">{t("comment.save")}</span>
               <Kbd>Esc</Kbd>
-              <span className="text-muted-foreground/60 text-[10px] sm:text-xs ml-1">取消</span>
+              <span className="text-muted-foreground/60 text-[10px] sm:text-xs ml-1">{t("comment.cancel")}</span>
             </KbdGroup>
 
             <span className={cn(
@@ -237,7 +239,7 @@ export function CommentEditForm({
                   : (
                       <Icon icon="mingcute:check-line" className="size-3.5 sm:size-4" />
                     )}
-                <span className="hidden sm:inline">{isEditing ? "保存中..." : "保存"}</span>
+                <span className="hidden sm:inline">{isEditing ? t("comment.saving") : t("comment.save")}</span>
               </button>
 
               <button
@@ -247,7 +249,7 @@ export function CommentEditForm({
                 className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-sm h-7 sm:h-8 cursor-pointer bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
               >
                 <Icon icon="mingcute:close-line" className="size-3.5 sm:size-4" />
-                <span className="hidden sm:inline">取消</span>
+                <span className="hidden sm:inline">{t("comment.cancel")}</span>
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import type { User } from "@/types/api";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderWS } from "@/hooks/use-reader-ws";
@@ -158,6 +159,8 @@ function AlbumCover({ cover, songName, artistName }: {
   songName?: string | null;
   artistName?: string | null;
 }) {
+  const t = useTranslations();
+
   // 没有歌曲信息时不显示
   if (!songName || !cover)
     return null;
@@ -175,7 +178,7 @@ function AlbumCover({ cover, songName, artistName }: {
         <div className="h-10 w-10 rounded-lg overflow-hidden shadow-sm border border-border/50 flex-shrink-0">
           <img
             src={cover}
-            alt="正在播放"
+            alt={t("home.album.playingAlt")}
             className="h-full w-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).parentElement!.style.display = "none";
@@ -184,9 +187,9 @@ function AlbumCover({ cover, songName, artistName }: {
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-medium text-foreground">
-            正在听
-            {" "}
-            {songName}
+            {artistName
+              ? t("home.status.listeningWithArtist", { title: songName, artist: artistName })
+              : t("home.status.listening", { title: songName })}
           </span>
           {artistName && (
             <span className="text-xs text-muted-foreground">

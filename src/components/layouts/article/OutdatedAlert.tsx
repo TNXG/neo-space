@@ -1,4 +1,5 @@
 import type { TimeCapsuleResponse } from "@/types/api";
+import { getTranslations } from "next-intl/server";
 import { getTimeCapsule } from "@/lib/api-client";
 import { Icon } from "@/lib/inline-icon";
 
@@ -7,6 +8,8 @@ interface OutdatedAlertProps {
   refId: string;
   /** 关联类型 */
   refType?: "post" | "note" | "page";
+  /** 当前内容语言 */
+  lang?: string;
   /** 最后更新时间 (ISO Date string) */
   lastUpdated: string;
   /** 当前日期（用于测试，可选） */
@@ -24,11 +27,13 @@ interface OutdatedAlertProps {
 export async function OutdatedAlert({
   refId,
   refType = "post",
+  lang = "zh",
   lastUpdated,
   currentDate,
   threshold = 365,
   className = "",
 }: OutdatedAlertProps) {
+  const t = await getTranslations();
   // 计算时间差
   const now = currentDate ?? new Date();
   const updated = new Date(lastUpdated);
@@ -39,7 +44,7 @@ export async function OutdatedAlert({
   // 尝试获取已有的 AI 分析结果
   let capsule: TimeCapsuleResponse | null = null;
   try {
-    const response = await getTimeCapsule(refId);
+    const response = await getTimeCapsule(refId, refType, lang);
     if (response.status === "success" && response.data) {
       capsule = response.data;
     }
@@ -66,11 +71,11 @@ export async function OutdatedAlert({
 
   // AI 分析的敏感度标签
   const sensitivityLabel = capsule?.sensitivity === "high"
-    ? "易过期内容"
+    ? t("outdated.sensitivity.high")
     : capsule?.sensitivity === "medium"
-      ? "部分时效内容"
+      ? t("outdated.sensitivity.medium")
       : capsule?.sensitivity === "low"
-        ? "长期有效内容"
+        ? t("outdated.sensitivity.low")
         : null;
 
   return (
@@ -122,18 +127,12 @@ export async function OutdatedAlert({
               {isOutdated
                 ? (
                     <h4 className="text-base font-bold text-foreground">
-                      本文最后更新于
-                      {" "}
-                      <span className="text-accent-600 border-b-2 border-accent-300">
-                        {timeDesc}
-                      </span>
-                      {" "}
-                      前
+                      {t("outdated.updatedBefore", { time: timeDesc })}
                     </h4>
                   )
                 : (
                     <h4 className="text-base font-bold text-foreground">
-                      此文章包含时效性内容
+                      {t("outdated.timely")}
                     </h4>
                   )}
 
@@ -146,10 +145,7 @@ export async function OutdatedAlert({
                   )
                 : (
                     <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                      文中涉及的技术方案、API 或最佳实践可能已经发生演变。
-                      <span className="hidden sm:inline">
-                        建议在阅读时结合最新的官方文档或社区动态进行验证。
-                      </span>
+                      {t("outdated.fallbackReason")}
                     </p>
                   )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -25,6 +26,7 @@ interface BackToTopFabProps {
 }
 
 export function BackToTopFab({ readingProgress, scrollToTop }: BackToTopFabProps) {
+  const t = useTranslations();
   const [isSpinning, setIsSpinning] = useState(false);
 
   const handleScrollToTopAction = useCallback((e?: React.MouseEvent) => {
@@ -55,7 +57,7 @@ export function BackToTopFab({ readingProgress, scrollToTop }: BackToTopFabProps
             <button
               type="button"
               onClick={handleScrollToTopAction}
-              aria-label="返回顶部"
+              aria-label={t("nav.backToTop")}
               className={cn(FAB_BTN_CLASS, "relative")}
             >
               <svg className="absolute inset-0 w-full h-full p-0.5" viewBox="0 0 36 36">
@@ -87,7 +89,7 @@ export function BackToTopFab({ readingProgress, scrollToTop }: BackToTopFabProps
               </div>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left" sideOffset={12}>返回顶部</TooltipContent>
+          <TooltipContent side="left" sideOffset={12}>{t("nav.backToTop")}</TooltipContent>
         </Tooltip>
       </motion.div>
     </AnimatePresence>

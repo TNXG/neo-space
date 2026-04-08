@@ -1,8 +1,8 @@
 import type { SearchItem } from "./types";
 import type { SearchNoteResult, SearchPostResult } from "@/types/api";
 
-import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { useRouter } from "@/locales/navigation";
 
 interface UseSearchNavigationProps {
   onOpenChange: (open: boolean) => void;

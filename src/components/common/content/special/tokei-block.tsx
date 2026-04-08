@@ -81,11 +81,11 @@ export function TokeiBlock({ raw }: { raw: string }) {
 
       <div className="flex flex-col gap-4 border-t border-border/60 bg-zinc-50/70 px-4 py-4 text-sm dark:bg-primary-200/50 md:flex-row md:items-center md:justify-between md:px-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-primary-700 dark:text-primary-700">
-          <Metric label="Files" value={formatCompact(totals.files)} />
-          <Metric label="Lines" value={formatCompact(totals.lines)} />
-          <Metric label="Code" value={formatCompact(totals.code)} />
+          <Metric label="文件数" value={formatCompact(totals.files)} />
+          <Metric label="总行数" value={formatCompact(totals.lines)} />
+          <Metric label="代码行" value={formatCompact(totals.code)} />
           <Metric
-            label="Comments"
+            label="注释率"
             value={`${percentage(totals.comments, totals.lines)}%`}
           />
         </div>
@@ -192,7 +192,7 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
 
         if (canRenderMeta) {
           const metaLine = layoutTreemapText(
-            `${formatCompact(stat.lines)} lines`,
+            `${formatCompact(stat.lines)} 行`,
             availableTextWidth,
             TREEMAP_META_FONT,
             TREEMAP_META_LINE_HEIGHT,
@@ -288,7 +288,7 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
             <span className="text-primary-600 dark:text-primary-600">
               {formatFull(tooltip.stat.lines)}
               {" "}
-              lines
+              行
             </span>
           </div>
           <StackBar
@@ -298,13 +298,13 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
             total={tooltip.stat.lines}
           />
           <div className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-primary-700 dark:text-primary-700">
-            <span>Files</span>
+            <span>文件</span>
             <span>{formatFull(tooltip.stat.files)}</span>
-            <span>Code</span>
+            <span>代码</span>
             <span>{formatFull(tooltip.stat.code)}</span>
-            <span>Comments</span>
+            <span>注释</span>
             <span>{formatFull(tooltip.stat.comments)}</span>
-            <span>Blanks</span>
+            <span>空行</span>
             <span>{formatFull(tooltip.stat.blanks)}</span>
           </div>
         </div>
@@ -347,12 +347,12 @@ function TokeiTable({ data }: { data: LangStat[] }) {
       <table className="min-w-full text-left text-sm">
         <thead className="text-xs uppercase tracking-wide text-primary-500 dark:text-primary-500">
           <tr>
-            <th className="pb-3 font-medium">Language</th>
-            <th className="pb-3 font-medium">Files</th>
-            <th className="pb-3 font-medium">Lines</th>
-            <th className="pb-3 font-medium">Code</th>
-            <th className="pb-3 font-medium">Comments</th>
-            <th className="pb-3 font-medium">Blanks</th>
+            <th className="pb-3 font-medium">语言</th>
+            <th className="pb-3 font-medium">文件</th>
+            <th className="pb-3 font-medium">总行数</th>
+            <th className="pb-3 font-medium">代码</th>
+            <th className="pb-3 font-medium">注释</th>
+            <th className="pb-3 font-medium">空行</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/60">

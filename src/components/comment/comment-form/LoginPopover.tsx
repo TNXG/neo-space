@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { OAuthButtons } from "@/components/comment/auth/OAuthButtons";
@@ -19,6 +20,7 @@ interface LoginPopoverProps {
  * 支持外部控制状态，用于与父组件的失焦逻辑集成
  */
 export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenChange }: LoginPopoverProps = {}) {
+  const t = useTranslations();
   const [internalOpen, setInternalOpen] = useState(false);
   const { isLoading } = useOAuthStore();
 
@@ -40,7 +42,7 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
               ? "text-accent-600 bg-accent-50"
               : "text-muted-foreground hover:text-accent-600 hover:bg-primary-50/50",
           )}
-          title="登录"
+          title={t("comment.login")}
         >
           <Icon icon="mingcute:user-3-line" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
@@ -51,14 +53,14 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
         className="w-[220px] sm:w-[260px] p-4 sm:p-6"
       >
         <div className="text-center mb-4 sm:mb-5">
-          <h3 className="font-serif text-lg sm:text-xl font-medium text-foreground">登录</h3>
+          <h3 className="font-serif text-lg sm:text-xl font-medium text-foreground">{t("comment.login")}</h3>
         </div>
 
         {isLoading
           ? (
               <div className="flex flex-col items-center justify-center py-4 sm:py-6 gap-2 sm:gap-3">
                 <Icon icon="mingcute:loading-line" className="size-6 sm:size-8 text-accent-500 animate-spin" />
-                <span className="text-[11px] sm:text-xs text-muted-foreground animate-pulse">正在登录...</span>
+                <span className="text-[11px] sm:text-xs text-muted-foreground animate-pulse">{t("comment.loggingIn")}</span>
               </div>
             )
           : (
@@ -66,15 +68,15 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
                 <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-5 text-[11px] sm:text-xs text-muted-foreground">
                   <li className="flex items-center gap-2 sm:gap-3">
                     <Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
-                    <span>无需进行人机验证</span>
+                    <span>{t("comment.loginBenefit.noCaptcha")}</span>
                   </li>
                   <li className="flex items-center gap-2 sm:gap-3">
                     <Icon icon="mingcute:check-circle-line" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
-                    <span>编辑和删除自己的想法</span>
+                    <span>{t("comment.loginBenefit.manage")}</span>
                   </li>
                   <li className="flex items-center gap-2 sm:gap-3">
                     <Icon icon="mingcute:heart-fill" className="text-accent-500 shrink-0 size-3.5 sm:size-4" />
-                    <span>我喜欢你</span>
+                    <span>{t("comment.loginBenefit.like")}</span>
                   </li>
                 </ul>
 
@@ -89,7 +91,7 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
                   onClick={() => setOpen(false)}
                   className="w-full mt-3 sm:mt-4 py-1 text-[11px] sm:text-xs text-muted-foreground/60 hover:text-foreground transition-colors bg-muted/30 rounded cursor-pointer"
                 >
-                  取消
+                  {t("comment.cancel")}
                 </button>
               </div>
             )}

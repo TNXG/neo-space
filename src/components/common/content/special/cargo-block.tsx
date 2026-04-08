@@ -141,13 +141,13 @@ export function CargoBlock({ raw }: { raw: string }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-primary-700 dark:text-primary-700">
             {featureCount > 0 && (
-              <Metric label="Features" value={String(featureCount)} />
+              <Metric label="特性数" value={String(featureCount)} />
             )}
             <Metric
-              label="Deps"
+              label="依赖项"
               value={`${directCount} + ${Math.max(0, data.deps.length - directCount)}`}
             />
-            <Metric label="Size" value={formatBytes(data.total_dep_size)} />
+            <Metric label="总体积" value={formatBytes(data.total_dep_size)} />
             {data.rust_version && (
               <Metric label="MSRV" value={data.rust_version} />
             )}
@@ -284,7 +284,7 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
             + 8;
 
         if (canRenderMeta) {
-          const metaText = `${formatBytes(dep.crate_size ?? 0)} · ${dep.depth === 0 ? "direct" : `d${dep.depth}`}`;
+          const metaText = `${formatBytes(dep.crate_size ?? 0)} · ${dep.depth === 0 ? "直接依赖" : `间接(d${dep.depth})`}`;
           const metaLine = layoutTreemapText(
             metaText,
             availableTextWidth,
@@ -395,17 +395,17 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
             </span>
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-primary-700 dark:text-primary-700">
-            <span>Kind</span>
-            <span>{tooltip.dep.optional ? `${tooltip.dep.kind} (optional)` : tooltip.dep.kind}</span>
-            <span>Size</span>
+            <span>类型</span>
+            <span>{tooltip.dep.optional ? `${tooltip.dep.kind} (可选)` : tooltip.dep.kind}</span>
+            <span>体积</span>
             <span>
-              {tooltip.dep.crate_size != null ? formatBytes(tooltip.dep.crate_size) : "unknown"}
+              {tooltip.dep.crate_size != null ? formatBytes(tooltip.dep.crate_size) : "未知"}
             </span>
-            <span>Depth</span>
-            <span>{tooltip.dep.depth === 0 ? "direct" : `transitive (${tooltip.dep.depth})`}</span>
+            <span>层级</span>
+            <span>{tooltip.dep.depth === 0 ? "直接依赖" : `间接依赖 (${tooltip.dep.depth})`}</span>
             {tooltip.dep.target && (
               <>
-                <span>Target</span>
+                <span>目标</span>
                 <span>{tooltip.dep.target}</span>
               </>
             )}
@@ -450,11 +450,11 @@ function CargoTable({ data }: { data: CargoDepInfo[] }) {
       <table className="min-w-full text-left text-sm">
         <thead className="text-xs uppercase tracking-wide text-primary-500 dark:text-primary-500">
           <tr>
-            <th className="pb-3 font-medium">Crate</th>
-            <th className="pb-3 font-medium">Version</th>
-            <th className="pb-3 font-medium">Kind</th>
-            <th className="pb-3 font-medium">Depth</th>
-            <th className="pb-3 font-medium">Size</th>
+            <th className="pb-3 font-medium">依赖库</th>
+            <th className="pb-3 font-medium">版本</th>
+            <th className="pb-3 font-medium">类型</th>
+            <th className="pb-3 font-medium">层级</th>
+            <th className="pb-3 font-medium">体积</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/60">
@@ -493,7 +493,7 @@ function CargoTable({ data }: { data: CargoDepInfo[] }) {
                 </span>
               </td>
               <td className="py-3 pr-4 text-primary-700 dark:text-primary-700">
-                {dep.depth === 0 ? "direct" : dep.depth}
+                {dep.depth === 0 ? "直接依赖" : dep.depth}
               </td>
               <td className="py-3 text-primary-700 dark:text-primary-700">
                 {dep.crate_size != null ? formatBytes(dep.crate_size) : "-"}

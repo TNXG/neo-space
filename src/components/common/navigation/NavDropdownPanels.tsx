@@ -5,7 +5,7 @@ import type { ApiResponse, NavData, NavTopItem, Note, PaginatedResponse, Post, U
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 
 import { motion } from "motion/react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import useSWR from "swr";
 
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { API_BASE_URL } from "@/lib/api-client";
 import { getRelativeTime } from "@/lib/date";
 import { Icon } from "@/lib/inline-icon";
+import { Link } from "@/locales/navigation";
 import { cn } from "@/lib/utils";
 
 export interface DropdownPanelProps {
@@ -37,6 +38,7 @@ function navItemHref(item: NavTopItem) {
 }
 
 export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
+  const t = useTranslations();
   const { data, isLoading } = useSWR<ApiResponse<NavData>>(
     `${API_BASE_URL}/aggregate/nav`,
     fetcher,
@@ -71,11 +73,11 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
               ? (
                   <>
                     <span className="inline-block size-1.5 shrink-0 rounded-full bg-green-500" />
-                    <span className="truncate">在线</span>
+                    <span className="truncate">{t("nav.online")}</span>
                   </>
                 )
               : (
-                  <span className="text-muted-foreground/80">离线</span>
+                  <span className="text-muted-foreground/80">{t("nav.offline")}</span>
                 )}
           </div>
         </div>
@@ -84,7 +86,7 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
       {/* Recent activity */}
       <div className="mt-2.5 border-t border-border/60 pt-2.5">
         <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          最新动态
+          {t("nav.latestActivity")}
         </div>
         <div className="flex flex-col gap-1">
           {isLoading
@@ -111,7 +113,7 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
                       <div className="flex items-center justify-between gap-1">
                         <div className="min-w-0 truncate text-[13px] leading-snug">{item.title}</div>
                         <span className="shrink-0 text-[10px] text-muted-foreground">
-                          {item.type === "post" ? "文章" : "手记"}
+                          {item.type === "post" ? t("nav.postLabel") : t("nav.noteLabel")}
                         </span>
                       </div>
                       <div className="mt-0.5 text-[10px] text-muted-foreground">
@@ -132,21 +134,21 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
             render={<Link href="/friends" />}
             className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
           >
-            友链
+            {t("nav.friends")}
           </NavigationMenu.Link>
           <NavigationMenu.Link
             closeOnClick
             render={<Link href="/about-me" />}
             className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
           >
-            关于我
+            {t("nav.about")}
           </NavigationMenu.Link>
           <NavigationMenu.Link
             closeOnClick
             render={<Link href="/rss.xml" />}
             className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
           >
-            RSS 订阅
+            {t("nav.rss")}
           </NavigationMenu.Link>
         </div>
       </div>
@@ -158,6 +160,7 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
 //  Posts Dropdown — 分类（含文章数）+ 悬停预览文章
 // ============================================================
 export const PostsDropdown: FC<DropdownPanelProps> = () => {
+  const t = useTranslations();
   // SWR deduplicates: same key as HomeDropdown → no extra request
   const { data: navData, isLoading: isNavLoading } = useSWR<ApiResponse<NavData>>(
     `${API_BASE_URL}/aggregate/nav`,
@@ -184,7 +187,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
         {/* Left: categories */}
         <div>
           <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            分类
+            {t("nav.categories")}
           </div>
           <div className="flex flex-col gap-0.5">
             {isNavLoading
@@ -230,8 +233,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
         {/* Right: recent posts */}
         <div className="min-w-0">
           <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {categories.find(c => c.slug === activeSlug)?.name ?? "最新"}
-            的文章
+            {t("nav.postsOfCategory", { name: categories.find(c => c.slug === activeSlug)?.name ?? t("nav.latest") })}
           </div>
           <div className="flex flex-col gap-1">
             {isPostsLoading
@@ -267,12 +269,11 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
           render={<Link href="/posts" />}
           className="flex items-center justify-between text-[11px] text-muted-foreground transition-colors hover:text-accent-600"
         >
-          <span>查看全部文章</span>
+          <span>{t("nav.viewAllPosts")}</span>
           {totalCount > 0 && (
             <span>
               {totalCount}
-              {" "}
-              篇
+              {t("nav.postsUnit")}
             </span>
           )}
         </NavigationMenu.Link>
@@ -285,6 +286,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
 //  Notes Dropdown — 心情标签（左）+ 最近手记（右）
 // ============================================================
 export const NotesDropdown: FC<DropdownPanelProps> = () => {
+  const t = useTranslations();
   const { data: notesData, isLoading } = useSWR<PaginatedResponse<Note>>(
     `${API_BASE_URL}/notes?page=1&size=8`,
     fetcher,
@@ -306,7 +308,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
           {/* Left: mood tags */}
           <div>
             <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              心情
+              {t("nav.moods")}
             </div>
             <div className="flex flex-col gap-0.5">
               {isLoading
@@ -345,7 +347,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
           {/* Right: filtered notes */}
           <div className="min-w-0">
             <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              最近手记
+              {t("nav.recentNotes")}
             </div>
             <div className="flex flex-col gap-1">
               {isLoading
@@ -378,7 +380,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
                   ))}
               {!isLoading && filteredNotes.length === 0 && (
                 <div className="py-4 text-center text-xs text-muted-foreground">
-                  暂无
+                  {t("nav.none")}
                 </div>
               )}
             </div>
@@ -392,7 +394,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
             render={<Link href="/notes" />}
             className="flex items-center justify-between text-[11px] text-muted-foreground transition-colors hover:text-accent-600"
           >
-            <span>查看全部手记</span>
+            <span>{t("nav.viewAllNotes")}</span>
             <Icon icon="mingcute:arrow-right-line" className="text-xs" />
           </NavigationMenu.Link>
         </div>
@@ -404,7 +406,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
   return (
     <div className="w-70 p-3">
       <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        最近手记
+        {t("nav.recentNotes")}
       </div>
       <div className="flex flex-col gap-1">
         {isLoading
@@ -446,7 +448,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
           render={<Link href="/notes" />}
           className="flex items-center justify-between text-[11px] text-muted-foreground transition-colors hover:text-accent-600"
         >
-          <span>查看全部手记</span>
+          <span>{t("nav.viewAllNotes")}</span>
           <Icon icon="mingcute:arrow-right-line" className="text-xs" />
         </NavigationMenu.Link>
       </div>

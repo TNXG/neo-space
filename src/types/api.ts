@@ -33,6 +33,9 @@ export interface Post {
   _id: string;
   title: string;
   text: string;
+  lang: string;
+  sourceLang: string;
+  isAiTranslated: boolean;
   slug: string;
   categoryId: string;
   category?: Category;
@@ -61,6 +64,9 @@ export interface Note {
   nid: number;
   title: string;
   text: string;
+  lang: string;
+  sourceLang: string;
+  isAiTranslated: boolean;
   created: string;
   modified?: string;
   mood?: string;
@@ -316,6 +322,7 @@ export interface TimeCapsuleResponse {
 export interface TimeCapsuleRequest {
   refId: string;
   refType?: "post" | "note" | "page";
+  lang?: string;
 }
 
 /**

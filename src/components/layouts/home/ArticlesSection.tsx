@@ -1,4 +1,5 @@
 import type { Post } from "@/types/api";
+import { useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ArticlePreview } from "./ArticlePreview";
 
@@ -11,12 +12,14 @@ interface ArticlesSectionProps {
  * Displays featured article and list of recent articles
  */
 export function ArticlesSection({ articles }: ArticlesSectionProps) {
+  const t = useTranslations();
+
   return (
     <section id="articles">
       <SectionHeader
-        title="文章"
+        title={t("home.section.articles")}
         icon="mingcute:book-2-line"
-        linkText="阅读全部"
+        linkText={t("home.section.readAll")}
         linkHref="/posts"
       />
       <div className="space-y-4">

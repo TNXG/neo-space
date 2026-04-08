@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Drawer,
   DrawerBody,
@@ -12,6 +12,7 @@ import {
 
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "@/locales/navigation";
 import { NAV_ITEMS } from "./nav-config";
 
 interface MobileNavDrawerProps {
@@ -20,6 +21,7 @@ interface MobileNavDrawerProps {
 }
 
 export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
+  const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -32,8 +34,8 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader className="text-left">
-          <DrawerTitle>导航菜单</DrawerTitle>
-          <DrawerDescription>探索更多精彩内容</DrawerDescription>
+          <DrawerTitle>{t("nav.menuTitle")}</DrawerTitle>
+          <DrawerDescription>{t("nav.menuDescription")}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="px-4 py-0">
           <div className="flex flex-col gap-2 py-2">
@@ -62,7 +64,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                   </div>
                   <div className="flex flex-col">
                     <span className={cn("font-medium text-base", isActive && "font-semibold")}>
-                      {item.title}
+                      {t(`nav.${item.id}`)}
                     </span>
                   </div>
                   {isActive && (

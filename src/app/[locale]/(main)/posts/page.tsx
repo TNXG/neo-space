@@ -14,10 +14,15 @@ export const revalidate = 57600;
  * 默认显示第一页
  * 不携带任何参数，完全静态化
  */
-export default async function PostsPage() {
+export default async function PostsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const page = 1;
   const pageSize = 10;
-  const { data } = await getPosts(page, pageSize);
+  const { data } = await getPosts(page, pageSize, locale);
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-6xl">

@@ -1,4 +1,5 @@
 import type { User } from "@/types/api";
+import { useTranslations } from "next-intl";
 
 interface FooterProps {
   user: User;
@@ -9,6 +10,7 @@ interface FooterProps {
  * 显示订阅链接、版权信息和技术栈
  */
 export function Footer({ user }: FooterProps) {
+  const t = useTranslations();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -27,7 +29,7 @@ export function Footer({ user }: FooterProps) {
             {" "}
             {user.name}
             <span className="mx-2 text-neutral-300">·</span>
-            {user.introduce || "保持简单，保持思考。"}
+            {user.introduce || t("footer.defaultIntroduce")}
           </p>
 
           {/* 技术栈 & 框架信息 */}

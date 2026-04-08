@@ -9,11 +9,16 @@ export const dynamicParams = true;
  * Homepage - Server Component
  * Fetches data from API and passes to client component
  */
-export default async function Page() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   // Fetch data from backend API（使用首页专用 API，带 home 标签）
   const [postsResponse, notesResponse, recentlyResponse, profileResponse] = await Promise.all([
-    getHomePagePosts(5).catch(() => ({ data: { items: [] } })),
-    getHomePageNotes(5).catch(() => ({ data: { items: [] } })),
+    getHomePagePosts(5, locale).catch(() => ({ data: { items: [] } })),
+    getHomePageNotes(5, locale).catch(() => ({ data: { items: [] } })),
     getRecently(5).catch(() => ({ data: { items: [] } })),
     getUserProfile().catch(() => ({
       data: {

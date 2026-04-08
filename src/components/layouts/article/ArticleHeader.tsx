@@ -1,7 +1,8 @@
 import type { Category } from "@/types/api";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { SmartDate } from "@/components/common/smart-date";
 import { Icon } from "@/lib/inline-icon";
+import { Link } from "@/locales/navigation";
 
 interface ArticleHeaderProps {
   title: string;
@@ -9,6 +10,9 @@ interface ArticleHeaderProps {
   tags?: string[];
   created: string;
   modified?: string;
+  lang?: string;
+  sourceLang?: string;
+  isAiTranslated?: boolean;
   summary?: string;
   /** AI 生成的摘要 */
   aiSummary?: string;
@@ -28,10 +32,26 @@ export function ArticleHeader({
   tags = EMPTY_TAGS,
   created,
   modified,
+  lang = "zh",
+  sourceLang = "zh",
+  isAiTranslated = false,
   summary,
   aiSummary,
   typeLabel = "Article",
 }: ArticleHeaderProps) {
+  const t = useTranslations();
+  const sourceLanguageLabel = t.has(`article.language.${sourceLang}`)
+    ? t(`article.language.${sourceLang}`)
+    : sourceLang.toUpperCase();
+  const targetLanguageLabel = t.has(`article.language.${lang}`)
+    ? t(`article.language.${lang}`)
+    : lang.toUpperCase();
+  const translationType = sourceLang === lang
+    ? "original"
+    : isAiTranslated
+      ? "ai"
+      : "human";
+  const originLabel = t(`article.translationType.${translationType}`);
   // 优先使用 AI 摘要，否则使用手动摘要
   const displaySummary = aiSummary || summary;
   const isAiSummary = !!aiSummary;
@@ -55,7 +75,7 @@ export function ArticleHeader({
             <div className="flex items-center gap-1.5 mb-2">
               <Icon icon="mingcute:sparkles-line" className="w-4 h-4 text-accent-500" />
               <span className="text-xs font-medium text-accent-600">
-                AI 摘要
+                {t("article.aiSummary")}
               </span>
             </div>
           )}
@@ -80,7 +100,7 @@ export function ArticleHeader({
 
         {/* 发布日期 */}
         <span className="flex items-center gap-1.5">
-          <span className="text-muted-foreground/60">发布于</span>
+          <span className="text-muted-foreground/60">{t("article.publishedAt")}</span>
           <SmartDate date={created} />
         </span>
 
@@ -88,10 +108,18 @@ export function ArticleHeader({
         {modified && modified !== created && (
           <span className="flex items-center gap-1.5">
             <span className="text-muted-foreground/60">·</span>
-            <span className="text-muted-foreground/60">更新于</span>
+            <span className="text-muted-foreground/60">{t("article.updatedAt")}</span>
             <SmartDate date={modified} />
           </span>
         )}
+        <span className="flex items-center gap-1.5">
+          <span className="text-muted-foreground/60">·</span>
+          <span>{t("article.languageMeta", { source: sourceLanguageLabel, target: targetLanguageLabel })}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="text-muted-foreground/60">·</span>
+          <span>{t("article.translationMeta", { origin: originLabel })}</span>
+        </span>
       </div>
 
       {/* 标签 */}

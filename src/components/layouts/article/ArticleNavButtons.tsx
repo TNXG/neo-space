@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Icon } from "@/lib/inline-icon";
+import { Link, useRouter } from "@/locales/navigation";
 
 interface ArticleNavButtonsProps {
   prevLink?: string;
@@ -23,6 +23,7 @@ export function ArticleNavButtons({
   nextTitle,
   type = "post",
 }: ArticleNavButtonsProps) {
+  const t = useTranslations();
   const router = useRouter();
 
   const handleBack = () => {
@@ -32,8 +33,6 @@ export function ArticleNavButtons({
       router.push("/");
     }
   };
-
-  const contentType = type === "note" ? "手记" : "文章";
 
   return (
     <nav className="w-full mt-16 pt-6 border-t border-border/40">
@@ -47,7 +46,7 @@ export function ArticleNavButtons({
             className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             <Icon icon="mingcute:arrow-left-line" className="text-[15px]" />
-            <span>返回</span>
+            <span>{t("article.back")}</span>
           </button>
           <span className="text-border/60">/</span>
           <Link
@@ -55,7 +54,7 @@ export function ArticleNavButtons({
             className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             <Icon icon="mingcute:home-2-line" className="text-[15px]" />
-            <span>首页</span>
+            <span>{t("article.home")}</span>
           </Link>
         </div>
 
@@ -69,10 +68,10 @@ export function ArticleNavButtons({
                 className="group flex flex-col items-start gap-1.5 w-full cursor-pointer"
               >
                 <div className="text-xs text-muted-foreground">
-                  上一篇
+                  {t("article.previous")}
                 </div>
                 <div className="text-sm sm:text-base font-medium text-foreground/80 group-hover:text-accent-600 transition-colors line-clamp-2">
-                  {prevTitle || `上一篇${contentType}`}
+                  {prevTitle || t(type === "note" ? "article.previousNoteFallback" : "article.previousPostFallback")}
                 </div>
               </Link>
             )}
@@ -86,10 +85,10 @@ export function ArticleNavButtons({
                 className="group flex flex-col items-start sm:items-end gap-1.5 w-full cursor-pointer"
               >
                 <div className="text-xs text-muted-foreground">
-                  下一篇
+                  {t("article.next")}
                 </div>
                 <div className="text-sm sm:text-base font-medium text-foreground/80 group-hover:text-accent-600 transition-colors line-clamp-2">
-                  {nextTitle || `下一篇${contentType}`}
+                  {nextTitle || t(type === "note" ? "article.nextNoteFallback" : "article.nextPostFallback")}
                 </div>
               </Link>
             )}

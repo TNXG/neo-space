@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import type { Post } from "@/types/api";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PostInteractiveList } from "@/components/common/InteractiveList";
 import { getCategories, getPosts } from "@/lib/api-client";
+import { Link } from "@/locales/navigation";
 
 export const revalidate = 57600;
 export const dynamicParams = true;
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -22,31 +23,32 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const t = await getTranslations({ locale });
   try {
     const { data: categories } = await getCategories();
     const cat = categories.find(c => c.slug === slug);
     if (!cat)
-      return { title: "分类不存在" };
+      return { title: t("category.detail.notFound") };
     return {
-      title: `${cat.name} | 分类`,
-      description: `浏览「${cat.name}」下的所有文章`,
+      title: t("category.detail.metaTitle", { name: cat.name }),
+      description: t("category.detail.metaDescription", { name: cat.name }),
     };
   } catch {
-    return { title: "分类" };
+    return { title: t("category.detail.fallbackTitle") };
   }
 }
 
 /**
  * 分批获取所有已发布文章并按分类过滤
  */
-async function getPostsByCategorySlug(slug: string): Promise<{ posts: Post[]; categoryName: string }> {
+async function getPostsByCategorySlug(slug: string, locale: string): Promise<{ posts: Post[]; categoryName: string }> {
   const allPosts: Post[] = [];
   let page = 1;
   let hasMore = true;
 
   while (hasMore) {
-    const { data } = await getPosts(page, 100);
+    const { data } = await getPosts(page, 100, locale);
     allPosts.push(...(data.items as Post[]));
     hasMore = data.pagination.has_next_page;
     page++;
@@ -61,11 +63,12 @@ async function getPostsByCategorySlug(slug: string): Promise<{ posts: Post[]; ca
 }
 
 export default async function CategoryDetailPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const t = await getTranslations({ locale });
 
   const [categoriesRes, { posts, categoryName }] = await Promise.all([
     getCategories(),
-    getPostsByCategorySlug(slug),
+    getPostsByCategorySlug(slug, locale),
   ]);
 
   const categories = categoriesRes.data ?? [];
@@ -92,15 +95,11 @@ export default async function CategoryDetailPage({ params }: PageProps) {
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70" />
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-base md:text-lg lg:text-xl tracking-wide text-primary-700">
-              共
-              {" "}
-              {posts.length}
-              {" "}
-              篇文章
+              {t("category.detail.total", { count: posts.length })}
             </span>
             <span className="text-[11px] md:text-xs lg:text-sm text-primary-400/80 font-normal italic tracking-wide mt-0.5 md:mt-1 font-serif">
               <Link href="/categories" className="hover:text-accent-600 transition-colors underline underline-offset-4 decoration-accent-300/50 hover:decoration-accent-600">
-                返回全部分类
+                {t("category.detail.backToCategories")}
               </Link>
             </span>
           </div>
@@ -110,7 +109,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
 
       <PostInteractiveList
         items={posts}
-        emptyMessage="选择一篇文章查看详情"
+        emptyMessage={t("interactive.empty.post")}
         staticMode
       />
     </main>

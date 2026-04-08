@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ interface SubmitButtonProps {
  * 评论提交按钮
  */
 export function SubmitButton({ onClick, disabled, isPending }: SubmitButtonProps) {
+  const t = useTranslations();
+
   return (
     <button
       type="button"
@@ -28,7 +31,7 @@ export function SubmitButton({ onClick, disabled, isPending }: SubmitButtonProps
       {isPending
         ? <Icon icon="mingcute:loading-line" className="animate-spin size-4 sm:size-4" />
         : <Icon icon="mingcute:send-plane-fill" className="size-4 sm:size-4" />}
-      <span>发送</span>
+      <span>{t("comment.send")}</span>
     </button>
   );
 }

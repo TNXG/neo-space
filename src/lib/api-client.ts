@@ -37,6 +37,15 @@ function inferWsUrlFromApiUrl(apiUrl: string): string {
 export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 export const WS_FALLBACK_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 
+function withLangParam(endpoint: string, lang?: string): string {
+  if (!lang || lang === "zh") {
+    return endpoint;
+  }
+
+  const separator = endpoint.includes("?") ? "&" : "?";
+  return `${endpoint}${separator}lang=${encodeURIComponent(lang)}`;
+}
+
 /**
  * Generic API client with error handling and ISR support
  */
@@ -116,8 +125,8 @@ async function apiClient<T>(
 /**
  * Posts API
  */
-export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<Post>> {
-  return apiClient<PaginatedResponse<Post>>(`/posts?page=${page}&size=${size}`, {
+export async function getPosts(page = 1, size = 10, lang?: string): Promise<PaginatedResponse<Post>> {
+  return apiClient<PaginatedResponse<Post>>(withLangParam(`/posts?page=${page}&size=${size}`, lang), {
     tags: ["posts"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
@@ -126,8 +135,8 @@ export async function getPosts(page = 1, size = 10): Promise<PaginatedResponse<P
 /**
  * 首页专用 - 获取最新文章（带 home 标签）
  */
-export async function getHomePagePosts(size = 5): Promise<PaginatedResponse<Post>> {
-  return apiClient<PaginatedResponse<Post>>(`/posts?page=1&size=${size}`, {
+export async function getHomePagePosts(size = 5, lang?: string): Promise<PaginatedResponse<Post>> {
+  return apiClient<PaginatedResponse<Post>>(withLangParam(`/posts?page=1&size=${size}`, lang), {
     tags: ["posts", "home"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
@@ -136,22 +145,22 @@ export async function getHomePagePosts(size = 5): Promise<PaginatedResponse<Post
 /**
  * 首页专用 - 获取最新日记（带 home 标签）
  */
-export async function getHomePageNotes(size = 5): Promise<PaginatedResponse<Note>> {
-  return apiClient<PaginatedResponse<Note>>(`/notes?page=1&size=${size}`, {
+export async function getHomePageNotes(size = 5, lang?: string): Promise<PaginatedResponse<Note>> {
+  return apiClient<PaginatedResponse<Note>>(withLangParam(`/notes?page=1&size=${size}`, lang), {
     tags: ["notes", "home"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
-export async function getPostById(id: string): Promise<ApiResponse<Post>> {
-  return apiClient<ApiResponse<Post>>(`/posts/${id}`, {
+export async function getPostById(id: string, lang?: string): Promise<ApiResponse<Post>> {
+  return apiClient<ApiResponse<Post>>(withLangParam(`/posts/${id}`, lang), {
     tags: ["posts", `post-${id}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
-export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
-  return apiClient<ApiResponse<Post>>(`/posts/slug/${slug}`, {
+export async function getPostBySlug(slug: string, lang?: string): Promise<ApiResponse<Post>> {
+  return apiClient<ApiResponse<Post>>(withLangParam(`/posts/slug/${slug}`, lang), {
     tags: ["posts", `post-slug-${slug}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
@@ -170,22 +179,22 @@ export async function getPageBySlug(slug: string): Promise<ApiResponse<Page>> {
 /**
  * Notes API
  */
-export async function getNotes(page = 1, size = 10): Promise<PaginatedResponse<Note>> {
-  return apiClient<PaginatedResponse<Note>>(`/notes?page=${page}&size=${size}`, {
+export async function getNotes(page = 1, size = 10, lang?: string): Promise<PaginatedResponse<Note>> {
+  return apiClient<PaginatedResponse<Note>>(withLangParam(`/notes?page=${page}&size=${size}`, lang), {
     tags: ["notes"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
-export async function getNoteById(id: string): Promise<ApiResponse<Note>> {
-  return apiClient<ApiResponse<Note>>(`/notes/${id}`, {
+export async function getNoteById(id: string, lang?: string): Promise<ApiResponse<Note>> {
+  return apiClient<ApiResponse<Note>>(withLangParam(`/notes/${id}`, lang), {
     tags: ["notes", `note-${id}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
-export async function getNoteByNid(nid: number): Promise<ApiResponse<Note>> {
-  return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}`, {
+export async function getNoteByNid(nid: number, lang?: string): Promise<ApiResponse<Note>> {
+  return apiClient<ApiResponse<Note>>(withLangParam(`/notes/nid/${nid}`, lang), {
     tags: ["notes", `note-nid-${nid}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
@@ -368,9 +377,18 @@ export async function analyzeTimeCapsule(
 /**
  * 获取已有的时间胶囊分析结果（服务端专用）
  */
-export async function getTimeCapsule(refId: string): Promise<ApiResponse<TimeCapsuleResponse>> {
-  return apiClient<ApiResponse<TimeCapsuleResponse>>(`/ai/time-capsule/${refId}`, {
-    tags: ["time-capsule", `time-capsule-${refId}`],
+export async function getTimeCapsule(
+  refId: string,
+  refType: "post" | "note" | "page" = "post",
+  lang?: string,
+): Promise<ApiResponse<TimeCapsuleResponse>> {
+  const endpoint = withLangParam(
+    `/ai/time-capsule/${refId}?refType=${encodeURIComponent(refType)}`,
+    lang,
+  );
+
+  return apiClient<ApiResponse<TimeCapsuleResponse>>(endpoint, {
+    tags: ["time-capsule", `time-capsule-${refId}-${refType}-${lang || "zh"}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
