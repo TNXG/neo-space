@@ -24,10 +24,12 @@ const SIZE_TIMEOUT_SECS: u64 = 5;
 const MAX_DEPTH: usize = 3;
 const MAX_DEPS: usize = 200;
 const CONCURRENCY: usize = 10;
+const INDEX_CACHE_PREFIX: &str = "cargo_index_";
+const SIZE_CACHE_PREFIX: &str = "cargo_size_";
 
 type IndexCache = Arc<Mutex<HashMap<String, Vec<IndexEntry>>>>;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 struct IndexDependency {
     name: String,
     req: String,
@@ -38,7 +40,7 @@ struct IndexDependency {
     package: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 struct IndexEntry {
     name: String,
     vers: String,
@@ -216,7 +218,18 @@ async fn resolve_all_dependencies(
                 let state = state.clone();
                 let index_cache = Arc::clone(index_cache);
                 async move {
-                    let entries = fetch_index_entries(&state, &index_cache, &seed.name).await?;
+                    let entries = match fetch_index_entries(&state, &index_cache, &seed.name).await {
+                        Ok(entries) => entries,
+                        Err(error) => {
+                            tracing::warn!(
+                                crate = %seed.name,
+                                depth = seed.depth,
+                                "Failed to fetch dependency index during tree expansion: {:?}",
+                                error
+                            );
+                            return Ok::<_, AppError>((seed, None));
+                        }
+                    };
                     let entry = resolve_version(&entries, Some(base_version(&seed.req).as_str()))
                         .or_else(|| resolve_version(&entries, None));
                     Ok::<_, AppError>((seed, entry))
@@ -281,7 +294,18 @@ async fn resolve_all_dependencies(
                 let state = state.clone();
                 let index_cache = Arc::clone(index_cache);
                 async move {
-                    let entries = fetch_index_entries(&state, &index_cache, &seed.name).await?;
+                    let entries = match fetch_index_entries(&state, &index_cache, &seed.name).await {
+                        Ok(entries) => entries,
+                        Err(error) => {
+                            tracing::warn!(
+                                crate = %seed.name,
+                                depth = seed.depth,
+                                "Failed to fetch dependency index during version resolution: {:?}",
+                                error
+                            );
+                            return Ok::<_, AppError>((seed, None));
+                        }
+                    };
                     let entry = resolve_version(&entries, Some(base_version(&seed.req).as_str()))
                         .or_else(|| resolve_version(&entries, None));
                     Ok::<_, AppError>((seed, entry.map(|value| value.vers)))
@@ -353,12 +377,22 @@ async fn fetch_index_entries(
     name: &str,
 ) -> AppResult<Vec<IndexEntry>> {
     let cache_key = name.to_lowercase();
+    let shared_cache_key = format!("{INDEX_CACHE_PREFIX}{cache_key}");
 
     {
         let cache = index_cache.lock().await;
         if let Some(entries) = cache.get(&cache_key) {
             return Ok(entries.clone());
         }
+    }
+
+    if let Some(cached) = state.cache.get(&shared_cache_key).await {
+        let entries: Vec<IndexEntry> = serde_json::from_slice(&cached)
+            .map_err(|error| AppError::Internal(format!("Failed to decode cargo index cache: {error}")))?;
+
+        let mut cache = index_cache.lock().await;
+        cache.insert(cache_key.clone(), entries.clone());
+        return Ok(entries);
     }
 
     let url = format!("{}/{}", INDEX_BASE, index_path(name));
@@ -394,15 +428,26 @@ async fn fetch_index_entries(
     let mut cache = index_cache.lock().await;
     cache.insert(cache_key, entries.clone());
 
+    if let Ok(serialized) = serde_json::to_vec(&entries) {
+        state.cache.insert(shared_cache_key, serialized).await;
+    }
+
     Ok(entries)
 }
 
 async fn fetch_crate_size(state: &SharedState, name: &str, version: &str) -> Option<u64> {
+    let shared_cache_key = format!("{SIZE_CACHE_PREFIX}{}@{}", name.to_lowercase(), version);
+
+    if let Some(cached) = state.cache.get(&shared_cache_key).await {
+        let size = serde_json::from_slice::<Option<u64>>(&cached).ok()?;
+        return size;
+    }
+
     let url = format!("{STATIC_BASE}/{name}/{name}-{version}.crate");
 
     let response = state
         .http_client
-        .get(url)
+        .head(url)
         .timeout(Duration::from_secs(SIZE_TIMEOUT_SECS))
         .send()
         .await
@@ -412,11 +457,17 @@ async fn fetch_crate_size(state: &SharedState, name: &str, version: &str) -> Opt
         return None;
     }
 
-    response
+    let size = response
         .headers()
         .get(reqwest::header::CONTENT_LENGTH)
         .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.parse::<u64>().ok())
+        .and_then(|value| value.parse::<u64>().ok());
+
+    if let Ok(serialized) = serde_json::to_vec(&size) {
+        state.cache.insert(shared_cache_key, serialized).await;
+    }
+
+    size
 }
 
 fn resolve_version(entries: &[IndexEntry], version: Option<&str>) -> Option<IndexEntry> {
