@@ -26,11 +26,11 @@ function inferWsUrlFromApiUrl(apiUrl: string): string {
     .replace("http://", "ws://")
     .replace(API_SUFFIX_REGEX, "")
     .replace(TRAILING_SLASH_REGEX, "");
-  
+
   if (!wsUrl.endsWith("/ws")) {
     wsUrl += "/ws";
   }
-  
+
   return wsUrl;
 }
 
@@ -381,13 +381,13 @@ export async function getTimeCapsule(
   refId: string,
   refType: "post" | "note" | "page" = "post",
   lang?: string,
-): Promise<ApiResponse<TimeCapsuleResponse>> {
+): Promise<ApiResponse<TimeCapsuleResponse | null>> {
   const endpoint = withLangParam(
     `/ai/time-capsule/${refId}?refType=${encodeURIComponent(refType)}`,
     lang,
   );
 
-  return apiClient<ApiResponse<TimeCapsuleResponse>>(endpoint, {
+  return apiClient<ApiResponse<TimeCapsuleResponse | null>>(endpoint, {
     tags: ["time-capsule", `time-capsule-${refId}-${refType}-${lang || "zh"}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
