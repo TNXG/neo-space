@@ -47,6 +47,8 @@ pub struct AiTranslation {
     #[serde(default)]
     pub text: Option<String>,
     #[serde(default)]
+    pub summary: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
     #[serde(
         rename = "sourceModified",

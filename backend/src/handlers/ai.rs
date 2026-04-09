@@ -3,6 +3,7 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppJson, AppQuery, AppResult},
+    external::ai::{AiService, AiUsage, ChatMessage, ChatRole},
     models::{AiTranslation, *},
 };
 use axum::{
@@ -224,11 +225,16 @@ async fn analyze_with_openai(
     content: &str,
     lang: &str,
 ) -> Result<TimeCapsuleResult, AppError> {
-    let api_key = &state.config.openai_api_key;
-    if api_key.is_empty() {
-        return Err(AppError::Internal(
-            "OpenAI API key not configured".to_string(),
-        ));
+    let ai_service = AiService::from_database_for_usage(
+        &state.db,
+        state.http_client.clone(),
+        AiUsage::Summary,
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    if !ai_service.is_enabled() {
+        return Err(AppError::Internal("AI service is disabled".to_string()));
     }
 
     let response_language_instruction = match lang {
@@ -260,49 +266,20 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
         &content[..content.len().min(3000)]
     );
 
-    let request_body = serde_json::json!({
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 500,
-        "temperature": 0.3
-    });
-
-    let response = state
-        .http_client
-        .post("https://api.openai.com/v1/chat/completions")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&request_body)
-        .send()
+    let response = ai_service
+        .chat(
+            &[ChatMessage {
+                role: ChatRole::User,
+                content: prompt,
+            }],
+            Some(0.3),
+            Some(500),
+        )
         .await
-        .map_err(|e| AppError::Internal(format!("OpenAI request failed: {}", e)))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let text = response.text().await.unwrap_or_default();
-        return Err(AppError::Internal(format!(
-            "OpenAI API error ({}): {}",
-            status, text
-        )));
-    }
-
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to parse OpenAI response: {}", e)))?;
-
-    let content_str = json
-        .get("choices")
-        .and_then(|v| v.get(0))
-        .and_then(|v| v.get("message"))
-        .and_then(|v| v.get("content"))
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("Invalid OpenAI response format".to_string()))?;
+        .map_err(AppError::Internal)?;
 
     // Clean up potential markdown code blocks
-    let clean_content = content_str
+    let clean_content = response
         .trim()
         .trim_start_matches("```json")
         .trim_start_matches("```")
@@ -373,10 +350,6 @@ async fn analyze_and_cache_time_capsule(
         });
     }
 
-    if state.config.openai_api_key.is_empty() {
-        return Err(AppError::Internal("AI service not configured".to_string()));
-    }
-
     let result = analyze_with_openai(state, &content, &effective_lang).await?;
     let sensitivity_str = match &result.sensitivity {
         TimeSensitivity::High => "high",
@@ -427,7 +400,7 @@ pub async fn get_time_capsule(
     State(state): State<SharedState>,
     Path(ref_id): Path<String>,
     AppQuery(params): AppQuery<GetTimeCapsuleParams>,
-) -> AppResult<Json<ApiResponse<TimeCapsuleResult>>> {
+) -> AppResult<Json<ApiResponse<Option<TimeCapsuleResult>>>> {
     let collection = state.db.collection::<TimeCapsule>("time_capsules");
     let ref_type = params.ref_type.unwrap_or_else(|| "post".to_string());
     let lang = params.lang.unwrap_or_else(default_language_code);
@@ -439,16 +412,24 @@ pub async fn get_time_capsule(
             _ => TimeSensitivity::Medium,
         };
 
-        return Ok(Json(ApiResponse::success(TimeCapsuleResult {
+        return Ok(Json(ApiResponse::success(Some(TimeCapsuleResult {
             sensitivity,
             reason: cached.reason,
             markers: cached.markers,
             is_new: false,
-        })));
+        }))));
+    }
+
+    if AiService::from_database_for_usage(&state.db, state.http_client.clone(), AiUsage::Summary)
+        .await
+        .map(|service| !service.is_enabled())
+        .unwrap_or(true)
+    {
+        return Ok(Json(ApiResponse::success(None)));
     }
 
     let result = analyze_and_cache_time_capsule(&state, &collection, &ref_id, &ref_type, &lang)
         .await?;
 
-    Ok(Json(ApiResponse::success(result)))
+    Ok(Json(ApiResponse::success(Some(result))))
 }

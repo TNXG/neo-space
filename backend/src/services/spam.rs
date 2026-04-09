@@ -11,7 +11,7 @@ use bson::oid::ObjectId;
 use mongodb::{Database, bson::doc};
 use serde::Deserialize;
 
-use crate::external::ai::{AiService, ChatMessage, ChatRole};
+use crate::external::ai::{AiService, AiUsage, ChatMessage, ChatRole};
 use crate::models::CommentState;
 use crate::models::options::RawOption;
 
@@ -133,7 +133,13 @@ impl SpamDetector {
             return SpamCheckResult::default();
         }
 
-        let ai_service = match AiService::from_database(db, http_client).await {
+        let ai_service = match AiService::from_database_for_usage(
+            db,
+            http_client,
+            AiUsage::CommentReview,
+        )
+        .await
+        {
             Ok(svc) => svc,
             Err(e) => {
                 tracing::error!("Failed to create AI service for spam check: {}", e);

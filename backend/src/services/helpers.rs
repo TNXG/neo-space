@@ -85,6 +85,9 @@ pub fn apply_translation_to_post(post: &mut PostWithCategory, translation: &AiTr
     if let Some(text) = &translation.text {
         post.text = text.clone();
     }
+    if let Some(summary) = &translation.summary {
+        post.ai_summary = Some(summary.clone());
+    }
     if !translation.tags.is_empty() {
         post.tags = translation.tags.clone();
     }
@@ -100,6 +103,9 @@ pub fn apply_translation_to_note(note: &mut Note, translation: &AiTranslation) {
     }
     if let Some(text) = &translation.text {
         note.text = text.clone();
+    }
+    if let Some(summary) = &translation.summary {
+        note.ai_summary = Some(summary.clone());
     }
     if !translation.tags.is_empty() {
         // Note model currently has no tags field. Ignore intentionally.

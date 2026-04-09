@@ -19,10 +19,28 @@ pub struct AiConfig {
     pub api_key: String,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum AiUsage {
+    Summary,
+    Writer,
+    CommentReview,
+    Translation,
+}
+
 /// Raw shape of the "ai" option stored in MongoDB
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AiOptionsValue {
+    #[serde(default)]
+    providers: Vec<AiProvider>,
+    #[serde(default)]
+    summary_model: Option<AiModelSelection>,
+    #[serde(default)]
+    writer_model: Option<AiModelSelection>,
+    #[serde(default)]
+    comment_review_model: Option<AiModelSelection>,
+    #[serde(default)]
+    translation_model: Option<AiModelSelection>,
     #[serde(default)]
     enable_summary: bool,
     #[serde(default)]
@@ -31,6 +49,28 @@ struct AiOptionsValue {
     open_ai_preferred_model: String,
     #[serde(default)]
     open_ai_key: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiProvider {
+    id: String,
+    #[serde(rename = "type", default)]
+    provider_type: String,
+    #[serde(default)]
+    api_key: String,
+    #[serde(default)]
+    endpoint: String,
+    #[serde(default)]
+    default_model: String,
+    #[serde(default)]
+    enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiModelSelection {
+    provider_id: String,
 }
 
 /// Chat message role
@@ -78,8 +118,54 @@ struct OpenAIMessage {
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
+fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Option<&str> {
+    match usage {
+        AiUsage::Summary => ai_options.summary_model.as_ref().map(|model| model.provider_id.as_str()),
+        AiUsage::Writer => ai_options.writer_model.as_ref().map(|model| model.provider_id.as_str()),
+        AiUsage::CommentReview => ai_options
+            .comment_review_model
+            .as_ref()
+            .map(|model| model.provider_id.as_str()),
+        AiUsage::Translation => ai_options
+            .translation_model
+            .as_ref()
+            .map(|model| model.provider_id.as_str()),
+    }
+}
+
+fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, String> {
+    if !ai_options.providers.is_empty() {
+        let selected_provider_id = get_selected_provider_id(&ai_options, usage);
+        let provider = selected_provider_id
+            .and_then(|provider_id| ai_options.providers.iter().find(|provider| provider.id == provider_id))
+            .or_else(|| ai_options.providers.iter().find(|provider| provider.enabled))
+            .ok_or_else(|| "No enabled AI provider found".to_string())?;
+
+        if provider.provider_type != "openai" {
+            return Err(format!(
+                "Unsupported AI provider type for current backend: {}",
+                provider.provider_type
+            ));
+        }
+
+        return Ok(AiConfig {
+            enabled: provider.enabled,
+            endpoint: provider.endpoint.clone(),
+            model: provider.default_model.clone(),
+            api_key: provider.api_key.clone(),
+        });
+    }
+
+    Ok(AiConfig {
+        enabled: ai_options.enable_summary,
+        endpoint: ai_options.open_ai_endpoint,
+        model: ai_options.open_ai_preferred_model,
+        api_key: ai_options.open_ai_key,
+    })
+}
+
 /// Load AI configuration from the database
-pub async fn get_ai_config(db: &Database) -> Result<AiConfig, String> {
+pub async fn get_ai_config_for_usage(db: &Database, usage: AiUsage) -> Result<AiConfig, String> {
     let collection = db.collection::<RawOption>("options");
 
     let option = collection
@@ -96,12 +182,12 @@ pub async fn get_ai_config(db: &Database) -> Result<AiConfig, String> {
     let ai_options: AiOptionsValue =
         bson::from_document(doc.clone()).map_err(|e| format!("Failed to parse AI options: {e}"))?;
 
-    Ok(AiConfig {
-        enabled: ai_options.enable_summary,
-        endpoint: ai_options.open_ai_endpoint,
-        model: ai_options.open_ai_preferred_model,
-        api_key: ai_options.open_ai_key,
-    })
+    to_ai_config(ai_options, usage)
+}
+
+/// Load AI configuration from the database
+pub async fn get_ai_config(db: &Database) -> Result<AiConfig, String> {
+    get_ai_config_for_usage(db, AiUsage::Summary).await
 }
 
 /// OpenAI-compatible AI service
@@ -119,6 +205,16 @@ impl AiService {
     /// Create by fetching configuration from the database
     pub async fn from_database(db: &Database, client: Client) -> Result<Self, String> {
         let config = get_ai_config(db).await?;
+        Ok(Self::new(config, client))
+    }
+
+    /// Create by fetching configuration from the database for a specific usage
+    pub async fn from_database_for_usage(
+        db: &Database,
+        client: Client,
+        usage: AiUsage,
+    ) -> Result<Self, String> {
+        let config = get_ai_config_for_usage(db, usage).await?;
         Ok(Self::new(config, client))
     }
 
