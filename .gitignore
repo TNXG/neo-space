@@ -60,3 +60,4 @@ backend/data/meilisearch/
 
 # agant
 .claude
+.agents

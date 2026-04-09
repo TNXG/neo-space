@@ -10,7 +10,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black.svg)](https://nextjs.org/)
 [![Rust](https://img.shields.io/badge/Rust-1.83-orange.svg)](https://www.rust-lang.org/)
 
-[功能介绍](#-核心特性) • [快速开始](#-快速开始) • [技术文档](#-技术架构) • [在线演示](#-在线演示)
+[功能介绍](#-核心特性) • [快速开始](#-快速开始) • [技术文档](#技术架构)
 
 </div>
 
@@ -33,12 +33,12 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。采用�
 
 ### 内容管理
 
-| 功能 | 描述 |
-|-----|------|
+| 功能            | 描述                                        |
+| --------------- | ------------------------------------------- |
 | 📝 **文章系统** | 支持 Markdown、代码高亮、数学公式、图片管理 |
-| 📔 **日记系统** | Mood/Weather/Location 标签的碎片化记录 |
-| 📄 **页面系统** | 静态页面支持，关于、友链等独立页面 |
-| 🏷️ **分类管理** | 文章分类系统，支持多级分类 |
+| 📔 **日记系统** | Mood/Weather/Location 标签的碎片化记录      |
+| 📄 **页面系统** | 静态页面支持，关于、友链等独立页面          |
+| 🏷️ **分类管理** | 文章分类系统，支持多级分类                  |
 
 ### 评论系统
 
@@ -149,6 +149,8 @@ tnxg-blog/
 
 ---
 
+<a id="技术架构"></a>
+
 ## 🏗️ 技术架构
 
 ### 技术栈
@@ -182,17 +184,17 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 
 ### 技术栈总览
 
-| 层级 | 技术选型 | 版本 | 用途 |
-|------|---------|------|------|
-| 前端框架 | Next.js | 16.1.6 | SSR/SSG 框架 |
-| UI 库 | React | 19.2.4 | 用户界面 |
-| 语言 | TypeScript | 5.9.3 | 类型安全 |
-| 样式 | Tailwind CSS | 4.2.1 | 原子化 CSS |
-| 后端框架 | Axum | 0.8.8 | 异步 Web 框架 |
-| 运行时 | Tokio | 1.50.0 | 异步运行时 |
-| 数据库 | MongoDB | 7.0 | 主数据存储 |
-| 搜索引擎 | Meilisearch | - | 全文搜索 |
-| 缓存 | Moka | 0.12.14 | 内存缓存 |
+| 层级     | 技术选型     | 版本    | 用途          |
+| -------- | ------------ | ------- | ------------- |
+| 前端框架 | Next.js      | 16.1.6  | SSR/SSG 框架  |
+| UI 库    | React        | 19.2.4  | 用户界面      |
+| 语言     | TypeScript   | 5.9.3   | 类型安全      |
+| 样式     | Tailwind CSS | 4.2.1   | 原子化 CSS    |
+| 后端框架 | Axum         | 0.8.8   | 异步 Web 框架 |
+| 运行时   | Tokio        | 1.50.0  | 异步运行时    |
+| 数据库   | MongoDB      | 7.0     | 主数据存储    |
+| 搜索引擎 | Meilisearch  | -       | 全文搜索      |
+| 缓存     | Moka         | 0.12.14 | 内存缓存      |
 
 ---
 
@@ -265,11 +267,11 @@ src/
 
 混合渲染架构优化性能与 SEO：
 
-| 渲染方式 | 使用场景 | 页面示例 |
-|---------|---------|---------|
-| SSR | SEO 关键页面 | 首页、文章详情、分类列表 |
-| SSG | 静态内容 | RSS Feed |
-| CSR | 高交互组件 | 评论表单、搜索弹窗、主题切换 |
+| 渲染方式 | 使用场景     | 页面示例                     |
+| -------- | ------------ | ---------------------------- |
+| SSR      | SEO 关键页面 | 首页、文章详情、分类列表     |
+| SSG      | 静态内容     | RSS Feed                     |
+| CSR      | 高交互组件   | 评论表单、搜索弹窗、主题切换 |
 
 ---
 
@@ -331,11 +333,11 @@ backend/src/
 
 基于 `tokio::spawn` 的异步任务系统：
 
-| 任务类型 | 执行方式 | 功能 |
-|---------|---------|------|
-| 友链健康检查 | 定时任务 | 检测友链可用性 |
-| 网易云音乐状态 | 轮询任务 | 更新当前播放状态 |
-| Change Stream | 持久监听 | 监听数据库变更并广播 |
+| 任务类型       | 执行方式 | 功能                 |
+| -------------- | -------- | -------------------- |
+| 友链健康检查   | 定时任务 | 检测友链可用性       |
+| 网易云音乐状态 | 轮询任务 | 更新当前播放状态     |
+| Change Stream  | 持久监听 | 监听数据库变更并广播 |
 
 ---
 
@@ -345,7 +347,7 @@ backend/src/
 
 #### Post (文章模型)
 
-- **基础字段**：_id, title, text, slug, categoryId
+- **基础字段**：\_id, title, text, slug, categoryId
 - **分类关联**：category (查询时填充)
 - **摘要**：summary (手动), aiSummary (AI 生成)
 - **标签**：tags 数组
@@ -354,13 +356,13 @@ backend/src/
 
 #### Note (日记模型)
 
-- **基础字段**：_id, nid (数字 ID), title, text
+- **基础字段**：\_id, nid (数字 ID), title, text
 - **情境标签**：mood, weather, location
 - **配置**：allowComment, isPublished, bookmark
 
 #### Comment (评论模型)
 
-- **基础字段**：_id, ref, refType, author, mail, link
+- **基础字段**：\_id, ref, refType, author, mail, link
 - **内容**：text (Markdown)
 - **状态**：state (0=未读, 1=已读, 2=垃圾, 3=隐藏)
 - **功能**：pin (置顶), isWhispers (悄悄说)
@@ -369,13 +371,13 @@ backend/src/
 
 #### User (用户模型)
 
-- **基础字段**：_id, username, mail, role
+- **基础字段**：\_id, username, mail, role
 - **认证**：password, accounts (OAuth 账号)
 - **资料**：avatar, website, bio
 
 #### Link (友链模型)
 
-- **基础字段**：_id, name, url, description, avatar
+- **基础字段**：\_id, name, url, description, avatar
 - **状态**：active, isPublished
 - **健康检查**：healthStatus, lastChecked, responseTime
 - **技术栈**：techStack 数组
@@ -383,14 +385,14 @@ backend/src/
 
 ### 数据库索引设计
 
-| 集合 | 索引字段 | 类型 |
-|------|---------|------|
-| posts | slug, categoryId, created | 唯一/普通 |
-| notes | nid, created | 唯一/普通 |
-| comments | ref+refType, rid, created | 复合/普通 |
-| users | username, accounts.providerId | 唯一 |
-| links | url, active | 唯一/普通 |
-| categories | slug, name | 唯一 |
+| 集合       | 索引字段                      | 类型      |
+| ---------- | ----------------------------- | --------- |
+| posts      | slug, categoryId, created     | 唯一/普通 |
+| notes      | nid, created                  | 唯一/普通 |
+| comments   | ref+refType, rid, created     | 复合/普通 |
+| users      | username, accounts.providerId | 唯一      |
+| links      | url, active                   | 唯一/普通 |
+| categories | slug, name                    | 唯一      |
 
 ---
 
@@ -423,6 +425,7 @@ backend/src/
 ### 标准响应格式
 
 **成功响应**：
+
 ```json
 {
   "code": 200,
@@ -433,13 +436,14 @@ backend/src/
 ```
 
 **分页响应**：
+
 ```json
 {
   "code": 200,
   "status": "success",
   "message": "获取成功",
   "data": {
-    "items": [ /* 数据列表 */ ],
+    "items": [],
     "pagination": {
       "total": 100,
       "current_page": 1,
@@ -453,6 +457,7 @@ backend/src/
 ```
 
 **错误响应**：
+
 ```json
 {
   "code": 400,
@@ -474,13 +479,13 @@ backend/src/
 
 支持的事件类型：
 
-| 事件类型 | 说明 |
-|---------|------|
-| comment.created | 新评论创建 |
-| comment.updated | 评论更新 |
-| comment.deleted | 评论删除 |
-| post.created | 文章发布 |
-| post.updated | 文章更新 |
+| 事件类型            | 说明             |
+| ------------------- | ---------------- |
+| comment.created     | 新评论创建       |
+| comment.updated     | 评论更新         |
+| comment.deleted     | 评论删除         |
+| post.created        | 文章发布         |
+| post.updated        | 文章更新         |
 | link.health_changed | 友链健康状态变化 |
 
 ### 广播机制
@@ -642,23 +647,23 @@ CDN / WAF (Cloudflare)
 
 ### 前端优化
 
-| 优化项 | 技术 | 效果 |
-|-------|------|------|
-| 代码分割 | Next.js 动态导入 | 减少初始加载体积 |
-| 图片优化 | next/image + blur placeholder | 提升感知性能 |
-| 预取 | Link prefetch | 即时页面切换 |
-| 并行数据获取 | Promise.all | 减少 TTFB |
-| 服务端组件 | Server Components | 减少客户端 JS |
+| 优化项       | 技术                          | 效果             |
+| ------------ | ----------------------------- | ---------------- |
+| 代码分割     | Next.js 动态导入              | 减少初始加载体积 |
+| 图片优化     | next/image + blur placeholder | 提升感知性能     |
+| 预取         | Link prefetch                 | 即时页面切换     |
+| 并行数据获取 | Promise.all                   | 减少 TTFB        |
+| 服务端组件   | Server Components             | 减少客户端 JS    |
 
 ### 后端优化
 
-| 优化项 | 技术 | 效果 |
-|-------|------|------|
-| 连接池 | MongoDB 连接池 | 复用数据库连接 |
-| 查询优化 | 索引 + 投影 | 减少查询时间 |
-| 批量处理 | bulk_write | 减少网络往返 |
-| 异步任务 | tokio::spawn | 非阻塞执行 |
-| 内存缓存 | Moka | 减少数据库查询 |
+| 优化项   | 技术           | 效果           |
+| -------- | -------------- | -------------- |
+| 连接池   | MongoDB 连接池 | 复用数据库连接 |
+| 查询优化 | 索引 + 投影    | 减少查询时间   |
+| 批量处理 | bulk_write     | 减少网络往返   |
+| 异步任务 | tokio::spawn   | 非阻塞执行     |
+| 内存缓存 | Moka           | 减少数据库查询 |
 
 ### 监控与日志
 

@@ -5,6 +5,8 @@ const atf = antfu({
     "src/components/ui/**",
     "node_modules/**",
     "backend/target/**",
+    ".agents/**",
+    "**/AGANT.md",
   ],
   formatters: true,
   react: true,

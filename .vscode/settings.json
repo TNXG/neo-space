@@ -49,6 +49,7 @@
     "postcss"
   ],
   "i18n-ally.localesPaths": [
-    "src/locales"
-  ]
+    "src/locales/messages"
+  ],
+  "i18n-ally.keystyle": "flat"
 }
