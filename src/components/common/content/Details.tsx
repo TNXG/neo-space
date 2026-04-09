@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ReactElement, ReactNode } from "react";
 import {
   Children,
@@ -12,11 +13,12 @@ import { Icon } from "@/lib/inline-icon";
 import styles from "./Details.module.scss";
 
 export function Details({ children, open = false }: { children: ReactNode; open?: boolean }) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(open);
   const [isAnimating, setIsAnimating] = useState(false);
 
   // 1. 增强型提取逻辑
-  let summaryContent: ReactNode = "详情";
+  let summaryContent: ReactNode = t("common.details.summary");
   const otherChildren: ReactNode[] = [];
 
   // eslint-disable-next-line react/no-children-to-array
@@ -61,7 +63,7 @@ export function Details({ children, open = false }: { children: ReactNode; open?
         className={styles.summary}
         onClick={toggle}
         aria-expanded={isOpen}
-        aria-label={`${isOpen ? "收起" : "展开"}详情`}
+        aria-label={isOpen ? t("common.details.collapse") : t("common.details.expand")}
       >
         <div className={styles.chevronBox}>
           <Icon

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { Icon } from "@/lib/inline-icon";
 import { Link } from "@/locales/navigation";
@@ -12,23 +13,8 @@ import { Link } from "@/locales/navigation";
  * 3. 优化了光晕在小屏幕上的尺寸
  */
 export default function NotFound() {
+  const t = useTranslations();
   const mounted = useHasMounted();
-  const isJapanese = typeof window !== "undefined" && window.location.pathname.startsWith("/ja");
-  const copy = isJapanese
-    ? {
-        title: "星の海で道に迷いました",
-        description: "お探しのページは宇宙の奥へ漂っていったようです。もともと存在しなかったのかもしれません。",
-        home: "ホームへ戻る",
-        back: "前のページへ戻る",
-        signalLost: "Signal Lost",
-      }
-    : {
-        title: "迷失在星海",
-        description: "你所寻找的页面似乎飘向了宇宙深处，或许它从未存在过。",
-        home: "返回首页",
-        back: "返回上页",
-        signalLost: "Signal Lost",
-      };
 
   return (
     <div className="fixed inset-0 z-50 font-sans w-full flex items-center justify-center bg-background text-foreground overflow-hidden p-4 sm:p-6">
@@ -68,10 +54,10 @@ export default function NotFound() {
           <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 w-full relative z-10">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1.5 tracking-tight">
-                {copy.title}
+                {t("notFound.title")}
               </h2>
               <p className="text-[10px] sm:text-xs font-medium tracking-[0.2em] sm:tracking-[0.3em] text-accent-600/70 uppercase font-mono">
-                Lost in Starlight
+                {t("notFound.eyebrow")}
               </p>
             </div>
 
@@ -84,7 +70,7 @@ export default function NotFound() {
 
             {/* 文案：移动端限制宽度以增加可读性 */}
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-65 sm:max-w-none mx-auto">
-              {copy.description}
+              {t("notFound.description")}
             </p>
           </div>
 
@@ -100,7 +86,7 @@ export default function NotFound() {
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
               </div>
               <Icon icon="mingcute:home-3-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>{copy.home}</span>
+              <span>{t("notFound.home")}</span>
             </Link>
 
             <button
@@ -111,7 +97,7 @@ export default function NotFound() {
               cursor-pointer select-none text-sm sm:text-base"
             >
               <Icon icon="mingcute:arrow-left-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>{copy.back}</span>
+              <span>{t("notFound.back")}</span>
             </button>
           </div>
         </div>
@@ -123,7 +109,7 @@ export default function NotFound() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
             </span>
-            <span>{copy.signalLost}</span>
+            <span>{t("notFound.signalLost")}</span>
           </div>
           <div>ERR: 404</div>
         </div>

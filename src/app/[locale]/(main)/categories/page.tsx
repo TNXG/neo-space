@@ -63,7 +63,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
             {t("category.title")}
           </h1>
           <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-accent-600/60 uppercase mt-1 font-mono">
-            Categories
+            {t("category.eyebrow")}
           </span>
         </div>
 
@@ -71,10 +71,10 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70" />
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-base md:text-lg lg:text-xl tracking-wide text-primary-700">
-              {t("category.summary", { categories: categories.length, posts: allPosts.length })}
+              {t("category.summary")}
             </span>
             <span className="text-[11px] md:text-xs lg:text-sm text-primary-400/80 font-normal italic tracking-wide mt-0.5 md:mt-1 font-serif">
-              Organized by topics
+              {t("category.summaryAlt")}
             </span>
           </div>
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70" />

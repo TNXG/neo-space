@@ -1,6 +1,7 @@
 "use client";
 
 import ExifReader from "exifreader";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KbdShortcut } from "@/components/ui/kbd";
@@ -83,6 +84,7 @@ function extractMetadataByPriority(tags: ExifReader.ExpandedTags): ExifData {
 }
 
 export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageFigureProps) {
+  const t = useTranslations();
   const [isSmall, setIsSmall] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -183,7 +185,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
           <span
             className="absolute inset-0 flex items-center justify-center bg-primary-100 dark:bg-primary-800 rounded-md cursor-pointer text-primary-400 hover:text-primary-500 transition-colors"
             onClick={handleRetry}
-            title="图片加载失败，点击重试"
+            title={t("common.imageFigure.retryLoad")}
           >
             <Icon icon="mingcute:close-circle-dash-line" width={16} height={16} />
           </span>
@@ -244,10 +246,10 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
             <span
               className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-primary-400/70 cursor-pointer hover:bg-primary-100/50 dark:hover:bg-primary-800/50 transition-colors"
               onClick={handleRetry}
-              title="图片加载失败，点击重试"
+              title={t("common.imageFigure.retryLoad")}
             >
               <Icon icon="mingcute:close-circle-dash-line" className={isBlock ? "w-8 h-8 md:w-10 md:h-10" : "w-5 h-5"} />
-              {isBlock && <span className="text-xs md:text-sm font-medium">重新加载</span>}
+              {isBlock && <span className="text-xs md:text-sm font-medium">{t("common.imageFigure.reload")}</span>}
             </span>
           )}
           {!isError && (
@@ -258,7 +260,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
                 e.stopPropagation();
                 setIsOpen(true);
               }}
-              title="点击放大"
+              title={t("common.imageFigure.zoomIn")}
             />
           )}
           {exif && !isError && (
@@ -295,6 +297,7 @@ function LightboxPortal({
   exif: ExifData | null;
   onClose: () => void;
 }) {
+  const t = useTranslations();
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -506,7 +509,7 @@ function LightboxPortal({
           e.stopPropagation();
           handleClose();
         }}
-        aria-label="Close"
+        aria-label={t("common.imageFigure.close")}
       >
         <Icon icon="mingcute:close-line" width={20} height={20} className="md:w-6 md:h-6" />
       </button>
@@ -551,14 +554,14 @@ function LightboxPortal({
         {/* 缩放提示 - 移动端显示捏合，桌面端显示滚轮 */}
         <div className="flex md:hidden items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
           <Icon icon="mingcute:finger-tap-line" width={14} height={14} />
-          <span>双指捏合缩放</span>
+          <span>{t("common.imageFigure.pinchToZoom")}</span>
         </div>
         <div className="hidden md:flex items-center gap-2 text-white/70 text-xs select-none bg-black/30 px-2.5 py-1 rounded-lg backdrop-blur-sm">
           <Icon icon="mingcute:mouse-line" width={14} height={14} />
-          <span>滚轮缩放</span>
+          <span>{t("common.imageFigure.wheelToZoom")}</span>
           <span className="mx-1">·</span>
           <KbdShortcut keys={["Esc"]} variant="lightbox" />
-          <span>关闭</span>
+          <span>{t("common.imageFigure.close")}</span>
         </div>
 
         {exif && (

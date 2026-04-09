@@ -1,5 +1,7 @@
 "use client";
 
+import type { AppLocale } from "@/locales";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { CreativeCommonsIcon } from "@/lib/file-icons";
 import { Icon } from "@/lib/inline-icon";
@@ -8,73 +10,70 @@ type LicenseAtom = "CC" | "BY" | "NC" | "ND" | "SA" | "ZERO";
 
 interface LicenseConfig {
   code: string;
-  name: string;
   atoms: LicenseAtom[];
-  url: string;
 }
 
 const LICENSES: Record<string, LicenseConfig> = {
   "BY-NC-SA": {
     code: "CC BY-NC-SA 4.0",
-    name: "署名-非商业性使用-相同方式共享",
     atoms: ["CC", "BY", "NC", "SA"],
-    url: "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh",
   },
   "BY-NC-ND": {
     code: "CC BY-NC-ND 4.0",
-    name: "署名-非商业性使用-禁止演绎",
     atoms: ["CC", "BY", "NC", "ND"],
-    url: "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh",
   },
   "BY": {
     code: "CC BY 4.0",
-    name: "署名",
     atoms: ["CC", "BY"],
-    url: "https://creativecommons.org/licenses/by/4.0/deed.zh",
   },
   "CC0": {
     code: "CC0 1.0",
-    name: "公共领域贡献宣告",
     atoms: ["ZERO"],
-    url: "https://creativecommons.org/publicdomain/zero/1.0/deed.zh",
   },
 };
 
-const ATOM_DATA: Record<
-  LicenseAtom,
-  { icon: string; label: string; desc: string }
-> = {
+const ATOM_DATA: Record<LicenseAtom, { icon: string; label: string }> = {
   CC: {
     icon: "simple-icons:creativecommons",
     label: "CC",
-    desc: "知识共享许可",
   },
   BY: {
     icon: "mingcute:user-4-line",
     label: "BY",
-    desc: "署名：必须保留原作者署名",
   },
   NC: {
     icon: "mingcute:currency-dollar-line",
     label: "NC",
-    desc: "非商业：禁止用于商业目的",
   },
   ND: {
     icon: "mingcute:balance-line",
     label: "ND",
-    desc: "禁止演绎：必须保持原样",
   },
   SA: {
     icon: "mingcute:refresh-2-line",
     label: "SA",
-    desc: "相同方式共享：以同协议发布",
   },
   ZERO: {
     icon: "mingcute:hashtag-line",
     label: "CC0",
-    desc: "公有领域：放弃所有权利",
   },
 };
+
+function getCreativeCommonsDeedUrl(licenseType: keyof typeof LICENSES, locale: AppLocale) {
+  const localeSuffix = locale === "ja" ? "ja" : "zh";
+
+  switch (licenseType) {
+    case "BY-NC-ND":
+      return `https://creativecommons.org/licenses/by-nc-nd/4.0/deed.${localeSuffix}`;
+    case "BY":
+      return `https://creativecommons.org/licenses/by/4.0/deed.${localeSuffix}`;
+    case "CC0":
+      return `https://creativecommons.org/publicdomain/zero/1.0/deed.${localeSuffix}`;
+    case "BY-NC-SA":
+    default:
+      return `https://creativecommons.org/licenses/by-nc-sa/4.0/deed.${localeSuffix}`;
+  }
+}
 
 interface CopyrightCardPropsBase {
   licenseType?: keyof typeof LICENSES;
@@ -107,7 +106,11 @@ export function CopyrightCard({
   postTitle,
   className = "",
 }: CopyrightCardProps) {
+  const t = useTranslations();
+  const locale = useLocale() as AppLocale;
   const config = LICENSES[licenseType] || LICENSES["BY-NC-SA"];
+  const normalizedLicenseType = (LICENSES[licenseType] ? licenseType : "BY-NC-SA") as keyof typeof LICENSES;
+  const licenseUrl = getCreativeCommonsDeedUrl(normalizedLicenseType, locale);
   const [hoveredAtom, setHoveredAtom] = useState<LicenseAtom | null>(null);
   const [displayedAtom, setDisplayedAtom] = useState<LicenseAtom | null>(null);
   const [copied, setCopied] = useState(false);
@@ -167,7 +170,7 @@ export function CopyrightCard({
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary-500 uppercase">
-                <span> Copyright & License</span>
+                <span>{t("copyrightCard.title")}</span>
               </div>
 
               <div className="flex flex-col">
@@ -203,7 +206,7 @@ export function CopyrightCard({
                 icon={copied ? "mingcute:check-line" : "mingcute:copy-2-line"}
                 className="text-base"
               />
-              <span>{copied ? "已复制" : "复制引用"}</span>
+              <span>{copied ? t("copyrightCard.copied") : t("copyrightCard.copyCitation")}</span>
             </button>
           </div>
 
@@ -261,14 +264,14 @@ export function CopyrightCard({
                       {ATOM_DATA[atom].label}
                     </span>
                     <span className="text-primary-600 font-medium">
-                      {ATOM_DATA[atom].desc}
+                      {t(`copyrightCard.atom.${atom}.description`)}
                     </span>
                   </div>
                 </div>
               ))}
               {/* 默认显示的许可协议链接 */}
               <a
-                href={config.url}
+                href={licenseUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`flex items-center gap-1 text-primary-500 hover:text-accent-600 transition-opacity duration-200 group ${
@@ -276,9 +279,9 @@ export function CopyrightCard({
                 }`}
               >
                 <Icon icon="mingcute:information-line" className="text-base" />
-                <span>许可协议：</span>
+                <span>{t("copyrightCard.licenseLabel")}</span>
                 <span className="font-semibold underline decoration-dashed decoration-primary-300 underline-offset-4 group-hover:decoration-accent-400">
-                  {config.name}
+                  {t(`copyrightCard.license.${normalizedLicenseType}.name`)}
                 </span>
               </a>
             </div>

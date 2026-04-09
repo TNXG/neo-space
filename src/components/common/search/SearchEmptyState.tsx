@@ -10,6 +10,8 @@ interface SearchEmptyStateProps {
 
 export function SearchEmptyState({ hasQuery, query }: SearchEmptyStateProps) {
   const t = useTranslations();
+  const emptyPrefix = t("search.empty.prefix");
+  const emptySuffix = t("search.empty.suffix");
 
   if (!hasQuery) {
     return (
@@ -25,15 +27,19 @@ export function SearchEmptyState({ hasQuery, query }: SearchEmptyStateProps) {
     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
       <Icon icon="mingcute:file-unknown-line" className="text-3xl mb-2 opacity-30" />
       <p className="text-sm">
-        {t("search.empty.prefix")}
-        {" "}
+        {emptyPrefix && (
+          <>
+            {emptyPrefix}
+            {" "}
+          </>
+        )}
         <span className="text-foreground font-medium">
           &quot;
           {query}
           &quot;
         </span>
         {" "}
-        {t("search.empty.suffix")}
+        {emptySuffix}
       </p>
     </div>
   );

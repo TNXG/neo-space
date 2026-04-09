@@ -1,5 +1,5 @@
-import { SmartDate } from "@/components/common/smart-date";
 import { useTranslations } from "next-intl";
+import { SmartDate } from "@/components/common/smart-date";
 
 interface NoteHeaderProps {
   title: string;

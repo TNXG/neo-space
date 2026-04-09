@@ -13,6 +13,8 @@ import {
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/locales/navigation";
+
+import { LanguageSwitch } from "./LanguageSwitch";
 import { NAV_ITEMS } from "./nav-config";
 
 interface MobileNavDrawerProps {
@@ -75,6 +77,10 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                 </button>
               );
             })}
+          </div>
+
+          <div className="mt-6 border-t border-border/60 pt-4">
+            <LanguageSwitch onLocaleChange={() => onOpenChange(false)} />
           </div>
         </DrawerBody>
         <div className="h-6" />

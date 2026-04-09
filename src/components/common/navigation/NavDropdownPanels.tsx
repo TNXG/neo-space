@@ -13,8 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { API_BASE_URL } from "@/lib/api-client";
 import { getRelativeTime } from "@/lib/date";
 import { Icon } from "@/lib/inline-icon";
-import { Link } from "@/locales/navigation";
 import { cn } from "@/lib/utils";
+import { Link } from "@/locales/navigation";
 
 export interface DropdownPanelProps {
   user?: User;
@@ -37,6 +37,17 @@ function withLangParam(url: string, lang?: string) {
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}lang=${encodeURIComponent(lang)}`;
 }
+
+function createSkeletonKeys(prefix: string, count: number) {
+  return Array.from({ length: count }, (_, index) => `${prefix}-${index + 1}`);
+}
+
+const RECENT_ACTIVITY_SKELETON_KEYS = createSkeletonKeys("recent-skeleton", 3);
+const CATEGORY_SKELETON_KEYS = createSkeletonKeys("cat-skeleton", 4);
+const POST_SKELETON_KEYS = createSkeletonKeys("posts-skeleton", 4);
+const MOOD_SKELETON_KEYS = createSkeletonKeys("mood-skeleton", 3);
+const NOTE_SKELETON_KEYS = createSkeletonKeys("notes-skeleton", 4);
+const ALL_NOTES_SKELETON_KEYS = createSkeletonKeys("allnotes-skeleton", 4);
 
 // ============================================================
 //  Home Dropdown — 用户卡片 + 最新动态 + 快捷页面
@@ -103,8 +114,8 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
         <div className="flex flex-col gap-1">
           {isLoading
             ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={`recent-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                RECENT_ACTIVITY_SKELETON_KEYS.map(skeletonKey => (
+                  <div key={skeletonKey} className="rounded-xl px-2.5 py-2">
                     <div className="flex items-center justify-between gap-1 mb-1.5">
                       <Skeleton className="h-4 w-2/3" />
                       <Skeleton className="h-3 w-8" />
@@ -207,8 +218,8 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
           <div className="flex flex-col gap-0.5">
             {isNavLoading
               ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={`cat-skeleton-${i}`} className="flex items-center justify-between rounded-lg px-2.5 py-2">
+                  CATEGORY_SKELETON_KEYS.map(skeletonKey => (
+                    <div key={skeletonKey} className="flex items-center justify-between rounded-lg px-2.5 py-2">
                       <Skeleton className="h-4 w-16" />
                       <Skeleton className="h-3 w-6" />
                     </div>
@@ -253,8 +264,8 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
           <div className="flex flex-col gap-1">
             {isPostsLoading
               ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={`posts-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                  POST_SKELETON_KEYS.map(skeletonKey => (
+                    <div key={skeletonKey} className="rounded-xl px-2.5 py-2">
                       <Skeleton className="h-4 w-3/4 mb-1.5" />
                       <Skeleton className="h-3 w-1/4" />
                     </div>
@@ -329,8 +340,8 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
             <div className="flex flex-col gap-0.5">
               {isLoading
                 ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <div key={`mood-skeleton-${i}`} className="px-2.5 py-2">
+                    MOOD_SKELETON_KEYS.map(skeletonKey => (
+                      <div key={skeletonKey} className="px-2.5 py-2">
                         <Skeleton className="h-4 w-12" />
                       </div>
                     ))
@@ -368,8 +379,8 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
             <div className="flex flex-col gap-1">
               {isLoading
                 ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <div key={`notes-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+                    NOTE_SKELETON_KEYS.map(skeletonKey => (
+                      <div key={skeletonKey} className="rounded-xl px-2.5 py-2">
                         <Skeleton className="h-4 w-3/4 mb-1.5" />
                         <Skeleton className="h-3 w-1/3" />
                       </div>
@@ -427,8 +438,8 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
       <div className="flex flex-col gap-1">
         {isLoading
           ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={`allnotes-skeleton-${i}`} className="rounded-xl px-2.5 py-2">
+              ALL_NOTES_SKELETON_KEYS.map(skeletonKey => (
+                <div key={skeletonKey} className="rounded-xl px-2.5 py-2">
                   <Skeleton className="h-4 w-3/4 mb-1.5" />
                   <Skeleton className="h-3 w-1/3" />
                 </div>

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Tooltip,
   TooltipContent,
@@ -13,6 +14,7 @@ import {
   getRelativeTime,
   shouldShowRelative,
 } from "@/lib/date";
+import type { AppLocale } from "@/locales";
 import { cn } from "@/lib/utils";
 
 export type DateDisplayMode = "auto" | "absolute" | "relative";
@@ -57,6 +59,8 @@ export function SmartDate({
   className,
   showTooltip = true,
 }: SmartDateProps) {
+  const locale = useLocale() as AppLocale;
+  const t = useTranslations("smartDate");
   const { displayText, tooltipContent, isoString } = useMemo(() => {
     // 优先使用修改时间，如果没有则使用创建时间
     const displayDate = modifiedDate || date;
@@ -69,36 +73,39 @@ export function SmartDate({
           : new Date(displayDate);
 
     const iso = parsedDisplayDate.toISOString();
-    const createdFull = getFullDateTime(date);
+    const invalidDateLabel = t("invalid");
+    const createdFull = getFullDateTime(date, locale, invalidDateLabel);
 
     let text: string;
     switch (mode) {
       case "absolute":
-        text = formatSmartDate(displayDate);
+        text = formatSmartDate(displayDate, locale, invalidDateLabel);
         break;
       case "relative":
-        text = getRelativeTime(displayDate);
+        text = getRelativeTime(displayDate, locale, invalidDateLabel);
         break;
       case "auto":
       default:
         text = shouldShowRelative(displayDate, threshold)
-          ? getRelativeTime(displayDate)
-          : formatSmartDate(displayDate);
+          ? getRelativeTime(displayDate, locale, invalidDateLabel)
+          : formatSmartDate(displayDate, locale, invalidDateLabel);
         break;
     }
 
     // 构建 tooltip 内容
     let tooltip: React.ReactNode;
     if (modifiedDate) {
-      const modifiedFull = getFullDateTime(modifiedDate);
+      const modifiedFull = getFullDateTime(modifiedDate, locale, invalidDateLabel);
       tooltip = (
         <div className="flex flex-col gap-1 text-xs">
           <div>
-            创建于:
+            {t("createdAt")}
+            :
             {createdFull}
           </div>
           <div>
-            修改于:
+            {t("updatedAt")}
+            :
             {modifiedFull}
           </div>
         </div>
@@ -112,7 +119,7 @@ export function SmartDate({
       tooltipContent: tooltip,
       isoString: iso,
     };
-  }, [date, modifiedDate, mode, threshold]);
+  }, [date, locale, mode, modifiedDate, t, threshold]);
 
   const timeElement = (
     <time

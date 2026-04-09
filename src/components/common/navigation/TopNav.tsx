@@ -18,6 +18,7 @@ import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link, usePathname, useRouter } from "@/locales/navigation";
 
+import { LanguageSwitch } from "./LanguageSwitch";
 import { NAV_ITEMS } from "./nav-config";
 import styles from "./nav-menu.module.scss";
 import { dropdownPanelMap } from "./NavDropdownPanels";
@@ -267,6 +268,11 @@ export function TopNav({
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={12}>{t("nav.search")}</TooltipContent>
           </Tooltip>
+
+          <LanguageSwitch
+            compact
+            className={cn("pointer-events-auto", navAnimClass)}
+          />
 
           {/* Theme toggle */}
           <ThemeToggle className={cn("pointer-events-auto", ACTION_BTN_CLASS, navAnimClass)} iconClassName="text-lg md:text-xl" />

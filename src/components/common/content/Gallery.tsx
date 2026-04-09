@@ -1,6 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Icon } from "@/lib/inline-icon";
@@ -19,6 +20,7 @@ interface GalleryProps {
  * Gallery 组件 - 图片画廊展示
  */
 export function Gallery({ images, className }: GalleryProps) {
+  const t = useTranslations();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -84,7 +86,7 @@ export function Gallery({ images, className }: GalleryProps) {
             >
               <img
                 src={image.url}
-                alt={image.alt || `Gallery image ${idx + 1}`}
+                alt={image.alt || t("common.gallery.imageAlt", { index: idx + 1 })}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 33vw"
               />
@@ -104,7 +106,7 @@ export function Gallery({ images, className }: GalleryProps) {
             type="button"
             onClick={handleClose}
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
-            aria-label="Close"
+            aria-label={t("common.gallery.close")}
           >
             <Icon icon="mingcute:close-line" width={32} height={32} />
           </button>
@@ -116,7 +118,7 @@ export function Gallery({ images, className }: GalleryProps) {
               handlePrev();
             }}
             className="absolute left-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
-            aria-label="Previous"
+            aria-label={t("common.gallery.previous")}
           >
             <Icon icon="mingcute:left-line" width={32} height={32} />
           </button>
@@ -128,7 +130,7 @@ export function Gallery({ images, className }: GalleryProps) {
               handleNext();
             }}
             className="absolute right-4 text-white/80 hover:text-white transition-colors cursor-pointer z-50"
-            aria-label="Next"
+            aria-label={t("common.gallery.next")}
           >
             <Icon icon="mingcute:right-line" width={32} height={32} />
           </button>
@@ -136,7 +138,7 @@ export function Gallery({ images, className }: GalleryProps) {
           <div className="relative max-w-6xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
             <img
               src={images[selectedIndex].url}
-              alt={images[selectedIndex].alt || `Gallery image ${selectedIndex + 1}`}
+              alt={images[selectedIndex].alt || t("common.gallery.imageAlt", { index: selectedIndex + 1 })}
               className="object-contain w-full h-full"
               sizes="90vw"
             />
@@ -147,11 +149,11 @@ export function Gallery({ images, className }: GalleryProps) {
             <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
               <Icon icon="mingcute:arrow-left-line" width={14} height={14} />
               <Icon icon="mingcute:arrow-right-line" width={14} height={14} />
-              <span>切换图片</span>
+              <span>{t("common.gallery.switchImage")}</span>
             </div>
             <div className="hidden md:flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm">
               <KbdShortcut keys={["Esc"]} variant="lightbox" />
-              <span>关闭</span>
+              <span>{t("common.gallery.close")}</span>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
@@ -5,6 +6,7 @@ import { MarkdownRenderer } from "@/components/common/markdown";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
+import { getLocalizedCategoryName } from "@/lib/category";
 import { extractTOC } from "@/lib/toc";
 
 // Static regex patterns to avoid re-compilation
@@ -75,6 +77,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PostPage({ params }: PageProps) {
   const { slug, category, locale } = await params;
+  const t = await getTranslations({ locale });
 
   // 验证 category 不是 ObjectId 格式
   const isObjectId = OBJECT_ID_REGEX.test(category);
@@ -108,6 +111,9 @@ export default async function PostPage({ params }: PageProps) {
 
   // 生成 JSON-LD 结构化数据
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const localizedCategoryLabel = post.category
+    ? getLocalizedCategoryName(post.category, t("category.detail.fallbackTitle"))
+    : null;
   const jsonLd = generateArticleJsonLd({
     title: post.title,
     description: (post.aiSummary || post.summary || post.text.slice(0, 150)).replace(NEWLINE_REGEX, " "),
@@ -124,8 +130,8 @@ export default async function PostPage({ params }: PageProps) {
       <ArticleLayout
         toc={toc}
         breadcrumbs={[
-          { label: "首页", href: "/" },
-          ...(post.category ? [{ label: post.category.name, href: `/categories/${post.category.slug}` }] : []),
+          { label: t("nav.home"), href: "/" },
+          ...(post.category && localizedCategoryLabel ? [{ label: localizedCategoryLabel, href: `/categories/${post.category.slug}` }] : []),
           { label: post.title },
         ]}
         header={(
@@ -148,7 +154,7 @@ export default async function PostPage({ params }: PageProps) {
             <OutdatedAlert
               refId={post._id}
               refType="post"
-              lang={post.lang}
+              lang={locale}
               lastUpdated={post.modified || post.created}
             />
             <MarkdownRenderer content={post.text} />

@@ -8,7 +8,7 @@ interface OutdatedAlertProps {
   refId: string;
   /** 关联类型 */
   refType?: "post" | "note" | "page";
-  /** 当前内容语言 */
+  /** 当前界面语言 */
   lang?: string;
   /** 最后更新时间 (ISO Date string) */
   lastUpdated: string;
@@ -65,9 +65,14 @@ export async function OutdatedAlert({
   // 计算时间描述
   const years = Math.floor(diffDays / 365);
   const months = Math.floor((diffDays % 365) / 30);
-  const timeDesc = years > 0
-    ? `${years} 年${months > 0 ? ` ${months} 个月` : ""}`
-    : `${months} 个月`;
+  const timeParts: string[] = [];
+  if (years > 0) {
+    timeParts.push(t("outdated.time.years", { count: years }));
+  }
+  if (months > 0 || timeParts.length === 0) {
+    timeParts.push(t("outdated.time.months", { count: months }));
+  }
+  const timeDesc = timeParts.join(" ");
 
   // AI 分析的敏感度标签
   const sensitivityLabel = capsule?.sensitivity === "high"

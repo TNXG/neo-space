@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
@@ -67,6 +68,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function NotePage({ params }: PageProps) {
   const { nid, locale } = await params;
+  const t = await getTranslations({ locale });
   const nidNum = Number.parseInt(nid, 10);
   if (Number.isNaN(nidNum))
     notFound();
@@ -112,8 +114,8 @@ export default async function NotePage({ params }: PageProps) {
       <ArticleLayout
         toc={toc}
         breadcrumbs={[
-          { label: "首页", href: "/" },
-          { label: "手记", href: "/notes" },
+          { label: t("nav.home"), href: "/" },
+          { label: t("nav.notes"), href: "/notes" },
           { label: note.title },
         ]}
         header={(
@@ -135,7 +137,7 @@ export default async function NotePage({ params }: PageProps) {
             <OutdatedAlert
               refId={note._id}
               refType="note"
-              lang={note.lang}
+              lang={locale}
               lastUpdated={note.modified || note.created}
             />
             <MarkdownRenderer content={note.text} />

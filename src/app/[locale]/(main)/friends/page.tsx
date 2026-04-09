@@ -52,9 +52,8 @@ async function getAllLinks(): Promise<Link[]> {
 /**
  * 友链页面
  */
-export default async function FriendsPage({ params }: FriendsPageProps) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale });
+export default async function FriendsPage() {
+  const t = await getTranslations();
   const allLinks = await getAllLinks();
 
   // 按类型分组
@@ -70,7 +69,7 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
             {t("friends.title")}
           </h1>
           <span className="text-xs md:text-sm lg:text-base font-medium tracking-[0.3em] text-accent-600/60 uppercase mt-1 font-mono">
-            Constellation
+            {t("friends.eyebrow")}
           </span>
         </div>
 
@@ -81,7 +80,7 @@ export default async function FriendsPage({ params }: FriendsPageProps) {
               {t("friends.subtitle")}
             </span>
             <span className="text-[11px] md:text-xs lg:text-sm text-primary-400/80 font-normal italic tracking-wide mt-0.5 md:mt-1 font-serif">
-              Connected by starlight
+              {t("friends.subtitleAlt")}
             </span>
           </div>
           <span className="w-6 md:w-8 lg:w-12 h-px bg-accent-300 inline-block opacity-70"></span>

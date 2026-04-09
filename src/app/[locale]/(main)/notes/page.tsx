@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { NoteInteractiveList } from "@/components/common/InteractiveList";
 import { getNotes } from "@/lib/api-client";
 
-export const metadata: Metadata = {
-  title: "Sparkle | 手记",
-  description: "寻找生活中的星之鼓动",
-};
+interface NotesPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: NotesPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+
+  return {
+    title: t("notes.meta.title"),
+    description: t("notes.meta.description"),
+  };
+}
 
 export const revalidate = 57600;
 
@@ -15,10 +25,9 @@ export const revalidate = 57600;
  */
 export default async function NotesPage({
   params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+}: NotesPageProps) {
   const { locale } = await params;
+  const t = await getTranslations({ locale });
   const page = 1;
   const pageSize = 10;
 
@@ -29,31 +38,30 @@ export default async function NotesPage({
       <header className="mb-20 md:text-center max-w-2xl mx-auto flex flex-col items-center">
         {/*
                    主标题区域
-                   中文: 微光 (Sparkle)
+                   标题按 locale 切换，英文副标固定为 Sparkle
                    配色: Teal -> Stone 渐变 (强调 Accent)
                 */}
         <div className="mb-6 flex flex-col items-center">
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight bg-linear-to-r from-accent-600 to-primary-600 bg-clip-text text-transparent leading-tight py-2 select-none">
-            微 光
+            {t("notes.hero.title")}
           </h1>
           <span className="text-sm md:text-base font-medium tracking-[0.3em] text-primary-500/60 uppercase mt-1 font-mono">
-            Sparkle
+            {t("notes.hero.eyebrow")}
           </span>
         </div>
 
         {/*
                    副标题区域
-                   中文: 寻觅那星之鼓动
-                   英文: Searching for the star beat
+                   主文案与辅助文案按 locale 分离
                 */}
         <div className="text-primary-600 font-medium flex items-center justify-center gap-4 w-full">
           <span className="w-8 md:w-12 h-px bg-primary-300 inline-block opacity-70"></span>
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-lg md:text-xl tracking-wide text-primary-700">
-              寻觅那星之鼓动
+              {t("notes.hero.subtitle")}
             </span>
             <span className="text-xs md:text-sm text-primary-400/80 font-normal italic tracking-wide mt-1 font-serif">
-              Searching for the star beat
+              {t("notes.hero.subtitleAlt")}
             </span>
           </div>
           <span className="w-8 md:w-12 h-px bg-primary-300 inline-block opacity-70"></span>
@@ -62,7 +70,7 @@ export default async function NotesPage({
 
       <NoteInteractiveList
         items={data.items}
-        emptyMessage="选择一篇日记查看详情"
+        emptyMessage={t("interactive.empty.note")}
       />
     </main>
   );

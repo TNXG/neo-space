@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { loadMoreThinkings } from "@/lib/actions/thinking";
 import { ThinkingItemSkeleton } from "./ThinkingItemSkeleton";
@@ -12,6 +13,7 @@ interface ThinkingListProps {
 }
 
 export function ThinkingList({ initialNodes, initialHasNextPage, isEmpty }: ThinkingListProps) {
+  const t = useTranslations();
   const [nodes, setNodes] = useState<ReactNode[]>(initialNodes);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
@@ -45,7 +47,7 @@ export function ThinkingList({ initialNodes, initialHasNextPage, isEmpty }: Thin
   if (isEmpty) {
     return (
       <div className="text-center py-20 text-muted-foreground">
-        <p>暂无碎碎念</p>
+        <p>{t("thinking.empty")}</p>
       </div>
     );
   }
@@ -64,7 +66,7 @@ export function ThinkingList({ initialNodes, initialHasNextPage, isEmpty }: Thin
       {/* 到底了 */}
       {!hasNextPage && nodes.length > 0 && (
         <div className="text-center py-8 text-sm text-muted-foreground/60">
-          - 已经到底啦 -
+          {t("thinking.end")}
         </div>
       )}
     </div>

@@ -13,8 +13,8 @@ import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
 import { Icon } from "@/lib/inline-icon";
-import { Link, useRouter } from "@/locales/navigation";
 import { cn } from "@/lib/utils";
+import { Link, useRouter } from "@/locales/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────
 

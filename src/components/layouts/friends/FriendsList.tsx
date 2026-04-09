@@ -2,6 +2,7 @@
 
 import type { Link } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { MagneticHoverEffect, MagneticZone } from "@/components/common/magnetic-hover-effect";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -88,6 +89,7 @@ const DetailCard = ({
 // -----------------------------------------------------------------------------
 
 export function FriendsList({ friends, collections }: FriendsListProps) {
+  const t = useTranslations();
   const [activeTab, setActiveTab] = useState<"friends" | "collections">("friends");
   const isMobile = useIsMobile();
 
@@ -441,7 +443,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                   icon={tab === "friends" ? "mingcute:group-line" : "mingcute:bookmark-line"}
                   className="w-4 h-4"
                 />
-                {tab === "friends" ? "朋友" : "收藏"}
+                {tab === "friends" ? t("friends.tab.friends") : t("friends.tab.collections")}
                 <span className="opacity-40 text-xs font-mono ml-0.5">
                   {tab === "friends" ? friends.length : collections.length}
                 </span>
@@ -463,7 +465,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             : (
                 <div className="h-64 flex flex-col items-center justify-center text-muted-foreground/40 bg-card/30 rounded-2xl border border-dashed border-border/50">
                   <Icon icon="mingcute:mouse-line" className="w-6 h-6 mb-2" />
-                  <span className="text-sm">Hover a friend to view details</span>
+                  <span className="text-sm">{t("friends.preview.empty")}</span>
                 </div>
               )}
         </aside>
@@ -475,7 +477,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
               ? (
                   <div className="col-span-full py-32 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-border/50 rounded-3xl bg-secondary/10">
                     <Icon icon="mingcute:ghost-line" className="w-16 h-16 mb-4 opacity-40" />
-                    <p>暂无数据</p>
+                    <p>{t("friends.empty")}</p>
                   </div>
                 )
               : (

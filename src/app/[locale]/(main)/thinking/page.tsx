@@ -45,7 +45,7 @@ export default async function ThinkingPage({ params }: ThinkingPageProps) {
             {t("thinking.title")}
           </h1>
           <span className="text-sm md:text-base font-medium tracking-[0.3em] text-primary-500/60 uppercase mt-1 font-mono">
-            Thinking
+            {t("thinking.eyebrow")}
           </span>
         </div>
 
@@ -56,7 +56,7 @@ export default async function ThinkingPage({ params }: ThinkingPageProps) {
               {t("thinking.subtitle")}
             </span>
             <span className="text-xs md:text-sm text-primary-400/80 font-normal italic tracking-wide mt-1 font-serif">
-              Bits and pieces of thoughts
+              {t("thinking.subtitleAlt")}
             </span>
           </div>
           <span className="w-8 md:w-12 h-px bg-primary-300 inline-block opacity-70" />
