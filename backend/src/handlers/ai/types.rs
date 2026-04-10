@@ -1,6 +1,8 @@
 use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+use crate::models::serializers::deserialize_flexible_datetime;
+
 pub(super) fn default_language_code() -> String {
     "zh".to_string()
 }
@@ -41,7 +43,10 @@ pub struct TimeCapsule {
     pub sensitivity: String,
     pub reason: String,
     pub markers: Vec<String>,
-    #[serde(serialize_with = "crate::models::serializers::serialize_datetime")]
+    #[serde(
+        serialize_with = "crate::models::serializers::serialize_datetime",
+        deserialize_with = "deserialize_flexible_datetime"
+    )]
     pub created: bson::DateTime,
 }
 

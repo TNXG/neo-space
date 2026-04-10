@@ -89,3 +89,40 @@ where
         ))),
     }
 }
+
+/// Deserialize `Option<DateTime>` flexibly while tolerating `null` and missing values.
+pub fn deserialize_flexible_optional_datetime<'de, D>(
+    deserializer: D,
+) -> Result<Option<bson::DateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let value = Option::<bson::Bson>::deserialize(deserializer)?;
+
+    match value {
+        None | Some(bson::Bson::Null) => Ok(None),
+        Some(bson::Bson::DateTime(dt)) => Ok(Some(dt)),
+        Some(bson::Bson::String(s)) => {
+            let chrono_dt = DateTime::parse_from_rfc3339(&s)
+                .map_err(|e| Error::custom(format!("Failed to parse datetime string: {e}")))?;
+            Ok(Some(bson::DateTime::from_chrono(
+                chrono_dt.with_timezone(&Utc),
+            )))
+        }
+        Some(bson::Bson::Int64(ts)) => {
+            let chrono_dt = DateTime::from_timestamp_millis(ts)
+                .ok_or_else(|| Error::custom("Invalid timestamp"))?;
+            Ok(Some(bson::DateTime::from_chrono(chrono_dt)))
+        }
+        Some(bson::Bson::Int32(ts)) => {
+            let chrono_dt = DateTime::from_timestamp(i64::from(ts), 0)
+                .ok_or_else(|| Error::custom("Invalid timestamp"))?;
+            Ok(Some(bson::DateTime::from_chrono(chrono_dt)))
+        }
+        Some(other) => Err(Error::custom(format!(
+            "Unexpected BSON type for optional datetime: {other:?}"
+        ))),
+    }
+}
