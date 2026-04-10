@@ -411,12 +411,32 @@ export type CommentStateType = typeof CommentState[keyof typeof CommentState];
 /**
  * 用户代理信息（浏览器/系统）
  */
+export interface UAClientHintsInfo {
+  mobile?: boolean;
+  platform?: string;
+  platformVersion?: string;
+  architecture?: string;
+  bitness?: string;
+  model?: string;
+  wow64?: boolean;
+  fullVersionList?: Array<{
+    brand: string;
+    version: string;
+  }>;
+  brands?: Array<{
+    brand: string;
+    version: string;
+  }>;
+}
+
 export interface UAInfo {
   browser: string;
   browserVersion: string;
   os: string;
   osVersion: string;
-  device: "mobile" | "desktop";
+  device: "mobile" | "desktop" | "tablet" | "unknown";
+  rawUserAgent?: string;
+  clientHints?: UAClientHintsInfo;
 }
 
 export interface Comment {

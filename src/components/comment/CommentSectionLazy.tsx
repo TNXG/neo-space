@@ -65,7 +65,7 @@ export function CommentSectionLazy({
   }, [isVisible]);
 
   return (
-    <div ref={containerRef} className="min-h-[100px]">
+    <div ref={containerRef} className="min-h-25">
       {isVisible
         ? (
             <>

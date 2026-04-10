@@ -58,6 +58,15 @@ async function apiClient<T>(
   },
 ): Promise<T> {
   const { tags, revalidate, timeout, ...fetchOptions } = options || {};
+  const requestHeaders = new Headers(fetchOptions.headers);
+
+  /**
+   * 默认以 JSON 形式与后端通信，但不要强行覆盖调用方已经声明的类型，
+   * 同时避免给 FormData 这类请求附上错误的 Content-Type。
+   */
+  if (!(fetchOptions.body instanceof FormData) && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
+  }
 
   // 创建 AbortController 用于超时控制
   const controller = new AbortController();
@@ -67,10 +76,8 @@ async function apiClient<T>(
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
       ...fetchOptions,
+      headers: requestHeaders,
       signal: controller.signal,
       next: {
         tags,

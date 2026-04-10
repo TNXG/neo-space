@@ -52,6 +52,7 @@ function getOSIcon(os: string): string {
  */
 export function CommentHeader({ comment }: CommentHeaderProps) {
   const t = useTranslations();
+
   return (
     <div className="flex items-start sm:items-center gap-2 relative z-10">
       <img
@@ -65,7 +66,7 @@ export function CommentHeader({ comment }: CommentHeaderProps) {
 
       <dt className="flex flex-col gap-0.5 min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-          <b className={cn("truncate max-w-[100px] sm:max-w-none", comment.isAdmin ? "text-green-700" : "text-foreground")}>
+          <b className={cn("truncate max-w-25 sm:max-w-none", comment.isAdmin ? "text-green-700" : "text-foreground")}>
             {comment.author}
           </b>
           {comment.isAdmin && (

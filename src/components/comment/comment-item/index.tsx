@@ -66,7 +66,7 @@ export function CommentItem({
       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
       className={cn(
         "relative group/item rounded-lg overflow-visible",
-        showLine && "before:absolute before:content-[''] before:top-10 sm:before:top-12 before:left-3 sm:before:left-4 before:h-[calc(100%-1.5rem)] sm:before:h-[calc(100%-2rem)] before:w-[2px] before:bg-linear-to-b before:from-border before:to-transparent",
+        showLine && "before:absolute before:content-[''] before:top-10 sm:before:top-12 before:left-3 sm:before:left-4 before:h-[calc(100%-1.5rem)] sm:before:h-[calc(100%-2rem)] before:w-0.5 before:bg-linear-to-b before:from-border before:to-transparent",
       )}
     >
       {/* 评论内容区域 */}
@@ -100,7 +100,7 @@ export function CommentItem({
             >
               <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
               <span>{t("comment.reply")}</span>
-              <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-[80px] sm:max-w-none">
+              <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-20 sm:max-w-none">
                 @
                 {parentAuthor}
               </span>
