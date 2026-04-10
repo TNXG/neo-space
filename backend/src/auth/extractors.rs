@@ -3,7 +3,7 @@
 use axum::{extract::FromRequestParts, http::request::Parts};
 use bson::oid::ObjectId;
 
-use crate::{auth::jwt, error::AppError};
+use crate::{app::AppState, auth::jwt, error::AppError, services::helpers::is_owner_user_id};
 
 /// Authenticated user extractor
 #[derive(Debug, Clone)]
@@ -14,11 +14,11 @@ pub struct AuthUser {
 
 impl<S> FromRequestParts<S> for AuthUser
 where
-    S: Send + Sync,
+    S: Send + Sync + AsRef<AppState>,
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         // Try to get SharedState from extensions
         // In Axum 0.7+, we need to use State extension or extract it differently
         // For now, we'll use the environment variable approach
@@ -52,10 +52,15 @@ where
 
         let user_id = claims.user_id().map_err(|_| AppError::InvalidToken)?;
 
-        Ok(AuthUser {
-            user_id,
-            is_owner: claims.is_owner,
-        })
+        let is_owner = match is_owner_user_id(&state.as_ref().db, user_id).await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::warn!("Failed to resolve owner status from database: {}", error);
+                claims.is_owner
+            }
+        };
+
+        Ok(AuthUser { user_id, is_owner })
     }
 }
 
@@ -68,11 +73,11 @@ pub struct OptionalAuth {
 
 impl<S> FromRequestParts<S> for OptionalAuth
 where
-    S: Send + Sync,
+    S: Send + Sync + AsRef<AppState>,
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let auth_header = parts
             .headers
             .get("Authorization")
@@ -103,10 +108,22 @@ where
                 match jwt::verify_jwt(token, &secret) {
                     Ok(claims) => {
                         let user_id = claims.user_id().ok();
-                        Ok(OptionalAuth {
-                            user_id,
-                            is_owner: claims.is_owner,
-                        })
+                        let is_owner = if let Some(user_id) = user_id {
+                            match is_owner_user_id(&state.as_ref().db, user_id).await {
+                                Ok(value) => value,
+                                Err(error) => {
+                                    tracing::warn!(
+                                        "Failed to resolve owner status from database: {}",
+                                        error
+                                    );
+                                    claims.is_owner
+                                }
+                            }
+                        } else {
+                            false
+                        };
+
+                        Ok(OptionalAuth { user_id, is_owner })
                     }
                     Err(_) => Ok(OptionalAuth {
                         user_id: None,
@@ -130,7 +147,7 @@ pub struct OwnerOnly {
 
 impl<S> FromRequestParts<S> for OwnerOnly
 where
-    S: Send + Sync,
+    S: Send + Sync + AsRef<AppState>,
 {
     type Rejection = AppError;
 

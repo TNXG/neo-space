@@ -1,10 +1,12 @@
 //! Shared service helpers to avoid code duplication
 
 use crate::app::SharedState;
+use crate::error::AppError;
+use crate::models::options::RawOption;
 use crate::models::{AiSummary, AiTranslation, Category, Note, PostWithCategory, TranslationEntry};
 use crate::services::oauth::OAuthService;
 use axum::http::HeaderMap;
-use bson::{doc, oid::ObjectId};
+use bson::{Bson, Document, doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -21,6 +23,145 @@ pub fn make_oauth_service(state: &SharedState) -> OAuthService {
         state.config.qq_app_id.clone(),
         state.config.qq_app_key.clone(),
     )
+}
+
+/// 基于 owner_profiles.readerId 与 readers.isOwner 双重判定站长身份。
+///
+/// 当前线上数据里真实站长挂在 owner_profiles.readerId 上，
+/// 不能只依赖 readers.isOwner，否则评论区会漏掉站长标识。
+pub async fn is_owner_user_id(
+    database: &mongodb::Database,
+    user_id: ObjectId,
+) -> Result<bool, mongodb::error::Error> {
+    let owner_profiles = database.collection::<Document>("owner_profiles");
+
+    if owner_profiles
+        .find_one(doc! { "readerId": user_id })
+        .await?
+        .is_some()
+    {
+        return Ok(true);
+    }
+
+    let readers = database.collection::<Document>("readers");
+    let reader = readers.find_one(doc! { "_id": user_id }).await?;
+
+    Ok(reader
+        .and_then(|document| document.get_bool("isOwner").ok())
+        .unwrap_or(false))
+}
+
+/// Create an OAuthService and backfill credentials from database options when
+/// deployment-time environment variables are unavailable.
+pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthService, AppError> {
+    let mut github_client_id = state.config.github_client_id.clone();
+    let mut github_client_secret = state.config.github_client_secret.clone();
+    let mut qq_app_id = state.config.qq_app_id.clone();
+    let mut qq_app_key = state.config.qq_app_key.clone();
+
+    let requires_database_fallback = github_client_id.is_empty()
+        || github_client_secret.is_empty()
+        || qq_app_id.is_empty()
+        || qq_app_key.is_empty();
+
+    if requires_database_fallback {
+        let collection = state.db.collection::<RawOption>("options");
+        let oauth_option = collection
+            .find_one(doc! { "name": "oauth" })
+            .await
+            .map_err(|error| {
+                AppError::Database(format!("Failed to load oauth options: {error}"))
+            })?;
+
+        if let Some(option) = oauth_option
+            && let Bson::Document(document) = option.value
+        {
+            if github_client_id.is_empty() {
+                github_client_id = extract_first_string(
+                    &document,
+                    &[
+                        &["github", "clientId"],
+                        &["public", "github", "clientId"],
+                        &["github", "client_id"],
+                    ],
+                )
+                .unwrap_or_default();
+            }
+
+            if github_client_secret.is_empty() {
+                github_client_secret = extract_first_string(
+                    &document,
+                    &[
+                        &["github", "clientSecret"],
+                        &["private", "github", "clientSecret"],
+                        &["github", "client_secret"],
+                        &["github", "secret"],
+                    ],
+                )
+                .unwrap_or_default();
+            }
+
+            if qq_app_id.is_empty() {
+                qq_app_id = extract_first_string(
+                    &document,
+                    &[
+                        &["qq", "appId"],
+                        &["public", "qq", "appId"],
+                        &["qq", "clientId"],
+                        &["qq", "app_id"],
+                    ],
+                )
+                .unwrap_or_default();
+            }
+
+            if qq_app_key.is_empty() {
+                qq_app_key = extract_first_string(
+                    &document,
+                    &[
+                        &["qq", "appKey"],
+                        &["private", "qq", "appKey"],
+                        &["qq", "clientSecret"],
+                        &["qq", "appSecret"],
+                        &["qq", "app_key"],
+                    ],
+                )
+                .unwrap_or_default();
+            }
+        }
+    }
+
+    Ok(OAuthService::new(
+        state.db.clone(),
+        Arc::new(state.http_client.clone()),
+        github_client_id,
+        github_client_secret,
+        state.config.backend_url.clone(),
+        qq_app_id,
+        qq_app_key,
+    ))
+}
+
+fn extract_first_string(document: &Document, candidate_paths: &[&[&str]]) -> Option<String> {
+    candidate_paths.iter().find_map(|path| {
+        find_nested_string(document, path).and_then(|value| {
+            let trimmed = value.trim();
+            (!trimmed.is_empty()).then(|| trimmed.to_string())
+        })
+    })
+}
+
+fn find_nested_string<'a>(document: &'a Document, path: &[&str]) -> Option<&'a str> {
+    let (current, remaining) = path.split_first()?;
+    let value = document.get(*current)?;
+
+    if remaining.is_empty() {
+        return value.as_str();
+    }
+
+    match value {
+        Bson::Document(nested) => find_nested_string(nested, remaining),
+        _ => None,
+    }
 }
 
 /// Fetch the latest AI summary for a given ref ID and language.

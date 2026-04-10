@@ -1,5 +1,6 @@
 //! Authentication and account management handlers
 
+use crate::services::helpers::is_owner_user_id;
 use crate::services::helpers::make_oauth_service;
 use crate::{
     app::SharedState,
@@ -29,7 +30,14 @@ pub async fn get_current_user(
         .get_current_user(&auth_user.user_id.to_hex())
         .await?;
 
-    let response = ReaderResponse::from(reader);
+    let is_owner = is_owner_user_id(&state.db, auth_user.user_id)
+        .await
+        .unwrap_or(auth_user.is_owner);
+
+    let response = ReaderResponse {
+        is_owner,
+        ..ReaderResponse::from(reader)
+    };
 
     Ok(Json(ApiResponse {
         code: 200,
