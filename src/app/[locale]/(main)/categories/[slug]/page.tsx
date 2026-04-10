@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale, slug } = await params;
   const t = await getTranslations({ locale });
   try {
-    const { data: categories } = await getCategories();
+    const { data: categories } = await getCategories(locale);
     const cat = categories.find(c => c.slug === slug);
     if (!cat)
       return { title: t("category.detail.notFound") };
@@ -67,7 +67,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   const t = await getTranslations({ locale });
 
   const [categoriesRes, { posts, categoryName }] = await Promise.all([
-    getCategories(),
+    getCategories(locale),
     getPostsByCategorySlug(slug, locale),
   ]);
 

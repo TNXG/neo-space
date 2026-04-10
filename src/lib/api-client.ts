@@ -244,8 +244,8 @@ export async function getAdjacentPosts(slug: string, lang?: string): Promise<Api
 /**
  * Categories API
  */
-export async function getCategories(): Promise<ApiResponse<Category[]>> {
-  return apiClient<ApiResponse<Category[]>>("/categories", {
+export async function getCategories(lang?: string): Promise<ApiResponse<Category[]>> {
+  return apiClient<ApiResponse<Category[]>>(withLangParam("/categories", lang), {
     tags: ["categories"],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });

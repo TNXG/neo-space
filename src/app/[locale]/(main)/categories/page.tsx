@@ -25,7 +25,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
   const { locale } = await params;
   const t = await getTranslations({ locale });
   const [categoriesRes, postsRes] = await Promise.all([
-    getCategories(),
+    getCategories(locale),
     getPosts(1, 100, locale),
   ]);
 

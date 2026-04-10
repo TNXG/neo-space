@@ -2,6 +2,7 @@
 
 import type { SearchItem } from "./types";
 import { AnimatePresence, motion } from "motion/react";
+import { useLocale } from "next-intl";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -27,6 +28,7 @@ interface SearchPanelProps {
  * 功能：实时搜索、键盘导航、按相关度混编结果、关键字高亮
  */
 export function SearchPanel({ open, onOpenChange }: SearchPanelProps) {
+  const locale = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
@@ -35,7 +37,7 @@ export function SearchPanel({ open, onOpenChange }: SearchPanelProps) {
   const [semantic, setSemantic] = useState(false);
   const prevQueryRef = useRef(debouncedQuery);
 
-  const { data, isLoading } = useSearch(debouncedQuery, undefined, 10, semantic);
+  const { data, isLoading } = useSearch(debouncedQuery, locale, undefined, 10, semantic);
 
   // 归一化各自分数后混排，避免因两类分数量纲不同而同类堆叠
   const allResults: SearchItem[] = useMemo(() => {

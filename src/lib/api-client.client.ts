@@ -132,10 +132,10 @@ export async function fetchLinks(page: number, size = 20): Promise<PaginatedResp
  * @param limit - 每种类型的最大结果数
  * @param semantic - 是否启用语义搜索（混合搜索）
  */
-export function useSearch(query: string, type_?: "post" | "note", limit = 10, semantic = false) {
+export function useSearch(query: string, lang?: string, type_?: "post" | "note", limit = 10, semantic = false) {
   const trimmed = query.trim();
   const key = trimmed
-    ? `${API_BASE_URL}/search?q=${encodeURIComponent(trimmed)}${type_ ? `&type=${type_}` : ""}&limit=${limit}${semantic ? "&semantic=true" : ""}`
+    ? withLangParam(`${API_BASE_URL}/search?q=${encodeURIComponent(trimmed)}${type_ ? `&type=${type_}` : ""}&limit=${limit}${semantic ? "&semantic=true" : ""}`, lang)
     : null;
 
   return useSWR<ApiResponse<SearchResults>>(key, fetcher, {
