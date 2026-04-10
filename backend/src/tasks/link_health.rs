@@ -10,6 +10,10 @@ use tokio::time::interval;
 pub use super::link_health_check::LinkHealthStatus;
 use super::link_health_check::perform_health_check;
 
+fn elapsed_millis_u64(start: std::time::Instant) -> u64 {
+    u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX)
+}
+
 /// Start the periodic link health check task
 pub fn start_link_health_task(state: SharedState) {
     let check_interval_hours = std::env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
@@ -100,7 +104,7 @@ async fn check_all_links(state: &SharedState) -> Result<LinkHealthCheckResult, S
         // Serialize HostingProvider enum to lowercase string via serde_json
         let hosting_provider_str = serde_json::to_value(&result.hosting_provider)
             .ok()
-            .and_then(|v| v.as_str().map(|s| s.to_string()))
+            .and_then(|v| v.as_str().map(ToString::to_string))
             .unwrap_or_else(|| "unknown".to_string());
         let health_data = crate::models::LinkHealthStatus {
             link_id: result.link_id.clone(),
@@ -120,7 +124,7 @@ async fn check_all_links(state: &SharedState) -> Result<LinkHealthCheckResult, S
 
     let alive_count = results.iter().filter(|r| r.is_alive).count();
     let failed_count = total - alive_count;
-    let duration_ms = start.elapsed().as_millis() as u64;
+    let duration_ms = elapsed_millis_u64(start);
 
     Ok(LinkHealthCheckResult {
         total,

@@ -22,9 +22,7 @@ pub struct AiConfig {
 #[derive(Debug, Clone, Copy)]
 pub enum AiUsage {
     Summary,
-    Writer,
     CommentReview,
-    Translation,
 }
 
 /// Raw shape of the "ai" option stored in MongoDB
@@ -36,11 +34,7 @@ struct AiOptionsValue {
     #[serde(default)]
     summary_model: Option<AiModelSelection>,
     #[serde(default)]
-    writer_model: Option<AiModelSelection>,
-    #[serde(default)]
     comment_review_model: Option<AiModelSelection>,
-    #[serde(default)]
-    translation_model: Option<AiModelSelection>,
     #[serde(default)]
     enable_summary: bool,
     #[serde(default)]
@@ -120,14 +114,12 @@ struct OpenAIMessage {
 
 fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Option<&str> {
     match usage {
-        AiUsage::Summary => ai_options.summary_model.as_ref().map(|model| model.provider_id.as_str()),
-        AiUsage::Writer => ai_options.writer_model.as_ref().map(|model| model.provider_id.as_str()),
-        AiUsage::CommentReview => ai_options
-            .comment_review_model
+        AiUsage::Summary => ai_options
+            .summary_model
             .as_ref()
             .map(|model| model.provider_id.as_str()),
-        AiUsage::Translation => ai_options
-            .translation_model
+        AiUsage::CommentReview => ai_options
+            .comment_review_model
             .as_ref()
             .map(|model| model.provider_id.as_str()),
     }
@@ -137,8 +129,18 @@ fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, 
     if !ai_options.providers.is_empty() {
         let selected_provider_id = get_selected_provider_id(&ai_options, usage);
         let provider = selected_provider_id
-            .and_then(|provider_id| ai_options.providers.iter().find(|provider| provider.id == provider_id))
-            .or_else(|| ai_options.providers.iter().find(|provider| provider.enabled))
+            .and_then(|provider_id| {
+                ai_options
+                    .providers
+                    .iter()
+                    .find(|provider| provider.id == provider_id)
+            })
+            .or_else(|| {
+                ai_options
+                    .providers
+                    .iter()
+                    .find(|provider| provider.enabled)
+            })
             .ok_or_else(|| "No enabled AI provider found".to_string())?;
 
         if provider.provider_type != "openai" {
@@ -185,11 +187,6 @@ pub async fn get_ai_config_for_usage(db: &Database, usage: AiUsage) -> Result<Ai
     to_ai_config(ai_options, usage)
 }
 
-/// Load AI configuration from the database
-pub async fn get_ai_config(db: &Database) -> Result<AiConfig, String> {
-    get_ai_config_for_usage(db, AiUsage::Summary).await
-}
-
 /// OpenAI-compatible AI service
 pub struct AiService {
     config: AiConfig,
@@ -200,12 +197,6 @@ impl AiService {
     /// Create from an existing config and HTTP client
     pub fn new(config: AiConfig, client: Client) -> Self {
         Self { config, client }
-    }
-
-    /// Create by fetching configuration from the database
-    pub async fn from_database(db: &Database, client: Client) -> Result<Self, String> {
-        let config = get_ai_config(db).await?;
-        Ok(Self::new(config, client))
     }
 
     /// Create by fetching configuration from the database for a specific usage

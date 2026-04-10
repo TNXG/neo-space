@@ -33,8 +33,6 @@ pub struct AppConfig {
     pub meilisearch_host: String,
     /// Meilisearch API key
     pub meilisearch_api_key: String,
-    /// OpenAI API key
-    pub openai_api_key: String,
 }
 
 /// Configuration error types
@@ -105,7 +103,6 @@ impl AppConfig {
                 .or_else(|_| env::var("MEILISEARCH_HOST"))
                 .unwrap_or_else(|_| "http://localhost:7700".to_string()),
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
-            openai_api_key: env::var("OPENAI_API_KEY").unwrap_or_default(),
         })
     }
 }
