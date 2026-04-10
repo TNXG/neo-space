@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { PageHero } from "@/components/common/PageHero";
 import { ThinkingItem, ThinkingList } from "@/components/layouts/thinking";
 import { getRecently } from "@/lib/api-client";
 
@@ -38,30 +39,13 @@ export default async function ThinkingPage({ params }: ThinkingPageProps) {
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-4xl">
-      {/* 页面头部 */}
-      <header className="mb-16 text-center max-w-2xl mx-auto flex flex-col items-center">
-        <div className="mb-6 flex flex-col items-center">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight bg-linear-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent leading-tight py-2 select-none">
-            {t("thinking.title")}
-          </h1>
-          <span className="text-sm md:text-base font-medium tracking-[0.3em] text-primary-500/60 uppercase mt-1 font-mono">
-            {t("thinking.eyebrow")}
-          </span>
-        </div>
-
-        <div className="text-primary-600 font-medium flex items-center justify-center gap-4 w-full">
-          <span className="w-8 md:w-12 h-px bg-primary-300 inline-block opacity-70" />
-          <div className="flex flex-col items-center justify-center text-center">
-            <span className="text-lg md:text-xl tracking-wide text-primary-700">
-              {t("thinking.subtitle")}
-            </span>
-            <span className="text-xs md:text-sm text-primary-400/80 font-normal italic tracking-wide mt-1 font-serif">
-              {t("thinking.subtitleAlt")}
-            </span>
-          </div>
-          <span className="w-8 md:w-12 h-px bg-primary-300 inline-block opacity-70" />
-        </div>
-      </header>
+      <PageHero
+        title={t("thinking.title")}
+        eyebrow={t("thinking.eyebrow")}
+        subtitle={t("thinking.subtitle")}
+        subtitleAlt={t("thinking.subtitleAlt")}
+        className="mb-16 text-center"
+      />
 
       {/* 碎碎念列表客户端组件 */}
       <ThinkingList

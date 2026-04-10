@@ -121,19 +121,21 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         `}
       >
         <JsonLd data={jsonLdData} />
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
+        {" "}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <NextIntlClientProvider messages={messages}>
+
             <TooltipProvider>
               {children}
               <Toaster richColors position="top-center" />
             </TooltipProvider>
-          </ThemeProvider>
-        </NextIntlClientProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
