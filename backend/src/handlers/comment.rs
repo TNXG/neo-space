@@ -23,13 +23,22 @@ use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::Deserialize;
 
+fn extract_request_user_agent(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
 /// Query parameters for listing comments
 #[derive(Debug, Deserialize)]
 pub struct ListCommentsQuery {
     /// Reference ID (post or note ID) - also accepts `ref_id` for backward compatibility
     #[serde(alias = "ref_id")]
     pub r#ref: Option<String>,
-    /// Reference type ("post" or "note")
+    /// Reference type ("posts" / "notes" / "pages")
     pub ref_type: Option<String>,
 }
 
@@ -76,10 +85,16 @@ pub async fn list_comments(
 
     // Extract unique emails for Reader mapping
     let emails: Vec<String> = comments.iter().map(|c| c.mail.clone()).collect();
-    let (email_to_avatar, email_to_is_owner) = comment.build_reader_mappings(emails).await;
+    let (email_to_avatar, email_to_is_owner, email_to_source) =
+        comment.build_reader_mappings(emails).await;
 
     // Build comment tree
-    let comment_trees = comment.build_comment_tree(&comments, &email_to_avatar, &email_to_is_owner);
+    let comment_trees = comment.build_comment_tree(
+        &comments,
+        &email_to_avatar,
+        &email_to_is_owner,
+        &email_to_source,
+    );
 
     // Count all comments (not just root trees) to match Rocket behavior
     let count = comments.len() as i64;
@@ -102,6 +117,8 @@ pub async fn create_comment(
     headers: HeaderMap,
     AppJson(payload): AppJson<CreateCommentRequest>,
 ) -> AppResult<Json<ApiResponse<CommentTree>>> {
+    let normalized_ref_type = CommentService::normalize_ref_type(&payload.ref_type);
+
     // Convert ref string to Bson (ObjectId if valid, otherwise String)
     let ref_bson = if let Ok(oid) = ObjectId::parse_str(&payload.r#ref) {
         bson::Bson::ObjectId(oid)
@@ -110,9 +127,9 @@ pub async fn create_comment(
     };
 
     // Validate ref_type
-    if !["post", "note"].contains(&payload.ref_type.as_str()) {
+    if !["posts", "notes", "pages"].contains(&normalized_ref_type.as_str()) {
         return Err(AppError::BadRequest(
-            "Invalid ref_type, must be 'post' or 'note'".to_string(),
+            "Invalid ref_type, must be 'posts', 'notes', or 'pages'".to_string(),
         ));
     }
 
@@ -180,7 +197,7 @@ pub async fn create_comment(
         (
             reader.name,
             reader.email,
-            reader.is_owner,
+            auth.is_owner,
             avatar,
             Some(source),
         )
@@ -238,63 +255,82 @@ pub async fn create_comment(
     };
 
     // Get parent author if this is a reply (for notification)
-    let parent_author = if let Some(parent_id) = parent_oid {
+    let parent_comment = if let Some(parent_id) = parent_oid {
         let parent_collection = state.db.collection::<Comment>("comments");
         parent_collection
             .find_one(doc! { "_id": parent_id })
             .await
             .map_err(|e| AppError::Database(format!("Failed to find parent comment: {}", e)))?
-            .map(|c| c.author)
+            .ok_or_else(|| AppError::BadRequest("Parent comment not found".to_string()))?
+    } else {
+        Comment::default()
+    };
+
+    let parent_author = if parent_oid.is_some() {
+        Some(parent_comment.author.clone())
     } else {
         None
     };
 
     // Clone UA info for notification before it's moved into comment
-    let ua_string = payload
-        .ua
-        .as_ref()
-        .map(|ua| format!("{} {}", ua.browser, ua.os));
-
-    // Generate comment key
-    let key = comment
-        .generate_comment_key(&ref_bson, &payload.ref_type, parent_oid)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to generate comment key: {}", e)))?;
-
-    // Get comment index
-    let comments_index = comment
-        .get_comment_index(&ref_bson, &payload.ref_type)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to get comment index: {}", e)))?;
+    let request_user_agent = extract_request_user_agent(&headers);
+    let ua_string = payload.ua.as_ref().map(|ua| {
+        let mut details = format!("{} {}", ua.browser, ua.os);
+        if let Some(raw_user_agent) = &ua.raw_user_agent
+            && !raw_user_agent.is_empty()
+        {
+            details.push_str(&format!(" | UA: {}", raw_user_agent));
+        }
+        if let Some(client_hints) = &ua.client_hints {
+            let platform = client_hints.platform.as_deref().unwrap_or("unknown");
+            let platform_version = client_hints
+                .platform_version
+                .as_deref()
+                .unwrap_or("unknown");
+            details.push_str(&format!(" | CH: {} {}", platform, platform_version));
+        }
+        details
+    });
 
     // Determine comment state based on user role
     let state_value = if is_owner {
         CommentState::READ // Admin comments are automatically approved
     } else {
-        CommentState::UNREAD // Normal users need approval
+        CommentState::PENDING // Normal users need approval
     };
+
+    let created_at = bson::DateTime::now();
+    let root_comment_id =
+        parent_oid.map(|parent_id| parent_comment.root_comment_id.unwrap_or(parent_id));
 
     let new_comment = Comment {
         id: None,
         r#ref: ref_bson,
-        ref_type: payload.ref_type,
+        ref_type: normalized_ref_type.clone(),
+        ref_id: Some(payload.r#ref.clone()),
         author,
         mail,
         text: payload.text,
         state: state_value,
-        children: Some(vec![]),
-        comments_index,
-        key,
+        status: Some(if is_owner { "approved" } else { "pending" }.to_string()),
         ip: client_ip,
-        agent: None,
+        agent: payload
+            .ua
+            .as_ref()
+            .and_then(|ua| ua.raw_user_agent.clone())
+            .or(request_user_agent),
         pin: false,
         is_whispers: false,
         source,
         avatar: Some(avatar_url),
-        created: bson::DateTime::now(),
+        created: created_at,
         location,
         url: payload.url,
         parent: parent_oid,
+        root_comment_id,
+        reply_count: 0,
+        latest_reply_at: None,
+        is_deleted: false,
         ua: payload.ua,
     };
 
@@ -310,37 +346,72 @@ pub async fn create_comment(
         .as_object_id()
         .ok_or_else(|| AppError::Internal("Failed to get inserted comment ID".to_string()))?;
 
-    // Update parent's children array if this is a reply
+    // 更新旧评论结构下的父评论统计
     if let Some(parent_id) = parent_oid {
         comment
-            .update_parent_children(parent_id, new_id)
+            .register_reply(parent_id, root_comment_id, created_at)
             .await
-            .map_err(|e| AppError::Internal(format!("Failed to update parent children: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("Failed to update reply metadata: {}", e)))?;
     }
 
-    // Get the inserted comment
     let inserted_comment = collection
         .find_one(doc! { "_id": new_id })
         .await
         .map_err(|e| AppError::Database(format!("Failed to retrieve inserted comment: {}", e)))?
         .ok_or(AppError::Internal("Inserted comment not found".to_string()))?;
 
-    // Build reader mappings for this single comment
-    let (email_to_avatar, email_to_is_owner) = comment
-        .build_reader_mappings(vec![inserted_comment.mail.clone()])
-        .await;
+    // 重新读取整个评论线程，再从树中提取当前评论，保证层级 key 与旧数据结构一致。
+    let thread_filter = CommentService::build_ref_filter(&payload.r#ref, &normalized_ref_type);
+    let mut cursor = collection
+        .find(thread_filter)
+        .with_options(
+            mongodb::options::FindOptions::builder()
+                .sort(doc! { "created": 1 })
+                .build(),
+        )
+        .await
+        .map_err(|e| AppError::Database(format!("Failed to reload comments: {}", e)))?;
 
-    // Build comment tree with single node
+    let mut thread_comments = Vec::new();
+    while let Some(thread_comment) = cursor
+        .try_next()
+        .await
+        .map_err(|e| AppError::Database(format!("Failed to deserialize reloaded comment: {}", e)))?
+    {
+        thread_comments.push(thread_comment);
+    }
+
+    let (email_to_avatar, email_to_is_owner, email_to_source) = comment
+        .build_reader_mappings(
+            thread_comments
+                .iter()
+                .map(|item| item.mail.clone())
+                .collect(),
+        )
+        .await;
     let comment_trees = comment.build_comment_tree(
-        std::slice::from_ref(&inserted_comment),
+        &thread_comments,
         &email_to_avatar,
         &email_to_is_owner,
+        &email_to_source,
     );
 
-    let comment_tree = comment_trees
-        .into_iter()
-        .next()
-        .ok_or_else(|| AppError::Internal("Failed to build comment tree".to_string()))?;
+    fn find_comment_by_id(comments: &[CommentTree], target_id: &str) -> Option<CommentTree> {
+        for comment in comments {
+            if comment.id == target_id {
+                return Some(comment.clone());
+            }
+
+            if let Some(found) = find_comment_by_id(&comment.children, target_id) {
+                return Some(found);
+            }
+        }
+
+        None
+    }
+
+    let comment_tree = find_comment_by_id(&comment_trees, &new_id.to_hex())
+        .ok_or_else(|| AppError::Internal("Failed to build inserted comment tree".to_string()))?;
 
     // Send notification to admin for new comment
     let notification_svc = NotificationService::new(state.db.clone());
@@ -348,7 +419,7 @@ pub async fn create_comment(
         author: inserted_comment.author.clone(),
         text: inserted_comment.text.clone(),
         email: inserted_comment.mail.clone(),
-        ref_type: inserted_comment.ref_type.clone(),
+        ref_type: normalized_ref_type,
         ref_id: payload.r#ref.clone(),
         ref_title: None, // Will be fetched by notification service
         created: inserted_comment.created,

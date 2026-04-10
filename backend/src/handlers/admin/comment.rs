@@ -27,7 +27,7 @@ pub async fn update_comment(
 
     // Get existing comment
     let existing_comment = collection
-        .find_one(doc! { "_id": object_id })
+        .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .await
         .map_err(|e| AppError::Database(format!("Failed to find comment: {}", e)))?
         .ok_or(AppError::NotFound("Comment not found".to_string()))?;
@@ -62,19 +62,20 @@ pub async fn update_comment(
 
     // Get updated comment
     let updated_comment = collection
-        .find_one(doc! { "_id": object_id })
+        .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .await
         .map_err(|e| AppError::Database(format!("Failed to retrieve updated comment: {}", e)))?
         .ok_or(AppError::Internal("Updated comment not found".to_string()))?;
 
     let comment = CommentService::new(state.db.clone());
-    let (email_to_avatar, email_to_is_owner) = comment
+    let (email_to_avatar, email_to_is_owner, email_to_source) = comment
         .build_reader_mappings(vec![updated_comment.mail.clone()])
         .await;
     let comment_trees = comment.build_comment_tree(
         std::slice::from_ref(&updated_comment),
         &email_to_avatar,
         &email_to_is_owner,
+        &email_to_source,
     );
 
     let comment_tree = comment_trees
@@ -105,7 +106,7 @@ pub async fn delete_comment(
 
     // Get existing comment
     let _existing_comment = collection
-        .find_one(doc! { "_id": object_id })
+        .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .await
         .map_err(|e| AppError::Database(format!("Failed to find comment: {}", e)))?
         .ok_or(AppError::NotFound("Comment not found".to_string()))?;
@@ -115,18 +116,47 @@ pub async fn delete_comment(
         return Err(AppError::Forbidden);
     }
 
-    // Cascade delete: delete this comment and all its children
-    collection
-        .delete_many(doc! {
-            "$or": [
-                { "_id": object_id },
-                { "parent": object_id }
-            ]
-        })
+    // 旧评论结构采用软删除，保留数据供审计与后续恢复。
+    let comment_service = CommentService::new(state.db.clone());
+    let comment_ids = comment_service
+        .collect_comment_subtree_ids(object_id)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to delete comment and children: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to collect comment subtree: {}", e)))?;
 
-    tracing::info!("Comment {} and its children deleted", id);
+    collection
+        .update_many(
+            doc! {
+                "_id": { "$in": &comment_ids }
+            },
+            doc! {
+                "$set": {
+                    "isDeleted": true
+                }
+            },
+        )
+        .await
+        .map_err(|e| {
+            AppError::Database(format!("Failed to mark comment subtree as deleted: {}", e))
+        })?;
+
+    collection
+        .update_many(
+            doc! {
+                "_id": { "$in": &comment_ids },
+                "latestReplyAt": { "$exists": true }
+            },
+            doc! {
+                "$set": {
+                    "latestReplyAt": null
+                }
+            },
+        )
+        .await
+        .map_err(|e| {
+            AppError::Database(format!("Failed to clear deleted comment timestamps: {}", e))
+        })?;
+
+    tracing::info!("Comment {} and its children marked as deleted", id);
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -148,7 +178,7 @@ pub async fn hide_comment(
     let collection = state.db.collection::<Comment>("comments");
     let result = collection
         .update_one(
-            doc! { "_id": object_id },
+            doc! { "_id": object_id, "isDeleted": { "$ne": true } },
             doc! { "$set": { "isWhispers": true } },
         )
         .await
@@ -173,7 +203,7 @@ pub async fn unhide_comment(
     let collection = state.db.collection::<Comment>("comments");
     let result = collection
         .update_one(
-            doc! { "_id": object_id },
+            doc! { "_id": object_id, "isDeleted": { "$ne": true } },
             doc! { "$set": { "isWhispers": false } },
         )
         .await
@@ -197,7 +227,10 @@ pub async fn pin_comment(
 
     let collection = state.db.collection::<Comment>("comments");
     let result = collection
-        .update_one(doc! { "_id": object_id }, doc! { "$set": { "pin": true } })
+        .update_one(
+            doc! { "_id": object_id, "isDeleted": { "$ne": true } },
+            doc! { "$set": { "pin": true } },
+        )
         .await
         .map_err(|e| AppError::Database(format!("Failed to pin comment: {}", e)))?;
 
@@ -219,7 +252,10 @@ pub async fn unpin_comment(
 
     let collection = state.db.collection::<Comment>("comments");
     let result = collection
-        .update_one(doc! { "_id": object_id }, doc! { "$set": { "pin": false } })
+        .update_one(
+            doc! { "_id": object_id, "isDeleted": { "$ne": true } },
+            doc! { "$set": { "pin": false } },
+        )
         .await
         .map_err(|e| AppError::Database(format!("Failed to unpin comment: {}", e)))?;
 
