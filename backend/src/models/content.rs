@@ -64,6 +64,28 @@ pub struct AiTranslation {
     pub created: bson::DateTime,
 }
 
+/// Entity translation entry model
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TranslationEntry {
+    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
+    pub id: ObjectId,
+    pub lang: String,
+    #[serde(rename = "keyPath")]
+    pub key_path: String,
+    #[serde(rename = "keyType", default)]
+    pub key_type: Option<String>,
+    #[serde(rename = "lookupKey")]
+    pub lookup_key: String,
+    #[serde(rename = "sourceText")]
+    pub source_text: String,
+    #[serde(rename = "sourceUpdatedAt", default)]
+    pub source_updated_at: Option<bson::DateTime>,
+    #[serde(rename = "translatedText")]
+    pub translated_text: String,
+    #[serde(serialize_with = "serialize_datetime")]
+    pub created: bson::DateTime,
+}
+
 // ==================== Category ====================
 
 /// Category model

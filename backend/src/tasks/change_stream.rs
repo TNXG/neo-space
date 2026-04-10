@@ -6,7 +6,9 @@
 
 use crate::app::SharedState;
 use crate::tasks::isr::trigger_isr_revalidation;
-use crate::tasks::meilisearch_sync::{sync_note_to_meilisearch, sync_post_to_meilisearch};
+use crate::tasks::meilisearch_sync::{
+    sync_note_to_meilisearch, sync_post_to_meilisearch, sync_translation_to_meilisearch,
+};
 use futures::stream::StreamExt;
 use mongodb::{Collection, bson::Document, change_stream::event::ChangeStreamEvent};
 use std::time::Duration;
@@ -40,10 +42,11 @@ pub fn start_change_stream_task(state: SharedState) {
 async fn monitor_changes(state: SharedState) -> Result<(), String> {
     tracing::info!("正在初始化 MongoDB Change Stream...");
 
-    // Watch collections: posts, notes, links
+    // Watch collections: posts, notes, links, ai_translations
     let posts: Collection<Document> = state.db.collection("posts");
     let notes: Collection<Document> = state.db.collection("notes");
     let links: Collection<Document> = state.db.collection("links");
+    let ai_translations: Collection<Document> = state.db.collection("ai_translations");
 
     // Create change streams with full document option
     // Change streams require readConcern "majority"
@@ -75,7 +78,14 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
         .await
         .map_err(|e| format!("Failed to create links change stream: {}", e))?;
 
-    tracing::info!("✓ Change stream 监听已启动 - 正在监听: posts, notes, links");
+    let translations_stream = ai_translations
+        .watch()
+        .full_document(mongodb::options::FullDocumentType::Required)
+        .read_concern(mongodb::options::ReadConcern::majority())
+        .await
+        .map_err(|e| format!("Failed to create ai_translations change stream: {}", e))?;
+
+    tracing::info!("✓ Change stream 监听已启动 - 正在监听: posts, notes, links, ai_translations");
 
     // Spawn separate tasks for each change stream
     let state_posts = state.clone();
@@ -108,6 +118,21 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
         }
     });
 
+    let state_translations = state.clone();
+    tokio::spawn(async move {
+        let mut stream = translations_stream;
+        while let Some(result) = stream.next().await {
+            match result {
+                Ok(event) => {
+                    if let Err(e) = handle_translation_change(&state_translations, event).await {
+                        tracing::error!("Failed to handle translation change: {}", e);
+                    }
+                }
+                Err(e) => tracing::error!("Translation change stream error: {}", e),
+            }
+        }
+    });
+
     let mut stream = links_stream;
     while let Some(result) = stream.next().await {
         match result {
@@ -118,6 +143,24 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
             }
             Err(e) => tracing::error!("Link change stream error: {}", e),
         }
+    }
+
+    Ok(())
+}
+
+/// Handle AI translation change events
+async fn handle_translation_change(
+    state: &SharedState,
+    event: ChangeStreamEvent<Document>,
+) -> Result<(), String> {
+    let operation = format!("{:?}", event.operation_type);
+
+    tracing::info!("Translation change: op={}", operation);
+
+    if event.full_document.is_some() {
+        sync_translation_to_meilisearch(state, &event.full_document)
+            .await
+            .map_err(|e| e.to_string())?;
     }
 
     Ok(())

@@ -1,10 +1,12 @@
 //! Shared service helpers to avoid code duplication
 
 use crate::app::SharedState;
-use crate::models::{AiSummary, AiTranslation, Note, PostWithCategory};
+use crate::models::{AiSummary, AiTranslation, Category, Note, PostWithCategory, TranslationEntry};
 use crate::services::oauth::OAuthService;
 use axum::http::HeaderMap;
-use bson::doc;
+use bson::{doc, oid::ObjectId};
+use futures::stream::TryStreamExt;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 /// Create an OAuthService from shared application state.
@@ -75,6 +77,174 @@ pub async fn get_ai_translation(
         .await
         .ok()
         .flatten()
+}
+
+/// Fetch the latest translated text for entity fields.
+pub async fn get_entity_translation_map(
+    state: &SharedState,
+    key_path: &str,
+    lang: &str,
+    lookup_keys: &[String],
+) -> HashMap<String, String> {
+    if lang == "zh" || lookup_keys.is_empty() {
+        return HashMap::new();
+    }
+
+    let distinct_lookup_keys: Vec<String> = lookup_keys
+        .iter()
+        .cloned()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if distinct_lookup_keys.is_empty() {
+        return HashMap::new();
+    }
+
+    let translations_collection = state
+        .db
+        .collection::<TranslationEntry>("translation_entries");
+    let filter = doc! {
+        "lang": lang,
+        "keyPath": key_path,
+        "keyType": "entity",
+        "lookupKey": { "$in": &distinct_lookup_keys }
+    };
+    let find_options = mongodb::options::FindOptions::builder()
+        .sort(doc! { "lookupKey": 1, "sourceUpdatedAt": -1, "created": -1 })
+        .build();
+
+    let mut translation_map = HashMap::new();
+
+    match translations_collection
+        .find(filter)
+        .with_options(find_options)
+        .await
+    {
+        Ok(mut cursor) => {
+            while let Ok(Some(entry)) = cursor.try_next().await {
+                translation_map
+                    .entry(entry.lookup_key.clone())
+                    .or_insert(entry.translated_text);
+            }
+        }
+        Err(error) => {
+            tracing::error!(
+                "Failed to fetch entity translations for {}: {}",
+                key_path,
+                error
+            );
+        }
+    }
+
+    translation_map
+}
+
+/// Fetch the latest translated text for dictionary fields.
+pub async fn get_dict_translation_map(
+    state: &SharedState,
+    key_path: &str,
+    lang: &str,
+    source_texts: &[String],
+) -> HashMap<String, String> {
+    if lang == "zh" || source_texts.is_empty() {
+        return HashMap::new();
+    }
+
+    let distinct_source_texts: Vec<String> = source_texts
+        .iter()
+        .cloned()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if distinct_source_texts.is_empty() {
+        return HashMap::new();
+    }
+
+    let translations_collection = state
+        .db
+        .collection::<TranslationEntry>("translation_entries");
+    let filter = doc! {
+        "lang": lang,
+        "keyPath": key_path,
+        "keyType": "dict",
+        "sourceText": { "$in": &distinct_source_texts }
+    };
+    let find_options = mongodb::options::FindOptions::builder()
+        .sort(doc! { "sourceText": 1, "created": -1 })
+        .build();
+
+    let mut translation_map = HashMap::new();
+
+    match translations_collection
+        .find(filter)
+        .with_options(find_options)
+        .await
+    {
+        Ok(mut cursor) => {
+            while let Ok(Some(entry)) = cursor.try_next().await {
+                translation_map
+                    .entry(entry.source_text.clone())
+                    .or_insert(entry.translated_text);
+            }
+        }
+        Err(error) => {
+            tracing::error!(
+                "Failed to fetch dict translations for {}: {}",
+                key_path,
+                error
+            );
+        }
+    }
+
+    translation_map
+}
+
+/// Fetch localized category names by category ObjectId.
+pub async fn get_category_name_translation_map(
+    state: &SharedState,
+    category_ids: &[ObjectId],
+    lang: &str,
+) -> HashMap<String, String> {
+    let lookup_keys: Vec<String> = category_ids
+        .iter()
+        .map(|category_id| category_id.to_hex())
+        .collect();
+    get_entity_translation_map(state, "category.name", lang, &lookup_keys).await
+}
+
+/// Apply category name translations in-place.
+pub fn localize_category_names<'a>(
+    categories: impl IntoIterator<Item = &'a mut Category>,
+    translation_map: &HashMap<String, String>,
+) {
+    for category in categories {
+        if let Some(translated_name) = translation_map.get(&category.id.to_hex()) {
+            category.name = translated_name.clone();
+        }
+    }
+}
+
+/// Apply note mood/weather dictionary translations in-place.
+pub fn localize_note_taxonomy_fields<'a>(
+    notes: impl IntoIterator<Item = &'a mut Note>,
+    mood_translation_map: &HashMap<String, String>,
+    weather_translation_map: &HashMap<String, String>,
+) {
+    for note in notes {
+        if let Some(mood) = note.mood.as_mut()
+            && let Some(translated_mood) = mood_translation_map.get(mood)
+        {
+            *mood = translated_mood.clone();
+        }
+
+        if let Some(weather) = note.weather.as_mut()
+            && let Some(translated_weather) = weather_translation_map.get(weather)
+        {
+            *weather = translated_weather.clone();
+        }
+    }
 }
 
 /// Apply translation fields onto a post payload.

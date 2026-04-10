@@ -12,6 +12,8 @@ use crate::error::AppError;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PostDocument {
     pub id: String,
+    pub ref_id: String,
+    pub lang: String,
     pub title: String,
     pub text: String,
     pub slug: String,
@@ -25,6 +27,8 @@ pub struct PostDocument {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NoteDocument {
     pub id: String,
+    pub ref_id: String,
+    pub lang: String,
     pub title: String,
     pub text: String,
     pub nid: i32,
@@ -139,11 +143,11 @@ impl SearchService {
         // Configure posts index
         let posts_index = self.posts_index();
         posts_index
-            .set_searchable_attributes(&["title", "text", "category", "tags"])
+            .set_searchable_attributes(&["title", "text", "category_name", "tags"])
             .await
             .map_err(|e| AppError::Internal(format!("设置文章 searchable 属性失败: {}", e)))?;
         posts_index
-            .set_filterable_attributes(&["category", "tags", "created"])
+            .set_filterable_attributes(&["lang", "ref_id", "category", "tags", "created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置文章 filterable 属性失败: {}", e)))?;
         posts_index
@@ -174,7 +178,7 @@ impl SearchService {
             .await
             .map_err(|e| AppError::Internal(format!("设置笔记 searchable 属性失败: {}", e)))?;
         notes_index
-            .set_filterable_attributes(&["created"])
+            .set_filterable_attributes(&["lang", "ref_id", "created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置笔记 filterable 属性失败: {}", e)))?;
         notes_index
@@ -184,6 +188,19 @@ impl SearchService {
         tracing::info!("笔记索引配置完成");
 
         tracing::info!("Meilisearch 索引初始化完成");
+        Ok(())
+    }
+
+    /// Clear all indexed documents before a full rebuild.
+    pub async fn clear_indexes(&self) -> Result<(), AppError> {
+        self.posts_index()
+            .delete_all_documents()
+            .await
+            .map_err(|e| AppError::Internal(format!("清空文章索引失败: {}", e)))?;
+        self.notes_index()
+            .delete_all_documents()
+            .await
+            .map_err(|e| AppError::Internal(format!("清空笔记索引失败: {}", e)))?;
         Ok(())
     }
 
@@ -223,13 +240,16 @@ impl SearchService {
         query: &str,
         limit: usize,
         offset: usize,
+        lang: &str,
     ) -> Result<Vec<PostSearchHit>, AppError> {
         let index = self.posts_index();
         let mut search = index.search();
+        let language_filter = format!("lang = \"{}\"", lang.replace('"', "\\\""));
         search
             .with_query(query)
             .with_limit(limit)
             .with_offset(offset)
+            .with_filter(&language_filter)
             .with_attributes_to_highlight(Selectors::Some(&["title", "text"]))
             .with_attributes_to_crop(Selectors::Some(&[("text", Some(80))]))
             .with_highlight_pre_tag("<mark>")
@@ -258,13 +278,16 @@ impl SearchService {
         query: &str,
         limit: usize,
         offset: usize,
+        lang: &str,
     ) -> Result<Vec<NoteSearchHit>, AppError> {
         let index = self.notes_index();
         let mut search = index.search();
+        let language_filter = format!("lang = \"{}\"", lang.replace('"', "\\\""));
         search
             .with_query(query)
             .with_limit(limit)
             .with_offset(offset)
+            .with_filter(&language_filter)
             .with_attributes_to_highlight(Selectors::Some(&["title", "text"]))
             .with_attributes_to_crop(Selectors::Some(&[("text", Some(80))]))
             .with_highlight_pre_tag("<mark>")
