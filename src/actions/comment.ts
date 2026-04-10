@@ -25,21 +25,21 @@ export async function createCommentAction(request: CreateCommentRequest) {
         code: 201,
         status: "success" as const,
         data: result.data,
-        message: result.message || "评论发布成功",
+        message: result.message || "",
       };
     }
 
     return {
       code: result.code || 400,
       status: "failed" as const,
-      message: result.message || "评论发布失败",
+      message: result.message || "",
     };
   } catch (error) {
     console.error("Failed to create comment:", error);
     return {
       code: 500,
       status: "failed" as const,
-      message: "评论发布失败，请稍后重试",
+      message: "",
     };
   }
 }
@@ -55,19 +55,19 @@ export async function updateCommentAction(id: string, request: UpdateCommentRequ
       return {
         success: true,
         data: result.data,
-        message: "评论更新成功",
+        message: result.message || "",
       };
     }
 
     return {
       success: false,
-      message: result.message || "评论更新失败",
+      message: result.message || "",
     };
   } catch (error) {
     console.error("Failed to update comment:", error);
     return {
       success: false,
-      message: "评论更新失败，请稍后重试",
+      message: "",
     };
   }
 }
@@ -91,19 +91,19 @@ export async function deleteCommentAction(id: string, refType: string) {
 
       return {
         success: true,
-        message: "评论删除成功",
+        message: result.message || "",
       };
     }
 
     return {
       success: false,
-      message: result.message || "评论删除失败",
+      message: result.message || "",
     };
   } catch (error) {
     console.error("Failed to delete comment:", error);
     return {
       success: false,
-      message: "评论删除失败，请稍后重试",
+      message: "",
     };
   }
 }

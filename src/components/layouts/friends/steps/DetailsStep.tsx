@@ -3,6 +3,7 @@
 import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 import type { LinkApplyFormData } from "@/lib/validations/link";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -32,17 +33,19 @@ export function DetailsStep({
   onRemoveTech,
   errors,
 }: DetailsStepProps) {
+  const t = useTranslations();
+
   return (
     <FieldGroup>
       <Field>
         <FieldLabel>
           <Icon icon="mingcute:text-line" className="w-3.5 h-3.5" />
-          站点描述
+          {t("friends.apply.details.siteDescription")}
         </FieldLabel>
         <FieldContent>
           <textarea
             {...register("description")}
-            placeholder="简单介绍一下你的站点..."
+            placeholder={t("friends.apply.details.siteDescriptionPlaceholder")}
             className="form-input min-h-25 resize-none"
             autoFocus
           />
@@ -53,7 +56,7 @@ export function DetailsStep({
       <Field>
         <FieldLabel>
           <Icon icon="mingcute:rss-line" className="w-3.5 h-3.5" />
-          RSS 地址
+          {t("friends.apply.details.rssUrl")}
         </FieldLabel>
         <FieldContent>
           <input
@@ -63,14 +66,14 @@ export function DetailsStep({
             className="form-input"
           />
           {errors.rssurl && <FieldError>{errors.rssurl}</FieldError>}
-          <FieldDescription>可选，用于订阅你的最新文章</FieldDescription>
+          <FieldDescription>{t("friends.apply.details.rssDescription")}</FieldDescription>
         </FieldContent>
       </Field>
 
       <Field>
         <FieldLabel>
           <Icon icon="mingcute:code-line" className="w-3.5 h-3.5" />
-          技术栈
+          {t("friends.apply.details.techStack")}
         </FieldLabel>
         <FieldContent>
           <div className="flex gap-2">
@@ -84,11 +87,11 @@ export function DetailsStep({
                   onAddTech();
                 }
               }}
-              placeholder="例如: Next.js"
+              placeholder={t("friends.apply.details.techStackPlaceholder")}
               className="form-input flex-1"
             />
             <Button type="button" variant="secondary" size="sm" onClick={onAddTech}>
-              添加
+              {t("friends.apply.details.addTech")}
             </Button>
           </div>
           {techstack.length > 0 && (
@@ -116,7 +119,7 @@ export function DetailsStep({
             </div>
           )}
           {errors.techstack && <FieldError>{errors.techstack}</FieldError>}
-          <FieldDescription>可选，最多 6 个标签，按 Enter 添加</FieldDescription>
+          <FieldDescription>{t("friends.apply.details.techStackDescription")}</FieldDescription>
         </FieldContent>
       </Field>
     </FieldGroup>

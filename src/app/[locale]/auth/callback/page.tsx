@@ -2,6 +2,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -31,9 +32,10 @@ function Background() {
 }
 
 function AuthCallbackContent() {
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"processing" | "bind" | "success" | "error">("processing");
-  const [message, setMessage] = useState("正在建立安全连接...");
+  const [message, setMessage] = useState(() => t("authCallback.messages.connecting"));
   const [token, setToken] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -84,7 +86,7 @@ function AuthCallbackContent() {
         const isNewUser = searchParams.get("new_user") === "true";
 
         if (!tokenParam)
-          throw new Error("未找到认证令牌");
+          throw new Error(t("authCallback.error.tokenNotFound"));
 
         setToken(tokenParam);
         setSkipBindingAllowed(true);
@@ -94,12 +96,12 @@ function AuthCallbackContent() {
           // 这有助于解决某些严格的 ESLint 规则抱怨直接 setState
           const timer = setTimeout(() => {
             setStatus("bind");
-            setMessage("完善您的身份");
+            setMessage(t("authCallback.messages.completeProfile"));
           }, 500);
           timers.push(timer);
         } else {
           setStatus("success");
-          setMessage("登录成功");
+          setMessage(t("authCallback.messages.loginSuccess"));
 
           // 检测是否为移动端直接跳转模式
           const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
@@ -125,7 +127,7 @@ function AuthCallbackContent() {
         }
       } catch (err) {
         console.error("OAuth callback error:", err);
-        const errorMessage = err instanceof Error ? err.message : "登录失败";
+        const errorMessage = err instanceof Error ? err.message : t("authCallback.error.loginFailed");
         setStatus("error");
         setMessage(errorMessage);
 
@@ -154,24 +156,24 @@ function AuthCallbackContent() {
 
     const cleanup = processAuth();
     return cleanup;
-  }, [searchParams]); // 仅依赖 searchParams
+  }, [searchParams, t]);
 
   const handleBind = async () => {
     if (!token)
-      return toast.error("Token 丢失");
+      return toast.error(t("authCallback.error.tokenMissing"));
     if (!name.trim() || !email.trim())
-      return toast.error("请输入昵称和邮箱");
+      return toast.error(t("authCallback.error.enterNameAndEmail"));
 
     if (!EMAIL_REGEX.test(email))
-      return toast.error("请输入有效的邮箱地址");
+      return toast.error(t("authCallback.error.invalidEmail"));
 
     setIsBinding(true);
     try {
       const response = await bindAnonymousIdentity({ name, email }, token);
       if (response.code === 200) {
-        toast.success("绑定成功");
+        toast.success(t("authCallback.toast.bindSuccess"));
         setStatus("success");
-        setMessage("身份绑定完成");
+        setMessage(t("authCallback.messages.bindCompleted"));
 
         // 检测是否为移动端直接跳转模式
         const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
@@ -196,11 +198,11 @@ function AuthCallbackContent() {
           return () => clearTimeout(timer);
         }
       } else {
-        toast.error(response.message || "绑定失败");
+        toast.error(response.message || t("authCallback.error.bindFailed"));
       }
     } catch (error) {
       console.error("Bind error:", error);
-      toast.error("绑定失败，请稍后重试");
+      toast.error(t("authCallback.error.bindRetry"));
     } finally {
       setIsBinding(false);
     }
@@ -214,7 +216,7 @@ function AuthCallbackContent() {
       const response = await skipBind(token);
       if (response.code === 200) {
         setStatus("success");
-        setMessage("注册成功");
+        setMessage(t("authCallback.messages.registerSuccess"));
 
         // 检测是否为移动端直接跳转模式
         const isMobileMode = !window.opener && sessionStorage.getItem("oauth_return_url");
@@ -239,12 +241,12 @@ function AuthCallbackContent() {
           return () => clearTimeout(timer);
         }
       } else {
-        toast.error(response.message || "注册失败");
+        toast.error(response.message || t("authCallback.error.registerFailed"));
         setIsSkipping(false);
       }
     } catch (error) {
       console.error("Skip error:", error);
-      toast.error("注册失败，请稍后重试");
+      toast.error(t("authCallback.error.registerRetry"));
       setIsSkipping(false);
     }
   };
@@ -286,7 +288,7 @@ function AuthCallbackContent() {
                   />
                 </div>
                 <h2 className="text-xl font-semibold text-foreground tracking-tight">{message}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">请稍候，正在验证您的信息</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("authCallback.processingHint")}</p>
               </motion.div>
             )}
 
@@ -307,10 +309,10 @@ function AuthCallbackContent() {
                     <Icon icon="mingcute:user-add-2-line" className="w-6 h-6" />
                   </div>
                   <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
-                    关联匿名身份
+                    {t("authCallback.bind.title")}
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed px-2">
-                    如果您曾在本站以匿名身份发表过评论，请输入当时使用的昵称和邮箱进行关联。
+                    {t("authCallback.bind.description")}
                   </p>
                 </div>
 
@@ -325,7 +327,7 @@ function AuthCallbackContent() {
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="匿名昵称"
+                        placeholder={t("authCallback.bind.namePlaceholder")}
                         disabled={isBinding}
                         className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-all duration-200"
                       />
@@ -340,7 +342,7 @@ function AuthCallbackContent() {
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder="匿名邮箱"
+                        placeholder={t("authCallback.bind.emailPlaceholder")}
                         disabled={isBinding}
                         className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-all duration-200"
                       />
@@ -350,7 +352,7 @@ function AuthCallbackContent() {
                   <div className="py-2">
                     <div className="flex gap-3 text-xs text-amber-600 bg-amber-50/50 px-3 py-2.5 rounded-lg border border-amber-200/50">
                       <Icon icon="mingcute:information-line" className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>必须与之前的匿名评论完全一致才能绑定成功。</span>
+                      <span>{t("authCallback.bind.notice")}</span>
                     </div>
                   </div>
 
@@ -367,7 +369,7 @@ function AuthCallbackContent() {
                               <Icon icon="mingcute:loading-line" className="animate-spin w-4 h-4" />
                             )
                           : (
-                              "跳过"
+                              t("authCallback.bind.skip")
                             )}
                       </button>
                     )}
@@ -384,11 +386,11 @@ function AuthCallbackContent() {
                         ? (
                             <span className="flex items-center gap-2">
                               <Icon icon="mingcute:loading-line" className="animate-spin w-4 h-4" />
-                              绑定中...
+                              {t("authCallback.bind.binding")}
                             </span>
                           )
                         : (
-                            "确认关联"
+                            t("authCallback.bind.confirm")
                           )}
                     </button>
                   </div>
@@ -416,7 +418,7 @@ function AuthCallbackContent() {
                   <Icon icon="mingcute:check-fill" className="w-10 h-10" />
                 </motion.div>
                 <h2 className="text-xl font-bold text-foreground">{message}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">窗口即将自动关闭...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("authCallback.successAutoClose")}</p>
               </motion.div>
             )}
 
@@ -434,7 +436,7 @@ function AuthCallbackContent() {
                 <div className="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-6">
                   <Icon icon="mingcute:close-line" className="w-8 h-8" />
                 </div>
-                <h2 className="text-lg font-bold text-red-600">认证失败</h2>
+                <h2 className="text-lg font-bold text-red-600">{t("authCallback.error.title")}</h2>
                 <p className="mt-2 text-sm text-muted-foreground text-center max-w-70">
                   {message}
                 </p>
@@ -443,7 +445,7 @@ function AuthCallbackContent() {
                   onClick={() => window.close()}
                   className="mt-8 px-6 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors cursor-pointer"
                 >
-                  关闭窗口
+                  {t("authCallback.closeWindow")}
                 </button>
               </motion.div>
             )}
@@ -455,6 +457,8 @@ function AuthCallbackContent() {
 }
 
 export default function AuthCallbackPage() {
+  const t = useTranslations();
+
   return (
     <Suspense fallback={(
       <div className="relative flex min-h-screen flex-col items-center justify-center p-4">
@@ -466,7 +470,7 @@ export default function AuthCallbackPage() {
               className="relative w-12 h-12 text-accent-600 animate-spin"
             />
           </div>
-          <h2 className="text-xl font-semibold text-foreground tracking-tight">加载中...</h2>
+          <h2 className="text-xl font-semibold text-foreground tracking-tight">{t("authCallback.loading")}</h2>
         </div>
       </div>
     )}

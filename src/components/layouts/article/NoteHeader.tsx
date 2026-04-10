@@ -78,10 +78,12 @@ export function NoteHeader({
             <SmartDate date={modified} />
           </span>
         )}
+        {sourceLang !== lang && (
         <span className="flex items-center gap-1.5">
           <span className="text-muted-foreground/60">·</span>
           <span>{t("article.languageMeta", { source: sourceLanguageLabel, target: targetLanguageLabel })}</span>
         </span>
+        )}
         <span className="flex items-center gap-1.5">
           <span className="text-muted-foreground/60">·</span>
           <span>{t("article.translationMeta", { origin: originLabel })}</span>

@@ -3,6 +3,7 @@
 import type { LinkApplyFormData } from "@/lib/validations/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -25,18 +26,20 @@ import { VerificationStep } from "./steps/VerificationStep";
 
 type Step = "guidelines" | "verification" | "basic" | "details";
 
-const STEPS: { id: Step; title: string; icon: string }[] = [
-  { id: "guidelines", title: "申请须知", icon: "mingcute:information-line" },
-  { id: "verification", title: "身份验证", icon: "mingcute:shield-shape-line" },
-  { id: "basic", title: "基础信息", icon: "mingcute:idcard-line" },
-  { id: "details", title: "站点详情", icon: "mingcute:monitor-line" },
-];
-
 // -----------------------------------------------------------------------------
 // 主组件
 // -----------------------------------------------------------------------------
 
 export function LinkApplyForm() {
+  const t = useTranslations();
+
+  const steps: { id: Step; title: string; icon: string }[] = [
+    { id: "guidelines", title: t("friends.apply.steps.guidelines"), icon: "mingcute:information-line" },
+    { id: "verification", title: t("friends.apply.steps.verification"), icon: "mingcute:shield-shape-line" },
+    { id: "basic", title: t("friends.apply.steps.basic"), icon: "mingcute:idcard-line" },
+    { id: "details", title: t("friends.apply.steps.details"), icon: "mingcute:monitor-line" },
+  ];
+
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isPending, startTransition] = useTransition();
@@ -85,7 +88,7 @@ export function LinkApplyForm() {
     if (techInput.trim() && !formData.techstack?.includes(techInput.trim())) {
       const currentTechstack = formData.techstack || [];
       if (currentTechstack.length >= 6) {
-        toast.warning("最多添加 6 个技术栈标签");
+        toast.warning(t("friends.apply.toast.techstackLimit"));
         return;
       }
       setValue("techstack", [...currentTechstack, techInput.trim()]);
@@ -99,7 +102,7 @@ export function LinkApplyForm() {
   };
 
   const handleNextStep = async () => {
-    const stepId = STEPS[currentStep].id;
+    const stepId = steps[currentStep].id;
     const schema = linkApplyStepSchemas[stepId];
     const isValid = await trigger(Object.keys(schema.shape) as any);
 
@@ -123,15 +126,19 @@ export function LinkApplyForm() {
         if (result.status === "success") {
           setIsCodeSent(true);
           setCountdown(60);
-          toast.success("验证码已发送", { description: "请查收邮件" });
+          toast.success(t("friends.apply.toast.codeSent"), {
+            description: t("friends.apply.toast.checkEmail"),
+          });
         } else {
-          throw new Error(result.message || "发送失败");
+          throw new Error(result.message || t("friends.apply.toast.sendFailed"));
         }
       } catch (e: any) {
         if (e.message?.includes("429") || e.message?.includes("TooManyRequests")) {
-          toast.error("发送过于频繁", { description: "请稍后再试" });
+          toast.error(t("friends.apply.toast.sendTooFrequent"), {
+            description: t("friends.apply.toast.retryLater"),
+          });
         } else {
-          toast.error(e.message || "发送失败，请稍后重试");
+          toast.error(e.message || t("friends.apply.toast.sendRetry"));
         }
       }
     });
@@ -152,21 +159,25 @@ export function LinkApplyForm() {
         });
 
         if (result.status === "success") {
-          toast.success("申请已提交", { description: "审核通过后将自动显示在友链列表中" });
+          toast.success(t("friends.apply.toast.submitSuccess"), {
+            description: t("friends.apply.toast.submitSuccessDescription"),
+          });
           reset();
           setIsCodeSent(false);
           setCurrentStep(0);
           setIsOpen(false);
         } else {
-          throw new Error(result.message || "申请失败");
+          throw new Error(result.message || t("friends.apply.toast.submitFailed"));
         }
       } catch (e: any) {
         if (e.message?.includes("409") || e.message?.includes("Conflict")) {
-          toast.error("该站点已存在");
+          toast.error(t("friends.apply.toast.siteExists"));
         } else if (e.message?.includes("400") || e.message?.includes("BadRequest")) {
-          toast.error("验证码错误或已过期", { description: "请重新获取验证码" });
+          toast.error(t("friends.apply.toast.codeInvalidOrExpired"), {
+            description: t("friends.apply.toast.regetCode"),
+          });
         } else {
-          toast.error(e.message || "申请失败，请稍后重试");
+          toast.error(e.message || t("friends.apply.toast.submitRetry"));
         }
       }
     });
@@ -189,7 +200,7 @@ export function LinkApplyForm() {
 
   const renderProgressBar = () => (
     <div className="flex justify-between items-center mb-8 px-2">
-      {STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const isActive = index === currentStep;
         const isCompleted = index < currentStep;
         return (
@@ -211,7 +222,7 @@ export function LinkApplyForm() {
             <span className={cn("text-xs mt-2 font-medium transition-colors duration-300", isActive ? "text-accent-600" : "text-muted-foreground")}>
               {step.title}
             </span>
-            {index < STEPS.length - 1 && (
+            {index < steps.length - 1 && (
               <div className="absolute left-[calc(50%+20px)] top-5 w-[calc(100vw/4-40px)] sm:w-22.5 h-0.5 -z-10 bg-secondary">
                 <motion.div initial={{ width: "0%" }} animate={{ width: isCompleted ? "100%" : "0%" }} className="h-full bg-accent-500 transition-all duration-500" />
               </div>
@@ -230,7 +241,7 @@ export function LinkApplyForm() {
       <div className="mb-6 p-4 bg-secondary/20 rounded-2xl border border-dashed border-border/60">
         <div className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
           <Icon icon="mingcute:eye-2-line" className="w-3.5 h-3.5" />
-          预览效果
+          {t("friends.apply.preview.title")}
         </div>
         <div className="flex items-start gap-3 p-3 bg-card border border-border/50 rounded-xl shadow-sm">
           <div className="relative shrink-0">
@@ -249,10 +260,10 @@ export function LinkApplyForm() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate text-sm text-foreground">{formData.name || "站点名称"}</h3>
+              <h3 className="font-semibold truncate text-sm text-foreground">{formData.name || t("friends.apply.preview.siteNameFallback")}</h3>
               <span className="text-[10px] text-muted-foreground/60 font-mono truncate">{getHostname(formData.url)}</span>
             </div>
-            <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1 leading-relaxed">{formData.description || "这里将显示你的站点简介..."}</p>
+            <p className="text-xs text-muted-foreground/70 line-clamp-2 mt-1 leading-relaxed">{formData.description || t("friends.apply.preview.siteDescriptionFallback")}</p>
           </div>
         </div>
       </div>
@@ -340,8 +351,8 @@ export function LinkApplyForm() {
             <Icon icon="mingcute:add-line" className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <div className="text-sm font-bold text-foreground">申请加入友链</div>
-            <div className="text-xs text-muted-foreground">与我建立连接</div>
+            <div className="text-sm font-bold text-foreground">{t("friends.apply.open.title")}</div>
+            <div className="text-xs text-muted-foreground">{t("friends.apply.open.subtitle")}</div>
           </div>
         </button>
       </div>
@@ -351,7 +362,7 @@ export function LinkApplyForm() {
           <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle className="flex items-center gap-2">
               <Icon icon="mingcute:user-add-2-line" className="w-5 h-5 text-accent-500" />
-              申请友链
+              {t("friends.apply.dialogTitle")}
             </DialogTitle>
           </DialogHeader>
 
@@ -364,22 +375,22 @@ export function LinkApplyForm() {
 
             <DialogFooter className="px-6 py-4 flex-row justify-between">
               <Button type="button" variant="outline" onClick={handlePrevStep} disabled={currentStep === 0 || isPending} className={cn(currentStep === 0 && "opacity-0 pointer-events-none")}>
-                上一步
+                {t("friends.apply.actions.previous")}
               </Button>
 
-              {currentStep === STEPS.length - 1
+              {currentStep === steps.length - 1
                 ? (
                     <Button type="submit" disabled={isPending || !formData.code}>
                       {isPending
                         ? (
                             <>
                               <Icon icon="mingcute:loading-line" className="w-4 h-4 animate-spin" />
-                              提交中...
+                              {t("friends.apply.actions.submitting")}
                             </>
                           )
                         : (
                             <>
-                              提交申请
+                              {t("friends.apply.actions.submit")}
                               <Icon icon="mingcute:send-plane-fill" className="w-4 h-4" />
                             </>
                           )}
@@ -387,7 +398,7 @@ export function LinkApplyForm() {
                   )
                 : (
                     <Button type="button" onClick={handleNextStep}>
-                      下一步
+                      {t("friends.apply.actions.next")}
                       <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
                     </Button>
                   )}

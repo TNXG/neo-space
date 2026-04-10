@@ -18,6 +18,7 @@ import { createAuthComment } from "@/lib/api-client";
 import { getUAInfo } from "@/lib/ua-parse";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { CommentState } from "@/types/api";
 import {
   AuthenticatedUser,
   CornerBorders,
@@ -236,8 +237,10 @@ export function CommentForm({
         }
 
         if (result && "code" in result && (result.code === 200 || result.code === 201)) {
-          const message = (result && "message" in result ? result.message : undefined) || t("comment.submitSuccess");
-          const isPendingReview = message.includes("审核");
+          const commentState = result && "data" in result && result.data
+            ? result.data.state
+            : undefined;
+          const isPendingReview = commentState === CommentState.PENDING;
 
           if (isPendingReview) {
             toast.success(t("comment.pendingReview"), {
@@ -312,12 +315,12 @@ export function CommentForm({
           <TurnstileWidget
             onVerify={token => setTurnstileToken(token)}
             onError={() => {
-              toast.error("人机验证失败，请刷新重试");
+              toast.error(t("comment.turnstile.error"));
               setTurnstileToken(null);
               setTurnstileStatus("error");
             }}
             onExpire={() => {
-              toast.warning("验证已过期，请重新验证");
+              toast.warning(t("comment.turnstile.expired"));
               setTurnstileToken(null);
               setTurnstileStatus("error");
             }}
@@ -393,7 +396,7 @@ export function CommentForm({
             transition={{ delay: 0.2 }}
             className="absolute bottom-3 right-4 pointer-events-none text-xs text-muted-foreground/40"
           >
-            点击输入框展开
+            {t("comment.clickToExpand")}
           </motion.div>
         )}
       </fieldset>

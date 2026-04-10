@@ -1,6 +1,7 @@
 "use client";
 
 import type { AccountInfo } from "@/lib/api-client";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { updateAvatar } from "@/lib/api-client";
@@ -22,6 +23,7 @@ type AvatarProvider = "github" | "qq" | "gravatar";
  * 前端只传递 provider，后端负责获取对应的头像 URL
  */
 export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarChange }: AvatarSelectorProps) {
+  const t = useTranslations();
   const { token, fetchUser } = useAuthStore();
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -52,7 +54,7 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
   const options: Array<{ value: AvatarProvider; label: string; icon: string }> = [
     {
       value: "gravatar",
-      label: "Gravatar（邮箱头像）",
+      label: t("avatar.provider.gravatar"),
       icon: "mingcute:mail-line",
     },
   ];
@@ -61,7 +63,7 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
   if (accounts.some(acc => acc.provider === "github")) {
     options.push({
       value: "github",
-      label: "GitHub",
+      label: t("avatar.provider.github"),
       icon: "mingcute:github-line",
     });
   }
@@ -71,14 +73,14 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
   if (qqAccount && !userEmail.endsWith("@qq.oauth")) {
     options.push({
       value: "qq",
-      label: "QQ",
+      label: t("avatar.provider.qq"),
       icon: "mingcute:qq-line",
     });
   }
 
   const handleChange = async (provider: AvatarProvider) => {
     if (!token) {
-      toast.error("未登录");
+      toast.error(t("avatar.loginRequired"));
       return;
     }
 
@@ -93,16 +95,16 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
       const response = await updateAvatar({ provider }, token);
 
       if (response.code === 200) {
-        toast.success("头像更新成功");
+        toast.success(t("avatar.updateSuccess"));
         await fetchUser();
         onAvatarChange?.();
       } else {
-        toast.error(response.message || "更新失败");
+        toast.error(response.message || t("avatar.updateFailed"));
         setSelectedProvider(detectCurrentProvider());
       }
     } catch (error) {
       console.error("Update avatar error:", error);
-      toast.error("更新失败，请稍后重试");
+      toast.error(t("avatar.updateRetry"));
       setSelectedProvider(detectCurrentProvider());
     } finally {
       setIsUpdating(false);
@@ -142,7 +144,7 @@ export function AvatarSelector({ accounts, currentAvatar, userEmail, onAvatarCha
       </div>
 
       <p className="text-xs text-muted-foreground/80">
-        选择头像来源
+        {t("avatar.selectSource")}
       </p>
     </div>
   );

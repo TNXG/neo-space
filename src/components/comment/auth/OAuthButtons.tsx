@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
@@ -34,6 +35,7 @@ interface OAuthButtonsProps {
  * - 新用户在弹窗内完成匿名身份绑定
  */
 export function OAuthButtons({ variant = "default", className = "" }: OAuthButtonsProps) {
+  const t = useTranslations();
   const { setAuth } = useAuthStore();
   const { isLoading, startLogin, markMessageReceived, endLogin, reset } = useOAuthStore();
   /**
@@ -62,20 +64,20 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
             // 显示欢迎消息
             if (isNewUser) {
               if (bound) {
-                toast.success(`欢迎，${response.data.name}！已成功绑定历史评论`);
+                toast.success(t("comment.welcomeWithBound", { name: response.data.name }));
               } else {
-                toast.success(`欢迎，${response.data.name}！`);
+                toast.success(t("comment.welcome", { name: response.data.name }));
               }
             } else {
-              toast.success(`欢迎回来，${response.data.name}！`);
+              toast.success(t("comment.welcomeBack", { name: response.data.name }));
             }
           } else {
-            console.error("[OAuth] 用户信息响应异常:", response);
-            throw new Error(response.message || "获取用户信息失败");
+            console.error("[OAuth] Unexpected user info response:", response);
+            throw new Error(response.message || t("comment.fetchUserFailed"));
           }
         } catch (error) {
-          console.error("[OAuth] 错误:", error);
-          toast.error(error instanceof Error ? error.message : "登录失败");
+          console.error("[OAuth] Error:", error);
+          toast.error(error instanceof Error ? error.message : t("comment.loginFailed"));
         }
       }
     };
@@ -117,7 +119,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
       );
 
       if (!newPopup) {
-        toast.error("无法打开登录窗口，请检查浏览器弹窗设置");
+        toast.error(t("comment.oauthPopupBlocked"));
         return;
       }
 
@@ -144,27 +146,27 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               // 显示欢迎消息
               if (event.data.isNewUser) {
                 if (event.data.bound) {
-                  toast.success(`欢迎，${response.data.name}！已成功绑定历史评论`);
+                  toast.success(t("comment.welcomeWithBound", { name: response.data.name }));
                 } else {
-                  toast.success(`欢迎，${response.data.name}！`);
+                  toast.success(t("comment.welcome", { name: response.data.name }));
                 }
               } else {
-                toast.success(`欢迎回来，${response.data.name}！`);
+                toast.success(t("comment.welcomeBack", { name: response.data.name }));
               }
             } else {
-              console.error("[OAuth] 用户信息响应异常:", response);
-              throw new Error(response.message || "获取用户信息失败");
+              console.error("[OAuth] Unexpected user info response:", response);
+              throw new Error(response.message || t("comment.fetchUserFailed"));
             }
           } catch (error) {
-            console.error("[OAuth] 错误:", error);
-            toast.error(error instanceof Error ? error.message : "登录失败");
+            console.error("[OAuth] Error:", error);
+            toast.error(error instanceof Error ? error.message : t("comment.loginFailed"));
           } finally {
             endLogin();
             window.removeEventListener("message", handleMessage);
           }
         } else if (event.data.type === "oauth_error") {
           markMessageReceived();
-          toast.error(event.data.message || "登录失败");
+          toast.error(event.data.message || t("comment.loginFailed"));
           endLogin();
           window.removeEventListener("message", handleMessage);
         }
@@ -178,7 +180,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
       };
     } catch (error) {
       console.error("OAuth error:", error);
-      toast.error("登录失败，请重试");
+      toast.error(t("comment.loginRetry"));
       reset();
     }
   };
@@ -194,7 +196,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
           onClick={handleGitHubLogin}
           disabled={isLoading}
           className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-800 px-4 py-2 text-sm text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
-          aria-label="使用 GitHub 登录"
+          aria-label={t("comment.githubLogin")}
         >
           {isLoading
             ? (
@@ -211,7 +213,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
           onClick={handleQQLogin}
           disabled={isLoading}
           className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
-          aria-label="使用 QQ 登录"
+          aria-label={t("comment.qqLogin")}
         >
           {isLoading
             ? (
@@ -234,7 +236,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
         onClick={handleGitHubLogin}
         disabled={isLoading}
         className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary-800 px-6 py-3 text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
-        aria-label="使用 GitHub 登录"
+        aria-label={t("comment.githubLogin")}
       >
         {isLoading
           ? (
@@ -244,7 +246,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <Icon icon="mingcute:github-line" className="size-5" />
             )}
         <span className="font-medium">
-          {isLoading ? "登录中..." : "使用 GitHub 登录"}
+          {isLoading ? t("comment.loggingIn") : t("comment.githubLogin")}
         </span>
       </button>
 
@@ -253,7 +255,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
         onClick={handleQQLogin}
         disabled={isLoading}
         className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-accent-600 px-6 py-3 text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
-        aria-label="使用 QQ 登录"
+        aria-label={t("comment.qqLogin")}
       >
         {isLoading
           ? (
@@ -263,7 +265,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
               <Icon icon="mingcute:qq-line" className="size-5" />
             )}
         <span className="font-medium">
-          {isLoading ? "登录中..." : "使用 QQ 登录"}
+          {isLoading ? t("comment.loggingIn") : t("comment.qqLogin")}
         </span>
       </button>
     </div>
