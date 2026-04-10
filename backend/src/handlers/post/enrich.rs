@@ -4,7 +4,10 @@ use crate::{
     app::SharedState,
     error::{AppError, AppResult},
     models::*,
-    services::helpers::{apply_translation_to_post, get_ai_summary, get_ai_translation},
+    services::helpers::{
+        apply_translation_to_post, get_ai_summary, get_ai_translation,
+        get_category_name_translation_map, localize_category_names,
+    },
 };
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
@@ -33,7 +36,12 @@ pub async fn enrich_single_post(
     let ai_summary = get_ai_summary(state, post_id, lang).await;
 
     let mut post_with_category = PostWithCategory::from(post);
-    post_with_category.category = category;
+    let mut localized_category = category;
+    if let Some(category) = localized_category.as_mut() {
+        let translation_map = get_category_name_translation_map(state, &[category.id], lang).await;
+        localize_category_names(std::iter::once(category), &translation_map);
+    }
+    post_with_category.category = localized_category;
     post_with_category.ai_summary = ai_summary;
 
     if let Some(translation) = get_ai_translation(state, post_id, "posts", lang).await {
@@ -66,7 +74,7 @@ pub async fn enrich_posts_with_data(
     let mut category_map = HashMap::new();
 
     if !category_ids.is_empty() {
-        let filter = doc! { "_id": { "$in": category_ids } };
+        let filter = doc! { "_id": { "$in": &category_ids } };
         match categories_collection.find(filter).await {
             Ok(mut cursor) => {
                 while let Ok(Some(category)) = cursor.try_next().await {
@@ -78,6 +86,10 @@ pub async fn enrich_posts_with_data(
             }
         }
     }
+
+    let category_translation_map =
+        get_category_name_translation_map(state, &category_ids, lang).await;
+    localize_category_names(category_map.values_mut(), &category_translation_map);
 
     // Collect post IDs for AI summaries
     let post_ids: Vec<String> = posts.iter().map(|p| p.id.to_hex()).collect();

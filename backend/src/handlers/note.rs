@@ -1,6 +1,9 @@
 //! Note handlers
 
-use crate::services::helpers::{apply_translation_to_note, get_ai_summary, get_ai_translation};
+use crate::services::helpers::{
+    apply_translation_to_note, get_ai_summary, get_ai_translation, get_dict_translation_map,
+    localize_note_taxonomy_fields,
+};
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
@@ -85,6 +88,22 @@ pub async fn list_notes(
     {
         items.push(note);
     }
+
+    let mood_source_texts: Vec<String> =
+        items.iter().filter_map(|note| note.mood.clone()).collect();
+    let weather_source_texts: Vec<String> = items
+        .iter()
+        .filter_map(|note| note.weather.clone())
+        .collect();
+    let mood_translation_map =
+        get_dict_translation_map(&state, "note.mood", lang, &mood_source_texts).await;
+    let weather_translation_map =
+        get_dict_translation_map(&state, "note.weather", lang, &weather_source_texts).await;
+    localize_note_taxonomy_fields(
+        items.iter_mut(),
+        &mood_translation_map,
+        &weather_translation_map,
+    );
 
     // Batch-fetch AI summaries using $in query (avoids N+1)
     if !items.is_empty() {
@@ -202,6 +221,26 @@ pub async fn get_note(
     let note_id = note.id.to_hex();
     let lang = params.lang.as_deref().unwrap_or("zh");
 
+    let mood_translation_map = get_dict_translation_map(
+        &state,
+        "note.mood",
+        lang,
+        &note.mood.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    let weather_translation_map = get_dict_translation_map(
+        &state,
+        "note.weather",
+        lang,
+        &note.weather.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    localize_note_taxonomy_fields(
+        std::iter::once(&mut note),
+        &mood_translation_map,
+        &weather_translation_map,
+    );
+
     note.ai_summary = get_ai_summary(&state, &note_id, lang).await;
     if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
         apply_translation_to_note(&mut note, &translation);
@@ -230,6 +269,26 @@ pub async fn get_note_by_nid(
 
     let note_id = note.id.to_hex();
     let lang = params.lang.as_deref().unwrap_or("zh");
+
+    let mood_translation_map = get_dict_translation_map(
+        &state,
+        "note.mood",
+        lang,
+        &note.mood.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    let weather_translation_map = get_dict_translation_map(
+        &state,
+        "note.weather",
+        lang,
+        &note.weather.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    localize_note_taxonomy_fields(
+        std::iter::once(&mut note),
+        &mood_translation_map,
+        &weather_translation_map,
+    );
 
     note.ai_summary = get_ai_summary(&state, &note_id, lang).await;
     if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {

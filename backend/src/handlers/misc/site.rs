@@ -2,6 +2,7 @@
 
 use crate::models::common::PaginatedList;
 use crate::models::options::SiteConfig;
+use crate::services::helpers::{get_category_name_translation_map, localize_category_names};
 use crate::services::options;
 use crate::{
     app::SharedState,
@@ -9,11 +10,16 @@ use crate::{
     models::*,
 };
 use axum::{Json, extract::State};
-use bson::doc;
+use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use mongodb::Collection;
 
 use super::pagination::PaginationParams;
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ListCategoriesParams {
+    pub lang: Option<String>,
+}
 
 /// Get public configuration
 pub async fn get_config(
@@ -34,7 +40,9 @@ pub async fn get_config(
 /// List all categories
 pub async fn list_categories(
     State(state): State<SharedState>,
+    AppQuery(params): AppQuery<ListCategoriesParams>,
 ) -> AppResult<Json<ApiResponse<Vec<Category>>>> {
+    let lang = params.lang.as_deref().unwrap_or("zh");
     let collection: Collection<Category> = state.db.collection("categories");
 
     let find_options = mongodb::options::FindOptions::builder()
@@ -55,6 +63,10 @@ pub async fn list_categories(
     })? {
         items.push(category);
     }
+
+    let category_ids: Vec<ObjectId> = items.iter().map(|category| category.id).collect();
+    let translation_map = get_category_name_translation_map(&state, &category_ids, lang).await;
+    localize_category_names(items.iter_mut(), &translation_map);
 
     Ok(Json(ApiResponse {
         code: 200,

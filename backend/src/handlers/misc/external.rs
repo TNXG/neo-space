@@ -4,7 +4,9 @@ use crate::{
     app::SharedState,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
-    services::helpers::get_ai_translation,
+    services::helpers::{
+        get_ai_translation, get_category_name_translation_map, localize_category_names,
+    },
 };
 use axum::{Json, extract::State};
 use bson::{doc, oid::ObjectId};
@@ -153,6 +155,11 @@ pub async fn aggregate_nav(
     {
         cat_map.insert(cat.id, cat);
     }
+
+    let category_ids: Vec<ObjectId> = cat_map.keys().copied().collect();
+    let category_translation_map =
+        get_category_name_translation_map(&state, &category_ids, lang).await;
+    localize_category_names(cat_map.values_mut(), &category_translation_map);
 
     // ── 2. Count published posts per category (one aggregation) ──
     let count_pipeline = vec![
