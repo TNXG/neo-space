@@ -5,6 +5,7 @@ use crate::services::notification_templates::{
     build_html_email, build_text_email, generate_notification_url,
 };
 use bson::doc;
+use futures::TryStreamExt;
 use mongodb::Database;
 use std::time::Duration;
 
@@ -59,38 +60,69 @@ impl NotificationService {
     pub async fn get_admin_config(&self) -> Result<AdminEmailConfig, AppError> {
         let collection: mongodb::Collection<bson::Document> = self.db.collection("options");
 
-        // Get site config (contains both title and url)
-        let site_config_doc = collection
-            .find_one(doc! { "name": "siteConfig" })
+        let option_docs = collection
+            .find(doc! { "name": { "$in": ["seo", "url"] } })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load site config: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to load site options: {}", e)))?;
 
-        let (site_name, site_url) = if let Some(doc) = site_config_doc {
-            let value = doc.get_document("value").ok();
-            let title = value
-                .and_then(|v| v.get_str("title").ok())
-                .unwrap_or("Neo Space")
-                .to_string();
-            let url = value
-                .and_then(|v| v.get_str("url").ok())
-                .unwrap_or("https://example.com")
-                .to_string();
-            (title, url)
-        } else {
-            ("Neo Space".to_string(), "https://example.com".to_string())
-        };
-
-        // Get admin email from owner account
-        let readers_collection: mongodb::Collection<bson::Document> = self.db.collection("readers");
-        let admin_email = match readers_collection
-            .find_one(doc! { "isOwner": true })
+        let option_docs: Vec<bson::Document> = option_docs
+            .try_collect()
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load admin email: {}", e)))?
-        {
-            Some(doc) => doc.get_str("email").map(|s| s.to_string()).ok(),
-            None => None,
+            .map_err(|e| AppError::Database(format!("Failed to iterate site options: {}", e)))?;
+
+        let mut site_name = "Neo Space".to_string();
+        let mut site_url = "https://example.com".to_string();
+
+        for doc in option_docs {
+            let name = doc.get_str("name").unwrap_or_default();
+            let value = match doc.get_document("value") {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+
+            match name {
+                "seo" => {
+                    if let Ok(title) = value.get_str("title")
+                        && !title.trim().is_empty()
+                    {
+                        site_name = title.trim().to_string();
+                    }
+                }
+                "url" => {
+                    if let Ok(url) = value.get_str("webUrl")
+                        && !url.trim().is_empty()
+                    {
+                        site_url = url.trim().to_string();
+                    }
+                }
+                _ => {}
+            }
         }
-        .ok_or_else(|| AppError::Internal("Admin email not configured".to_string()))?;
+
+        let owner_profiles: mongodb::Collection<bson::Document> =
+            self.db.collection("owner_profiles");
+        let owner_profile = owner_profiles
+            .find_one(doc! {})
+            .await
+            .map_err(|e| AppError::Database(format!("Failed to load owner profile: {}", e)))?;
+
+        let owner_profile = owner_profile
+            .ok_or_else(|| AppError::Internal("Owner profile not configured".to_string()))?;
+
+        let admin_email = owner_profile
+            .get_str("mail")
+            .ok()
+            .filter(|email| !email.trim().is_empty())
+            .map(|email| email.trim().to_string())
+            .or_else(|| {
+                owner_profile
+                    .get_document("socialIds")
+                    .ok()
+                    .and_then(|social_ids| social_ids.get_str("mail").ok())
+                    .filter(|email| !email.trim().is_empty())
+                    .map(|email| email.trim().to_string())
+            })
+            .ok_or_else(|| AppError::Internal("Admin email not configured".to_string()))?;
 
         Ok(AdminEmailConfig {
             email: admin_email,

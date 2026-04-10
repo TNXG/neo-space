@@ -11,21 +11,37 @@ pub fn generate_notification_url(
     ref_title: Option<&str>,
 ) -> String {
     match ref_type {
-        "post" => {
+        "post" | "posts" => {
             if let Some(slug) = ref_title {
                 format!("{}/archives/{}", site_url, slug)
             } else {
                 format!("{}/archives/{}", site_url, ref_id)
             }
         }
-        "note" => {
+        "note" | "notes" => {
             if let Some(slug) = ref_title {
                 format!("{}/notes/{}", site_url, slug)
             } else {
                 format!("{}/notes/{}", site_url, ref_id)
             }
         }
+        "page" | "pages" => {
+            if let Some(slug) = ref_title {
+                format!("{}/{}", site_url, slug)
+            } else {
+                site_url.to_string()
+            }
+        }
         _ => site_url.to_string(),
+    }
+}
+
+fn ref_type_name(ref_type: &str) -> &'static str {
+    match ref_type {
+        "post" | "posts" => "文章",
+        "note" | "notes" => "动态",
+        "page" | "pages" => "页面",
+        _ => "内容",
     }
 }
 
@@ -112,11 +128,7 @@ pub fn build_html_email(
 </html>"#,
         comment_type = comment_type,
         author = html_escape::encode_text(&notification.author),
-        ref_type_name = if notification.ref_type == "post" {
-            "文章"
-        } else {
-            "动态"
-        },
+        ref_type_name = ref_type_name(&notification.ref_type),
         parent_info = parent_info,
         comment_text = html_escape::encode_text(&notification.text),
         email = html_escape::encode_text(&notification.email),
@@ -171,11 +183,7 @@ pub fn build_text_email(
         © {} {} · Powered by Neo Space",
         comment_type,
         notification.author,
-        if notification.ref_type == "post" {
-            "文章"
-        } else {
-            "动态"
-        },
+        ref_type_name(&notification.ref_type),
         comment_type,
         parent_info,
         notification.text,
