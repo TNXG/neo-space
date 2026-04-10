@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 use crate::error::AppError;
 use crate::models::{Account, Reader};
+use crate::services::helpers::is_owner_user_id;
 
 use super::OAuthService;
 use super::OAuthUserInfo;
@@ -155,7 +156,13 @@ impl OAuthService {
                 .await
                 .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?;
 
-            let is_owner = reader.is_some_and(|r| r.is_owner);
+            let is_owner = match is_owner_user_id(&self.db, account.user_id).await {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!("Failed to resolve GitHub owner status: {}", error);
+                    reader.is_some_and(|r| r.is_owner)
+                }
+            };
 
             Ok((user_id, is_owner, false))
         } else {

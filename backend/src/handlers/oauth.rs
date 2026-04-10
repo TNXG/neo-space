@@ -1,84 +1,54 @@
 //! OAuth authentication handlers
 
-use crate::services::helpers::make_oauth_service;
+use crate::services::helpers::make_runtime_oauth_service;
 use crate::{
     app::SharedState,
     auth::{extractors::OptionalAuth, jwt::generate_jwt},
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
 };
-use axum::{Json, extract::State};
+use axum::{Json, extract::State, response::Redirect};
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 
 /// GitHub OAuth authorization
-pub async fn github_oauth(
-    State(state): State<SharedState>,
-) -> AppResult<Json<OAuthAuthorizeResponse>> {
-    let oauth_service = make_oauth_service(&state);
+pub async fn github_oauth(State(state): State<SharedState>) -> AppResult<Redirect> {
+    let oauth_service = make_runtime_oauth_service(&state).await?;
     let url = oauth_service.github_authorize_url()?;
 
-    Ok(Json(OAuthAuthorizeResponse { url }))
+    Ok(Redirect::to(&url))
 }
 
 /// GitHub OAuth callback
 pub async fn github_callback(
     State(state): State<SharedState>,
     AppQuery(query): AppQuery<OAuthCallbackQuery>,
-) -> AppResult<Json<OAuthCallbackResponse>> {
-    let oauth_service = make_oauth_service(&state);
-
-    let user_info = oauth_service.exchange_github_code(&query.code).await?;
-
-    let (user_id, is_owner, _is_new_user) = oauth_service.process_oauth_login(user_info).await?;
-
-    let token = generate_jwt(
-        ObjectId::parse_str(&user_id)
-            .map_err(|_| AppError::Internal("Invalid user ID".to_string()))?,
-        is_owner,
-        &state.config.jwt_secret,
-    )
-    .map_err(|e| AppError::Internal(format!("Failed to generate token: {}", e)))?;
-
-    Ok(Json(OAuthCallbackResponse { token }))
+) -> Redirect {
+    Redirect::to(&handle_oauth_callback(&state, OAuthProvider::GitHub, &query.code).await)
 }
 
 /// QQ OAuth authorization
-pub async fn qq_oauth(State(state): State<SharedState>) -> AppResult<Json<OAuthAuthorizeResponse>> {
-    let oauth_service = make_oauth_service(&state);
+pub async fn qq_oauth(State(state): State<SharedState>) -> AppResult<Redirect> {
+    let oauth_service = make_runtime_oauth_service(&state).await?;
     let url = oauth_service.qq_authorize_url()?;
 
-    Ok(Json(OAuthAuthorizeResponse { url }))
+    Ok(Redirect::to(&url))
 }
 
 /// QQ OAuth callback
 pub async fn qq_callback(
     State(state): State<SharedState>,
     AppQuery(query): AppQuery<OAuthCallbackQuery>,
-) -> AppResult<Json<OAuthCallbackResponse>> {
-    let oauth_service = make_oauth_service(&state);
-
-    let user_info = oauth_service.exchange_qq_code(&query.code).await?;
-
-    let (user_id, is_owner, _is_new_user) = oauth_service.process_qq_oauth_login(user_info).await?;
-
-    let token = generate_jwt(
-        ObjectId::parse_str(&user_id)
-            .map_err(|_| AppError::Internal("Invalid user ID".to_string()))?,
-        is_owner,
-        &state.config.jwt_secret,
-    )
-    .map_err(|e| AppError::Internal(format!("Failed to generate token: {}", e)))?;
-
-    Ok(Json(OAuthCallbackResponse { token }))
+) -> Redirect {
+    Redirect::to(&handle_oauth_callback(&state, OAuthProvider::QQ, &query.code).await)
 }
 
 /// Get bindable OAuth identities for anonymous user
 pub async fn get_bindable_identities(
     State(state): State<SharedState>,
 ) -> AppResult<Json<Vec<BindableIdentity>>> {
-    let oauth_service = make_oauth_service(&state);
+    let oauth_service = make_runtime_oauth_service(&state).await?;
 
     let github_client_id = oauth_service.github_client_id();
 
@@ -279,18 +249,6 @@ pub struct OAuthCallbackQuery {
     pub code: String,
 }
 
-/// OAuth authorize response
-#[derive(Debug, Serialize)]
-pub struct OAuthAuthorizeResponse {
-    pub url: String,
-}
-
-/// OAuth callback response
-#[derive(Debug, Serialize)]
-pub struct OAuthCallbackResponse {
-    pub token: String,
-}
-
 /// Bindable identity response
 #[derive(Debug, Clone, Serialize)]
 pub struct BindableIdentity {
@@ -304,4 +262,84 @@ pub struct BindableIdentity {
 pub struct BindAnonymousRequest {
     pub name: String,
     pub email: String,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum OAuthProvider {
+    GitHub,
+    QQ,
+}
+
+async fn handle_oauth_callback(state: &SharedState, provider: OAuthProvider, code: &str) -> String {
+    let oauth_service = match make_runtime_oauth_service(state).await {
+        Ok(service) => service,
+        Err(error) => return build_oauth_error_redirect(state, &app_error_message(&error)),
+    };
+
+    let user_info_result = match provider {
+        OAuthProvider::GitHub => oauth_service.exchange_github_code(code).await,
+        OAuthProvider::QQ => oauth_service.exchange_qq_code(code).await,
+    };
+
+    let user_info = match user_info_result {
+        Ok(user_info) => user_info,
+        Err(error) => return build_oauth_error_redirect(state, &app_error_message(&error)),
+    };
+
+    let login_result = match provider {
+        OAuthProvider::GitHub => oauth_service.process_oauth_login(user_info).await,
+        OAuthProvider::QQ => oauth_service.process_qq_oauth_login(user_info).await,
+    };
+
+    let (user_id, is_owner, is_new_user) = match login_result {
+        Ok(result) => result,
+        Err(error) => return build_oauth_error_redirect(state, &app_error_message(&error)),
+    };
+
+    let object_id = match ObjectId::parse_str(&user_id) {
+        Ok(object_id) => object_id,
+        Err(_) => return build_oauth_error_redirect(state, "Invalid user ID"),
+    };
+
+    let token = match generate_jwt(object_id, is_owner, &state.config.jwt_secret) {
+        Ok(token) => token,
+        Err(error) => {
+            return build_oauth_error_redirect(
+                state,
+                &format!("Failed to generate token: {error}"),
+            );
+        }
+    };
+
+    format!(
+        "{}/auth/callback?token={}&new_user={}",
+        state.config.frontend_url,
+        urlencoding::encode(&token),
+        is_new_user
+    )
+}
+
+fn build_oauth_error_redirect(state: &SharedState, message: &str) -> String {
+    format!(
+        "{}/auth/callback?error={}",
+        state.config.frontend_url,
+        urlencoding::encode(message)
+    )
+}
+
+fn app_error_message(error: &AppError) -> String {
+    match error {
+        AppError::NotFound(message)
+        | AppError::BadRequest(message)
+        | AppError::Database(message)
+        | AppError::Internal(message)
+        | AppError::OAuthFailed(message)
+        | AppError::ConfigError(message) => message.clone(),
+        AppError::Unauthorized | AppError::MissingAuthHeader | AppError::InvalidToken => {
+            "Unauthorized".to_string()
+        }
+        AppError::Forbidden => "Forbidden".to_string(),
+        AppError::SpamDetected => "Spam detected".to_string(),
+        AppError::TokenExpired => "Token expired".to_string(),
+    }
 }

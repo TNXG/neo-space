@@ -4,11 +4,25 @@ use bson::doc;
 
 use crate::error::AppError;
 use crate::models::{Account, Reader};
+use crate::services::helpers::is_owner_user_id;
 
 use super::OAuthService;
 use super::OAuthUserInfo;
 
 impl OAuthService {
+    /// Rocket 时期的 QQ 登录依赖外部中转服务，而不是本地直连 QQ OAuth。
+    /// Axum 迁移后改成了仅支持本地凭证直连，导致旧部署在未配置
+    /// `QQ_APP_ID/QQ_APP_KEY` 时直接报错。
+    ///
+    /// 这里保留新实现，同时在本地凭证缺失时自动回退到旧的中转服务。
+    fn qq_proxy_authorize_url(&self) -> String {
+        let redirect_uri = format!("{}/api/auth/oauth/qq/callback", self.backend_url.as_str());
+        format!(
+            "https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
+            urlencoding::encode(&redirect_uri)
+        )
+    }
+
     /// Get QQ OAuth client credentials
     pub fn qq_app_id(&self) -> &str {
         &self.qq_app_id
@@ -18,7 +32,7 @@ impl OAuthService {
     pub fn qq_authorize_url(&self) -> Result<String, AppError> {
         let app_id = self.qq_app_id.as_str();
         if app_id.is_empty() {
-            return Err(AppError::Internal("QQ OAuth not configured".to_string()));
+            return Ok(self.qq_proxy_authorize_url());
         }
         let redirect_uri = format!("{}/api/auth/oauth/qq/callback", self.backend_url.as_str());
         Ok(format!(
@@ -34,7 +48,7 @@ impl OAuthService {
         let app_key = self.qq_app_key.as_str();
 
         if app_id.is_empty() || app_key.is_empty() {
-            return Err(AppError::Internal("QQ OAuth not configured".to_string()));
+            return self.exchange_qq_code_via_proxy(code).await;
         }
 
         let redirect_uri = format!("{}/api/auth/oauth/qq/callback", self.backend_url.as_str());
@@ -144,6 +158,73 @@ impl OAuthService {
         })
     }
 
+    async fn exchange_qq_code_via_proxy(&self, code: &str) -> Result<OAuthUserInfo, AppError> {
+        let user_url = format!("https://api-space.tnxg.top/user/get?code={code}");
+
+        let response = self
+            .http_client
+            .get(&user_url)
+            .send()
+            .await
+            .map_err(|error| AppError::Internal(format!("QQ proxy request failed: {error}")))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(AppError::Internal(format!(
+                "QQ proxy request failed ({status}): {text}"
+            )));
+        }
+
+        let proxy_response: serde_json::Value = response.json().await.map_err(|error| {
+            AppError::Internal(format!("Failed to parse QQ proxy response: {error}"))
+        })?;
+
+        let status = proxy_response
+            .get("status")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default();
+
+        if status != "success" {
+            let message = proxy_response
+                .get("message")
+                .and_then(|value| value.as_str())
+                .unwrap_or("QQ proxy login failed");
+            return Err(AppError::Internal(message.to_string()));
+        }
+
+        let user_data = proxy_response
+            .get("data")
+            .ok_or_else(|| AppError::Internal("QQ proxy response missing user data".to_string()))?;
+
+        let openid = user_data
+            .get("qq_openid")
+            .and_then(|value| value.as_str())
+            .ok_or_else(|| AppError::Internal("QQ proxy response missing qq_openid".to_string()))?
+            .to_string();
+
+        let nickname = user_data
+            .get("nickname")
+            .and_then(|value| value.as_str())
+            .unwrap_or("QQ User")
+            .to_string();
+
+        let avatar = user_data
+            .get("avatar")
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        Ok(OAuthUserInfo {
+            provider: "qq".to_string(),
+            provider_user_id: openid,
+            nickname,
+            avatar,
+            email: None,
+            access_token: None,
+        })
+    }
+
     /// Process QQ OAuth login (same logic as GitHub but for QQ provider)
     pub async fn process_qq_oauth_login(
         &self,
@@ -168,7 +249,13 @@ impl OAuthService {
                 .find_one(doc! { "_id": account.user_id })
                 .await
                 .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?;
-            let is_owner = reader.is_some_and(|r| r.is_owner);
+            let is_owner = match is_owner_user_id(&self.db, account.user_id).await {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!("Failed to resolve QQ owner status: {}", error);
+                    reader.is_some_and(|r| r.is_owner)
+                }
+            };
             Ok((user_id, is_owner, false))
         } else {
             let user_id = bson::oid::ObjectId::new();
