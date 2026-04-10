@@ -334,7 +334,7 @@ export function LinkApplyForm() {
       <div className="mt-12 flex justify-center pb-20">
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg hover:shadow-xl hover:bg-card transition-all duration-300 cursor-pointer"
+          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl transition-colors duration-300 cursor-pointer"
         >
           <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-300">
             <Icon icon="mingcute:add-line" className="w-5 h-5" />

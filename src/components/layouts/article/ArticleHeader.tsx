@@ -1,5 +1,6 @@
 import type { Category } from "@/types/api";
 import { useTranslations } from "next-intl";
+import { MarkdownPreviewClient } from "@/components/common/markdown";
 import { SmartDate } from "@/components/common/smart-date";
 import { Icon } from "@/lib/inline-icon";
 import { Link } from "@/locales/navigation";
@@ -79,9 +80,9 @@ export function ArticleHeader({
               </span>
             </div>
           )}
-          <p className="text-base text-foreground/80 leading-relaxed">
-            {displaySummary}
-          </p>
+          <div className="text-base text-foreground/80 leading-relaxed">
+            <MarkdownPreviewClient content={displaySummary} maxLength={Infinity} />
+          </div>
         </div>
       )}
 

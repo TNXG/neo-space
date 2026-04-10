@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSWRConfig } from "swr";
 import useSWRInfinite from "swr/infinite";
+import { MarkdownPreviewClient } from "@/components/common/markdown/MarkdownPreview.client";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
 import { useHasMounted } from "@/hooks/use-has-mounted";
@@ -377,10 +378,13 @@ function PostPreview({ post }: { post: Post }) {
 
       {post.category && (
         <div className="flex justify-start">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+          <Link
+            href={`/categories/${post.category.slug}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200"
+          >
             <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
             {post.category.name}
-          </span>
+          </Link>
         </div>
       )}
 
@@ -391,11 +395,11 @@ function PostPreview({ post }: { post: Post }) {
             <span className="text-xs font-medium text-accent-600">{t("interactive.post.aiSummary")}</span>
           </div>
         )}
-        <p className="text-left line-clamp-6">
+        <div className="text-left line-clamp-6">
           {post.aiSummary || post.summary
-            ? truncateText(stripMarkdown(post.aiSummary || post.summary || ""), 300)
-            : t("interactive.post.noSummary")}
-        </p>
+            ? <MarkdownPreviewClient content={post.aiSummary || post.summary || ""} maxLength={300} />
+            : <p>{t("interactive.post.noSummary")}</p>}
+        </div>
       </div>
 
       {post.tags && post.tags.length > 0 && (
@@ -469,11 +473,9 @@ function NotePreview({ note }: { note: Note }) {
             <span className="text-xs font-medium text-accent-600">{t("interactive.post.aiSummary")}</span>
           </div>
         )}
-        <p className="text-left line-clamp-6">
-          {note.aiSummary
-            ? truncateText(stripMarkdown(note.aiSummary), 200)
-            : truncateText(stripMarkdown(note.text), 200)}
-        </p>
+        <div className="text-left line-clamp-6">
+          <MarkdownPreviewClient content={note.aiSummary || note.text} maxLength={200} />
+        </div>
       </div>
     </motion.div>
   );
@@ -514,7 +516,7 @@ export function PostInteractiveList({
               const res = await fetchPosts(page, size, locale);
               return { items: res.data.items as Post[], hasNextPage: res.data.pagination.has_next_page };
             },
-            keyPrefix: "post",
+            keyPrefix: `post-${locale}`,
           }
         : undefined}
     />
@@ -551,7 +553,7 @@ export function NoteInteractiveList({
           const res = await fetchNotes(page, size, locale);
           return { items: res.data.items as Note[], hasNextPage: res.data.pagination.has_next_page };
         },
-        keyPrefix: "note",
+        keyPrefix: `note-${locale}`,
       }}
     />
   );
