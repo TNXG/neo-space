@@ -11,5 +11,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "articles", icon: "mingcute:book-2-line", href: "/posts", dropdownType: "posts" },
   { id: "notes", icon: "mingcute:pen-line", href: "/notes", dropdownType: "notes" },
   { id: "thinking", icon: "mingcute:light-line", href: "/thinking" },
+  { id: "donate", icon: "mingcute:heart-line", href: "/donate" },
   { id: "friends", icon: "mingcute:group-line", href: "/friends" },
 ];

@@ -161,6 +161,13 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
           </NavigationMenu.Link>
           <NavigationMenu.Link
             closeOnClick
+            render={<Link href="/donate" />}
+            className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
+          >
+            {t("nav.donate")}
+          </NavigationMenu.Link>
+          <NavigationMenu.Link
+            closeOnClick
             render={<Link href="/about-me" />}
             className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
           >
