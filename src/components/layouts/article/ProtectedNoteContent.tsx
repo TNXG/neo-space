@@ -2,9 +2,8 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
-import { renderProtectedNoteMarkdownAction } from "@/actions/note";
+import { unlockAndRenderProtectedNoteAction } from "@/actions/note";
 import { Button } from "@/components/ui/button";
-import { unlockNoteByNid } from "@/lib/api-client";
 
 interface ProtectedNoteContentProps {
   nid: number;
@@ -24,13 +23,7 @@ export function ProtectedNoteContent({ nid, lang }: ProtectedNoteContentProps) {
       setIsUnlocking(true);
       setError(null);
 
-      const unlockedNote = await unlockNoteByNid(nid, password, lang);
-      const renderKey = [
-        unlockedNote.data._id,
-        unlockedNote.data.modified || unlockedNote.data.created,
-        lang,
-      ].join(":");
-      const renderedMarkdown = await renderProtectedNoteMarkdownAction(renderKey, unlockedNote.data.text);
+      const renderedMarkdown = await unlockAndRenderProtectedNoteAction(nid, password, lang);
 
       setRenderedContent(renderedMarkdown);
       setPassword("");
