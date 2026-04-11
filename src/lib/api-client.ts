@@ -37,6 +37,16 @@ function inferWsUrlFromApiUrl(apiUrl: string): string {
 export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 export const WS_FALLBACK_URL = process.env.NEXT_PUBLIC_WS_URL || inferWsUrlFromApiUrl(API_BASE_URL);
 
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiClientError";
+  }
+}
+
 function withLangParam(endpoint: string, lang?: string): string {
   if (!lang || lang === "zh") {
     return endpoint;
@@ -113,7 +123,10 @@ async function apiClient<T>(
           });
         }
       }
-      throw new Error(errorData?.message || `API Error: ${response.status} ${response.statusText}`);
+      throw new ApiClientError(
+        errorData?.message || `API Error: ${response.status} ${response.statusText}`,
+        response.status,
+      );
     }
 
     return response.json();
@@ -204,6 +217,15 @@ export async function getNoteByNid(nid: number, lang?: string): Promise<ApiRespo
   return apiClient<ApiResponse<Note>>(withLangParam(`/notes/nid/${nid}`, lang), {
     tags: ["notes", `note-nid-${nid}`],
     revalidate: process.env.NODE_ENV === "development" ? 0 : false,
+  });
+}
+
+export async function unlockNoteByNid(nid: number, password: string, lang?: string): Promise<ApiResponse<Note>> {
+  return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}/unlock`, {
+    method: "POST",
+    body: JSON.stringify({ password, lang }),
+    cache: "no-store",
+    revalidate: false,
   });
 }
 

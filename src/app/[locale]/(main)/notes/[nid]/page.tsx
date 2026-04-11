@@ -1,11 +1,13 @@
+import type { AdjacentNotes } from "@/lib/api-client";
+import type { TOCItem } from "@/lib/toc";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown";
-import { ArticleLayout, NoteHeader, OutdatedAlert } from "@/components/layouts/article";
+import { ArticleLayout, NoteHeader, OutdatedAlert, ProtectedNoteContent } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
-import { getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
+import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 
 // Static regex patterns to avoid re-compilation
@@ -61,7 +63,14 @@ export async function generateMetadata({ params }: PageProps) {
         description,
       },
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiClientError && error.status === 403) {
+      return {
+        title: `加密日记 #${nidNum}`,
+        description: "这篇日记已加密。",
+      };
+    }
+
     return { title: "日记不存在" };
   }
 }
@@ -74,43 +83,69 @@ export default async function NotePage({ params }: PageProps) {
     notFound();
 
   let note;
-  let toc;
-  let adjacentNotes;
+  let toc: TOCItem[];
+  let adjacentNotes: AdjacentNotes = { prev: null, next: null };
   let authorName = "作者";
+  let isProtected = false;
 
   try {
-    // 并行获取手记内容、相邻手记信息和站点配置
-    const [noteResponse, adjacentResponse, configResponse] = await Promise.all([
-      getNoteByNid(nidNum, locale),
-      getAdjacentNotes(nidNum, locale),
+    const [adjacentResponse, configResponse] = await Promise.all([
+      getAdjacentNotes(nidNum, locale).catch(() => null),
       getSiteConfig().catch(() => null),
     ]);
 
+    const noteResponse = await getNoteByNid(nidNum, locale);
     note = noteResponse.data;
-    adjacentNotes = adjacentResponse.data;
+    adjacentNotes = adjacentResponse?.data ?? adjacentNotes;
     toc = await extractTOC(note.text);
 
     if (configResponse) {
       authorName = configResponse.data.seo.title;
     }
-  } catch {
-    notFound();
+  } catch (error) {
+    if (!(error instanceof ApiClientError) || error.status !== 403) {
+      notFound();
+    }
+
+    isProtected = true;
+    note = {
+      _id: `protected-note-${nidNum}`,
+      nid: nidNum,
+      title: `加密日记 #${nidNum}`,
+      text: "",
+      created: new Date().toISOString(),
+      lang: locale,
+      sourceLang: locale,
+      isAiTranslated: false,
+      modified: undefined,
+      mood: undefined,
+      weather: undefined,
+      location: undefined,
+      allowComment: false,
+      isPublished: true,
+      bookmark: false,
+      images: [],
+      isEncrypted: true,
+    };
+    toc = [];
   }
 
   // 生成 JSON-LD 结构化数据
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
-  const jsonLd = generateArticleJsonLd({
-    title: note.title,
-    description: note.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
-    url: `${baseUrl}/notes/${note.nid}`,
-    datePublished: note.created,
-    dateModified: note.modified || note.created,
-    authorName,
-  });
+  const jsonLd = isProtected
+    ? null
+    : generateArticleJsonLd({
+        title: note.title,
+        description: note.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
+        url: `${baseUrl}/notes/${note.nid}`,
+        datePublished: note.created,
+        dateModified: note.modified || note.created,
+        authorName,
+      });
 
   return (
     <>
-      <JsonLd data={jsonLd} />
+      {jsonLd && <JsonLd data={jsonLd} />}
       <ArticleLayout
         toc={toc}
         breadcrumbs={[
@@ -134,16 +169,20 @@ export default async function NotePage({ params }: PageProps) {
         )}
         content={(
           <>
-            <OutdatedAlert
-              refId={note._id}
-              refType="note"
-              lang={locale}
-              lastUpdated={note.modified || note.created}
-            />
-            <MarkdownRenderer content={note.text} />
+            {!isProtected && (
+              <OutdatedAlert
+                refId={note._id}
+                refType="note"
+                lang={locale}
+                lastUpdated={note.modified || note.created}
+              />
+            )}
+            {isProtected
+              ? <ProtectedNoteContent nid={nidNum} lang={locale} />
+              : <MarkdownRenderer content={note.text} />}
           </>
         )}
-        footer={note.allowComment && (
+        footer={!isProtected && note.allowComment && (
           <Suspense fallback={<CommentSkeleton />}>
             <CommentSectionServer
               refId={note._id}

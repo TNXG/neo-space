@@ -64,6 +64,7 @@ export interface Note {
   nid: number;
   title: string;
   text: string;
+  isEncrypted: boolean;
   lang: string;
   sourceLang: string;
   isAiTranslated: boolean;

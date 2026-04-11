@@ -6,7 +6,7 @@ use crate::services::helpers::{
 };
 use crate::{
     app::SharedState,
-    error::{AppError, AppQuery, AppResult},
+    error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
 };
 use axum::{
@@ -29,6 +29,12 @@ pub struct DetailNoteParams {
     lang: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UnlockNoteRequest {
+    password: String,
+    lang: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct AdjacentNotes {
     pub prev: Option<AdjacentNote>,
@@ -48,6 +54,27 @@ struct MinimalNote {
     pub id: ObjectId,
     pub nid: i32,
     pub title: String,
+}
+
+fn is_protected_note(note: &Note) -> bool {
+    note.password
+        .as_ref()
+        .is_some_and(|password| !password.is_empty())
+}
+
+fn strip_protected_fields(note: &mut Note) {
+    note.password = None;
+    note.encrypted_text = None;
+}
+
+fn redact_protected_note(note: &mut Note) {
+    note.is_encrypted = is_protected_note(note);
+    strip_protected_fields(note);
+
+    if note.is_encrypted {
+        note.text = String::new();
+        note.ai_summary = None;
+    }
 }
 
 /// List published notes with pagination
@@ -145,6 +172,7 @@ pub async fn list_notes(
             for (ref_id, summary) in zh_fallback_map {
                 summary_map.entry(ref_id).or_insert(summary);
             }
+
             for note in &mut items {
                 note.ai_summary = summary_map.get(&note.id.to_hex()).cloned();
             }
@@ -182,6 +210,10 @@ pub async fn list_notes(
                 }
             }
         }
+    }
+
+    for note in &mut items {
+        redact_protected_note(note);
     }
 
     let total_page = ((total as f64) / (size as f64)).ceil() as i64;
@@ -245,6 +277,10 @@ pub async fn get_note(
     if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
         apply_translation_to_note(&mut note, &translation);
     }
+    if is_protected_note(&note) {
+        return Err(AppError::Forbidden);
+    }
+    strip_protected_fields(&mut note);
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -294,6 +330,66 @@ pub async fn get_note_by_nid(
     if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
         apply_translation_to_note(&mut note, &translation);
     }
+    if is_protected_note(&note) {
+        return Err(AppError::Forbidden);
+    }
+    strip_protected_fields(&mut note);
+
+    Ok(Json(ApiResponse {
+        code: 200,
+        status: ResponseStatus::Success,
+        message: "Success".to_string(),
+        data: note,
+    }))
+}
+
+/// Unlock protected note by numeric ID (nid)
+pub async fn unlock_note_by_nid(
+    State(state): State<SharedState>,
+    Path(nid): Path<i32>,
+    AppJson(request): AppJson<UnlockNoteRequest>,
+) -> AppResult<Json<ApiResponse<Note>>> {
+    let collection = state.db.collection::<Note>("notes");
+    let mut note = collection
+        .find_one(doc! { "nid": nid, "isPublished": true })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Note not found".to_string()))?;
+
+    let stored_password = note.password.as_deref().unwrap_or("");
+    if stored_password.is_empty() || stored_password != request.password {
+        return Err(AppError::Forbidden);
+    }
+
+    let note_id = note.id.to_hex();
+    let lang = request.lang.as_deref().unwrap_or("zh");
+
+    let mood_translation_map = get_dict_translation_map(
+        &state,
+        "note.mood",
+        lang,
+        &note.mood.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    let weather_translation_map = get_dict_translation_map(
+        &state,
+        "note.weather",
+        lang,
+        &note.weather.iter().cloned().collect::<Vec<_>>(),
+    )
+    .await;
+    localize_note_taxonomy_fields(
+        std::iter::once(&mut note),
+        &mood_translation_map,
+        &weather_translation_map,
+    );
+
+    note.ai_summary = get_ai_summary(&state, &note_id, lang).await;
+    if let Some(translation) = get_ai_translation(&state, &note_id, "notes", lang).await {
+        apply_translation_to_note(&mut note, &translation);
+    }
+    strip_protected_fields(&mut note);
+    note.is_encrypted = false;
 
     Ok(Json(ApiResponse {
         code: 200,

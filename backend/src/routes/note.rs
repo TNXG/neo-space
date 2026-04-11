@@ -10,6 +10,10 @@ pub fn routes() -> axum::Router<SharedState> {
         .route("/{id}", axum::routing::get(note::get_note))
         .route("/nid/{nid}", axum::routing::get(note::get_note_by_nid))
         .route(
+            "/nid/{nid}/unlock",
+            axum::routing::post(note::unlock_note_by_nid),
+        )
+        .route(
             "/nid/{nid}/adjacent",
             axum::routing::get(note::get_adjacent_notes),
         )

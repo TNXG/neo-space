@@ -260,8 +260,12 @@ pub struct Note {
     pub images: Vec<NoteImage>,
     #[serde(rename = "commentsIndex", default)]
     pub comments_index: i32,
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     pub password: Option<String>,
+    #[serde(default, rename = "encryptedText", skip_serializing)]
+    pub encrypted_text: Option<EncryptedText>,
+    #[serde(default, rename = "isEncrypted")]
+    pub is_encrypted: bool,
     #[serde(
         rename = "publicAt",
         default,
@@ -281,6 +285,18 @@ pub struct Note {
     pub source_lang: String,
     #[serde(rename = "isAiTranslated", default)]
     pub is_ai_translated: bool,
+}
+
+/// Browser-decryptable note payload.
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct EncryptedText {
+    pub version: i32,
+    pub algorithm: String,
+    pub kdf: String,
+    pub iterations: u32,
+    pub salt: String,
+    pub iv: String,
+    pub ciphertext: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
