@@ -25,7 +25,12 @@ export function ProtectedNoteContent({ nid, lang }: ProtectedNoteContentProps) {
       setError(null);
 
       const unlockedNote = await unlockNoteByNid(nid, password, lang);
-      const renderedMarkdown = await renderProtectedNoteMarkdownAction(unlockedNote.data.text);
+      const renderKey = [
+        unlockedNote.data._id,
+        unlockedNote.data.modified || unlockedNote.data.created,
+        lang,
+      ].join(":");
+      const renderedMarkdown = await renderProtectedNoteMarkdownAction(renderKey, unlockedNote.data.text);
 
       setRenderedContent(renderedMarkdown);
       setPassword("");
