@@ -11,12 +11,24 @@ pub(super) async fn handle_translation_change(
     event: ChangeStreamEvent<Document>,
 ) -> Result<(), String> {
     let operation = format!("{:?}", event.operation_type);
-    tracing::info!("Translation change: op={}", operation);
+    let document_key = event.document_key.as_ref().map(ToString::to_string);
+    let has_full_document = event.full_document.is_some();
+    tracing::info!(
+        "Translation change: op={}, key={:?}, has_full_document={}, isr=false",
+        operation,
+        document_key,
+        has_full_document
+    );
 
     if event.full_document.is_some() {
         sync_translation_to_meilisearch(state, event.full_document.as_ref())
             .await
             .map_err(|error| error.to_string())?;
+    } else {
+        tracing::warn!(
+            "Translation change skipped Meilisearch sync because full_document is missing: key={:?}",
+            document_key
+        );
     }
 
     Ok(())
@@ -43,17 +55,24 @@ pub(super) async fn handle_post_change(
         .unwrap_or(false);
 
     tracing::info!(
-        "Post change: op={}, id={:?}, slug={:?}, published={}",
+        "Post change: op={}, id={:?}, slug={:?}, published={}, has_full_document={}",
         operation,
         post_id,
         slug,
-        is_published
+        is_published,
+        event.full_document.is_some()
     );
 
     if is_published {
         sync_post_to_meilisearch(state, event.full_document.as_ref())
             .await
             .map_err(|error| error.to_string())?;
+    } else {
+        tracing::info!(
+            "Post change skipped Meilisearch sync because post is not published: id={:?}, slug={:?}",
+            post_id,
+            slug
+        );
     }
 
     if let Some(id) = post_id {
@@ -66,6 +85,10 @@ pub(super) async fn handle_post_change(
         }
     }
 
+    tracing::info!(
+        "Post change triggering ISR revalidation: tag=posts, path={:?}",
+        slug
+    );
     trigger_isr_revalidation(state, "posts", slug.as_deref()).await;
     Ok(())
 }
@@ -90,17 +113,24 @@ pub(super) async fn handle_note_change(
         .unwrap_or(false);
 
     tracing::info!(
-        "Note change: op={}, id={:?}, nid={:?}, published={}",
+        "Note change: op={}, id={:?}, nid={:?}, published={}, has_full_document={}",
         operation,
         note_id,
         nid,
-        is_published
+        is_published,
+        event.full_document.is_some()
     );
 
     if is_published {
         sync_note_to_meilisearch(state, event.full_document.as_ref())
             .await
             .map_err(|error| error.to_string())?;
+    } else {
+        tracing::info!(
+            "Note change skipped Meilisearch sync because note is not published: id={:?}, nid={:?}",
+            note_id,
+            nid
+        );
     }
 
     if let Some(id) = note_id {
@@ -113,7 +143,50 @@ pub(super) async fn handle_note_change(
         }
     }
 
+    tracing::info!("Note change triggering ISR revalidation: tag=notes, path=None");
     trigger_isr_revalidation(state, "notes", None).await;
+    Ok(())
+}
+
+pub(super) async fn handle_page_change(
+    state: &SharedState,
+    event: ChangeStreamEvent<Document>,
+) -> Result<(), String> {
+    let operation = format!("{:?}", event.operation_type);
+    let page_id = event
+        .document_key
+        .and_then(|key| key.get_object_id("_id").ok())
+        .map(|id| id.to_hex());
+    let slug = event
+        .full_document
+        .as_ref()
+        .and_then(|doc| doc.get_str("slug").ok())
+        .map(ToString::to_string);
+
+    tracing::info!(
+        "Page change: op={}, id={:?}, slug={:?}, has_full_document={}",
+        operation,
+        page_id,
+        slug,
+        event.full_document.is_some()
+    );
+
+    if let Some(id) = page_id {
+        let key = format!("page:{id}");
+        state.cache.invalidate(&key).await;
+    }
+
+    if let Some(slug) = &slug {
+        let slug_key = format!("page:{slug}");
+        state.cache.invalidate(&slug_key).await;
+    }
+
+    state.cache.invalidate("pages").await;
+    tracing::info!(
+        "Page change triggering ISR revalidation: tag=pages, path={:?}",
+        slug
+    );
+    trigger_isr_revalidation(state, "pages", slug.as_deref()).await;
     Ok(())
 }
 
@@ -142,21 +215,29 @@ pub(super) async fn handle_link_change(
         );
 
     tracing::info!(
-        "Link change: op={}, id={:?}, state={:?}, should_refresh={}",
+        "Link change: op={}, id={:?}, state={:?}, should_refresh={}, has_full_document={}",
         operation,
         link_id,
         link_state,
-        should_refresh
+        should_refresh,
+        event.full_document.is_some()
     );
 
-    if let Some(id) = link_id {
+    if let Some(id) = &link_id {
         let key = format!("link:{id}");
         state.cache.invalidate(&key).await;
     }
     state.cache.invalidate("links").await;
 
     if should_refresh {
+        tracing::info!("Link change triggering ISR revalidation: tag=links, path=/friends");
         trigger_isr_revalidation(state, "links", Some("/friends")).await;
+    } else {
+        tracing::info!(
+            "Link change skipped ISR revalidation because link state does not require refresh: id={:?}, state={:?}",
+            link_id,
+            link_state
+        );
     }
 
     Ok(())

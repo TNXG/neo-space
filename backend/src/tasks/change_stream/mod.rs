@@ -10,7 +10,8 @@ use mongodb::{Collection, bson::Document};
 use crate::app::SharedState;
 
 use self::handlers::{
-    handle_link_change, handle_note_change, handle_post_change, handle_translation_change,
+    handle_link_change, handle_note_change, handle_page_change, handle_post_change,
+    handle_translation_change,
 };
 
 /// Start the `MongoDB` change stream monitoring task.
@@ -44,15 +45,19 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
 
     let posts: Collection<Document> = state.db.collection("posts");
     let notes: Collection<Document> = state.db.collection("notes");
+    let pages: Collection<Document> = state.db.collection("pages");
     let links: Collection<Document> = state.db.collection("links");
     let ai_translations: Collection<Document> = state.db.collection("ai_translations");
 
     let posts_stream = create_change_stream(&posts, "posts").await?;
     let notes_stream = create_change_stream(&notes, "notes").await?;
+    let pages_stream = create_change_stream(&pages, "pages").await?;
     let links_stream = create_change_stream(&links, "links").await?;
     let translations_stream = create_change_stream(&ai_translations, "ai_translations").await?;
 
-    tracing::info!("✓ Change stream 监听已启动 - 正在监听: posts, notes, links, ai_translations");
+    tracing::info!(
+        "✓ Change stream 监听已启动 - 正在监听: posts, notes, pages, links, ai_translations"
+    );
 
     let state_posts = state.clone();
     tokio::spawn(async move {
@@ -67,6 +72,7 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
                 Err(error) => tracing::error!("Post change stream error: {}", error),
             }
         }
+        tracing::warn!("Post change stream ended");
     });
 
     let state_notes = state.clone();
@@ -82,6 +88,23 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
                 Err(error) => tracing::error!("Note change stream error: {}", error),
             }
         }
+        tracing::warn!("Note change stream ended");
+    });
+
+    let state_pages = state.clone();
+    tokio::spawn(async move {
+        let mut stream = pages_stream;
+        while let Some(result) = stream.next().await {
+            match result {
+                Ok(event) => {
+                    if let Err(error) = handle_page_change(&state_pages, event).await {
+                        tracing::error!("Failed to handle Page change: {}", error);
+                    }
+                }
+                Err(error) => tracing::error!("Page change stream error: {}", error),
+            }
+        }
+        tracing::warn!("Page change stream ended");
     });
 
     let state_translations = state.clone();
@@ -98,6 +121,7 @@ async fn monitor_changes(state: SharedState) -> Result<(), String> {
                 Err(error) => tracing::error!("Translation change stream error: {}", error),
             }
         }
+        tracing::warn!("Translation change stream ended");
     });
 
     let mut stream = links_stream;
@@ -126,7 +150,7 @@ async fn create_change_stream(
 > {
     collection
         .watch()
-        .full_document(mongodb::options::FullDocumentType::Required)
+        .full_document(mongodb::options::FullDocumentType::UpdateLookup)
         .read_concern(mongodb::options::ReadConcern::majority())
         .await
         .map_err(|error| {

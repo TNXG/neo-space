@@ -38,6 +38,12 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
 
     let timestamp = chrono::Utc::now().timestamp();
     let url = format!("{}/api/revalidate", frontend_url);
+    tracing::info!(
+        "Preparing ISR revalidation request: url={}, tag={}, path={:?}",
+        url,
+        tag,
+        path
+    );
 
     // Revalidate by tag
     let signature = match generate_signature(tag, "", timestamp) {
