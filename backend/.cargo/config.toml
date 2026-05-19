@@ -2,18 +2,24 @@
 # brew install sccache
 # rustc-wrapper = "sccache"
 
+# 注意：cargo 的 rustflags 不会跨表合并，只有最具体的一处生效。
+# 因此 nightly 加速选项必须放进各 target 段，而不是放在 [build].rustflags。
+# 这些是 nightly 选项，切回 stable 时删掉两条 -Z 行即可：
+#   -Z threads=8         编译器前端并行，dev 冷启动 / 重载更快、峰值内存更低
+#   -Z share-generics=y  跨 crate 共享泛型单态，减少重复 codegen，重载更快
+
 [target.aarch64-apple-darwin]
 rustflags = [
-  "-C",
-  "link-arg=-Wl,-ld_new",
-  "-C",
-  "link-arg=-Wl,-dead_strip_dylibs",
+  "-Z", "threads=8",
+  "-Z", "share-generics=y",
+  "-C", "link-arg=-Wl,-ld_new",
+  "-C", "link-arg=-Wl,-dead_strip_dylibs",
 ]
 
 [target.x86_64-apple-darwin]
 rustflags = [
-  "-C",
-  "link-arg=-Wl,-ld_new",
-  "-C",
-  "link-arg=-Wl,-dead_strip_dylibs",
+  "-Z", "threads=8",
+  "-Z", "share-generics=y",
+  "-C", "link-arg=-Wl,-ld_new",
+  "-C", "link-arg=-Wl,-dead_strip_dylibs",
 ]

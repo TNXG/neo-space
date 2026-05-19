@@ -12,8 +12,24 @@ indexing_slicing = "forbid"
 [profile.dev]
 incremental = true
 codegen-units = 128
-debug = 1
+# 只保留行号表，链接更快、磁盘和峰值内存显著下降，堆栈仍可读
+debug = "line-tables-only"
 split-debuginfo = "unpacked"
+
+# 依赖项一次性轻度优化、且不带调试信息：
+# - 第三方 crate 不会被频繁修改，重载时不会重编它们
+# - 省下大量 debuginfo 和增量缓存所占的磁盘 / 内存
+# - 运行期速度也更接近 release，dev 体感更顺
+[profile.dev.package."*"]
+opt-level = 1
+debug = false
+codegen-units = 16
+
+# 当前业务 crate 仍走最快的 debug，方便迭代
+[profile.dev.package.neo-space-backend-axum]
+opt-level = 0
+debug = "line-tables-only"
+incremental = true
 
 [profile.release]
 opt-level = 3
