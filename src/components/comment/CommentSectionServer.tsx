@@ -28,7 +28,7 @@ function StaticCommentItem({
     <div
       className={cn(
         "relative rounded-lg overflow-visible",
-        canNest && "before:absolute before:content-[''] before:top-10 sm:before:top-12 before:left-3 sm:before:left-4 before:h-[calc(100%-1.5rem)] sm:before:h-[calc(100%-2rem)] before:w-[2px] before:bg-linear-to-b before:from-border before:to-transparent",
+        canNest && "before:absolute before:content-[''] before:top-10 sm:before:top-12 before:left-3 sm:before:left-4 before:h-[calc(100%-1.5rem)] sm:before:h-[calc(100%-2rem)] before:w-0.5 before:bg-linear-to-b before:from-border before:to-transparent",
       )}
     >
       <dl className="relative flex flex-col gap-1.5 sm:gap-2 mt-4 sm:mt-6">
