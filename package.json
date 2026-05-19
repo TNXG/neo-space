@@ -2,7 +2,7 @@
   "name": "neo-space",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "packageManager": "pnpm@11.1.3+sha512.c85357fe17ca12dd23dd7071822666dfd7e3cb76fe214e3370b5ea2fb34f2a231185509b63e717f3cd0acb38dd3f8d82bcd5e8172400ae678b70ea4fbed0896d",
   "scripts": {
     "dev": "next dev",
     "dev:auto": "./scripts/dev.sh start",
@@ -34,7 +34,7 @@
     "input-otp": "^1.4.2",
     "katex": "^0.16.45",
     "motion": "^12.38.0",
-    "next": "16.2.2",
+    "next": "16.2.6",
     "next-intl": "^4.9.0",
     "next-themes": "^0.4.6",
     "qrcode.react": "^4.2.0",

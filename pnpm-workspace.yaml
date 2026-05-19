@@ -1,0 +1,14 @@
+shellEmulator: true
+
+trustPolicy: no-downgrade
+
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
+  esbuild: true
+  exifreader: true
+  sharp: true
+
+trustPolicyExclude:
+  - chokidar@4.0.3
+  - semver@6.3.1
