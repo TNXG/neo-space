@@ -1,6 +1,6 @@
 use aes::Aes128;
 use aes::cipher::block_padding::Pkcs7;
-use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyInit};
+use aes::cipher::{BlockModeDecrypt, BlockModeEncrypt, KeyInit};
 use bson::doc;
 use ecb::{Decryptor, Encryptor};
 use md5;
@@ -82,7 +82,7 @@ pub async fn get_ncm_now_play(user_id: u64) -> Result<Value, NeteaseError> {
     let key = generate_key(EAPI_KEY.as_bytes());
     let cipher = Decryptor::<Aes128>::new(&key.into());
     let decrypted_slice = cipher
-        .decrypt_padded_mut::<Pkcs7>(&mut buf)
+        .decrypt_padded::<Pkcs7>(&mut buf)
         .map_err(|e| format!("Decryption failed: {}", e))?;
     let decrypted_str = String::from_utf8(decrypted_slice.to_vec())?;
     let json: Value = serde_json::from_str(&decrypted_str)?;
@@ -129,7 +129,7 @@ fn eapi_encrypt(path: &str, data: &str) -> Result<String, &'static str> {
         dest.copy_from_slice(plaintext);
     }
     let ciphertext = cipher
-        .encrypt_padded_mut::<Pkcs7>(&mut buf, plaintext.len())
+        .encrypt_padded::<Pkcs7>(&mut buf, plaintext.len())
         .map_err(|_| "Encryption failed: buffer too small")?;
 
     Ok(format!("params={}", hex::encode(ciphertext).to_uppercase()))

@@ -1,7 +1,7 @@
 //! ISR (Incremental Static Regeneration) revalidation for Next.js
 
 use crate::app::SharedState;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 use std::time::Duration;
 
