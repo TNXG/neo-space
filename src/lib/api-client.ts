@@ -225,7 +225,6 @@ export async function unlockNoteByNid(nid: number, password: string, lang?: stri
     method: "POST",
     body: JSON.stringify({ password, lang }),
     cache: "no-store",
-    revalidate: false,
   });
 }
 

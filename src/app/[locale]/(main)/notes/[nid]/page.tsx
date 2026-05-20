@@ -153,20 +153,22 @@ export default async function NotePage({ params }: PageProps) {
           { label: t("nav.notes"), href: "/notes" },
           { label: note.title },
         ]}
-        header={(
-          <NoteHeader
-            title={note.title}
-            nid={note.nid}
-            created={note.created}
-            modified={note.modified}
-            lang={note.lang}
-            sourceLang={note.sourceLang}
-            isAiTranslated={note.isAiTranslated}
-            mood={note.mood}
-            weather={note.weather}
-            location={note.location}
-          />
-        )}
+        header={isProtected
+          ? null
+          : (
+              <NoteHeader
+                title={note.title}
+                nid={note.nid}
+                created={note.created}
+                modified={note.modified}
+                lang={note.lang}
+                sourceLang={note.sourceLang}
+                isAiTranslated={note.isAiTranslated}
+                mood={note.mood}
+                weather={note.weather}
+                location={note.location}
+              />
+            )}
         content={(
           <>
             {!isProtected && (
@@ -178,7 +180,26 @@ export default async function NotePage({ params }: PageProps) {
               />
             )}
             {isProtected
-              ? <ProtectedNoteContent nid={nidNum} lang={locale} />
+              ? (
+                  <ProtectedNoteContent
+                    nid={nidNum}
+                    lang={locale}
+                    initialHeader={{
+                      _id: note._id,
+                      nid: note.nid,
+                      title: note.title,
+                      created: note.created,
+                      modified: note.modified,
+                      mood: note.mood,
+                      weather: note.weather,
+                      location: note.location,
+                      lang: note.lang,
+                      sourceLang: note.sourceLang,
+                      isAiTranslated: note.isAiTranslated,
+                      allowComment: note.allowComment,
+                    }}
+                  />
+                )
               : <MarkdownRenderer content={note.text} />}
           </>
         )}

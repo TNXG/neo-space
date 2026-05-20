@@ -1,8 +1,11 @@
 "use server";
 
+import type { ReactNode } from "react";
+import type { TOCItem } from "@/lib/toc";
 import { unstable_cache } from "next/cache";
 import { MarkdownRenderer } from "@/components/common/markdown";
 import { unlockNoteByNid } from "@/lib/api-client";
+import { extractTOC } from "@/lib/toc";
 
 const renderProtectedNoteMarkdown = unstable_cache(
   async (_renderKey: string, content: string) => {
@@ -12,13 +15,61 @@ const renderProtectedNoteMarkdown = unstable_cache(
   { revalidate: 57600 },
 );
 
-export async function unlockAndRenderProtectedNoteAction(nid: number, password: string, lang: string) {
+export interface UnlockedNoteHeader {
+  _id: string;
+  nid: number;
+  title: string;
+  created: string;
+  modified?: string;
+  mood?: string;
+  weather?: string;
+  location?: string;
+  lang: string;
+  sourceLang: string;
+  isAiTranslated: boolean;
+  allowComment: boolean;
+}
+
+export interface UnlockedNoteResult {
+  header: UnlockedNoteHeader;
+  rendered: ReactNode;
+  toc: TOCItem[];
+}
+
+export async function unlockAndRenderProtectedNoteAction(
+  nid: number,
+  password: string,
+  lang: string,
+): Promise<UnlockedNoteResult> {
   const unlockedNote = await unlockNoteByNid(nid, password, lang);
+  const note = unlockedNote.data;
   const renderKey = [
-    unlockedNote.data._id,
-    unlockedNote.data.modified || unlockedNote.data.created,
+    note._id,
+    note.modified || note.created,
     lang,
   ].join(":");
 
-  return renderProtectedNoteMarkdown(renderKey, unlockedNote.data.text);
+  const [rendered, toc] = await Promise.all([
+    renderProtectedNoteMarkdown(renderKey, note.text),
+    extractTOC(note.text),
+  ]);
+
+  return {
+    header: {
+      _id: note._id,
+      nid: note.nid,
+      title: note.title,
+      created: note.created,
+      modified: note.modified,
+      mood: note.mood,
+      weather: note.weather,
+      location: note.location,
+      lang: note.lang,
+      sourceLang: note.sourceLang,
+      isAiTranslated: note.isAiTranslated,
+      allowComment: note.allowComment,
+    },
+    rendered,
+    toc,
+  };
 }

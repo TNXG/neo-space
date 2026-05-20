@@ -16,16 +16,20 @@ interface ArticleContentProps {
  * 滚动方向感知：页面下滑时标题进入底部 30% 更新，页面上滑时标题进入顶部 30% 更新
  */
 export function ArticleContent({ children, items }: ArticleContentProps) {
-  const { setItems, setActiveId } = useTOCStore();
+  const setItems = useTOCStore(state => state.setItems);
+  const setActiveId = useTOCStore(state => state.setActiveId);
+  const storeItemsLength = useTOCStore(state => state.items.length);
   const contentRef = useRef<HTMLDivElement>(null);
   const lastScrollYRef = useRef(0);
   const scrollDirectionRef = useRef<"down" | "up">("down");
   const lastActiveIdRef = useRef<string>("");
   const rafIdRef = useRef<number | null>(null);
 
-  // 初始化 items
+  // 初始化 items（仅当 prop 提供有效数据时；为空则交由其他 client 组件如 ProtectedNoteContent 推送）
   useEffect(() => {
-    setItems(items);
+    if (items.length > 0) {
+      setItems(items);
+    }
   }, [items, setItems]);
 
   // 防抖的 setActiveId，避免快速滚动时抖动
@@ -50,7 +54,7 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
 
   // 设置滚动监听检测标题位置
   useEffect(() => {
-    if (items.length === 0)
+    if (storeItemsLength === 0)
       return;
 
     let scrollHandler: (() => void) | null = null;
@@ -125,7 +129,7 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
         window.removeEventListener("scroll", scrollHandler);
       }
     };
-  }, [items, debouncedSetActiveId]);
+  }, [storeItemsLength, debouncedSetActiveId]);
 
   return <div ref={contentRef}>{children}</div>;
 }
