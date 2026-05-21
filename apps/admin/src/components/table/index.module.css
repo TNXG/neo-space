@@ -1,0 +1,7 @@
+/* /// table style */
+
+.table-row {
+  @apply py-7 leading-normal;
+
+  font-size: 12px;
+}

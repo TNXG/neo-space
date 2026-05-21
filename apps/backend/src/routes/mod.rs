@@ -1,0 +1,28 @@
+//! Route definitions organized by feature module
+
+pub mod admin_comments;
+pub mod admin_links;
+pub mod admin_misc;
+pub mod admin_notes;
+pub mod admin_posts;
+pub mod ai_admin;
+pub mod auth;
+pub mod categories;
+pub mod comment;
+pub mod drafts;
+pub mod files;
+pub mod health;
+pub mod link;
+pub mod misc;
+pub mod note;
+pub mod options;
+pub mod owner;
+pub mod pages;
+pub mod post;
+pub mod projects;
+pub mod recently;
+pub mod says;
+pub mod snippets;
+pub mod topics;
+pub mod user;
+pub mod ws;

@@ -2,13 +2,56 @@ shellEmulator: true
 
 trustPolicy: no-downgrade
 
+packages:
+  - apps/*
+  - packages/*
+
 allowBuilds:
   "@parcel/watcher": true
   "@swc/core": true
   esbuild: true
   exifreader: true
   sharp: true
+  vue-demi: true
 
 trustPolicyExclude:
   - chokidar@4.0.3
   - semver@6.3.1
+  - "langium@3.3.1"
+
+minimumReleaseAgeExclude:
+  - '@haklex/cm-editor@0.14.1'
+  - '@haklex/rich-agent-core@0.14.1'
+  - '@haklex/rich-compose@0.14.1'
+  - '@haklex/rich-diff-core@0.14.1'
+  - '@haklex/rich-diff@0.14.1'
+  - '@haklex/rich-editor-ui@0.14.1'
+  - '@haklex/rich-editor@0.14.1'
+  - '@haklex/rich-ext-ai-agent@0.14.1'
+  - '@haklex/rich-ext-chat@0.14.1'
+  - '@haklex/rich-ext-code-snippet@0.14.1'
+  - '@haklex/rich-ext-embed@0.14.1'
+  - '@haklex/rich-ext-excalidraw@0.14.1'
+  - '@haklex/rich-ext-gallery@0.14.1'
+  - '@haklex/rich-ext-nested-doc@0.14.1'
+  - '@haklex/rich-ext-poll@0.14.1'
+  - '@haklex/rich-headless@0.14.1'
+  - '@haklex/rich-litexml@0.14.1'
+  - '@haklex/rich-plugin-block-handle@0.14.1'
+  - '@haklex/rich-plugin-floating-toolbar@0.14.1'
+  - '@haklex/rich-plugin-link-edit@0.14.1'
+  - '@haklex/rich-plugin-mention@0.14.1'
+  - '@haklex/rich-plugin-slash-menu@0.14.1'
+  - '@haklex/rich-plugin-table@0.14.1'
+  - '@haklex/rich-plugin-toolbar@0.14.1'
+  - '@haklex/rich-renderer-alert@0.14.1'
+  - '@haklex/rich-renderer-banner@0.14.1'
+  - '@haklex/rich-renderer-codeblock@0.14.1'
+  - '@haklex/rich-renderer-image@0.14.1'
+  - '@haklex/rich-renderer-katex@0.14.1'
+  - '@haklex/rich-renderer-linkcard@0.14.1'
+  - '@haklex/rich-renderer-mention@0.14.1'
+  - '@haklex/rich-renderer-mermaid@0.14.1'
+  - '@haklex/rich-renderer-ruby@0.14.1'
+  - '@haklex/rich-renderer-video@0.14.1'
+  - '@haklex/rich-style-token@0.14.1'

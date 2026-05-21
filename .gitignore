@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,7 +15,7 @@
 /coverage
 
 # next.js
-/.next/
+**/.next/
 /out/
 
 # production
@@ -49,14 +50,21 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-db_structure_report.md
-
 .dev-backend.pid
 .dev-frontend.pid
 certificates
 
 # Meilisearch data
 backend/data/meilisearch/
+apps/backend/data/meilisearch/
+
+# turborepo
+.turbo/
+**/.turbo/
+
+# build outputs
+**/dist/
+apps/backend/target/
 
 # agant
 .claude

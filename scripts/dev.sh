@@ -89,14 +89,14 @@ install_deps() {
     pnpm install
     
     # 检查并安装后端依赖
-    if [ -d "backend" ]; then
+    if [ -d "apps/backend" ]; then
         echo -e "${BLUE}安装后端依赖...${NC}"
         if ! check_command cargo; then
             echo -e "${YELLOW}Rust/Cargo 未安装，跳过后端依赖安装${NC}"
         else
-            cd backend
+            cd apps/backend
             cargo build
-            cd ..
+            cd ../..
         fi
     fi
     
@@ -116,9 +116,9 @@ start_services() {
     fi
     
     # 启动后端服务（如果存在）
-    if [ -d "backend" ] && check_command cargo; then
+    if [ -d "apps/backend" ] && check_command cargo; then
         echo -e "${BLUE}启动后端服务...${NC}"
-        cd backend
+        cd apps/backend
         cargo watch \
             -i 'cache/' \
             -i 'target/' \
@@ -129,15 +129,15 @@ start_services() {
         BACKEND_PID=$!
         echo "$BACKEND_PID" > "$BACKEND_PID_FILE"
         echo -e "${GREEN}后端服务已启动 (PID: $BACKEND_PID)${NC}"
-        cd ..
-        
+        cd ../..
+
         # 等待后端启动
         sleep 3
     fi
-    
+
     # 启动前端服务
     echo -e "${BLUE}启动前端服务...${NC}"
-    pnpm run dev -H :: & # maybe use --experimental-https
+    pnpm --filter @neo-space/web run dev -H :: &
     FRONTEND_PID=$!
     echo "$FRONTEND_PID" > "$FRONTEND_PID_FILE"
     echo -e "${GREEN}前端服务已启动 (PID: $FRONTEND_PID)${NC}"

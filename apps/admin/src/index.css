@@ -1,0 +1,516 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;1,300&display=swap');
+@import 'vue-sonner/style.css';
+
+body,
+html {
+  margin: 0;
+  font-size: 14px !important;
+  padding: 0;
+
+  --sans-font: 'Segoe UI', 'Helvetica Neue', sans-serif, -apple-system,
+    system-ui;
+
+  font-family: var(--sans-font);
+  background: var(--page-bg);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--page-bg);
+
+  @apply overflow-hidden;
+}
+
+body a {
+  @apply text-primary transition-colors;
+  text-decoration: none;
+}
+
+body a:hover {
+  @apply text-primary-shallow;
+}
+
+/* 按钮样式重置 - 针对自定义按钮组件 */
+button:focus,
+button {
+  outline: unset;
+}
+
+button:where(:not(.n-button):not([class*='n-'])) {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 5px;
+}
+
+html:not(.dark) *::-webkit-scrollbar-thumb {
+  background-color: rgba(115, 115, 115, 0.4);
+}
+
+html:not(.dark) *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(115, 115, 115, 0.6);
+}
+
+html.dark *::-webkit-scrollbar-thumb {
+  background-color: rgba(163, 163, 163, 0.3);
+}
+
+html.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(163, 163, 163, 0.5);
+}
+
+html:not(.dark) *::-webkit-scrollbar-corner {
+  background: #f5f5f5;
+}
+
+html.dark *::-webkit-scrollbar-corner {
+  background: #171717;
+}
+
+.n-scrollbar-rail {
+  @apply z-100;
+}
+
+/* vue-sonner toast 样式 - Lobe UI Design */
+[data-sonner-toaster] {
+  font-family: var(--sans-font) !important;
+  --width: 360px;
+}
+
+/* Toast 基础样式 */
+[data-sonner-toast].sonner-toast {
+  @apply !rounded-lg !border-0;
+  padding: 12px 16px !important;
+  font-family: var(--sans-font) !important;
+  --normal-bg: white;
+  --normal-border: transparent;
+  gap: 12px !important;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.4s !important;
+}
+
+/* Light mode - 多层渐进阴影 */
+html:not(.dark) [data-sonner-toast].sonner-toast {
+  @apply !bg-white !text-neutral-900;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 1px 1px -0.5px rgba(0, 0, 0, 0.03),
+    0 3px 3px -1.5px rgba(0, 0, 0, 0.03),
+    0 6px 6px -3px rgba(0, 0, 0, 0.03),
+    0 12px 12px -6px rgba(0, 0, 0, 0.03),
+    0 24px 24px -12px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Dark mode - 多层渐进阴影 */
+html.dark [data-sonner-toast].sonner-toast {
+  @apply !bg-neutral-900 !text-neutral-100;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 1px 1px -0.5px rgba(0, 0, 0, 0.15),
+    0 3px 3px -1.5px rgba(0, 0, 0, 0.15),
+    0 6px 6px -3px rgba(0, 0, 0, 0.15),
+    0 12px 12px -6px rgba(0, 0, 0, 0.15),
+    0 24px 24px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 图标容器 */
+[data-sonner-toast] [data-icon] {
+  @apply flex-shrink-0;
+}
+
+/* 成功状态图标 */
+[data-sonner-toast][data-type='success'] [data-icon] svg {
+  color: #22c55e !important;
+}
+
+/* 错误状态图标 */
+[data-sonner-toast][data-type='error'] [data-icon] svg {
+  color: #ef4444 !important;
+}
+
+/* 警告状态图标 */
+[data-sonner-toast][data-type='warning'] [data-icon] svg {
+  color: #f59e0b !important;
+}
+
+/* 信息状态图标 */
+[data-sonner-toast][data-type='info'] [data-icon] svg {
+  color: #3b82f6 !important;
+}
+
+/* 加载状态图标 */
+[data-sonner-toast][data-type='loading'] [data-icon] svg {
+  color: var(--n-color-primary, #18181b) !important;
+}
+
+html.dark [data-sonner-toast][data-type='loading'] [data-icon] svg {
+  color: var(--n-color-primary, #fafafa) !important;
+}
+
+/* Toast 标题 - 14px/500 */
+.sonner-title {
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+}
+
+html:not(.dark) .sonner-title {
+  @apply !text-neutral-900;
+}
+
+html.dark .sonner-title {
+  @apply !text-neutral-100;
+}
+
+/* Toast 描述 - 13px */
+.sonner-description {
+  margin: 0 !important;
+  margin-top: 4px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+html:not(.dark) .sonner-description {
+  @apply !text-neutral-500;
+}
+
+html.dark .sonner-description {
+  @apply !text-neutral-400;
+}
+
+/* Toast 关闭按钮 - 20x20px */
+[data-sonner-toast][data-styled='true'] [data-close-button] {
+  @apply !border-0 !bg-transparent;
+  width: 20px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  top: 12px !important;
+  right: 12px !important;
+  left: auto !important;
+  transition: all 0.2s !important;
+}
+
+html:not(.dark) [data-sonner-toast] [data-close-button] {
+  @apply !text-neutral-400;
+}
+
+html:not(.dark) [data-sonner-toast] [data-close-button]:hover {
+  @apply !text-neutral-900 !bg-neutral-100;
+}
+
+html.dark [data-sonner-toast] [data-close-button] {
+  @apply !text-neutral-500;
+}
+
+html.dark [data-sonner-toast] [data-close-button]:hover {
+  @apply !text-neutral-100 !bg-neutral-800;
+}
+
+/* Toast Action 按钮 - 28px 高度 */
+.sonner-action-button {
+  height: 28px !important;
+  padding: 0 12px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition:
+    background 0.2s,
+    color 0.2s !important;
+}
+
+html:not(.dark) .sonner-action-button {
+  @apply !bg-neutral-900 !text-white;
+}
+
+html:not(.dark) .sonner-action-button:hover {
+  @apply !bg-neutral-700;
+}
+
+html.dark .sonner-action-button {
+  @apply !bg-white !text-neutral-900;
+}
+
+html.dark .sonner-action-button:hover {
+  @apply !bg-neutral-200;
+}
+
+/* Cancel 按钮样式 - secondary variant */
+.sonner-cancel-button {
+  height: 28px !important;
+  padding: 0 12px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition:
+    background 0.2s,
+    color 0.2s !important;
+}
+
+html:not(.dark) .sonner-cancel-button {
+  @apply !bg-neutral-100 !text-neutral-900;
+}
+
+html:not(.dark) .sonner-cancel-button:hover {
+  @apply !bg-neutral-200;
+}
+
+html.dark .sonner-cancel-button {
+  @apply !bg-neutral-800 !text-neutral-100;
+}
+
+html.dark .sonner-cancel-button:hover {
+  @apply !bg-neutral-700;
+}
+
+.modal-card {
+  @apply !w-[60rem] !max-w-[90vw];
+
+  &.sm {
+    @apply !w-[40rem];
+  }
+
+  &.xs {
+    @apply !w-[30rem];
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+.n-list-item {
+  .n-list-item__prefix {
+    align-self: flex-start;
+  }
+
+  .n-thing-avatar {
+    @apply self-center;
+  }
+}
+
+.n-data-table-base-table-header {
+  @apply overflow-hidden;
+}
+
+.n-upload-trigger,
+.n-upload-file-list {
+  @apply w-full;
+}
+
+.p0 .n-upload-dragger {
+  @apply flex p-0;
+}
+
+/*  monaco */
+.monaco-editor {
+  @apply !border-0 !outline-none;
+
+  & .sticky-widget {
+    background-color: var(--n-color) !important;
+  }
+}
+
+/* Naive UI Layout 背景覆盖 - 沉浸式 Sidebar */
+.n-layout {
+  background: transparent !important;
+}
+
+.n-layout-scroll-container {
+  background: transparent !important;
+}
+
+.n-data-table-table {
+  @apply rounded-naive;
+}
+
+/* Modal & Dialog 样式优化 - Vercel 风格 */
+.n-modal-mask {
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.n-modal-body-wrapper {
+  /* 优化动画 */
+  --n-bezier: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light mode Dialog 阴影 */
+html:not(.dark) .n-dialog {
+  @apply !rounded-xl;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 16px 32px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode Dialog 阴影 */
+html.dark .n-dialog {
+  @apply !rounded-xl;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 16px 32px rgba(0, 0, 0, 0.4);
+}
+
+.n-dialog__title {
+  @apply !font-semibold;
+}
+
+.n-dialog__action {
+  @apply !pt-0;
+}
+
+/* Light mode Card 阴影 */
+html:not(.dark) .n-modal .n-card {
+  @apply !rounded-xl;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 16px 32px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode Card 阴影 */
+html.dark .n-modal .n-card {
+  @apply !rounded-xl;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 16px 32px rgba(0, 0, 0, 0.4);
+}
+
+.n-card__header {
+  @apply !pb-4;
+}
+
+.n-card-header__main {
+  @apply !font-semibold;
+}
+
+/* Naive UI 动画加速 - 全局 transition duration 覆盖 */
+[class*='n-'] {
+  --n-duration: 0.2s !important;
+}
+
+/* Transition 动画覆盖 */
+.fade-in-transition-enter-active,
+.fade-in-transition-leave-active,
+.fade-in-scale-up-transition-enter-active,
+.fade-in-scale-up-transition-leave-active,
+.fade-down-transition-enter-active,
+.fade-down-transition-leave-active,
+.icon-switch-transition-enter-active,
+.icon-switch-transition-leave-active,
+.fade-in-height-expand-transition-enter-active,
+.fade-in-height-expand-transition-leave-active,
+.fade-in-width-expand-transition-enter-active,
+.fade-in-width-expand-transition-leave-active {
+  transition-duration: 0.2s !important;
+}
+
+/* 组件内部 transition 覆盖 */
+.n-base-selection,
+.n-base-selection-label,
+.n-base-selection-input,
+.n-input,
+.n-input__input-el,
+.n-button,
+.n-checkbox,
+.n-radio,
+.n-switch,
+.n-slider,
+.n-select,
+.n-dropdown,
+.n-popover,
+.n-tooltip,
+.n-modal,
+.n-dialog,
+.n-drawer,
+.n-card,
+.n-collapse,
+.n-collapse-item,
+.n-data-table,
+.n-pagination,
+.n-tabs,
+.n-menu,
+.n-tree {
+  transition-duration: 0.2s !important;
+}
+
+.n-headless.n-popover {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Comment filter select - custom trigger styling */
+.comment-filter-select .n-base-selection {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: auto !important;
+  cursor: pointer !important;
+}
+
+.comment-filter-select .n-base-selection .n-base-selection-label {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.comment-filter-select .n-base-selection .n-base-selection__border,
+.comment-filter-select .n-base-selection .n-base-selection__state-border {
+  display: none !important;
+}
+
+.comment-filter-select .n-base-selection-input {
+  padding: 0 !important;
+}
+
+.comment-filter-select .n-base-suffix {
+  display: none !important;
+}
+
+.comment-filter-select .n-base-selection:hover {
+  background: transparent !important;
+}
+
+.comment-filter-select .n-base-selection.n-base-selection--active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.n-split__resize-trigger,
+.n-split__resize-trigger-wrapper {
+  width: 0px !important;
+}

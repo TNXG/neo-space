@@ -88,8 +88,8 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。采用�
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourusername/tnxg-blog.git
-cd tnxg-blog
+git clone https://github.com/yourusername/neo-space.git
+cd neo-space
 
 # 配置环境变量
 cp .env.local.example .env.local
@@ -126,7 +126,7 @@ cargo run             # 后端: localhost:8000
 ## 📂 项目结构
 
 ```
-tnxg-blog/
+neo-space/
 ├── backend/              # Rust 后端
 │   ├── src/
 │   │   ├── main.rs      # 服务入口
@@ -680,8 +680,8 @@ CDN / WAF (Cloudflare)
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourusername/tnxg-blog.git
-cd tnxg-blog
+git clone https://github.com/yourusername/neo-space.git
+cd neo-space
 
 # 安装前端依赖
 pnpm install
