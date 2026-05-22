@@ -1,11 +1,12 @@
 import type { Image, PaginateResult } from '~/models/base'
 import type {
+  DraftHistoryModel,
   DraftHistoryListItem,
   DraftModel,
-  DraftRefType,
   TypeSpecificData,
 } from '~/models/draft'
 
+import { DraftRefType } from '~/models/draft'
 import { request } from '~/utils/request'
 
 export interface GetDraftsParams {
@@ -42,9 +43,18 @@ interface BackendPaginatedDrafts {
   pagination: PaginateResult<DraftModel>['pagination']
 }
 
-type BackendDraftHistory = Omit<DraftHistoryListItem, 'savedAt'> & {
+type BackendDraftHistoryListItem = Omit<DraftHistoryListItem, 'savedAt'> & {
   savedAt?: string
   saved_at?: string
+}
+
+type BackendDraftHistoryModel = Omit<
+  DraftHistoryModel,
+  'savedAt' | 'typeSpecificData'
+> & {
+  savedAt?: string
+  saved_at?: string
+  typeSpecificData?: Record<string, any> | string | null
 }
 
 type BackendDraft = Omit<
@@ -60,7 +70,7 @@ type BackendDraft = Omit<
   modified?: string | null
   meta?: Record<string, any> | string | null
   typeSpecificData?: TypeSpecificData | string | null
-  history?: BackendDraftHistory[]
+  history?: BackendDraftHistoryModel[]
 }
 
 function unwrapApiResponse<T>(response: T | ApiResponse<T>): T {
@@ -87,10 +97,26 @@ function parseJsonObject<T>(value: T | string | null | undefined): T | undefined
   }
 }
 
-function normalizeHistoryItem(item: BackendDraftHistory): DraftHistoryListItem {
+function normalizeHistoryItem(
+  item: BackendDraftHistoryListItem,
+): DraftHistoryListItem {
   return {
     ...item,
     savedAt: item.savedAt ?? item.saved_at ?? '',
+  }
+}
+
+function normalizeHistoryModel(
+  item: BackendDraftHistoryModel,
+): DraftHistoryModel {
+  return {
+    ...item,
+    title: item.title ?? '',
+    text: item.text ?? '',
+    savedAt: item.savedAt ?? item.saved_at ?? '',
+    typeSpecificData: parseJsonObject<Record<string, any>>(
+      item.typeSpecificData,
+    ),
   }
 }
 
@@ -114,7 +140,7 @@ function normalizeDraft(draft: BackendDraft): DraftModel {
     typeSpecificData: parseJsonObject<TypeSpecificData>(
       draft.typeSpecificData,
     ),
-    history: (draft.history ?? []).map(normalizeHistoryItem),
+    history: (draft.history ?? []).map(normalizeHistoryModel),
   }
 }
 
@@ -139,10 +165,10 @@ function normalizeDraftResponse(response: DraftModel | ApiResponse<BackendDraft>
 }
 
 function normalizeHistoryResponse(
-  response: DraftHistoryListItem[] | ApiResponse<BackendDraftHistory[]>,
+  response: DraftHistoryListItem[] | ApiResponse<BackendDraftHistoryListItem[]>,
 ) {
   return unwrapApiResponse(
-    response as ApiResponse<BackendDraftHistory[]>,
+    response as ApiResponse<BackendDraftHistoryListItem[]>,
   ).map(normalizeHistoryItem)
 }
 
@@ -186,7 +212,7 @@ export const draftsApi = {
 
   // 获取历史版本列表
   getHistory: async (id: string) => {
-    const response = await request.get<ApiResponse<BackendDraftHistory[]>>(
+    const response = await request.get<ApiResponse<BackendDraftHistoryListItem[]>>(
       `/drafts/${id}/history`,
       { bypassTransform: true },
     )
