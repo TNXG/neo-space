@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cargo watch --no-process-group --ignore cache --ignore target --ignore '**/*.md' --ignore '**/*.sh' -x run",
+    "dev": "cargo watch --ignore cache --ignore target --ignore '**/*.md' --ignore '**/*.sh' -x run",
     "build": "cargo build --release",
     "build:debug": "cargo build",
     "start": "cargo run --release",
