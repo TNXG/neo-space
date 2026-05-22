@@ -6,8 +6,8 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppResult},
-    models::*,
     models::options::RawOption,
+    models::*,
 };
 use axum::{Json, extract::State};
 use bson::{Bson, Document, doc};
@@ -17,17 +17,22 @@ use serde_json::Value;
 ///
 /// 返回当前后端实际支持的登录方式。字段含义：
 ///
-/// - `password`: `accounts` 集合中存在 `providerId == "credential"` 的记录。
+/// - `password`: `accounts` 集合中存在 credential/password provider 的记录。
 /// - `passkey`: `accounts` 集合中存在 `providerId == "passkey"` 或 `provider == "passkey"`
 ///   的记录（暂未启用 WebAuthn，所以现网应当返回 false）。
 /// - `github` / `qq` / 其他 provider：来自 `AppConfig` 或 `options.oauth` 的真实配置。
-pub async fn allow_login(
-    State(state): State<SharedState>,
-) -> AppResult<Json<ApiResponse<Value>>> {
+pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<ApiResponse<Value>>> {
     let accounts = state.db.collection::<Document>("accounts");
 
     let password = accounts
-        .count_documents(doc! { "providerId": "credential" })
+        .count_documents(doc! {
+            "$or": [
+                { "providerId": "credential" },
+                { "provider": "credential" },
+                { "provider": "password" }
+            ],
+            "password": { "$type": "string" }
+        })
         .await
         .map_err(|e| AppError::Database(format!("count credential failed: {e}")))?
         > 0;

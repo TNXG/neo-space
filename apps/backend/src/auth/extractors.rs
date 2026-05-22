@@ -1,9 +1,14 @@
 //! Authentication extractors for Axum
 
-use axum::{extract::FromRequestParts, http::request::Parts};
+use axum::{
+    extract::FromRequestParts,
+    http::{header::COOKIE, request::Parts},
+};
 use bson::oid::ObjectId;
 
 use crate::{app::AppState, auth::jwt, error::AppError, services::helpers::is_owner_user_id};
+
+const ADMIN_AUTH_COOKIE: &str = "admin-auth-token";
 
 /// Authenticated user extractor
 #[derive(Debug, Clone)]
@@ -23,18 +28,9 @@ where
         // In Axum 0.7+, we need to use State extension or extract it differently
         // For now, we'll use the environment variable approach
 
-        // Extract token from Authorization header
-        let auth_header = parts
-            .headers
-            .get("Authorization")
-            .and_then(|h| h.to_str().ok())
+        let token = extract_bearer_token(parts)
+            .or_else(|| extract_cookie_token(parts))
             .ok_or(AppError::MissingAuthHeader)?;
-
-        if !auth_header.starts_with("Bearer ") {
-            return Err(AppError::InvalidToken);
-        }
-
-        let token = &auth_header[7..];
 
         // Try to get JWT secret from extensions (set by middleware)
         let secret = if let Some(Some(secret)) = parts.extensions.get::<Option<String>>() {
@@ -45,7 +41,7 @@ where
                 .map_err(|_| AppError::Internal("JWT_SECRET not configured".to_string()))?
         };
 
-        let claims = jwt::verify_jwt(token, &secret).map_err(|e| match e {
+        let claims = jwt::verify_jwt(&token, &secret).map_err(|e| match e {
             jwt::JwtError::TokenExpired => AppError::TokenExpired,
             _ => AppError::InvalidToken,
         })?;
@@ -78,15 +74,7 @@ where
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let auth_header = parts
-            .headers
-            .get("Authorization")
-            .and_then(|h| h.to_str().ok());
-
-        let token = match auth_header {
-            Some(h) if h.starts_with("Bearer ") => Some(&h[7..]),
-            _ => None,
-        };
+        let token = extract_bearer_token(parts).or_else(|| extract_cookie_token(parts));
 
         match token {
             Some(token) => {
@@ -105,7 +93,7 @@ where
                     }
                 };
 
-                match jwt::verify_jwt(token, &secret) {
+                match jwt::verify_jwt(&token, &secret) {
                     Ok(claims) => {
                         let user_id = claims.user_id().ok();
                         let is_owner = if let Some(user_id) = user_id {
@@ -137,6 +125,26 @@ where
             }),
         }
     }
+}
+
+fn extract_bearer_token(parts: &Parts) -> Option<String> {
+    let auth_header = parts
+        .headers
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())?;
+
+    auth_header
+        .strip_prefix("Bearer ")
+        .map(|token| token.to_string())
+}
+
+fn extract_cookie_token(parts: &Parts) -> Option<String> {
+    let cookie_header = parts.headers.get(COOKIE).and_then(|h| h.to_str().ok())?;
+
+    cookie_header.split(';').find_map(|cookie| {
+        let (name, value) = cookie.trim().split_once('=')?;
+        (name == ADMIN_AUTH_COOKIE && !value.is_empty()).then(|| value.to_string())
+    })
 }
 
 /// Owner-only extractor - requires authentication and owner role

@@ -6,6 +6,13 @@ use crate::handlers;
 /// Create authentication routes (stateless, to be nested)
 pub fn routes() -> axum::Router<SharedState> {
     axum::Router::new()
+        // Admin dashboard JWT auth
+        .route(
+            "/tokens",
+            axum::routing::get(handlers::auth::get_current_token_user)
+                .post(handlers::auth::create_token)
+                .delete(handlers::auth::delete_token),
+        )
         // Current user info
         .route("/me", axum::routing::get(handlers::auth::get_current_user))
         // OAuth routes
