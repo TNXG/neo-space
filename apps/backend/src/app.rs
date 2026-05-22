@@ -126,6 +126,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
 
     // Build API router with nested routes to avoid path conflicts
     let api_router = axum::Router::new()
+        .route("/", axum::routing::get(crate::handlers::app_info::app_info))
         .nest("/auth", routes::auth::routes())
         .nest(
             "/posts",
