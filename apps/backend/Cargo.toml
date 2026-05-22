@@ -172,3 +172,4 @@ cipher = { version = "0.5.1", default-features = false, features = [ "block-padd
 # 用于将 admin 控制面板构建产物打包进可执行文件
 rust-embed = { version = "8.7.2", default-features = false, features = [ "include-exclude" ] }
 mime_guess = { version = "2.0.5", default-features = false }
+bcrypt = "0.19.1"
