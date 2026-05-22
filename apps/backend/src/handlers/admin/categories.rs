@@ -15,6 +15,7 @@ use axum::{
 use bson::{doc, oid::ObjectId};
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateCategoryRequest {
@@ -38,6 +39,12 @@ pub struct CategoryQuery {
     pub tag: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ListCategoriesQuery {
+    #[serde(rename = "type", default)]
+    pub category_type: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct TagItem {
     pub name: String,
@@ -46,6 +53,42 @@ pub struct TagItem {
 
 fn parse_oid(id: &str) -> AppResult<ObjectId> {
     ObjectId::parse_str(id).map_err(|_| AppError::BadRequest("Invalid ObjectId".to_string()))
+}
+
+/// GET /categories — 返回分类列表；type=Tag/tag 时返回标签聚合列表
+pub async fn list_categories(
+    State(state): State<SharedState>,
+    AppQuery(query): AppQuery<ListCategoriesQuery>,
+) -> AppResult<Json<ApiResponse<Value>>> {
+    if matches!(query.category_type.as_deref(), Some("Tag" | "tag")) {
+        let tags = load_tags(&state).await?;
+        return Ok(Json(ApiResponse::success(
+            serde_json::to_value(tags).unwrap_or(Value::Array(vec![])),
+        )));
+    }
+
+    let opts = mongodb::options::FindOptions::builder()
+        .sort(doc! { "created": -1 })
+        .build();
+    let mut cursor = state
+        .db
+        .collection::<Category>("categories")
+        .find(doc! {})
+        .with_options(opts)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let mut items = Vec::new();
+    while let Some(category) = cursor
+        .try_next()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+    {
+        items.push(category);
+    }
+
+    Ok(Json(ApiResponse::success(
+        serde_json::to_value(items).unwrap_or(Value::Array(vec![])),
+    )))
 }
 
 /// POST /categories
@@ -157,6 +200,10 @@ pub async fn delete_category(
 pub async fn list_tags(
     State(state): State<SharedState>,
 ) -> AppResult<Json<ApiResponse<Vec<TagItem>>>> {
+    Ok(Json(ApiResponse::success(load_tags(&state).await?)))
+}
+
+async fn load_tags(state: &SharedState) -> AppResult<Vec<TagItem>> {
     let pipeline = vec![
         doc! { "$match": { "isPublished": true } },
         doc! { "$unwind": "$tags" },
@@ -181,7 +228,7 @@ pub async fn list_tags(
             items.push(TagItem { name, count });
         }
     }
-    Ok(Json(ApiResponse::success(items)))
+    Ok(items)
 }
 
 /// GET /categories/{name}?tag=true — 返回指定 tag 下的文章

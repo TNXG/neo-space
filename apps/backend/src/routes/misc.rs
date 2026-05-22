@@ -13,10 +13,6 @@ pub fn routes() -> axum::Router<SharedState> {
             axum::routing::get(handlers::misc::list_recentlies),
         )
         .route(
-            "/categories",
-            axum::routing::get(handlers::misc::list_categories),
-        )
-        .route(
             "/nbnhhsh/guess",
             axum::routing::post(handlers::misc::nbnhhsh_guess),
         )

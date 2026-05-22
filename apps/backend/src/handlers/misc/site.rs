@@ -1,8 +1,7 @@
-//! Site-related handlers (config, categories, recentlies)
+//! Site-related handlers (config, recentlies)
 
 use crate::models::common::PaginatedList;
 use crate::models::options::SiteConfig;
-use crate::services::helpers::{get_category_name_translation_map, localize_category_names};
 use crate::services::options;
 use crate::{
     app::SharedState,
@@ -10,16 +9,11 @@ use crate::{
     models::*,
 };
 use axum::{Json, extract::State};
-use bson::{doc, oid::ObjectId};
+use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::Collection;
 
 use super::pagination::PaginationParams;
-
-#[derive(Debug, serde::Deserialize)]
-pub struct ListCategoriesParams {
-    pub lang: Option<String>,
-}
 
 /// Get public configuration
 pub async fn get_config(
@@ -34,45 +28,6 @@ pub async fn get_config(
         status: ResponseStatus::Success,
         message: "Success".to_string(),
         data: config,
-    }))
-}
-
-/// List all categories
-pub async fn list_categories(
-    State(state): State<SharedState>,
-    AppQuery(params): AppQuery<ListCategoriesParams>,
-) -> AppResult<Json<ApiResponse<Vec<Category>>>> {
-    let lang = params.lang.as_deref().unwrap_or("zh");
-    let collection: Collection<Category> = state.db.collection("categories");
-
-    let find_options = mongodb::options::FindOptions::builder()
-        .sort(doc! { "created": -1 })
-        .build();
-
-    let mut cursor = collection
-        .find(doc! {})
-        .with_options(find_options)
-        .await
-        .map_err(|e| {
-            crate::error::AppError::Internal(format!("Failed to fetch categories: {}", e))
-        })?;
-
-    let mut items = Vec::new();
-    while let Some(category) = cursor.try_next().await.map_err(|e| {
-        crate::error::AppError::Internal(format!("Failed to iterate categories: {}", e))
-    })? {
-        items.push(category);
-    }
-
-    let category_ids: Vec<ObjectId> = items.iter().map(|category| category.id).collect();
-    let translation_map = get_category_name_translation_map(&state, &category_ids, lang).await;
-    localize_category_names(items.iter_mut(), &translation_map);
-
-    Ok(Json(ApiResponse {
-        code: 200,
-        status: ResponseStatus::Success,
-        message: "Success".to_string(),
-        data: items,
     }))
 }
 
