@@ -1,7 +1,7 @@
 import type { VNode } from "vue";
 import type { RouteLocation } from "vue-router";
 import { NSpin } from "naive-ui";
-import { defineComponent, Suspense } from "vue";
+import { cloneVNode, defineComponent, Suspense } from "vue";
 import { RouterView } from "vue-router";
 
 const $RouterView = defineComponent({
@@ -9,11 +9,12 @@ const $RouterView = defineComponent({
     return () => (
       <RouterView>
         {{
-          default({ Component }: { Component: VNode; route: RouteLocation }) {
+          default({ Component, route }: { Component?: VNode; route: RouteLocation }) {
             return (
               <Suspense>
                 {{
-                  default: () => Component,
+                  default: () =>
+                    Component ? cloneVNode(Component, { key: route.fullPath }) : null,
 
                   fallback() {
                     return (

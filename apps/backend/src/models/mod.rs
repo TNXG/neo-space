@@ -20,7 +20,8 @@ pub use content::{
     TranslationEntry,
 };
 pub use extended::{
-    ApiToken, CronTaskRecord, Draft, Project, Say, Snippet, Subscriber, Topic, Webhook,
+    ApiToken, CronTaskRecord, Draft, DraftHistoryEntry, Project, Say, Snippet, Subscriber, Topic,
+    Webhook,
 };
 pub use link::{
     Link, LinkApplyRequest, LinkHealthStatus, LinkState, LinkType, LinkWithHealth, SendCodeRequest,

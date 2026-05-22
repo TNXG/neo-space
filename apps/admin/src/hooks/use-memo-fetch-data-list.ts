@@ -5,7 +5,7 @@ import type { Ref } from 'vue'
 import { createGlobalState } from '@vueuse/core'
 
 export const createMemoDataListFetchHook = <
-  T extends { id: string },
+  T extends { id?: string; _id?: string },
   FetchDataType extends T,
 >(
   fetchFn: (page?: number) => Promise<PaginateResult<FetchDataType>>,
@@ -16,14 +16,18 @@ export const createMemoDataListFetchHook = <
     let currentPage = 0
     let isEnd = false
 
+    const getItemKey = (item: T) => item._id ?? item.id ?? ''
+
     const loading = ref(true)
     const fetch = async (page = 1) => {
       loading.value = true
       const { data, pagination } = await fetchFn(page)
 
-      datalist.value.push(...data.filter((dataItem) => !idSet.has(dataItem.id)))
+      datalist.value.push(
+        ...data.filter((dataItem) => !idSet.has(getItemKey(dataItem))),
+      )
       loading.value = false
-      data.forEach((i) => idSet.add(i.id))
+      data.forEach((i) => idSet.add(getItemKey(i)))
 
       currentPage = pagination.currentPage
       if (!pagination.hasNextPage) {
@@ -36,8 +40,10 @@ export const createMemoDataListFetchHook = <
       datalist,
       append(data: T[]) {
         for (const item of data) {
-          if (!idSet.has(item.id)) {
-            idSet.add(item.id)
+          const key = getItemKey(item)
+          if (!key) continue
+          if (!idSet.has(key)) {
+            idSet.add(key)
             datalist.value.push({ ...item })
           }
         }

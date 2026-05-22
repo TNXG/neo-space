@@ -111,9 +111,9 @@ export const useServerDraft = (
           meta: data.meta,
           typeSpecificData: data.typeSpecificData,
         })
-        draftId.value = response.id
+        draftId.value = response._id
         // 通知调用方草稿已创建（用于更新 URL）
-        onDraftCreated?.(response.id)
+        onDraftCreated?.(response._id)
       }
 
       memoPreviousData = { ...data }
@@ -135,8 +135,8 @@ export const useServerDraft = (
   const loadDraftById = async (id: string): Promise<DraftModel | null> => {
     try {
       const draft = await draftsApi.getById(id)
-      if (draft?.id) {
-        draftId.value = draft.id
+      if (draft?._id) {
+        draftId.value = draft._id
         lastSavedVersion.value = draft.version
         lastSavedTime.value = new Date(draft.updatedAt)
         memoPreviousData = {
@@ -166,8 +166,8 @@ export const useServerDraft = (
   ): Promise<DraftModel | null> => {
     try {
       const draft = await draftsApi.getByRef(type, id)
-      if (draft?.id) {
-        draftId.value = draft.id
+      if (draft?._id) {
+        draftId.value = draft._id
         lastSavedVersion.value = draft.version
         lastSavedTime.value = new Date(draft.updatedAt)
         memoPreviousData = {
@@ -207,7 +207,7 @@ export const useServerDraft = (
         text: '',
         typeSpecificData: {},
       })
-      draftId.value = response.id
+      draftId.value = response._id
       lastSavedVersion.value = response.version
       lastSavedTime.value = new Date(response.updatedAt || response.createdAt)
       return response

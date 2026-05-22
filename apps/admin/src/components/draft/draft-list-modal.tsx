@@ -43,7 +43,7 @@ export const DraftListModal = defineComponent({
       () => props.show,
       (show) => {
         if (show && props.drafts.length > 0) {
-          selectedDraftId.value = props.drafts[0].id
+          selectedDraftId.value = props.drafts[0]._id
           selectedDraft.value = props.drafts[0]
         }
       },
@@ -51,7 +51,7 @@ export const DraftListModal = defineComponent({
     )
 
     const handleSelectDraft = (draft: DraftModel) => {
-      selectedDraftId.value = draft.id
+      selectedDraftId.value = draft._id
       selectedDraft.value = draft
     }
 
@@ -106,10 +106,10 @@ export const DraftListModal = defineComponent({
             <div class="w-60 flex-shrink-0 overflow-y-auto border-r border-neutral-200 dark:border-neutral-800">
               {props.drafts.map((draft, index) => (
                 <div
-                  key={draft.id}
+                  key={draft._id}
                   class={[
                     'cursor-pointer px-4 py-3 transition-colors',
-                    selectedDraftId.value === draft.id
+                    selectedDraftId.value === draft._id
                       ? 'bg-neutral-100 dark:bg-neutral-800'
                       : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50',
                     index !== props.drafts.length - 1 &&
@@ -120,7 +120,7 @@ export const DraftListModal = defineComponent({
                   <div class="flex items-start gap-3">
                     <div class="mt-0.5 flex-shrink-0">
                       <NCheckbox
-                        checked={selectedDraftId.value === draft.id}
+                        checked={selectedDraftId.value === draft._id}
                         onUpdateChecked={() => handleSelectDraft(draft)}
                       />
                     </div>

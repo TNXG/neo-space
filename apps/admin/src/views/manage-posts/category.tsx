@@ -810,8 +810,8 @@ const PostListSection = defineComponent({
           <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
             {props.posts.map((post) => (
               <RouterLink
-                key={post.id}
-                to={`/posts/edit?id=${post.id}`}
+                key={post._id}
+                to={`/posts/edit?id=${post._id}`}
                 class="flex items-center justify-between gap-4 border-b border-neutral-100 px-4 py-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
               >
                 <div class="min-w-0 flex-1">

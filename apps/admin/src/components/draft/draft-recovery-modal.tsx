@@ -135,8 +135,8 @@ export const DraftRecoveryModal = defineComponent({
 
     // Get draft history
     const { data: historyData, isLoading: historyLoading } = useQuery({
-      queryKey: ['drafts', 'history', () => props.draft.id],
-      queryFn: () => draftsApi.getHistory(props.draft.id),
+      queryKey: ['drafts', 'history', () => props.draft._id],
+      queryFn: () => draftsApi.getHistory(props.draft._id),
       enabled: () => props.show,
       select: (res: any) =>
         Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [],
@@ -241,7 +241,7 @@ export const DraftRecoveryModal = defineComponent({
           const item = versions[idx++]
           try {
             const data = await draftsApi.getHistoryVersion(
-              props.draft.id,
+              props.draft._id,
               item.version,
             )
             if (gen !== batchGeneration) return
@@ -306,7 +306,7 @@ export const DraftRecoveryModal = defineComponent({
         }
         try {
           const versionData = await draftsApi.getHistoryVersion(
-            props.draft.id,
+            props.draft._id,
             version,
           )
           selectedVersionContent.value = {
@@ -420,7 +420,7 @@ export const DraftRecoveryModal = defineComponent({
             : (selectedVersion.value as number)
         try {
           const versionData = await draftsApi.getHistoryVersion(
-            props.draft.id,
+            props.draft._id,
             version,
           )
           props.onRecover(version, versionData)

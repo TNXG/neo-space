@@ -109,13 +109,42 @@ pub struct Project {
 // ==================== Draft ====================
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct DraftHistoryEntry {
+    pub version: i32,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub text: String,
+    #[serde(rename = "contentFormat", default)]
+    pub content_format: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+    #[serde(rename = "typeSpecificData", default)]
+    #[schema(value_type = Object)]
+    pub type_specific_data: Option<bson::Bson>,
+    #[serde(serialize_with = "serialize_datetime", rename = "savedAt")]
+    #[schema(value_type = String)]
+    pub saved_at: bson::DateTime,
+    #[serde(rename = "isFullSnapshot", default)]
+    pub is_full_snapshot: bool,
+    #[serde(rename = "refVersion", default)]
+    pub ref_version: Option<i32>,
+    #[serde(rename = "baseVersion", default)]
+    pub base_version: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Draft {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
     pub id: ObjectId,
     #[serde(rename = "refType")]
     pub ref_type: String,
-    #[serde(default, serialize_with = "serialize_optional_object_id", rename = "refId")]
+    #[serde(
+        default,
+        serialize_with = "serialize_optional_object_id",
+        rename = "refId"
+    )]
     #[schema(value_type = Option<String>)]
     pub ref_id: Option<ObjectId>,
     #[serde(default)]
@@ -127,11 +156,18 @@ pub struct Draft {
     #[serde(default)]
     pub content: Option<String>,
     #[serde(default)]
+    #[schema(value_type = Vec<Object>)]
+    pub images: Vec<bson::Bson>,
+    #[serde(default)]
     #[schema(value_type = Object)]
-    pub meta: Option<bson::Document>,
+    pub meta: Option<bson::Bson>,
     #[serde(rename = "typeSpecificData", default)]
     #[schema(value_type = Object)]
-    pub type_specific_data: Option<bson::Document>,
+    pub type_specific_data: Option<bson::Bson>,
+    #[serde(default = "default_draft_version")]
+    pub version: i32,
+    #[serde(default)]
+    pub history: Vec<DraftHistoryEntry>,
     #[serde(rename = "isPublished", default)]
     pub is_published: bool,
     #[serde(serialize_with = "serialize_datetime")]
@@ -139,7 +175,16 @@ pub struct Draft {
     pub created: bson::DateTime,
     #[serde(default, serialize_with = "serialize_optional_datetime")]
     #[schema(value_type = Option<String>)]
+    pub updated: Option<bson::DateTime>,
+    #[serde(default, serialize_with = "serialize_optional_datetime")]
+    #[schema(value_type = Option<String>)]
     pub modified: Option<bson::DateTime>,
+    #[serde(rename = "publishedVersion", default)]
+    pub published_version: Option<i32>,
+}
+
+fn default_draft_version() -> i32 {
+    1
 }
 
 // ==================== Webhook ====================

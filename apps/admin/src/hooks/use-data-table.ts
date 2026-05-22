@@ -114,7 +114,7 @@ export interface UseDataTableReturn<T> {
  * })
  * ```
  */
-export const useDataTable = <T extends { id?: string }>(
+export const useDataTable = <T extends { id?: string; _id?: string }>(
   options: UseDataTableOptions<T>,
 ): UseDataTableReturn<T> => {
   const {

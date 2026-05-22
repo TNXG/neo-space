@@ -92,6 +92,7 @@ function toProviderGroups(response: ProviderModelsResponse[]): ProviderGroup[] {
 }
 
 type PostReactiveType = WriteBaseType & {
+  _id?: string
   slug: string
   categoryId: string
   copyright: boolean
@@ -146,6 +147,7 @@ const PostWriteView = defineComponent(() => {
     copyright: true,
     tags: [],
     summary: '',
+    _id: undefined,
     id: undefined,
     images: [],
     meta: undefined,
@@ -196,8 +198,8 @@ const PostWriteView = defineComponent(() => {
   const loadPublished = async (id: string) => {
     const payload = await postsApi.getById(id)
     const postData = payload as any
-    postData.relatedId = postData.related?.map((r: any) => r.id) || []
-    postListState.append(postData.related)
+    postData.relatedId = postData.related?.map((r: any) => r._id) || []
+    postListState.append(postData.related ?? [])
     // The reactive form keeps `pin` as a boolean toggle, but the API now
     // returns the timestamp under `pinAt` after the Postgres migration.
     postData.pin = !!postData.pinAt
@@ -244,7 +246,9 @@ const PostWriteView = defineComponent(() => {
     },
   })
 
-  const loading = computed(() => !!(id.value && typeof data.id === 'undefined'))
+  const loading = computed(
+    () => !!(id.value && typeof data._id === 'undefined'),
+  )
 
   const category = computed(
     () =>
@@ -301,11 +305,11 @@ const PostWriteView = defineComponent(() => {
       toast.success('修改成功')
     } else {
       const result = await postsApi.create(payload)
-      data.id = result.id
+      data._id = result._id
       data.text = result.text
       data.images = result.images || []
       serverDraft.syncMemory()
-      await router.replace({ query: { id: result.id } })
+      await router.replace({ query: { id: result._id } })
       toast.success('发布成功')
     }
   }
@@ -387,7 +391,7 @@ const PostWriteView = defineComponent(() => {
   return () => (
     <>
       <WriteEditor
-        key={data.id}
+        key={data._id}
         loading={loading.value}
         autoFocus={isEditing.value ? 'content' : 'title'}
         title={data.title}
@@ -420,7 +424,7 @@ const PostWriteView = defineComponent(() => {
         onSelectModel={(model) => {
           selectedModel.value = model
         }}
-        refId={actualRefId.value || data.id}
+        refId={actualRefId.value || data._id}
         refType="post"
         metaFieldsSchema={POST_META_SCHEMA}
         getMetaFields={() => ({
@@ -556,7 +560,7 @@ const PostWriteView = defineComponent(() => {
             multiple
             options={postListState.datalist.value.map((i) => ({
               label: i.title,
-              value: i.id,
+              value: i._id,
             }))}
             loading={postListState.loading.value}
             filterable

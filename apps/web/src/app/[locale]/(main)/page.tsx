@@ -34,9 +34,12 @@ export default async function Page({
       },
     })),
   ]);
+  const posts = postsResponse.data?.items ?? [];
+  const notes = notesResponse.data?.items ?? [];
+  const recently = recentlyResponse.data?.items ?? [];
 
   // 服务端预渲染碎碎念的 markdown 内容
-  const recentlyWithRendered = recentlyResponse.data.items.map(item => ({
+  const recentlyWithRendered = recently.map(item => ({
     ...item,
     renderedContent: item.content
       ? <MarkdownPreview content={item.content} maxLength={200} />
@@ -47,8 +50,8 @@ export default async function Page({
     <>
       <HomePage
         profile={profileResponse.data}
-        articles={postsResponse.data.items}
-        notes={notesResponse.data.items}
+        articles={posts}
+        notes={notes}
         recently={recentlyWithRendered}
       />
     </>

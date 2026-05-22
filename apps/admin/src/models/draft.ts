@@ -17,6 +17,7 @@ export interface DraftHistoryModel {
 }
 
 export interface DraftModel {
+  _id: string
   id: string
   refType: DraftRefType
   refId?: string

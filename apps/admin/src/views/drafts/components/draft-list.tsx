@@ -114,9 +114,9 @@ export const DraftList = defineComponent({
               <div>
                 {props.data.map((item) => (
                   <DraftListItem
-                    key={item.id}
+                    key={item._id}
                     data={item}
-                    selected={props.selectedId === item.id}
+                    selected={props.selectedId === item._id}
                     onSelect={() => props.onSelect(item)}
                   />
                 ))}

@@ -422,8 +422,8 @@ export const DraftDetailBase = defineComponent({
     onBeforeUnmount(cancelRowDiffBatch)
 
     const { data: historyData, isLoading: historyLoading } = useQuery({
-      queryKey: ['drafts', 'history', () => props.draft.id],
-      queryFn: () => draftsApi.getHistory(props.draft.id),
+      queryKey: ['drafts', 'history', () => props.draft._id],
+      queryFn: () => draftsApi.getHistory(props.draft._id),
       select: (res: any) =>
         Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [],
     })
@@ -447,7 +447,7 @@ export const DraftDetailBase = defineComponent({
     })
 
     watch(
-      [historyData, () => props.draft.id],
+      [historyData, () => props.draft._id],
       () => {
         prefetchGeneration++
         const gen = prefetchGeneration
@@ -474,7 +474,7 @@ export const DraftDetailBase = defineComponent({
             const item = toFetch[idx++]
             try {
               const data = await draftsApi.getHistoryVersion(
-                props.draft.id,
+                props.draft._id,
                 item.version,
               )
               if (gen !== prefetchGeneration) return
@@ -530,7 +530,7 @@ export const DraftDetailBase = defineComponent({
       if (cached) return cached
 
       try {
-        const data = await draftsApi.getHistoryVersion(props.draft.id, version)
+        const data = await draftsApi.getHistoryVersion(props.draft._id, version)
         const entry = { text: data.text, content: data.content }
         const next = new Map(versionContentCache.value)
         next.set(version, entry)
@@ -543,7 +543,7 @@ export const DraftDetailBase = defineComponent({
     }
 
     watch(
-      [() => props.draft.id, versionList],
+      [() => props.draft._id, versionList],
       async ([, list]) => {
         if (list.length >= 2) {
           const prevVersion = list[1]
@@ -588,7 +588,7 @@ export const DraftDetailBase = defineComponent({
 
     const restoreMutation = useMutation({
       mutationFn: (version: number) =>
-        draftsApi.restoreVersion(props.draft.id, version),
+        draftsApi.restoreVersion(props.draft._id, version),
       onSuccess: () => {
         toast.success('版本已恢复')
         queryClient.invalidateQueries({ queryKey: ['drafts'] })
@@ -605,7 +605,7 @@ export const DraftDetailBase = defineComponent({
     const handleEdit = () => {
       router.push({
         name: config.value.editRoute,
-        query: { draftId: props.draft.id },
+        query: { draftId: props.draft._id },
       })
     }
 
@@ -835,7 +835,7 @@ export const DraftDetailBase = defineComponent({
             <NPopconfirm
               positiveText="取消"
               negativeText="删除"
-              onNegativeClick={() => props.onDelete(props.draft.id)}
+              onNegativeClick={() => props.onDelete(props.draft._id)}
             >
               {{
                 trigger: () => (

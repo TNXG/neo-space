@@ -10,7 +10,9 @@ export interface PostModel {
   tags: string[]
   readCount: number
   likeCount: number
-  id: string
+  _id: string
+  /** @deprecated 仅兼容还未迁移的旧组件，posts 管理链路应使用 `_id`。 */
+  id?: string
   text: string
   title: string
   slug: string
@@ -27,6 +29,7 @@ export interface PostModel {
   related?: Pick<
     PostModel,
     | 'id'
+    | '_id'
     | 'title'
     | 'slug'
     | 'categoryId'
@@ -41,6 +44,7 @@ export interface PostModel {
 
 export interface Category {
   type: number
+  _id?: string
   id: string
   name: string
   slug: string

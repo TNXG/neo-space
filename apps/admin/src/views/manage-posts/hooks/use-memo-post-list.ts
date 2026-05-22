@@ -5,6 +5,7 @@ import { createMemoDataListFetchHook } from '~/hooks/use-memo-fetch-data-list'
 
 export const useMemoPostList = createMemoDataListFetchHook<
   {
+    _id: string
     id: string
     title: string
     slug: string

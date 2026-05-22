@@ -47,11 +47,11 @@ export default defineComponent({
 
     const selectedDraft = computed(() => {
       if (!selectedId.value) return null
-      const fromList = allDrafts.value.find((d) => d.id === selectedId.value)
+      const fromList = allDrafts.value.find((draft) => draft._id === selectedId.value)
       if (fromList) return fromList
       if (
         selectedDraftSnapshot.value &&
-        selectedDraftSnapshot.value.id === selectedId.value
+        selectedDraftSnapshot.value._id === selectedId.value
       ) {
         return selectedDraftSnapshot.value
       }
@@ -76,7 +76,7 @@ export default defineComponent({
     }
 
     const handleSelect = (draft: DraftModel) => {
-      selectedId.value = draft.id
+      selectedId.value = draft._id
       selectedDraftSnapshot.value = { ...draft }
       if (isMobile.value) {
         showDetailOnMobile.value = true
