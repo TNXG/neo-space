@@ -2,7 +2,7 @@
 
 use crate::app::SharedState;
 use crate::handlers::admin::topics_snippets_projects as tsp;
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()

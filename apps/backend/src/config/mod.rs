@@ -109,11 +109,15 @@ impl AppConfig {
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
             admin_dashboard_enabled: env::var("ADMIN_DASHBOARD_ENABLED")
                 .ok()
-                .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .map(|v| {
+                    matches!(
+                        v.trim().to_ascii_lowercase().as_str(),
+                        "1" | "true" | "yes" | "on"
+                    )
+                })
                 .unwrap_or(true),
             admin_dashboard_path: normalize_mount_path(
-                env::var("ADMIN_DASHBOARD_PATH")
-                    .unwrap_or_else(|_| "/admin".to_string()),
+                env::var("ADMIN_DASHBOARD_PATH").unwrap_or_else(|_| "/admin".to_string()),
             ),
         })
     }

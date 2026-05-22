@@ -65,7 +65,10 @@ pub async fn list_topics(
         items.push(t);
     }
     let pagination = Pagination::new(total as i64, page as i64, size as i64);
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }
 
 pub async fn get_topic(
@@ -88,8 +91,12 @@ pub async fn create_topic(
     _owner: OwnerOnly,
     AppJson(req): AppJson<UpsertTopicRequest>,
 ) -> AppResult<Json<ApiResponse<Topic>>> {
-    let name = req.name.ok_or_else(|| AppError::BadRequest("name 必填".into()))?;
-    let slug = req.slug.ok_or_else(|| AppError::BadRequest("slug 必填".into()))?;
+    let name = req
+        .name
+        .ok_or_else(|| AppError::BadRequest("name 必填".into()))?;
+    let slug = req
+        .slug
+        .ok_or_else(|| AppError::BadRequest("slug 必填".into()))?;
     let introduce = req
         .introduce
         .ok_or_else(|| AppError::BadRequest("introduce 必填".into()))?;
@@ -320,7 +327,10 @@ pub async fn list_projects(
         items.push(p);
     }
     let pagination = Pagination::new(total as i64, page as i64, size as i64);
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }
 
 pub async fn create_project(

@@ -119,7 +119,12 @@ pub async fn upload_file(
     let public_base = std::env::var("UPLOAD_PUBLIC_URL")
         .unwrap_or_else(|_| format!("{}/api/static/uploads", state.config.backend_url));
     let folder = if kind == "image" { "images" } else { "files" };
-    let url = format!("{}/{}/{}", public_base.trim_end_matches('/'), folder, unique);
+    let url = format!(
+        "{}/{}/{}",
+        public_base.trim_end_matches('/'),
+        folder,
+        unique
+    );
 
     Ok(Json(ApiResponse::success(UploadResult {
         url,

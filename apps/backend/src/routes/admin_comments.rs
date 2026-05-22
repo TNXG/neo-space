@@ -2,7 +2,7 @@
 
 use crate::app::SharedState;
 use crate::handlers::admin::comments_batch as cb;
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()

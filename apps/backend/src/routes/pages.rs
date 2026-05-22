@@ -5,7 +5,7 @@
 
 use crate::app::SharedState;
 use crate::handlers::admin::pages;
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()

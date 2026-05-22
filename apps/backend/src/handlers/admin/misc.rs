@@ -136,9 +136,7 @@ pub struct BackupItem {
     pub created_at: String,
 }
 
-pub async fn list_backups(
-    _owner: OwnerOnly,
-) -> AppResult<Json<ApiResponse<Vec<BackupItem>>>> {
+pub async fn list_backups(_owner: OwnerOnly) -> AppResult<Json<ApiResponse<Vec<BackupItem>>>> {
     let dir = std::env::var("BACKUP_DIR").unwrap_or_else(|_| "./storage/backups".into());
     let mut items: Vec<BackupItem> = Vec::new();
     if let Ok(mut entries) = tokio::fs::read_dir(&dir).await {

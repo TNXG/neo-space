@@ -146,7 +146,11 @@ pub async fn link_state_count(
     let collection = state.db.collection::<Link>("links");
     let count = |s: i32| {
         let coll = collection.clone();
-        async move { coll.count_documents(doc! { "state": s }).await.map(|c| c as i64) }
+        async move {
+            coll.count_documents(doc! { "state": s })
+                .await
+                .map(|c| c as i64)
+        }
     };
     let audit = count(0).await.unwrap_or(0);
     let pass = count(1).await.unwrap_or(0);

@@ -96,7 +96,13 @@ pub async fn writer_generate(
             let text = req
                 .text
                 .ok_or_else(|| AppError::BadRequest("text 必填".into()))?;
-            let title = text.lines().next().unwrap_or(&text).chars().take(40).collect::<String>();
+            let title = text
+                .lines()
+                .next()
+                .unwrap_or(&text)
+                .chars()
+                .take(40)
+                .collect::<String>();
             let slug = fallback_slug(&title);
             WriterGenerateResponse {
                 title: Some(title),
@@ -382,16 +388,10 @@ pub async fn update_conversation(
         set_doc.insert("title", t);
     }
     if let Some(r) = req.review_state {
-        set_doc.insert(
-            "reviewState",
-            bson::to_bson(&r).unwrap_or(bson::Bson::Null),
-        );
+        set_doc.insert("reviewState", bson::to_bson(&r).unwrap_or(bson::Bson::Null));
     }
     if let Some(d) = req.diff_state {
-        set_doc.insert(
-            "diffState",
-            bson::to_bson(&d).unwrap_or(bson::Bson::Null),
-        );
+        set_doc.insert("diffState", bson::to_bson(&d).unwrap_or(bson::Bson::Null));
     }
     state
         .db

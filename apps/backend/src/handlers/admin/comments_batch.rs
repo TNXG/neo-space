@@ -69,9 +69,7 @@ pub async fn batch_delete(
 ) -> AppResult<Json<ApiResponse<u64>>> {
     let mut oids = Vec::with_capacity(payload.ids.len());
     for id in &payload.ids {
-        oids.push(
-            ObjectId::parse_str(id).map_err(|_| AppError::BadRequest("Invalid id".into()))?,
-        );
+        oids.push(ObjectId::parse_str(id).map_err(|_| AppError::BadRequest("Invalid id".into()))?);
     }
     let r = state
         .db
@@ -91,8 +89,7 @@ pub async fn update_state(
     axum::extract::Path(id): axum::extract::Path<String>,
     AppJson(payload): AppJson<serde_json::Value>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let oid =
-        ObjectId::parse_str(&id).map_err(|_| AppError::BadRequest("Invalid id".into()))?;
+    let oid = ObjectId::parse_str(&id).map_err(|_| AppError::BadRequest("Invalid id".into()))?;
     let new_state = payload
         .get("state")
         .and_then(|v| v.as_i64())

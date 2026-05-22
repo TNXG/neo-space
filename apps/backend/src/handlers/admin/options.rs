@@ -97,8 +97,9 @@ pub async fn get_url_options(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     let value = match d.and_then(|d| d.get("value").cloned()) {
-        Some(v) => bson::from_bson::<Value>(v)
-            .map_err(|e| AppError::Internal(format!("decode: {}", e)))?,
+        Some(v) => {
+            bson::from_bson::<Value>(v).map_err(|e| AppError::Internal(format!("decode: {}", e)))?
+        }
         None => serde_json::json!({
             "webUrl": state.config.frontend_url,
             "adminUrl": "",

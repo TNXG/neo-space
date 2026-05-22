@@ -4,15 +4,12 @@
 
 use crate::app::SharedState;
 use crate::handlers::admin::ai;
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/writer/generate", routing::post(ai::writer_generate))
-        .route(
-            "/summaries",
-            routing::get(ai::list_summaries),
-        )
+        .route("/summaries", routing::get(ai::list_summaries))
         .route("/summaries/{id}", routing::delete(ai::delete_summary))
         .route(
             "/agent/conversations",

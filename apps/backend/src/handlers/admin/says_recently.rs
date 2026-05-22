@@ -76,7 +76,10 @@ pub async fn list_says(
         items.push(s);
     }
     let pagination = Pagination::new(total as i64, page as i64, size as i64);
-    Ok(Json(ApiResponse::success(PaginatedData { items, pagination })))
+    Ok(Json(ApiResponse::success(PaginatedData {
+        items,
+        pagination,
+    })))
 }
 
 pub async fn create_say(

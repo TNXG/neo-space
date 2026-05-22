@@ -7,11 +7,7 @@ use crate::{
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
 };
-use axum::{
-    Json,
-    extract::State,
-    response::Redirect,
-};
+use axum::{Json, extract::State, response::Redirect};
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -33,7 +29,13 @@ pub async fn github_callback(
     State(state): State<SharedState>,
     AppQuery(query): AppQuery<OAuthCallbackQuery>,
 ) -> Redirect {
-    handle_oauth_callback(&state, OAuthProvider::GitHub, &query.code, query.state.as_deref()).await
+    handle_oauth_callback(
+        &state,
+        OAuthProvider::GitHub,
+        &query.code,
+        query.state.as_deref(),
+    )
+    .await
 }
 
 /// QQ OAuth authorization
@@ -53,7 +55,13 @@ pub async fn qq_callback(
     State(state): State<SharedState>,
     AppQuery(query): AppQuery<OAuthCallbackQuery>,
 ) -> Redirect {
-    handle_oauth_callback(&state, OAuthProvider::QQ, &query.code, query.state.as_deref()).await
+    handle_oauth_callback(
+        &state,
+        OAuthProvider::QQ,
+        &query.code,
+        query.state.as_deref(),
+    )
+    .await
 }
 
 /// Get bindable OAuth identities for anonymous user
