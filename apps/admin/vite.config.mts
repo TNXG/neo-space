@@ -76,6 +76,7 @@ export default ({ mode }) => {
     server: {
       // https: true,
       port: 9528,
+      strictPort: true,
     },
     oxc: {
       jsx: {

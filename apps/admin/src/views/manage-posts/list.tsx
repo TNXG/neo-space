@@ -31,7 +31,6 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { debouncedRef } from '@vueuse/core'
 
 import { postsApi } from '~/api/posts'
-import { searchApi } from '~/api/search'
 import { TableTitleLink } from '~/components/link/title-link'
 import { DeleteConfirmButton } from '~/components/special-button/delete-confirm'
 import { StatusToggle } from '~/components/status-toggle'
@@ -67,6 +66,7 @@ const PostItem = defineComponent({
   },
   setup(props) {
     const row = computed(() => props.data)
+    const postId = computed(() => row.value._id)
 
     return () => (
       <div class="flex items-center gap-2 border-b border-neutral-200 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900/50">
@@ -76,7 +76,7 @@ const PostItem = defineComponent({
               <PhPushPin class="h-3 w-3 shrink-0 text-orange-400" />
             )}
             <RouterLink
-              to={`/posts/edit?id=${row.value.id}`}
+              to={`/posts/edit?id=${postId.value}`}
               class="truncate text-sm font-medium text-neutral-900 hover:text-blue-600 dark:text-neutral-100 dark:hover:text-blue-400"
             >
               {row.value.title}
@@ -119,7 +119,7 @@ const PostItem = defineComponent({
 
         <div class="flex shrink-0 items-center">
           <a
-            href={`${WEB_URL}/posts/${row.value.category?.slug}/${row.value.slug}`}
+            href={`${WEB_URL}/posts/${row.value.category?.slug ?? '_'}/${row.value.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="在新窗口打开文章"
@@ -134,7 +134,7 @@ const PostItem = defineComponent({
           </a>
 
           <RouterLink
-            to={`/posts/edit?id=${row.value.id}`}
+            to={`/posts/edit?id=${postId.value}`}
             aria-label="编辑文章"
           >
             <NButton quaternary size="tiny" class="!px-1.5">
@@ -147,7 +147,7 @@ const PostItem = defineComponent({
           <NPopconfirm
             positiveText="取消"
             negativeText="删除"
-            onNegativeClick={() => props.onDelete(row.value.id)}
+            onNegativeClick={() => props.onDelete(postId.value)}
           >
             {{
               trigger: () => (
@@ -193,16 +193,10 @@ export const ManagePostListView = defineComponent({
       queryKey: (params) => queryKeys.posts.list(params),
       queryFn: (params) => {
         const keyword = params.filters?.search
-        if (keyword) {
-          return searchApi.searchPosts({
-            keyword,
-            page: params.page,
-            size: params.size,
-          })
-        }
         return postsApi.getList({
           page: params.page,
           size: params.size,
+          keyword,
           select:
             'title id createdAt modifiedAt slug categoryId copyright tags readCount likeCount pinAt meta isPublished',
           categoryIds: params.filters?.categoryIds,
@@ -267,7 +261,7 @@ export const ManagePostListView = defineComponent({
               <div>
                 {data.value.map((item) => (
                   <PostItem
-                    key={item.id}
+                    key={item._id}
                     data={item}
                     categoryName={
                       categoryStore.map.value?.get(item.categoryId)?.name ?? ''
@@ -363,10 +357,14 @@ export const ManagePostListView = defineComponent({
                   )}
                   <div class={'w-0 flex-grow'}>
                     <TableTitleLink
-                      id={row.id}
+                      id={row._id}
                       title={row.title}
-                      inPageTo={`/posts/edit?id=${row.id}`}
-                      externalLinkTo={`/posts/${row.category.slug}/${row.slug}`}
+                      inPageTo={`/posts/edit?id=${row._id}`}
+                      externalLinkTo={
+                        row.category?.slug
+                          ? `/posts/${row.category.slug}/${row.slug}`
+                          : `/posts/${row.slug}`
+                      }
                     />
                   </div>
                 </div>
@@ -397,9 +395,9 @@ export const ManagePostListView = defineComponent({
                     categoryStore.map.value.get(row.categoryId)?.name ?? ''
                   }
                   onSubmit={async (v) => {
-                    await postsApi.patch(row.id, { categoryId: v })
+                    await postsApi.patch(row._id, { categoryId: v })
                     toast.success('修改成功')
-                    data.value.find((i) => i.id === row.id)!.categoryId = v
+                    data.value.find((i) => i._id === row._id)!.categoryId = v
                   }}
                   type="select"
                   options={
@@ -470,14 +468,14 @@ export const ManagePostListView = defineComponent({
             title: '操作',
             fixed: 'right',
             width: 60,
-            key: 'id',
+            key: '_id',
             render(row) {
               return (
                 <NSpace>
                   <NPopconfirm
                     positiveText={'取消'}
                     negativeText="删除"
-                    onNegativeClick={() => handleDelete(row.id)}
+                    onNegativeClick={() => handleDelete(row._id)}
                   >
                     {{
                       trigger: () => (
@@ -502,6 +500,7 @@ export const ManagePostListView = defineComponent({
             loading={loading.value}
             columns={columns}
             data={data}
+            checkedRowKey="_id"
             nTableProps={{
               onUpdateFilters: (filterState: FilterState) => {
                 const categoryIds = filterState.category as string[] | null
