@@ -9,7 +9,6 @@ import { router } from './router'
 export const progress = new QProgress({ colorful: false, color: '#1a9cf3' })
 const title = configs.title
 
-let lastCheckedLogAt = 0
 let layoutMutationSnapshotAtNavigation: ReturnType<
   ReturnType<typeof LayoutStore>['getMutationSnapshot']
 > | null = null
@@ -22,18 +21,9 @@ router.beforeEach(async (to) => {
   if (to.meta.isPublic || to.fullPath.startsWith('/dev')) {
     return
   } else {
-    const now = Date.now()
-    if (now - lastCheckedLogAt < 1000 * 60 * 5) {
-      return
-    }
     const { ok } = await userApi.checkLogged()
-    lastCheckedLogAt = now
     if (!ok) {
       return `/login?from=${encodeURI(to.fullPath)}`
-    } else {
-      import('~/socket').then((mo) => {
-        mo.socket.initIO()
-      })
     }
   }
 })

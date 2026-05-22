@@ -5,6 +5,7 @@ import type { FetchOptions } from 'ofetch'
 import { simpleCamelcaseKeys } from './camelcase-keys'
 
 import { API_URL } from '~/constants/env'
+import { getAdminAuthToken } from '~/utils/admin-auth'
 
 import { router } from '../router/router'
 import { uuid } from './index'
@@ -40,6 +41,10 @@ export const $api = ofetch.create({
   onRequest({ options }) {
     const headers = new Headers(options.headers)
     headers.set('x-uuid', _uuid)
+    const token = getAdminAuthToken()
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
 
     // GET 请求添加时间戳防缓存
     if (options.method?.toUpperCase() === 'GET') {

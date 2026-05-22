@@ -1,7 +1,12 @@
 import type { UserModel } from '~/models/user'
 
-import { authClient } from '~/utils/authjs/auth'
 import { request } from '~/utils/request'
+import {
+  clearAdminAuthToken,
+  getAdminAuthToken,
+  isAdminTokenValid,
+  setAdminAuthToken,
+} from '~/utils/admin-auth'
 
 export interface LoginData {
   username: string
@@ -9,17 +14,8 @@ export interface LoginData {
 }
 
 export interface LoginResponse {
-  token?: string
-  user?: {
-    id: string
-    email: string
-    name: string
-    image?: string | null
-    emailVerified: boolean
-    createdAt: string | Date
-    updatedAt: string | Date
-    role?: 'reader' | 'owner'
-  }
+  token: string
+  user: UserModel
 }
 
 export interface UpdateOwnerData {
@@ -45,36 +41,55 @@ export interface AllowLoginResponse {
   password: boolean
   passkey: boolean
   github?: boolean
+  qq?: boolean
   google?: boolean
   [key: string]: boolean | undefined
 }
 
+interface ApiEnvelope<T> {
+  data: T
+}
+
 export const userApi = {
   // 获取当前 Owner 信息
-  getOwner: () => request.get<UserModel>('/user/profile'),
-
-  // 检查是否已登录（基于 better-auth session）
-  checkLogged: async () => {
-    const result = await authClient.getSession()
-    return { ok: result.data?.session ? 1 : 0 }
+  getOwner: async () => {
+    const response = await request.get<ApiEnvelope<UserModel>>('/user/profile')
+    return response.data
   },
 
-  // 用户名密码登录（Cookie Session，不返回 JWT）
-  loginWithPassword: async (data: LoginData) => {
-    const result = await authClient.signIn.username({
-      username: data.username,
-      password: data.password,
-    })
-
-    if (result.error) {
-      throw new Error(result.error.message || '登录失败')
+  // 检查是否已登录（只校验本地 JWT，不引入服务端 session）
+  checkLogged: async () => {
+    const token = getAdminAuthToken()
+    if (!isAdminTokenValid(token)) {
+      clearAdminAuthToken()
+      return { ok: 0 }
     }
 
-    return result.data as LoginResponse
+    return { ok: 1 }
+  },
+
+  // 用户名密码登录（单次请求，后端校验 bcrypt 并写 JWT Cookie）
+  loginWithPassword: async (data: LoginData) => {
+    const response = await request.post<ApiEnvelope<LoginResponse>>(
+      '/auth/tokens',
+      {
+        data: {
+          username: data.username,
+          password: data.password,
+        },
+      },
+    )
+
+    setAdminAuthToken(response.data.token)
+    return response.data
   },
 
   // 获取允许的登录方式
-  getAllowLogin: () => request.get<AllowLoginResponse>('/owner/allow-login'),
+  getAllowLogin: async () => {
+    const response =
+      await request.get<ApiEnvelope<AllowLoginResponse>>('/owner/allow-login')
+    return response.data
+  },
 
   // 更新 Owner 信息
   updateOwner: (data: UpdateOwnerData) =>
@@ -82,53 +97,21 @@ export const userApi = {
 
   // 登出当前会话
   logout: async () => {
-    const result = await authClient.signOut()
-    if (result.error) {
-      throw new Error(result.error.message || '登出失败')
+    try {
+      await request.delete<ApiEnvelope<void>>('/auth/tokens')
+    } finally {
+      clearAdminAuthToken()
     }
   },
 
-  // 获取会话列表（Better Auth）
-  getSessions: async () => {
-    const [sessionsResult, currentResult] = await Promise.all([
-      authClient.listSessions(),
-      authClient.getSession(),
-    ])
-
-    if (sessionsResult.error) {
-      throw new Error(sessionsResult.error.message || '获取会话失败')
-    }
-
-    const currentToken = currentResult.data?.session?.token
-
-    return (sessionsResult.data || []).map((session: any) => {
-      const token = session.token || session.id
-      return {
-        id: token,
-        token,
-        ua: session.userAgent || '',
-        ip: session.ipAddress || '',
-        lastActiveAt: new Date(
-          session.updatedAt || session.createdAt || Date.now(),
-        ).toISOString(),
-        current: currentToken ? token === currentToken : false,
-      }
-    }) as Session[]
-  },
+  // JWT 不保留服务端 session 列表。
+  getSessions: async () => [] as Session[],
 
   // 删除指定会话
-  deleteSession: async (token: string) => {
-    const result = await authClient.revokeSession({ token })
-    if (result.error) {
-      throw new Error(result.error.message || '删除会话失败')
-    }
+  deleteSession: async (_token: string) => {
+    clearAdminAuthToken()
   },
 
   // 删除所有其他会话
-  deleteAllSessions: async () => {
-    const result = await authClient.revokeOtherSessions()
-    if (result.error) {
-      throw new Error(result.error.message || '删除会话失败')
-    }
-  },
+  deleteAllSessions: async () => {},
 }

@@ -1,4 +1,3 @@
-import { KeyRound as PassKeyIcon } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import {
   defineComponent,
@@ -6,7 +5,6 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
-  watchEffect,
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -16,10 +14,9 @@ import { useQuery } from '@tanstack/vue-query'
 import { userApi } from '~/api/user'
 import Avatar from '~/components/avatar'
 import { SESSION_WITH_LOGIN } from '~/constants/keys'
+import { API_URL } from '~/constants/env'
 import { queryKeys } from '~/hooks/queries/keys'
 import { useUserStore } from '~/stores/user'
-import { authClient } from '~/utils/authjs/auth'
-import { AuthnUtils } from '~/utils/authn'
 
 const GithubIcon = () => (
   <svg
@@ -33,7 +30,7 @@ const GithubIcon = () => (
   </svg>
 )
 
-const GoogleIcon = () => (
+const QQIcon = () => (
   <svg
     width="20"
     height="20"
@@ -41,10 +38,7 @@ const GoogleIcon = () => (
     fill="currentColor"
     aria-hidden="true"
   >
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    <path d="M12.01 2C6.49 2 2 5.58 2 10c0 2.56 1.5 4.83 3.84 6.29l-.86 3.15a.5.5 0 0 0 .73.56l3.38-1.85c.91.22 1.89.34 2.92.34 5.52 0 10.01-3.58 10.01-8.01S17.53 2 12.01 2Zm-3.5 9.1c-.65 0-1.18-.58-1.18-1.29 0-.72.53-1.3 1.18-1.3.66 0 1.19.58 1.19 1.3 0 .71-.53 1.29-1.19 1.29Zm3.5 0c-.65 0-1.18-.58-1.18-1.29 0-.72.53-1.3 1.18-1.3.66 0 1.19.58 1.19 1.3 0 .71-.53 1.29-1.19 1.29Zm3.51 0c-.66 0-1.19-.58-1.19-1.29 0-.72.53-1.3 1.19-1.3.65 0 1.18.58 1.18 1.3 0 .71-.53 1.29-1.18 1.29Z" />
   </svg>
 )
 
@@ -76,40 +70,17 @@ export const LoginView = defineComponent({
       })
     })
 
-    const postSuccessfulLogin = () => {
-      router.push(
+    const postSuccessfulLogin = async () => {
+      sessionStorage.setItem(SESSION_WITH_LOGIN, '1')
+      await router.replace(
         route.query.from ? decodeURI(route.query.from as string) : '/dashboard',
       )
-      sessionStorage.setItem(SESSION_WITH_LOGIN, '1')
       toast.success('欢迎回来')
     }
 
     const { data: settings } = useQuery({
       queryKey: queryKeys.user.allowLogin(),
       queryFn: () => userApi.getAllowLogin(),
-    })
-
-    let triggerAuthnOnce = false
-
-    const passkeyAuth = async () => {
-      try {
-        const res = await AuthnUtils.validate()
-        if (!res) {
-          toast.error('验证失败')
-          return
-        }
-        postSuccessfulLogin()
-      } catch {
-        toast.error('Passkey 验证失败')
-      }
-    }
-
-    watchEffect(() => {
-      if (triggerAuthnOnce) return
-      if (settings.value?.password === false) {
-        triggerAuthnOnce = true
-        passkeyAuth()
-      }
     })
 
     const handleLogin = async (e: Event) => {
@@ -127,12 +98,16 @@ export const LoginView = defineComponent({
 
         isLoading.value = true
 
-        await userApi.loginWithPassword({
+        const loginResponse = await userApi.loginWithPassword({
           username,
           password: password.value,
         })
+        user.value = {
+          ...loginResponse.user,
+          avatar: loginResponse.user.avatar || loginResponse.user.image,
+        }
 
-        postSuccessfulLogin()
+        await postSuccessfulLogin()
       } catch {
         toast.error('登录失败')
       } finally {
@@ -140,11 +115,8 @@ export const LoginView = defineComponent({
       }
     }
 
-    const handleSocialLogin = (provider: 'github' | 'google') => {
-      authClient.signIn.social({
-        provider,
-        callbackURL: `${window.location.origin}${window.location.pathname}#${route.query.to || ''}`,
-      })
+    const handleSocialLogin = (provider: 'github' | 'qq') => {
+      window.location.href = `${API_URL}/auth/oauth/${provider}?return_to=admin`
     }
 
     return () => {
@@ -153,9 +125,8 @@ export const LoginView = defineComponent({
         settings.value?.password === true
 
       const hasAlternativeAuth =
-        settings.value?.passkey ||
         settings.value?.github ||
-        settings.value?.google
+        settings.value?.qq
 
       return (
         <div class="flex min-h-screen flex-col items-center justify-center p-4">
@@ -197,17 +168,6 @@ export const LoginView = defineComponent({
 
           {hasAlternativeAuth && (
             <div class="mt-6 flex justify-center gap-4">
-              {settings.value?.passkey && (
-                <button
-                  type="button"
-                  onClick={passkeyAuth}
-                  aria-label="使用 Passkey 登录"
-                  class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white/80 backdrop-blur-sm transition-all hover:bg-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                >
-                  <PassKeyIcon class="h-4.5 w-4.5" aria-hidden="true" />
-                </button>
-              )}
-
               {settings.value?.github && (
                 <button
                   type="button"
@@ -219,14 +179,14 @@ export const LoginView = defineComponent({
                 </button>
               )}
 
-              {settings.value?.google && (
+              {settings.value?.qq && (
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('google')}
-                  aria-label="使用 Google 登录"
+                  onClick={() => handleSocialLogin('qq')}
+                  aria-label="使用 QQ 登录"
                   class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white/80 backdrop-blur-sm transition-all hover:bg-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                 >
-                  <GoogleIcon />
+                  <QQIcon />
                 </button>
               )}
             </div>

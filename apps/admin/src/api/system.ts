@@ -6,6 +6,10 @@ export interface AppInfo {
   hash?: string
 }
 
+interface ApiEnvelope<T> {
+  data: T
+}
+
 export interface DebugEventData {
   type: string
   payload: any
@@ -18,7 +22,10 @@ export interface PtyRecord {
 
 export const systemApi = {
   // 获取应用信息
-  getAppInfo: () => request.get<AppInfo>('/'),
+  getAppInfo: async () => {
+    const response = await request.get<ApiEnvelope<AppInfo>>('/')
+    return response.data
+  },
 
   // === Debug ===
 

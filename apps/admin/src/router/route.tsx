@@ -49,6 +49,7 @@ import { DashBoardView } from '~/views/dashboard'
 import { ManagePostListView } from '~/views/manage-posts/list'
 
 import CommentPage from '../views/comments/index'
+import AuthCallbackView from '../views/auth-callback'
 import LoginView from '../views/login'
 import { ManageNoteListView } from '../views/manage-notes/list'
 import ManageNoteWrite from '../views/manage-notes/write'
@@ -473,6 +474,11 @@ export const routes: RouteRecordRaw[] = [
         name: RouteName.Login,
         meta: { isPublic: true, title: '登录' },
         component: LoginView,
+      },
+      {
+        path: '/auth/callback',
+        meta: { isPublic: true, title: '登录回调' },
+        component: AuthCallbackView,
       },
     ],
   },

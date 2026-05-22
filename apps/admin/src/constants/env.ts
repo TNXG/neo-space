@@ -3,7 +3,7 @@ export const WEB_URL: string =
 
 export const bgUrl =
   (import.meta.env.VITE_APP_LOGIN_BG as string) ||
-  'https://fastly.jsdelivr.net/gh/mx-space/docs-images@master/images/chichi-1.jpeg'
+  'https://api-space.tnxg.top/images/wallpaper?type=cdn'
 
 // admin 由 Rust 后端同源托管，API 始终走相对路径
 export const API_URL = transformUrl(
