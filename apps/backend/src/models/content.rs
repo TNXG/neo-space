@@ -134,7 +134,24 @@ pub struct Post {
     #[serde(default)]
     pub copyright: bool,
     #[serde(default)]
-    pub meta: Option<String>,
+    pub meta: Option<serde_json::Value>,
+    #[serde(rename = "contentFormat", default)]
+    pub content_format: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+    #[serde(
+        rename = "pinAt",
+        default,
+        serialize_with = "serialize_optional_datetime"
+    )]
+    #[schema(value_type = Option<String>)]
+    pub pin_at: Option<bson::DateTime>,
+    #[serde(rename = "pinOrder", default)]
+    pub pin_order: Option<i32>,
+    #[serde(rename = "readCount", default)]
+    pub read_count: i32,
+    #[serde(rename = "likeCount", default)]
+    pub like_count: i32,
     #[serde(default)]
     pub images: Vec<PostImage>,
     #[serde(default = "default_language_code")]
@@ -177,7 +194,24 @@ pub struct PostWithCategory {
     #[serde(default)]
     pub copyright: bool,
     #[serde(default)]
-    pub meta: Option<String>,
+    pub meta: Option<serde_json::Value>,
+    #[serde(rename = "contentFormat", default)]
+    pub content_format: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+    #[serde(
+        rename = "pinAt",
+        default,
+        serialize_with = "serialize_optional_datetime"
+    )]
+    #[schema(value_type = Option<String>)]
+    pub pin_at: Option<bson::DateTime>,
+    #[serde(rename = "pinOrder", default)]
+    pub pin_order: Option<i32>,
+    #[serde(rename = "readCount", default)]
+    pub read_count: i32,
+    #[serde(rename = "likeCount", default)]
+    pub like_count: i32,
     #[serde(default)]
     pub images: Vec<PostImage>,
     #[serde(default = "default_language_code")]
@@ -209,6 +243,12 @@ impl From<Post> for PostWithCategory {
             is_published: post.is_published,
             copyright: post.copyright,
             meta: post.meta,
+            content_format: post.content_format,
+            content: post.content,
+            pin_at: post.pin_at,
+            pin_order: post.pin_order,
+            read_count: post.read_count,
+            like_count: post.like_count,
             images: post.images,
             lang,
             source_lang,

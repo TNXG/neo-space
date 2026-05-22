@@ -15,6 +15,7 @@ use axum::{
 };
 use bson::{doc, oid::ObjectId};
 use serde::Deserialize;
+use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 pub struct CreatePostRequest {
@@ -30,6 +31,14 @@ pub struct CreatePostRequest {
     pub copyright: bool,
     #[serde(rename = "isPublished", default = "default_true")]
     pub is_published: bool,
+    #[serde(rename = "contentFormat", default)]
+    pub content_format: Option<String>,
+    #[serde(default)]
+    pub content: Option<String>,
+    #[serde(default)]
+    pub pin: Option<Value>,
+    #[serde(rename = "pinOrder", default)]
+    pub pin_order: Option<i32>,
     pub meta: Option<bson::Document>,
 }
 
@@ -45,6 +54,13 @@ pub struct UpdatePostRequest {
     pub copyright: Option<bool>,
     #[serde(rename = "isPublished")]
     pub is_published: Option<bool>,
+    #[serde(rename = "contentFormat")]
+    pub content_format: Option<String>,
+    pub content: Option<String>,
+    #[serde(default)]
+    pub pin: Option<Value>,
+    #[serde(rename = "pinOrder")]
+    pub pin_order: Option<i32>,
     pub meta: Option<bson::Document>,
 }
 
@@ -63,6 +79,17 @@ fn parse_oid(id: &str) -> AppResult<ObjectId> {
 
 fn now() -> bson::DateTime {
     bson::DateTime::now()
+}
+
+fn parse_pin_at(pin: &Value) -> AppResult<Option<bson::DateTime>> {
+    match pin {
+        Value::String(value) if !value.trim().is_empty() => {
+            let parsed = chrono::DateTime::parse_from_rfc3339(value)
+                .map_err(|_| AppError::BadRequest("Invalid pin timestamp".to_string()))?;
+            Ok(Some(bson::DateTime::from_millis(parsed.timestamp_millis())))
+        }
+        _ => Ok(None),
+    }
 }
 
 fn slugify(input: &str) -> String {
@@ -105,10 +132,7 @@ pub async fn create_post(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
     {
-        return Err(AppError::BadRequest(format!(
-            "Slug '{}' 已被使用",
-            slug
-        )));
+        return Err(AppError::BadRequest(format!("Slug '{}' 已被使用", slug)));
     }
 
     let id = ObjectId::new();
@@ -127,6 +151,20 @@ pub async fn create_post(
         "isAiTranslated": false,
         "created": now(),
     };
+    if let Some(content_format) = &req.content_format {
+        doc.insert("contentFormat", content_format);
+    }
+    if let Some(content) = &req.content {
+        doc.insert("content", content);
+    }
+    if let Some(pin) = &req.pin {
+        if let Some(pin_at) = parse_pin_at(pin)? {
+            doc.insert("pinAt", pin_at);
+            if let Some(pin_order) = req.pin_order {
+                doc.insert("pinOrder", pin_order);
+            }
+        }
+    }
     if let Some(s) = &req.summary {
         doc.insert("summary", s);
     }
@@ -184,13 +222,29 @@ pub async fn update_post(
     if let Some(v) = req.is_published {
         set_doc.insert("isPublished", v);
     }
+    if let Some(v) = req.content_format {
+        set_doc.insert("contentFormat", v);
+    }
+    if let Some(v) = req.content {
+        set_doc.insert("content", v);
+    }
+    if let Some(v) = req.pin_order {
+        set_doc.insert("pinOrder", v);
+    }
     if let Some(meta) = req.meta {
         set_doc.insert("meta", meta);
     }
 
+    if let Some(pin) = &req.pin {
+        if let Some(pin_at) = parse_pin_at(pin)? {
+            set_doc.insert("pinAt", pin_at);
+        }
+    }
+    let update_doc = doc! { "$set": set_doc };
+
     let collection = state.db.collection::<Post>("posts");
     let result = collection
-        .update_one(doc! { "_id": oid }, doc! { "$set": set_doc })
+        .update_one(doc! { "_id": oid }, update_doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

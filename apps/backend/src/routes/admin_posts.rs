@@ -2,7 +2,7 @@
 
 use crate::app::SharedState;
 use crate::handlers::admin::posts;
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn routes() -> Router<SharedState> {
     Router::new()
@@ -10,6 +10,8 @@ pub fn routes() -> Router<SharedState> {
         .route("/batch", routing::delete(posts::delete_posts_batch))
         .route(
             "/{id}",
-            routing::put(posts::update_post).delete(posts::delete_post),
+            routing::put(posts::update_post)
+                .patch(posts::update_post)
+                .delete(posts::delete_post),
         )
 }

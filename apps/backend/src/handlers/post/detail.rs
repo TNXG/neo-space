@@ -2,6 +2,7 @@
 
 use crate::{
     app::SharedState,
+    auth::extractors::OptionalAuth,
     error::{AppError, AppQuery, AppResult},
     models::*,
 };
@@ -21,6 +22,7 @@ pub struct DetailPostParams {
 /// Get a post by ID
 pub async fn get_post(
     State(state): State<SharedState>,
+    auth: OptionalAuth,
     Path(id): Path<String>,
     AppQuery(params): AppQuery<DetailPostParams>,
 ) -> AppResult<Json<ApiResponse<PostWithCategory>>> {
@@ -28,8 +30,13 @@ pub async fn get_post(
         .map_err(|_| AppError::BadRequest("Invalid ID format".to_string()))?;
 
     let posts_collection = state.db.collection::<Post>("posts");
+    let filter = if auth.is_owner {
+        doc! { "_id": object_id }
+    } else {
+        doc! { "_id": object_id, "isPublished": true }
+    };
     let post = posts_collection
-        .find_one(doc! { "_id": object_id, "isPublished": true })
+        .find_one(filter)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Post not found".to_string()))?;
