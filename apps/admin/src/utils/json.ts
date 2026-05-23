@@ -1,15 +1,15 @@
 export const JSONSafeParse: typeof JSON.parse = (...rest) => {
   try {
-    return JSON.parse(...rest)
+    return JSON.parse(...rest);
   } catch {
-    return null
+    return null;
   }
-}
+};
 
 export const JSONParseReturnOriginal: typeof JSON.parse = (...rest) => {
   try {
-    return JSON.parse(...rest)
+    return JSON.parse(...rest);
   } catch {
-    return rest[0]
+    return rest[0];
   }
-}
+};

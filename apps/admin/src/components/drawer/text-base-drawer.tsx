@@ -1,4 +1,9 @@
-import { BracesIcon, ImageIcon, SettingsIcon } from 'lucide-vue-next'
+import type { LexicalEditor } from "lexical";
+import type { SelectOption } from "naive-ui";
+import type { PropType, VNode } from "vue";
+import type { Image } from "~/models/base";
+import type { MetaPresetScope } from "~/models/meta-preset";
+import { BracesIcon, ImageIcon, SettingsIcon } from "lucide-vue-next";
 import {
   NDatePicker,
   NDrawer,
@@ -8,19 +13,14 @@ import {
   NPopover,
   NSelect,
   NTooltip,
-} from 'naive-ui'
-import isURL from 'validator/lib/isURL'
-import { defineComponent, h, ref } from 'vue'
-import type { Image } from '~/models/base'
-import type { MetaPresetScope } from '~/models/meta-preset'
-import type { LexicalEditor } from 'lexical'
-import type { SelectOption } from 'naive-ui'
-import type { PropType, VNode } from 'vue'
+} from "naive-ui";
+import isURL from "validator/lib/isURL";
+import { defineComponent, h, ref } from "vue";
 
-import { ImageDetailSection } from './components/image-detail-section'
-import { LexicalImageDetailSection } from './components/lexical-image-detail-section'
-import { MetaPresetSection } from './components/meta-preset-section'
-import { FormField, SectionTitle, SwitchRow } from './components/ui'
+import { ImageDetailSection } from "./components/image-detail-section";
+import { LexicalImageDetailSection } from "./components/lexical-image-detail-section";
+import { MetaPresetSection } from "./components/meta-preset-section";
+import { FormField, SectionTitle } from "./components/ui";
 
 // 重新导出 UI 组件，方便外部使用
 export {
@@ -31,9 +31,9 @@ export {
   InlineField,
   SectionTitle,
   SwitchRow,
-} from './components/ui'
+} from "./components/ui";
 
-type ItemType = 'date-picker'
+type ItemType = "date-picker";
 export const TextBaseDrawer = defineComponent({
   props: {
     show: {
@@ -51,7 +51,7 @@ export const TextBaseDrawer = defineComponent({
 
     title: {
       type: String,
-      default: '文章设定',
+      default: "文章设定",
     },
 
     disabledItem: {
@@ -64,7 +64,7 @@ export const TextBaseDrawer = defineComponent({
      */
     scope: {
       type: String as PropType<MetaPresetScope>,
-      default: 'both',
+      default: "both",
     },
     lexicalEditor: {
       type: Object as PropType<LexicalEditor | null>,
@@ -73,12 +73,12 @@ export const TextBaseDrawer = defineComponent({
     },
   },
   setup(props, { slots }) {
-    const disabledItem = new Set(props.disabledItem || [])
+    const disabledItem = new Set(props.disabledItem || []);
 
     // 更新 meta 数据
     const handleUpdateMeta = (meta: Record<string, any> | undefined) => {
-      props.data.meta = meta
-    }
+      props.data.meta = meta;
+    };
 
     return () => (
       <NDrawer
@@ -101,13 +101,13 @@ export const TextBaseDrawer = defineComponent({
             {/* 基础设置 */}
             <SectionTitle icon={SettingsIcon}>基础设置</SectionTitle>
 
-            {!disabledItem.has('date-picker') && (
+            {!disabledItem.has("date-picker") && (
               <FormField label="自定义创建时间">
                 <NDatePicker
                   class="w-full"
                   clearable
                   isDateDisabled={(ts: number) => {
-                    return ts > Date.now()
+                    return ts > Date.now();
                   }}
                   type="datetime"
                   value={
@@ -116,8 +116,8 @@ export const TextBaseDrawer = defineComponent({
                       : undefined
                   }
                   onUpdateValue={(e) => {
-                    const value = e ? new Date(e).toISOString() : undefined
-                    props.data.createdAt = value
+                    const value = e ? new Date(e).toISOString() : undefined;
+                    props.data.createdAt = value;
                   }}
                 />
               </FormField>
@@ -130,38 +130,41 @@ export const TextBaseDrawer = defineComponent({
               <ImageCoverInput
                 images={props.data.images}
                 onChange={(src) => {
-                  if (!props.data.meta) props.data.meta = {}
+                  if (!props.data.meta)
+                    props.data.meta = {};
                   if (src === null) {
-                    delete props.data.meta.cover
+                    delete props.data.meta.cover;
                     // 如果 meta 为空对象，设为 undefined
                     if (Object.keys(props.data.meta).length === 0) {
-                      props.data.meta = undefined
+                      props.data.meta = undefined;
                     }
-                    return
+                    return;
                   }
-                  props.data.meta.cover = src
+                  props.data.meta.cover = src;
                 }}
                 value={props.data.meta?.cover}
               />
             </FormField>
 
-            {props.data.contentFormat !== 'lexical' ? (
-              <ImageDetailSection
-                text={props.data.text}
-                images={props.data.images}
-                extraImages={
-                  props.data.meta?.cover ? [props.data.meta.cover] : undefined
-                }
-                onChange={(images) => {
-                  props.data.images = images
-                }}
-              />
-            ) : (
-              <LexicalImageDetailSection
-                content={props.data.content || ''}
-                editor={props.lexicalEditor}
-              />
-            )}
+            {props.data.contentFormat !== "lexical"
+              ? (
+                  <ImageDetailSection
+                    text={props.data.text}
+                    images={props.data.images}
+                    extraImages={
+                      props.data.meta?.cover ? [props.data.meta.cover] : undefined
+                    }
+                    onChange={(images) => {
+                      props.data.images = images;
+                    }}
+                  />
+                )
+              : (
+                  <LexicalImageDetailSection
+                    content={props.data.content || ""}
+                    editor={props.lexicalEditor}
+                  />
+                )}
 
             {/* 附加字段 */}
             <SectionTitle icon={BracesIcon}>附加字段</SectionTitle>
@@ -174,9 +177,9 @@ export const TextBaseDrawer = defineComponent({
           </div>
         </NDrawerContent>
       </NDrawer>
-    )
+    );
   },
-})
+});
 
 /**
  * 图片封面输入组件
@@ -197,87 +200,91 @@ const ImageCoverInput = defineComponent({
     },
   },
   setup(props) {
-    const isValidated = ref(true)
+    const isValidated = ref(true);
     const validateAndCallback = (value: string) => {
       if (!value) {
-        isValidated.value = true
-        props.onChange(null)
-        return
+        isValidated.value = true;
+        props.onChange(null);
+        return;
       }
-      if (isURL(value)) isValidated.value = true
-      else isValidated.value = false
+      if (isURL(value))
+        isValidated.value = true;
+      else isValidated.value = false;
 
-      props.onChange(value)
-    }
-    const show = ref(false)
+      props.onChange(value);
+    };
+    const show = ref(false);
     return () => (
       <NPopover
         placement="left"
         show={show.value}
         onUpdateShow={(newValue) => {
-          if (newValue && !props.value) return
-          show.value = newValue
+          if (newValue && !props.value)
+            return;
+          show.value = newValue;
         }}
       >
         {{
           trigger() {
             const validImages = (props.images as Image[]).filter(
-              (img) => img?.src,
-            )
-            return validImages.length > 0 ? (
-              <NSelect
-                class="w-full"
-                status={isValidated.value ? undefined : 'error'}
-                value={props.value}
-                onUpdateValue={validateAndCallback}
-                options={validImages.map((image) => ({
-                  label: image.src,
-                  value: image.src,
-                }))}
-                filterable
-                tag
-                clearable
-                maxTagCount={1}
-                placeholder="选择或输入图片 URL"
-                renderOption={({
-                  node,
-                  option,
-                }: {
-                  node: VNode
-                  option: SelectOption
-                }) =>
-                  h(
-                    NTooltip,
-                    { placement: 'left' },
-                    {
-                      trigger: () => node,
-                      default: () => (
-                        <NImage
-                          src={option.value as string}
-                          alt="缩略图预览"
-                          width={400}
-                        />
-                      ),
-                    },
-                  )
-                }
-              />
-            ) : (
-              <NInput
-                class="w-full"
-                value={props.value}
-                status={isValidated.value ? undefined : 'error'}
-                onUpdateValue={validateAndCallback}
-                placeholder="输入图片 URL (https://...)"
-              />
-            )
+              img => img?.src,
+            );
+            return validImages.length > 0
+              ? (
+                  <NSelect
+                    class="w-full"
+                    status={isValidated.value ? undefined : "error"}
+                    value={props.value}
+                    onUpdateValue={validateAndCallback}
+                    options={validImages.map(image => ({
+                      label: image.src,
+                      value: image.src,
+                    }))}
+                    filterable
+                    tag
+                    clearable
+                    maxTagCount={1}
+                    placeholder="选择或输入图片 URL"
+                    renderOption={({
+                      node,
+                      option,
+                    }: {
+                      node: VNode;
+                      option: SelectOption;
+                    }) =>
+                      h(
+                        NTooltip,
+                        { placement: "left" },
+                        {
+                          trigger: () => node,
+                          default: () => (
+                            <NImage
+                              src={option.value as string}
+                              alt="缩略图预览"
+                              width={400}
+                            />
+                          ),
+                        },
+                      )}
+                  />
+                )
+              : (
+                  <NInput
+                    class="w-full"
+                    value={props.value}
+                    status={isValidated.value ? undefined : "error"}
+                    onUpdateValue={validateAndCallback}
+                    placeholder="输入图片 URL (https://...)"
+                  />
+                );
           },
           default() {
-            if (!props.value) return null
-            return <NImage src={props.value} alt="封面预览" width={400} />
+            if (!props.value)
+              return null;
+            return <NImage src={props.value} alt="封面预览" width={400} />;
           },
         }}
       </NPopover>
-    )
+    );
   },
-})
+});

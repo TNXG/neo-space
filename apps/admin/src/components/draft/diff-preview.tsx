@@ -1,3 +1,6 @@
+import type { PropType } from "vue";
+import { FileDiff, preloadHighlighter } from "@pierre/diffs";
+
 import {
   defineComponent,
   nextTick,
@@ -6,29 +9,27 @@ import {
   ref,
   shallowRef,
   watch,
-} from 'vue'
-import type { PropType } from 'vue'
-
-import { FileDiff, preloadHighlighter } from '@pierre/diffs'
+} from "vue";
 
 export interface DiffFile {
-  name: string
-  contents: string
+  name: string;
+  contents: string;
 }
 
 // Preload highlighter once
-let highlighterReady = false
+let highlighterReady = false;
 const ensureHighlighter = async () => {
-  if (highlighterReady) return
+  if (highlighterReady)
+    return;
   await preloadHighlighter({
-    themes: ['github-dark', 'github-light'],
-    langs: ['markdown', 'typescript', 'javascript', 'json', 'html', 'css'],
-  })
-  highlighterReady = true
-}
+    themes: ["github-dark", "github-light"],
+    langs: ["markdown", "typescript", "javascript", "json", "html", "css"],
+  });
+  highlighterReady = true;
+};
 
 export const DiffPreview = defineComponent({
-  name: 'DiffPreview',
+  name: "DiffPreview",
   props: {
     oldFile: {
       type: Object as PropType<DiffFile>,
@@ -40,37 +41,39 @@ export const DiffPreview = defineComponent({
     },
   },
   setup(props) {
-    const containerRef = ref<HTMLElement>()
-    const diffInstance = shallowRef<FileDiff | null>(null)
-    const isLoading = ref(true)
+    const containerRef = ref<HTMLElement>();
+    const diffInstance = shallowRef<FileDiff | null>(null);
+    const isLoading = ref(true);
 
     const createDiff = async () => {
-      if (!containerRef.value) return
+      if (!containerRef.value)
+        return;
 
       // Clean up existing instance
       if (diffInstance.value) {
-        diffInstance.value.cleanUp()
-        diffInstance.value = null
+        diffInstance.value.cleanUp();
+        diffInstance.value = null;
       }
 
       // Clear container
-      containerRef.value.innerHTML = ''
+      containerRef.value.innerHTML = "";
 
       try {
         // Ensure highlighter is ready
-        await ensureHighlighter()
-        isLoading.value = false
+        await ensureHighlighter();
+        isLoading.value = false;
 
-        await nextTick()
+        await nextTick();
 
-        if (!containerRef.value) return
+        if (!containerRef.value)
+          return;
 
         diffInstance.value = new FileDiff({
-          diffStyle: 'unified',
-          diffIndicators: 'bars',
-          themeType: 'system',
+          diffStyle: "unified",
+          diffIndicators: "bars",
+          themeType: "system",
           disableFileHeader: true,
-        })
+        });
 
         // Use containerWrapper to attach the diffs-container element
         diffInstance.value.render({
@@ -83,39 +86,39 @@ export const DiffPreview = defineComponent({
             contents: props.newFile.contents,
           },
           containerWrapper: containerRef.value,
-        })
+        });
       } catch (error) {
-        console.error('[DiffPreview] Failed to create diff:', error)
-        isLoading.value = false
+        console.error("[DiffPreview] Failed to create diff:", error);
+        isLoading.value = false;
       }
-    }
+    };
 
     onMounted(() => {
-      createDiff()
-    })
+      createDiff();
+    });
 
     watch(
       () => [props.oldFile.contents, props.newFile.contents],
       () => {
-        createDiff()
+        createDiff();
       },
-    )
+    );
 
     onUnmounted(() => {
       if (diffInstance.value) {
-        diffInstance.value.cleanUp()
-        diffInstance.value = null
+        diffInstance.value.cleanUp();
+        diffInstance.value = null;
       }
-    })
+    });
 
     return () => (
       <div ref={containerRef} class="h-full overflow-auto">
         {isLoading.value && (
-          <div class="flex h-full items-center justify-center text-neutral-400">
+          <div class="text-neutral-400 flex h-full items-center justify-center">
             加载中...
           </div>
         )}
       </div>
-    )
+    );
   },
-})
+});

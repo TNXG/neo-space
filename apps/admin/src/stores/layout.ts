@@ -1,29 +1,29 @@
-import { defineStore } from 'pinia'
-import { ref, shallowReactive, shallowRef, watch } from 'vue'
-import type { VNode } from 'vue'
+import type { VNode } from "vue";
+import { defineStore } from "pinia";
+import { ref, shallowReactive, shallowRef, watch } from "vue";
 
-type LayoutMutationSnapshot = {
-  headerActions: number
-  footerActions: number
-  pageTitle: number
-  hideHeader: number
-  headerClass: number
-  headerSubtitle: number
-  contentPadding: number
-  contentMinFullHeight: number
-  floatButtons: number
+interface LayoutMutationSnapshot {
+  headerActions: number;
+  footerActions: number;
+  pageTitle: number;
+  hideHeader: number;
+  headerClass: number;
+  headerSubtitle: number;
+  contentPadding: number;
+  contentMinFullHeight: number;
+  floatButtons: number;
 }
 
-export const useLayoutStore = defineStore('layout', () => {
-  const headerActions = shallowRef<VNode | null>(null)
-  const footerActions = shallowRef<VNode | null>(null)
-  const pageTitle = ref<string | null>(null)
-  const hideHeader = ref(false)
-  const headerClass = ref<string | null>(null)
-  const headerSubtitle = shallowRef<VNode | null>(null)
-  const contentPadding = ref(true)
-  const contentMinFullHeight = ref(false)
-  const floatButtons = shallowReactive<Map<symbol, VNode>>(new Map())
+export const useLayoutStore = defineStore("layout", () => {
+  const headerActions = shallowRef<VNode | null>(null);
+  const footerActions = shallowRef<VNode | null>(null);
+  const pageTitle = ref<string | null>(null);
+  const hideHeader = ref(false);
+  const headerClass = ref<string | null>(null);
+  const headerSubtitle = shallowRef<VNode | null>(null);
+  const contentPadding = ref(true);
+  const contentMinFullHeight = ref(false);
+  const floatButtons = shallowReactive<Map<symbol, VNode>>(new Map());
   const mutationStamps = shallowReactive<LayoutMutationSnapshot>({
     headerActions: 0,
     footerActions: 0,
@@ -34,93 +34,93 @@ export const useLayoutStore = defineStore('layout', () => {
     contentPadding: 0,
     contentMinFullHeight: 0,
     floatButtons: 0,
-  })
+  });
 
   watch(
     headerActions,
     () => {
-      mutationStamps.headerActions += 1
+      mutationStamps.headerActions += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     footerActions,
     () => {
-      mutationStamps.footerActions += 1
+      mutationStamps.footerActions += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     pageTitle,
     () => {
-      mutationStamps.pageTitle += 1
+      mutationStamps.pageTitle += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     hideHeader,
     () => {
-      mutationStamps.hideHeader += 1
+      mutationStamps.hideHeader += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     headerClass,
     () => {
-      mutationStamps.headerClass += 1
+      mutationStamps.headerClass += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     headerSubtitle,
     () => {
-      mutationStamps.headerSubtitle += 1
+      mutationStamps.headerSubtitle += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     contentPadding,
     () => {
-      mutationStamps.contentPadding += 1
+      mutationStamps.contentPadding += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     contentMinFullHeight,
     () => {
-      mutationStamps.contentMinFullHeight += 1
+      mutationStamps.contentMinFullHeight += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
   watch(
     () => floatButtons.size,
     () => {
-      mutationStamps.floatButtons += 1
+      mutationStamps.floatButtons += 1;
     },
-    { flush: 'sync' },
-  )
+    { flush: "sync" },
+  );
 
   const addFloatButton = (button: VNode): symbol => {
-    const key = Symbol('floatButton')
-    floatButtons.set(key, button)
-    return key
-  }
+    const key = Symbol("floatButton");
+    floatButtons.set(key, button);
+    return key;
+  };
 
   const removeFloatButton = (key: symbol) => {
-    floatButtons.delete(key)
-  }
+    floatButtons.delete(key);
+  };
 
   const reset = () => {
-    headerActions.value = null
-    footerActions.value = null
-    pageTitle.value = null
-    hideHeader.value = false
-    headerClass.value = null
-    headerSubtitle.value = null
-    contentPadding.value = true
-    contentMinFullHeight.value = false
-    floatButtons.clear()
-  }
+    headerActions.value = null;
+    footerActions.value = null;
+    pageTitle.value = null;
+    hideHeader.value = false;
+    headerClass.value = null;
+    headerSubtitle.value = null;
+    contentPadding.value = true;
+    contentMinFullHeight.value = false;
+    floatButtons.clear();
+  };
 
   const getMutationSnapshot = (): LayoutMutationSnapshot => ({
     headerActions: mutationStamps.headerActions,
@@ -132,50 +132,50 @@ export const useLayoutStore = defineStore('layout', () => {
     contentPadding: mutationStamps.contentPadding,
     contentMinFullHeight: mutationStamps.contentMinFullHeight,
     floatButtons: mutationStamps.floatButtons,
-  })
+  });
 
   const resetIfUnchanged = (snapshot: LayoutMutationSnapshot) => {
-    let didReset = false
+    let didReset = false;
 
     if (mutationStamps.headerActions === snapshot.headerActions) {
-      headerActions.value = null
-      didReset = true
+      headerActions.value = null;
+      didReset = true;
     }
     if (mutationStamps.footerActions === snapshot.footerActions) {
-      footerActions.value = null
-      didReset = true
+      footerActions.value = null;
+      didReset = true;
     }
     if (mutationStamps.pageTitle === snapshot.pageTitle) {
-      pageTitle.value = null
-      didReset = true
+      pageTitle.value = null;
+      didReset = true;
     }
     if (mutationStamps.hideHeader === snapshot.hideHeader) {
-      hideHeader.value = false
-      didReset = true
+      hideHeader.value = false;
+      didReset = true;
     }
     if (mutationStamps.headerClass === snapshot.headerClass) {
-      headerClass.value = null
-      didReset = true
+      headerClass.value = null;
+      didReset = true;
     }
     if (mutationStamps.headerSubtitle === snapshot.headerSubtitle) {
-      headerSubtitle.value = null
-      didReset = true
+      headerSubtitle.value = null;
+      didReset = true;
     }
     if (mutationStamps.contentPadding === snapshot.contentPadding) {
-      contentPadding.value = true
-      didReset = true
+      contentPadding.value = true;
+      didReset = true;
     }
     if (mutationStamps.contentMinFullHeight === snapshot.contentMinFullHeight) {
-      contentMinFullHeight.value = false
-      didReset = true
+      contentMinFullHeight.value = false;
+      didReset = true;
     }
     if (mutationStamps.floatButtons === snapshot.floatButtons) {
-      floatButtons.clear()
-      didReset = true
+      floatButtons.clear();
+      didReset = true;
     }
 
-    return didReset
-  }
+    return didReset;
+  };
 
   return {
     headerActions,
@@ -192,7 +192,7 @@ export const useLayoutStore = defineStore('layout', () => {
     getMutationSnapshot,
     reset,
     resetIfUnchanged,
-  }
-})
+  };
+});
 
-export { useLayoutStore as LayoutStore }
+export { useLayoutStore as LayoutStore };

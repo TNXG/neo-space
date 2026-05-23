@@ -1,3 +1,6 @@
+import type { EditorView } from "@codemirror/view";
+import type { Component, PropType } from "vue";
+import { redo, undo } from "@codemirror/commands";
 import {
   Bold,
   Code,
@@ -14,28 +17,25 @@ import {
   Smile,
   Strikethrough,
   Undo2,
-} from 'lucide-vue-next'
-import { NPopover } from 'naive-ui'
-import { defineComponent, onUnmounted, ref, watch } from 'vue'
-import type { EditorView } from '@codemirror/view'
-import type { Component, PropType } from 'vue'
+} from "lucide-vue-next";
+import { NPopover } from "naive-ui";
 
-import { redo, undo } from '@codemirror/commands'
+import { defineComponent, onUnmounted, ref, watch } from "vue";
 
-import { EmojiPicker } from './emoji-picker'
-import { commands, isInlineFormatActive } from './markdown-commands'
+import { EmojiPicker } from "./emoji-picker";
+import { commands, isInlineFormatActive } from "./markdown-commands";
 
 interface ToolbarButton {
-  icon: Component
-  title: string
-  shortcut: string
-  action: () => void
-  divider?: boolean
-  isActive?: (view: EditorView) => boolean
+  icon: Component;
+  title: string;
+  shortcut: string;
+  action: () => void;
+  divider?: boolean;
+  isActive?: (view: EditorView) => boolean;
 }
 
 export const MarkdownToolbar = defineComponent({
-  name: 'MarkdownToolbar',
+  name: "MarkdownToolbar",
   props: {
     editorView: {
       type: Object as PropType<EditorView | undefined>,
@@ -43,188 +43,189 @@ export const MarkdownToolbar = defineComponent({
     },
   },
   setup(props) {
-    const emojiPickerVisible = ref(false)
-    const emojiButtonRef = ref<HTMLElement>()
-    const selectionVersion = ref(0)
-    let detachSelectionListeners: (() => void) | null = null
+    const emojiPickerVisible = ref(false);
+    const emojiButtonRef = ref<HTMLElement>();
+    const selectionVersion = ref(0);
+    let detachSelectionListeners: (() => void) | null = null;
 
     const executeCommand = (commandFn: (view: EditorView) => boolean) => {
       if (props.editorView) {
-        commandFn(props.editorView)
-        selectionVersion.value += 1
+        commandFn(props.editorView);
+        selectionVersion.value += 1;
       }
-    }
+    };
 
     const handleEmojiSelect = (emoji: string) => {
       if (props.editorView) {
-        commands.emoji(props.editorView, emoji)
+        commands.emoji(props.editorView, emoji);
       }
-      emojiPickerVisible.value = false
-    }
+      emojiPickerVisible.value = false;
+    };
 
     const buttons: ToolbarButton[] = [
       {
         icon: Smile,
-        title: '插入表情',
-        shortcut: 'Ctrl+E',
+        title: "插入表情",
+        shortcut: "Ctrl+E",
         action: () => {
-          emojiPickerVisible.value = !emojiPickerVisible.value
+          emojiPickerVisible.value = !emojiPickerVisible.value;
         },
       },
       {
         icon: Heading,
-        title: '标题',
-        shortcut: 'Ctrl+H',
+        title: "标题",
+        shortcut: "Ctrl+H",
         action: () => executeCommand(commands.heading),
       },
       {
         icon: Bold,
-        title: '粗体',
-        shortcut: 'Ctrl+B',
+        title: "粗体",
+        shortcut: "Ctrl+B",
         action: () => executeCommand(commands.bold),
-        isActive: (view) => isInlineFormatActive(view, 'bold'),
+        isActive: view => isInlineFormatActive(view, "bold"),
       },
       {
         icon: Italic,
-        title: '斜体',
-        shortcut: 'Ctrl+I',
+        title: "斜体",
+        shortcut: "Ctrl+I",
         action: () => executeCommand(commands.italic),
-        isActive: (view) => isInlineFormatActive(view, 'italic'),
+        isActive: view => isInlineFormatActive(view, "italic"),
       },
       {
         icon: Strikethrough,
-        title: '删除线',
-        shortcut: 'Ctrl+D',
+        title: "删除线",
+        shortcut: "Ctrl+D",
         action: () => executeCommand(commands.strikethrough),
-        isActive: (view) => isInlineFormatActive(view, 'strikethrough'),
+        isActive: view => isInlineFormatActive(view, "strikethrough"),
       },
       {
         icon: Link,
-        title: '链接',
-        shortcut: 'Ctrl+K',
+        title: "链接",
+        shortcut: "Ctrl+K",
         action: () => executeCommand(commands.link),
         divider: true,
       },
       {
         icon: List,
-        title: '无序列表',
-        shortcut: 'Ctrl+L',
+        title: "无序列表",
+        shortcut: "Ctrl+L",
         action: () => executeCommand(commands.bulletList),
       },
       {
         icon: ListOrdered,
-        title: '有序列表',
-        shortcut: 'Ctrl+O',
+        title: "有序列表",
+        shortcut: "Ctrl+O",
         action: () => executeCommand(commands.orderedList),
       },
       {
         icon: ListTodo,
-        title: '任务列表',
-        shortcut: 'Ctrl+J',
+        title: "任务列表",
+        shortcut: "Ctrl+J",
         action: () => executeCommand(commands.taskList),
         divider: true,
       },
       {
         icon: Quote,
-        title: '引用',
-        shortcut: 'Ctrl+;',
+        title: "引用",
+        shortcut: "Ctrl+;",
         action: () => executeCommand(commands.quote),
       },
       {
         icon: Minus,
-        title: '分隔线',
-        shortcut: 'Ctrl+Shift+H',
+        title: "分隔线",
+        shortcut: "Ctrl+Shift+H",
         action: () => executeCommand(commands.horizontalRule),
       },
       {
         icon: FileCode,
-        title: '代码块',
-        shortcut: 'Ctrl+U',
+        title: "代码块",
+        shortcut: "Ctrl+U",
         action: () => executeCommand(commands.codeBlock),
       },
       {
         icon: Code,
-        title: '行内代码',
-        shortcut: 'Ctrl+G',
+        title: "行内代码",
+        shortcut: "Ctrl+G",
         action: () => executeCommand(commands.inlineCode),
         divider: true,
-        isActive: (view) => isInlineFormatActive(view, 'inlineCode'),
+        isActive: view => isInlineFormatActive(view, "inlineCode"),
       },
       {
         icon: Undo2,
-        title: '撤销',
-        shortcut: 'Ctrl+Z',
+        title: "撤销",
+        shortcut: "Ctrl+Z",
         action: () => {
           if (props.editorView) {
-            props.editorView.focus()
-            undo(props.editorView)
-            selectionVersion.value += 1
+            props.editorView.focus();
+            undo(props.editorView);
+            selectionVersion.value += 1;
           }
         },
       },
       {
         icon: Redo2,
-        title: '重做',
-        shortcut: 'Ctrl+Y',
+        title: "重做",
+        shortcut: "Ctrl+Y",
         action: () => {
           if (props.editorView) {
-            props.editorView.focus()
-            redo(props.editorView)
-            selectionVersion.value += 1
+            props.editorView.focus();
+            redo(props.editorView);
+            selectionVersion.value += 1;
           }
         },
       },
-    ]
+    ];
 
     const updateSelectionState = () => {
-      selectionVersion.value += 1
-    }
+      selectionVersion.value += 1;
+    };
 
     const setupSelectionListeners = (view: EditorView | undefined) => {
-      if (!view) return
+      if (!view)
+        return;
 
-      const handleMouseUp = () => updateSelectionState()
+      const handleMouseUp = () => updateSelectionState();
       const handleKeyUp = (e: KeyboardEvent) => {
         if (
-          e.key === 'Shift' ||
-          e.key.startsWith('Arrow') ||
-          e.ctrlKey ||
-          e.metaKey
+          e.key === "Shift"
+          || e.key.startsWith("Arrow")
+          || e.ctrlKey
+          || e.metaKey
         ) {
-          updateSelectionState()
+          updateSelectionState();
         }
-      }
-      const handleMouseDown = () => updateSelectionState()
+      };
+      const handleMouseDown = () => updateSelectionState();
 
-      view.dom.addEventListener('mouseup', handleMouseUp)
-      view.dom.addEventListener('keyup', handleKeyUp)
-      view.dom.addEventListener('mousedown', handleMouseDown)
+      view.dom.addEventListener("mouseup", handleMouseUp);
+      view.dom.addEventListener("keyup", handleKeyUp);
+      view.dom.addEventListener("mousedown", handleMouseDown);
 
       detachSelectionListeners = () => {
-        view.dom.removeEventListener('mouseup', handleMouseUp)
-        view.dom.removeEventListener('keyup', handleKeyUp)
-        view.dom.removeEventListener('mousedown', handleMouseDown)
-      }
-    }
+        view.dom.removeEventListener("mouseup", handleMouseUp);
+        view.dom.removeEventListener("keyup", handleKeyUp);
+        view.dom.removeEventListener("mousedown", handleMouseDown);
+      };
+    };
 
     watch(
       () => props.editorView,
       (view) => {
         if (detachSelectionListeners) {
-          detachSelectionListeners()
-          detachSelectionListeners = null
+          detachSelectionListeners();
+          detachSelectionListeners = null;
         }
-        setupSelectionListeners(view)
-        updateSelectionState()
+        setupSelectionListeners(view);
+        updateSelectionState();
       },
       { immediate: true },
-    )
+    );
 
     onUnmounted(() => {
       if (detachSelectionListeners) {
-        detachSelectionListeners()
+        detachSelectionListeners();
       }
-    })
+    });
 
     const ToolbarButtonComponent = defineComponent({
       props: {
@@ -251,12 +252,12 @@ export const MarkdownToolbar = defineComponent({
                   ref={buttonProps.isEmojiButton ? emojiButtonRef : undefined}
                   onClick={buttonProps.button.action}
                   class={[
-                    'toolbar-button inline-flex cursor-pointer items-center justify-center border-none bg-transparent outline-none',
+                    "toolbar-button inline-flex cursor-pointer items-center justify-center border-none bg-transparent outline-none",
                     selectionVersion.value && props.editorView
                       ? buttonProps.button.isActive?.(props.editorView)
-                        ? 'is-active'
-                        : ''
-                      : '',
+                        ? "is-active"
+                        : ""
+                      : "",
                   ]}
                   aria-label={buttonProps.button.title}
                 >
@@ -266,7 +267,7 @@ export const MarkdownToolbar = defineComponent({
               ),
               default: () => (
                 <div class="px-2 py-1.5">
-                  <div class="whitespace-nowrap text-xs">
+                  <div class="text-xs whitespace-nowrap">
                     {buttonProps.button.title}
                     <span class="ml-2 opacity-50">
                       {buttonProps.button.shortcut}
@@ -276,12 +277,12 @@ export const MarkdownToolbar = defineComponent({
               ),
             }}
           </NPopover>
-        )
+        );
       },
-    })
+    });
 
     return () => (
-      <div class="markdown-toolbar flex items-center gap-2 py-2 pl-2 pr-4">
+      <div class="markdown-toolbar py-2 pl-2 pr-4 flex gap-2 items-center">
         {buttons.flatMap((button, index) => {
           const elements = [
             <ToolbarButtonComponent
@@ -289,23 +290,23 @@ export const MarkdownToolbar = defineComponent({
               button={button}
               isEmojiButton={index === 0}
             />,
-          ]
+          ];
 
           if (button.divider) {
             elements.push(
               <span
                 key={`div-${index}`}
-                class="inline-block h-4 w-px bg-neutral-300 opacity-50 dark:bg-neutral-600"
+                class="bg-neutral-300 opacity-50 h-4 w-px inline-block dark:bg-neutral-600"
               />,
-            )
+            );
           }
 
-          return elements
+          return elements;
         })}
 
         <NPopover
           show={emojiPickerVisible.value}
-          onUpdateShow={(val) => (emojiPickerVisible.value = val)}
+          onUpdateShow={val => (emojiPickerVisible.value = val)}
           trigger="manual"
           placement="bottom-start"
           x-placement="bottom-start"
@@ -315,7 +316,7 @@ export const MarkdownToolbar = defineComponent({
         >
           {{
             trigger: () => (
-              <span ref={emojiButtonRef} style={{ position: 'absolute' }} />
+              <span ref={emojiButtonRef} style={{ position: "absolute" }} />
             ),
             default: () => <EmojiPicker onSelect={handleEmojiSelect} />,
           }}
@@ -352,6 +353,6 @@ export const MarkdownToolbar = defineComponent({
           `}
         </style>
       </div>
-    )
+    );
   },
-})
+});

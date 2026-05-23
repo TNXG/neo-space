@@ -1,55 +1,56 @@
-import { MessageSquare as CommentIcon } from 'lucide-vue-next'
-import { defineComponent, onMounted, ref, watch } from 'vue'
+import { Chart } from "@antv/g2";
+import { MessageSquare as CommentIcon } from "lucide-vue-next";
 
-import { Chart } from '@antv/g2'
+import { defineComponent, onMounted, ref, watch } from "vue";
 
-import { aggregateApi } from '~/api/aggregate'
+import { aggregateApi } from "~/api/aggregate";
 
-import { ChartCard } from './ChartCard'
-import { useChartTheme } from './use-chart-theme'
+import { ChartCard } from "./ChartCard";
+import { useChartTheme } from "./use-chart-theme";
 
 interface ActivityData {
-  date: string
-  count: number
+  date: string;
+  count: number;
 }
 
 export const CommentActivity = defineComponent({
   setup() {
-    const chartRef = ref<HTMLDivElement>()
-    const loading = ref(true)
-    const data = ref<ActivityData[]>([])
-    let chart: Chart | null = null
+    const chartRef = ref<HTMLDivElement>();
+    const loading = ref(true);
+    const data = ref<ActivityData[]>([]);
+    let chart: Chart | null = null;
 
-    const { isDark, chartTheme } = useChartTheme()
+    const { isDark, chartTheme } = useChartTheme();
 
     const fetchData = async () => {
       try {
-        const result = await aggregateApi.getCommentActivity()
-        data.value = Array.isArray(result) ? result : []
+        const result = await aggregateApi.getCommentActivity();
+        data.value = Array.isArray(result) ? result : [];
       } catch {
-        data.value = []
+        data.value = [];
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const renderChart = () => {
-      if (!chartRef.value || data.value.length === 0) return
+      if (!chartRef.value || data.value.length === 0)
+        return;
 
       if (chart) {
-        chart.destroy()
+        chart.destroy();
       }
 
-      const theme = chartTheme.value
+      const theme = chartTheme.value;
 
       chart = new Chart({
         container: chartRef.value,
         autoFit: true,
         height: 250,
-      })
+      });
 
       chart.options({
-        type: 'view',
+        type: "view",
         data: data.value,
         paddingTop: 24,
         paddingRight: 24,
@@ -76,30 +77,30 @@ export const CommentActivity = defineComponent({
         },
         children: [
           {
-            type: 'area',
-            encode: { x: 'date', y: 'count' },
-            style: { shape: 'smooth', fill: '#8884d8', fillOpacity: 0.4 },
+            type: "area",
+            encode: { x: "date", y: "count" },
+            style: { shape: "smooth", fill: "#8884d8", fillOpacity: 0.4 },
           },
           {
-            type: 'line',
-            encode: { x: 'date', y: 'count' },
-            style: { shape: 'smooth', stroke: '#8884d8' },
+            type: "line",
+            encode: { x: "date", y: "count" },
+            style: { shape: "smooth", stroke: "#8884d8" },
           },
         ],
-      })
+      });
 
-      chart.render()
-    }
+      chart.render();
+    };
 
     onMounted(() => {
-      fetchData()
-    })
+      fetchData();
+    });
 
     watch([() => data.value, isDark], () => {
       if (data.value.length > 0) {
-        setTimeout(renderChart, 0)
+        setTimeout(renderChart, 0);
       }
-    })
+    });
 
     return () => (
       <ChartCard
@@ -109,6 +110,6 @@ export const CommentActivity = defineComponent({
       >
         <div ref={chartRef} class="h-full w-full" />
       </ChartCard>
-    )
+    );
   },
-})
+});

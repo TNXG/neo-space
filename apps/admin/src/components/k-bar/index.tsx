@@ -1,8 +1,4 @@
-import { CornerDownLeft, LogIn, Search } from 'lucide-vue-next'
-import { defineComponent, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import type { Action } from '@bytebase/vue-kbar'
-
+import type { Action } from "@bytebase/vue-kbar";
 import {
   createAction,
   KBarAnimator,
@@ -12,31 +8,35 @@ import {
   KBarResults,
   KBarSearch,
   useKBarMatches,
-} from '@bytebase/vue-kbar'
+} from "@bytebase/vue-kbar";
+import { CornerDownLeft, LogIn, Search } from "lucide-vue-next";
+import { defineComponent, onMounted, ref } from "vue";
 
-import './kbar.css'
+import { useRouter } from "vue-router";
+
+import "./kbar.css";
 
 export const KBarWrapper = defineComponent({
   setup(_props, { slots }) {
-    const router = useRouter()
+    const router = useRouter();
 
-    const actions = ref([] as Action[])
+    const actions = ref([] as Action[]);
 
     onMounted(() => {
-      const routes = router.getRoutes()
+      const routes = router.getRoutes();
 
       actions.value = routes
         .map((route) => {
-          if (route?.path.match(':')) {
-            return null
+          if (route?.path.match(":")) {
+            return null;
           }
 
           if (
-            !route.meta.title ||
-            route.children.length > 0 ||
-            route.meta.hideKbar
+            !route.meta.title
+            || route.children.length > 0
+            || route.meta.hideKbar
           ) {
-            return null
+            return null;
           }
           return createAction({
             id: route.path,
@@ -53,10 +53,10 @@ export const KBarWrapper = defineComponent({
                       path: (route.redirect || route.path) as string,
                     },
               ),
-          })
+          });
         })
-        .filter(Boolean) as Action[]
-    })
+        .filter(Boolean) as Action[];
+    });
 
     return () => (
       <KBarProvider actions={actions.value}>
@@ -79,17 +79,17 @@ export const KBarWrapper = defineComponent({
 
         {slots.default?.()}
       </KBarProvider>
-    )
+    );
   },
-})
+});
 
 const SearchResult = defineComponent({
   setup() {
-    const matches = useKBarMatches()
+    const matches = useKBarMatches();
 
     return () => {
-      const results = matches.value.results
-      const hasResults = results.length > 0
+      const results = matches.value.results;
+      const hasResults = results.length > 0;
 
       if (!hasResults) {
         return (
@@ -102,24 +102,24 @@ const SearchResult = defineComponent({
             />
             <span>没有找到匹配的结果</span>
           </div>
-        )
+        );
       }
 
       return (
         <KBarResults class="kbar-results" itemHeight={56} items={results}>
           {{
             item({ item, active }) {
-              if (typeof item === 'string') {
+              if (typeof item === "string") {
                 return (
                   <div class="kbar-group-label" role="presentation">
                     {item}
                   </div>
-                )
+                );
               }
 
               return (
                 <div
-                  class={['kbar-result-item', active && 'active']}
+                  class={["kbar-result-item", active && "active"]}
                   role="option"
                   aria-selected={active}
                   tabindex={-1}
@@ -139,11 +139,11 @@ const SearchResult = defineComponent({
                     </div>
                   )}
                 </div>
-              )
+              );
             },
           }}
         </KBarResults>
-      )
-    }
+      );
+    };
   },
-})
+});

@@ -1,21 +1,21 @@
-import { NInput } from 'naive-ui'
-import { defineComponent } from 'vue'
-import type { InputProps } from 'naive-ui'
-import type { PropType } from 'vue'
+import type { InputProps } from "naive-ui";
+import type { PropType } from "vue";
+import { NInput } from "naive-ui";
+import { defineComponent } from "vue";
 
-const borderlessThemeOverrides: InputProps['themeOverrides'] = {
-  border: 'none',
-  borderHover: 'none',
-  borderFocus: 'none',
-  boxShadowFocus: 'none',
-  color: 'transparent',
-  colorFocus: 'transparent',
-}
+const borderlessThemeOverrides: InputProps["themeOverrides"] = {
+  border: "none",
+  borderHover: "none",
+  borderFocus: "none",
+  boxShadowFocus: "none",
+  color: "transparent",
+  colorFocus: "transparent",
+};
 
 export const BorderlessInput = defineComponent({
-  name: 'BorderlessInput',
+  name: "BorderlessInput",
   props: {
-    value: { type: String, default: '' },
+    value: { type: String, default: "" },
     onUpdateValue: {
       type: Function as PropType<(value: string) => void>,
     },
@@ -35,6 +35,6 @@ export const BorderlessInput = defineComponent({
       >
         {slots}
       </NInput>
-    )
+    );
   },
-})
+});

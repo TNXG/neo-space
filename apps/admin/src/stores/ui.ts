@@ -1,3 +1,4 @@
+import { usePreferredDark, useStorage } from "@vueuse/core";
 /*
  * @Author: Innei
  * @Date: 2021-03-22 11:41:32
@@ -6,77 +7,76 @@
  * @FilePath: /admin-next/src/stores/ui.ts
  * Mark: Coding with Love
  */
-import { debounce } from 'es-toolkit/compat'
-import { defineStore } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
+import { debounce } from "es-toolkit/compat";
+import { defineStore } from "pinia";
 
-import { usePreferredDark, useStorage } from '@vueuse/core'
+import { computed, onMounted, ref, watch } from "vue";
 
-export type ThemeMode = 'light' | 'dark' | 'system'
+export type ThemeMode = "light" | "dark" | "system";
 
 export interface ViewportRecord {
-  w: number
-  h: number
-  mobile: boolean
-  pad: boolean
-  hpad: boolean
-  wider: boolean
-  widest: boolean
-  phone: boolean
+  w: number;
+  h: number;
+  mobile: boolean;
+  pad: boolean;
+  hpad: boolean;
+  wider: boolean;
+  widest: boolean;
+  phone: boolean;
 }
 
-export const useUIStore = defineStore('ui', () => {
-  const viewport = ref<ViewportRecord>({} as any)
-  const sidebarCollapse = ref(viewport.value.mobile ? true : false)
+export const useUIStore = defineStore("ui", () => {
+  const viewport = ref<ViewportRecord>({} as any);
+  const sidebarCollapse = ref(!!viewport.value.mobile);
 
-  const themeMode = useStorage<ThemeMode>('theme-mode', 'system')
-  const prefersDark = usePreferredDark()
+  const themeMode = useStorage<ThemeMode>("theme-mode", "system");
+  const prefersDark = usePreferredDark();
 
   const isDark = computed(() => {
-    if (themeMode.value === 'system') {
-      return prefersDark.value
+    if (themeMode.value === "system") {
+      return prefersDark.value;
     }
-    return themeMode.value === 'dark'
-  })
+    return themeMode.value === "dark";
+  });
 
   const cycleTheme = () => {
-    const modes: ThemeMode[] = ['light', 'dark', 'system']
-    const currentIndex = modes.indexOf(themeMode.value)
-    const nextIndex = (currentIndex + 1) % modes.length
-    themeMode.value = modes[nextIndex]
-  }
+    const modes: ThemeMode[] = ["light", "dark", "system"];
+    const currentIndex = modes.indexOf(themeMode.value);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    themeMode.value = modes[nextIndex];
+  };
 
   const setThemeMode = (mode: ThemeMode) => {
-    themeMode.value = mode
-  }
+    themeMode.value = mode;
+  };
 
   const toggleDark = () => {
     if (isDark.value) {
-      themeMode.value = 'light'
+      themeMode.value = "light";
     } else {
-      themeMode.value = 'dark'
+      themeMode.value = "dark";
     }
-  }
+  };
 
   onMounted(() => {
-    const resizeHandler = debounce(updateViewport, 500, { trailing: true })
-    window.addEventListener('resize', resizeHandler)
-    updateViewport()
-  })
+    const resizeHandler = debounce(updateViewport, 500, { trailing: true });
+    window.addEventListener("resize", resizeHandler);
+    updateViewport();
+  });
   const updateViewport = () => {
-    const innerHeight = window.innerHeight
-    const width = document.documentElement.getBoundingClientRect().width
-    const { hpad, pad, mobile } = viewport.value
+    const innerHeight = window.innerHeight;
+    const width = document.documentElement.getBoundingClientRect().width;
+    const { hpad, pad, mobile } = viewport.value;
 
     // 忽略移动端浏览器 上下滚动 导致的视图大小变化
     if (
-      viewport.value.h &&
+      viewport.value.h
       // chrome mobile delta == 56
-      Math.abs(innerHeight - viewport.value.h) < 80 &&
-      width === viewport.value.w &&
-      (hpad || pad || mobile)
+      && Math.abs(innerHeight - viewport.value.h) < 80
+      && width === viewport.value.w
+      && (hpad || pad || mobile)
     ) {
-      return
+      return;
     }
     viewport.value = {
       w: width,
@@ -88,42 +88,42 @@ export const useUIStore = defineStore('ui', () => {
       widest: window.innerWidth >= 1920,
 
       phone: window.innerWidth <= 768,
-    }
-  }
+    };
+  };
 
   const contentWidth = computed(() => {
     if (sidebarCollapse.value) {
       // 折叠时内容区域占满整个屏幕宽度
-      return viewport.value.w
+      return viewport.value.w;
     }
     // 展开时减去 Sidebar 宽度
     const sidebarWidthValue = Number.parseInt(
       getComputedStyle(document.documentElement).getPropertyValue(
-        '--sidebar-width',
+        "--sidebar-width",
       ),
-    )
-    return viewport.value.w - sidebarWidthValue
-  })
+    );
+    return viewport.value.w - sidebarWidthValue;
+  });
 
   const contentInsetWidth = computed(
     () =>
-      contentWidth.value -
-      Number.parseInt(getComputedStyle(document.documentElement).fontSize) * 6,
-  )
+      contentWidth.value
+      - Number.parseInt(getComputedStyle(document.documentElement).fontSize) * 6,
+  );
 
   watch(
     () => isDark.value,
     (isDark) => {
       if (isDark) {
-        document.documentElement.classList.add('dark')
+        document.documentElement.classList.add("dark");
       } else {
-        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove("dark");
       }
     },
     { immediate: true },
-  )
+  );
 
-  const naiveUIDark = ref(false)
+  const naiveUIDark = ref(false);
   return {
     viewport,
     contentWidth,
@@ -138,9 +138,9 @@ export const useUIStore = defineStore('ui', () => {
 
     naiveUIDark,
     onlyToggleNaiveUIDark: (dark?: boolean) => {
-      naiveUIDark.value = dark ?? !naiveUIDark.value
+      naiveUIDark.value = dark ?? !naiveUIDark.value;
     },
-  }
-})
+  };
+});
 
-export { useUIStore as UIStore }
+export { useUIStore as UIStore };

@@ -1,6 +1,6 @@
-import ejs from 'ejs'
-import { defineComponent, ref, watch } from 'vue'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import ejs from "ejs";
+import { defineComponent, ref, watch } from "vue";
 
 export const EJSRender = defineComponent({
   props: {
@@ -17,7 +17,7 @@ export const EJSRender = defineComponent({
     },
   },
   setup(props) {
-    const html = ref('')
+    const html = ref("");
     watch(
       () => props.template,
       async () => {
@@ -26,20 +26,20 @@ export const EJSRender = defineComponent({
             async: true,
           })
           .catch((error) => {
-            props.onError?.(error)
+            props.onError?.(error);
 
-            console.error(error)
+            console.error(error);
 
-            return html.value
-          })
+            return html.value;
+          });
       },
       { immediate: true },
-    )
+    );
 
     return () => (
-      <div class="h-full overflow-auto bg-white">
+      <div class="bg-white h-full overflow-auto">
         <div innerHTML={html.value} />
       </div>
-    )
+    );
   },
-})
+});

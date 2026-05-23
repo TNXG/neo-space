@@ -1,4 +1,6 @@
-import { debounce } from 'es-toolkit/compat'
+import type { DataTableColumns, UploadFileInfo } from "naive-ui";
+import type { ParsedModel } from "~/utils/markdown-parser";
+import { debounce } from "es-toolkit/compat";
 import {
   AlertCircle,
   CheckCircle,
@@ -8,7 +10,7 @@ import {
   FileUp,
   Trash2,
   Upload,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -19,156 +21,154 @@ import {
   NSwitch,
   NTag,
   NUpload,
-} from 'naive-ui'
-import { computed, defineComponent, reactive, ref, watch } from 'vue'
-import { toast } from 'vue-sonner'
-import type { ParsedModel } from '~/utils/markdown-parser'
-import type { DataTableColumns, UploadFileInfo } from 'naive-ui'
+} from "naive-ui";
+import { computed, defineComponent, reactive, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
-import { markdownApi } from '~/api'
-import { responseBlobToFile } from '~/utils'
-import { ParseMarkdownYAML } from '~/utils/markdown-parser'
+import { markdownApi } from "~/api";
+import { responseBlobToFile } from "~/utils";
+import { ParseMarkdownYAML } from "~/utils/markdown-parser";
 
 enum ImportType {
-  Post = 'post',
-  Note = 'note',
+  Post = "post",
+  Note = "note",
 }
 
 const types = [
   {
     value: ImportType.Post,
-    label: '博文',
+    label: "博文",
   },
   {
-    label: '日记',
+    label: "日记",
     value: ImportType.Note,
   },
-]
+];
 
 interface ParsedItem extends ParsedModel {
-  filename: string
+  filename: string;
 }
 
 export default defineComponent({
-  name: 'MarkdownHelper',
+  name: "MarkdownHelper",
   setup() {
-    const importType = ref(ImportType.Post)
-    const fileList = ref<UploadFileInfo[]>([])
-    const parsedList = ref<ParsedItem[]>([])
-    const parsing = ref(false)
-    const importing = ref(false)
-    const exporting = ref(false)
-    const showImportConfirm = ref(false)
-    const hasFiles = computed(() => fileList.value.length > 0)
-    const hasParsedData = computed(() => parsedList.value.length > 0)
+    const importType = ref(ImportType.Post);
+    const fileList = ref<UploadFileInfo[]>([]);
+    const parsedList = ref<ParsedItem[]>([]);
+    const parsing = ref(false);
+    const importing = ref(false);
+    const exporting = ref(false);
+    const showImportConfirm = ref(false);
+    const hasFiles = computed(() => fileList.value.length > 0);
+    const hasParsedData = computed(() => parsedList.value.length > 0);
 
     function parseMarkdown(strList: string[]) {
-      const parser = new ParseMarkdownYAML(strList)
+      const parser = new ParseMarkdownYAML(strList);
       return parser.start().map((i, index) => {
-        const filename = fileList.value[index].file?.name ?? ''
-        const title = filename.replace(/\.md$/, '')
+        const filename = fileList.value[index].file?.name ?? "";
+        const title = filename.replace(/\.md$/, "");
         if (i.meta) {
-          i.meta.slug = i.meta.slug ?? title
+          i.meta.slug = i.meta.slug ?? title;
         } else {
           i.meta = {
             title,
             slug: title,
-          } as any
+          } as any;
         }
 
         if (!i.meta?.date) {
-          i.meta!.date = new Date().toISOString()
+          i.meta!.date = new Date().toISOString();
         }
-        return i
-      })
+        return i;
+      });
     }
 
     async function handleParse(e?: MouseEvent) {
-      e?.preventDefault()
-      e?.stopPropagation()
+      e?.preventDefault();
+      e?.stopPropagation();
 
       if (!hasFiles.value) {
-        toast.warning('请先选择文件')
-        return
+        toast.warning("请先选择文件");
+        return;
       }
 
-      parsing.value = true
-      const strList: string[] = []
+      parsing.value = true;
+      const strList: string[] = [];
 
       try {
         for (const _file of fileList.value) {
           const res = await new Promise<string>((resolve, reject) => {
-            const file = _file.file as File | null
+            const file = _file.file as File | null;
             if (!file) {
-              reject(new Error('文件不存在'))
-              return
+              reject(new Error("文件不存在"));
+              return;
             }
 
-            const ext = file.name.split('.').pop()
+            const ext = file.name.split(".").pop();
             if (
-              (file.type && file.type !== 'text/markdown') ||
-              !['md', 'markdown'].includes(ext!)
+              (file.type && file.type !== "text/markdown")
+              || !["md", "markdown"].includes(ext!)
             ) {
               reject(
                 new Error(
                   `只能解析 Markdown 文件，当前文件类型：${file.type || ext}`,
                 ),
-              )
-              return
+              );
+              return;
             }
 
-            const reader = new FileReader()
-            reader.addEventListener('load', (e) => {
-              resolve((e.target?.result as string) || '')
-            })
-            reader.addEventListener('error', () => {
-              reject(new Error('文件读取失败'))
-            })
-            reader.readAsText(file)
-          })
-          strList.push(res)
+            const reader = new FileReader();
+            reader.addEventListener("load", (e) => {
+              resolve((e.target?.result as string) || "");
+            });
+            reader.addEventListener("error", () => {
+              reject(new Error("文件读取失败"));
+            });
+            reader.readAsText(file);
+          });
+          strList.push(res);
         }
 
-        const parsed = parseMarkdown(strList)
+        const parsed = parseMarkdown(strList);
         parsedList.value = parsed.map((v, index) => ({
           ...v,
-          filename: fileList.value[index].file?.name ?? '',
-        }))
-        toast.success(`成功解析 ${parsed.length} 个文件`)
+          filename: fileList.value[index].file?.name ?? "",
+        }));
+        toast.success(`成功解析 ${parsed.length} 个文件`);
       } catch (e: any) {
-        toast.error(e.message || '解析失败')
-        console.error(e)
+        toast.error(e.message || "解析失败");
+        console.error(e);
       } finally {
-        parsing.value = false
+        parsing.value = false;
       }
     }
 
     function handleImportClick(e: MouseEvent) {
-      e.stopPropagation()
-      e.preventDefault()
+      e.stopPropagation();
+      e.preventDefault();
 
       if (!hasParsedData.value) {
-        toast.warning('请先解析文件')
-        return
+        toast.warning("请先解析文件");
+        return;
       }
-      showImportConfirm.value = true
+      showImportConfirm.value = true;
     }
 
     async function handleImportConfirm() {
-      importing.value = true
+      importing.value = true;
       try {
         await markdownApi.import({
           type: importType.value,
           data: parsedList.value,
-        })
-        toast.success(`成功导入 ${parsedList.value.length} 条数据`)
-        fileList.value = []
-        parsedList.value = []
+        });
+        toast.success(`成功导入 ${parsedList.value.length} 条数据`);
+        fileList.value = [];
+        parsedList.value = [];
       } catch (e: any) {
-        toast.error(e.message || '导入失败')
+        toast.error(e.message || "导入失败");
       } finally {
-        importing.value = false
-        showImportConfirm.value = false
+        importing.value = false;
+        showImportConfirm.value = false;
       }
     }
 
@@ -177,85 +177,86 @@ export default defineComponent({
       titleBigTitle: false,
       filenameSlug: false,
       withMetaJson: true,
-    })
+    });
 
     async function handleExportMarkdown() {
-      exporting.value = true
+      exporting.value = true;
       try {
-        const { includeYAMLHeader, filenameSlug, withMetaJson, titleBigTitle } =
-          exportConfig
+        const { includeYAMLHeader, filenameSlug, withMetaJson, titleBigTitle }
+          = exportConfig;
         const data = await markdownApi.export({
           slug: filenameSlug,
           yaml: includeYAMLHeader,
           show_title: titleBigTitle,
           with_meta_json: withMetaJson,
-        })
-        responseBlobToFile(data, 'markdown.zip')
-        toast.success('导出成功')
+        });
+        responseBlobToFile(data, "markdown.zip");
+        toast.success("导出成功");
       } catch (e: any) {
-        toast.error(e.message || '导出失败')
+        toast.error(e.message || "导出失败");
       } finally {
-        exporting.value = false
+        exporting.value = false;
       }
     }
 
     const debouncedParse = debounce((files: UploadFileInfo[]) => {
-      fileList.value = files
-    }, 250)
+      fileList.value = files;
+    }, 250);
 
     watch(fileList, (n) => {
       if (n.length === 0) {
-        parsedList.value = []
+        parsedList.value = [];
       } else {
-        handleParse()
+        handleParse();
       }
-    })
+    });
 
     function handleFileRemove(e: { file: UploadFileInfo }) {
-      const name = e.file.name
-      const index = parsedList.value.findIndex((i) => i.filename === name)
+      const name = e.file.name;
+      const index = parsedList.value.findIndex(i => i.filename === name);
       if (index !== -1) {
-        parsedList.value.splice(index, 1)
+        parsedList.value.splice(index, 1);
       }
     }
 
     const previewColumns: DataTableColumns<ParsedItem> = [
       {
-        title: '文件名',
-        key: 'filename',
+        title: "文件名",
+        key: "filename",
         width: 200,
         ellipsis: { tooltip: true },
       },
       {
-        title: '标题',
-        key: 'meta.title',
+        title: "标题",
+        key: "meta.title",
         ellipsis: { tooltip: true },
-        render: (row) => row.meta?.title || '—',
+        render: row => row.meta?.title || "—",
       },
       {
-        title: 'Slug',
-        key: 'meta.slug',
+        title: "Slug",
+        key: "meta.slug",
         width: 150,
         ellipsis: { tooltip: true },
-        render: (row) => row.meta?.slug || '—',
+        render: row => row.meta?.slug || "—",
       },
       {
-        title: '日期',
-        key: 'meta.date',
+        title: "日期",
+        key: "meta.date",
         width: 180,
         render: (row) => {
-          if (!row.meta?.date) return '—'
-          return new Intl.DateTimeFormat('zh-CN', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          }).format(new Date(row.meta.date))
+          if (!row.meta?.date)
+            return "—";
+          return new Intl.DateTimeFormat("zh-CN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(row.meta.date));
         },
       },
       {
-        title: '操作',
-        key: 'actions',
+        title: "操作",
+        key: "actions",
         width: 80,
-        render: (row) => (
+        render: row => (
           <NButton
             size="small"
             quaternary
@@ -263,15 +264,15 @@ export default defineComponent({
             aria-label={`删除 ${row.filename}`}
             onClick={() => {
               const index = parsedList.value.findIndex(
-                (i) => i.filename === row.filename,
-              )
+                i => i.filename === row.filename,
+              );
               if (index !== -1) {
-                parsedList.value.splice(index, 1)
+                parsedList.value.splice(index, 1);
                 const fileIndex = fileList.value.findIndex(
-                  (f) => f.file?.name === row.filename,
-                )
+                  f => f.file?.name === row.filename,
+                );
                 if (fileIndex !== -1) {
-                  fileList.value.splice(fileIndex, 1)
+                  fileList.value.splice(fileIndex, 1);
                 }
               }
             }}
@@ -280,30 +281,30 @@ export default defineComponent({
           </NButton>
         ),
       },
-    ]
+    ];
 
     const exportOptions = [
       {
-        id: 'includeYAMLHeader',
-        label: '包含 YAML 头部',
-        description: '在文件开头添加 Front Matter 元数据',
+        id: "includeYAMLHeader",
+        label: "包含 YAML 头部",
+        description: "在文件开头添加 Front Matter 元数据",
       },
       {
-        id: 'titleBigTitle',
-        label: '首行显示标题',
-        description: '在正文第一行添加 # 标题',
+        id: "titleBigTitle",
+        label: "首行显示标题",
+        description: "在正文第一行添加 # 标题",
       },
       {
-        id: 'filenameSlug',
-        label: '使用 Slug 作为文件名',
-        description: '用 slug 而非标题命名文件',
+        id: "filenameSlug",
+        label: "使用 Slug 作为文件名",
+        description: "用 slug 而非标题命名文件",
       },
       {
-        id: 'withMetaJson',
-        label: '导出元数据 JSON',
-        description: '附带完整的元数据 JSON 文件',
+        id: "withMetaJson",
+        label: "导出元数据 JSON",
+        description: "附带完整的元数据 JSON 文件",
       },
-    ] as const
+    ] as const;
 
     return () => (
       <div class="space-y-6">
@@ -311,23 +312,23 @@ export default defineComponent({
           title="从 Markdown 导入"
           class="overflow-hidden"
           headerExtra={() => (
-            <div class="flex items-center gap-2">
-              <FileUp class="size-5 text-neutral-400" />
+            <div class="flex gap-2 items-center">
+              <FileUp class="text-neutral-400 size-5" />
             </div>
           )}
         >
           <div class="space-y-4">
-            <div class="flex items-center gap-4">
+            <div class="flex gap-4 items-center">
               <label
                 id="import-type-label"
-                class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                class="text-sm text-neutral-700 font-medium dark:text-neutral-300"
               >
                 导入到
               </label>
               <NSelect
                 options={types}
                 value={importType.value}
-                onUpdateValue={(e) => (importType.value = e)}
+                onUpdateValue={e => (importType.value = e)}
                 class="w-32"
                 aria-labelledby="import-type-label"
               />
@@ -336,13 +337,13 @@ export default defineComponent({
             <NUpload
               multiple
               accept=".md,.markdown"
-              onChange={(e) => debouncedParse(e.fileList)}
+              onChange={e => debouncedParse(e.fileList)}
               onRemove={handleFileRemove}
               showFileList={!hasParsedData.value}
             >
-              <div class="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-8 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:border-neutral-700 dark:bg-neutral-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
-                <Upload class="mb-3 size-10 text-neutral-400" />
-                <p class="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <div class="px-6 py-8 border-2 border-neutral-300 rounded-lg border-dashed bg-neutral-50 flex flex-col w-full cursor-pointer transition-colors items-center justify-center dark:border-neutral-700 hover:border-blue-400 dark:bg-neutral-800/50 hover:bg-blue-50/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
+                <Upload class="text-neutral-400 mb-3 size-10" />
+                <p class="text-sm text-neutral-700 font-medium mb-1 dark:text-neutral-300">
                   点击或拖拽上传 Markdown 文件
                 </p>
                 <p class="text-xs text-neutral-500">
@@ -354,18 +355,22 @@ export default defineComponent({
             {hasParsedData.value && (
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <CheckCircle class="size-4 text-green-500" />
-                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      已解析 {parsedList.value.length} 个文件
+                  <div class="flex gap-2 items-center">
+                    <CheckCircle class="text-green-500 size-4" />
+                    <span class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
+                      已解析
+                      {" "}
+                      {parsedList.value.length}
+                      {" "}
+                      个文件
                     </span>
                   </div>
                   <NButton
                     size="small"
                     quaternary
                     onClick={() => {
-                      fileList.value = []
-                      parsedList.value = []
+                      fileList.value = [];
+                      parsedList.value = [];
                     }}
                   >
                     清空
@@ -384,13 +389,13 @@ export default defineComponent({
             )}
 
             {parsing.value && (
-              <div class="flex items-center justify-center py-4">
+              <div class="py-4 flex items-center justify-center">
                 <NSpin size="small" />
-                <span class="ml-2 text-sm text-neutral-500">解析中…</span>
+                <span class="text-sm text-neutral-500 ml-2">解析中…</span>
               </div>
             )}
 
-            <div class="flex justify-end gap-2 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+            <div class="pt-4 border-t border-neutral-200 flex gap-2 justify-end dark:border-neutral-700">
               <NButton
                 onClick={handleImportClick}
                 type="primary"
@@ -398,10 +403,11 @@ export default defineComponent({
                 loading={importing.value}
                 renderIcon={() => <FileText class="size-4" />}
               >
-                导入{' '}
+                导入
+                {" "}
                 {hasParsedData.value
                   ? `${parsedList.value.length} 条数据`
-                  : '数据'}
+                  : "数据"}
               </NButton>
             </div>
           </div>
@@ -411,8 +417,8 @@ export default defineComponent({
           title="导出为 Markdown"
           class="overflow-hidden"
           headerExtra={() => (
-            <div class="flex items-center gap-2">
-              <FileDown class="size-5 text-neutral-400" />
+            <div class="flex gap-2 items-center">
+              <FileDown class="text-neutral-400 size-5" />
             </div>
           )}
         >
@@ -421,19 +427,19 @@ export default defineComponent({
               导出所有博文和日记为 Markdown 文件（Hexo YAML 格式）
             </p>
 
-            <div class="grid gap-3 sm:grid-cols-2">
-              {exportOptions.map((option) => (
+            <div class="gap-3 grid sm:grid-cols-2">
+              {exportOptions.map(option => (
                 <label
                   key={option.id}
-                  class="flex cursor-pointer items-start gap-3 rounded-lg border border-neutral-200 p-3 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  class="p-3 border border-neutral-200 rounded-lg flex gap-3 cursor-pointer transition-colors items-start dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   <NSwitch
                     value={exportConfig[option.id]}
-                    onUpdateValue={(e) => (exportConfig[option.id] = e)}
+                    onUpdateValue={e => (exportConfig[option.id] = e)}
                     aria-describedby={`${option.id}-desc`}
                   />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
                       {option.label}
                     </div>
                     <div
@@ -447,7 +453,7 @@ export default defineComponent({
               ))}
             </div>
 
-            <div class="flex justify-end border-t border-neutral-200 pt-4 dark:border-neutral-700">
+            <div class="pt-4 border-t border-neutral-200 flex justify-end dark:border-neutral-700">
               <NButton
                 type="primary"
                 onClick={handleExportMarkdown}
@@ -463,28 +469,32 @@ export default defineComponent({
 
         <NModal
           show={showImportConfirm.value}
-          onUpdateShow={(v) => (showImportConfirm.value = v)}
+          onUpdateShow={v => (showImportConfirm.value = v)}
           preset="card"
           title="确认导入"
-          style={{ width: '400px', maxWidth: '90vw' }}
+          style={{ width: "400px", maxWidth: "90vw" }}
         >
           <div class="space-y-4">
-            <div class="flex items-start gap-3">
-              <AlertCircle class="mt-0.5 size-5 flex-shrink-0 text-amber-500" />
+            <div class="flex gap-3 items-start">
+              <AlertCircle class="text-amber-500 mt-0.5 flex-shrink-0 size-5" />
               <div>
                 <p class="text-sm text-neutral-700 dark:text-neutral-300">
-                  即将导入 <strong>{parsedList.value.length}</strong> 条数据到
+                  即将导入
+                  {" "}
+                  <strong>{parsedList.value.length}</strong>
+                  {" "}
+                  条数据到
                   <NTag size="small" class="mx-1">
-                    {importType.value === ImportType.Post ? '博文' : '日记'}
+                    {importType.value === ImportType.Post ? "博文" : "日记"}
                   </NTag>
                 </p>
-                <p class="mt-1 text-xs text-neutral-500">
+                <p class="text-xs text-neutral-500 mt-1">
                   此操作会创建新的内容，请确认数据无误
                 </p>
               </div>
             </div>
 
-            <div class="flex justify-end gap-2">
+            <div class="flex gap-2 justify-end">
               <NButton onClick={() => (showImportConfirm.value = false)}>
                 取消
               </NButton>
@@ -499,6 +509,6 @@ export default defineComponent({
           </div>
         </NModal>
       </div>
-    )
+    );
   },
-})
+});

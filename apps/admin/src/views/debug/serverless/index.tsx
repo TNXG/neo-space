@@ -1,22 +1,22 @@
-import { CircleCheck as CheckCircleOutlinedIcon } from 'lucide-vue-next'
-import { NGi } from 'naive-ui'
-import { defineComponent, ref } from 'vue'
-import { toast } from 'vue-sonner'
+import { useLocalStorage } from "@vueuse/core";
+import { CircleCheck as CheckCircleOutlinedIcon } from "lucide-vue-next";
+import { NGi } from "naive-ui";
+import { defineComponent, ref } from "vue";
 
-import { useLocalStorage } from '@vueuse/core'
+import { toast } from "vue-sonner";
 
-import { debugApi } from '~/api'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { FunctionCodeEditor } from '~/components/monaco-editor'
-import { useLayout } from '~/layouts/content'
-import { TwoColGridLayout } from '~/layouts/two-col'
-import { defaultServerlessFunction } from '~/models/snippet'
+import { debugApi } from "~/api";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { FunctionCodeEditor } from "~/components/monaco-editor";
+import { useLayout } from "~/layouts/content";
+import { TwoColGridLayout } from "~/layouts/two-col";
+import { defaultServerlessFunction } from "~/models/snippet";
 
 export default defineComponent({
   setup() {
-    const value = useLocalStorage('debug-serverless', defaultServerlessFunction)
-    const previewRef = ref<HTMLPreElement>()
-    const errorMsg = ref('')
+    const value = useLocalStorage("debug-serverless", defaultServerlessFunction);
+    const previewRef = ref<HTMLPreElement>();
+    const errorMsg = ref("");
     const runTest = async () => {
       try {
         const res = await debugApi
@@ -24,33 +24,33 @@ export default defineComponent({
             function: value.value,
           })
           .catch((err) => {
-            errorMsg.value = `Error: ${err.message || err.data?.message || 'Unknown error'}`
-            toast.error(err.message || err.data?.message || 'Unknown error')
-            throw err
-          })
+            errorMsg.value = `Error: ${err.message || err.data?.message || "Unknown error"}`;
+            toast.error(err.message || err.data?.message || "Unknown error");
+            throw err;
+          });
 
-        import('monaco-editor').then((mo) => {
+        import("monaco-editor").then((mo) => {
           mo.editor
-            .colorize(JSON.stringify(res.data, null, 2), 'typescript', {
+            .colorize(JSON.stringify(res.data, null, 2), "typescript", {
               tabSize: 2,
             })
             .then((res) => {
-              previewRef.value!.innerHTML = res
+              previewRef.value!.innerHTML = res;
             })
             .catch(() => {
-              previewRef.value!.innerHTML = JSON.stringify(res, null, 2)
-            })
-        })
+              previewRef.value!.innerHTML = JSON.stringify(res, null, 2);
+            });
+        });
       } catch {}
-    }
+    };
 
-    const { setActions } = useLayout()
+    const { setActions } = useLayout();
     setActions(
       <HeaderActionButton
         icon={<CheckCircleOutlinedIcon />}
         onClick={runTest}
       />,
-    )
+    );
 
     return () => (
       <TwoColGridLayout>
@@ -68,6 +68,6 @@ export default defineComponent({
           </pre>
         </NGi>
       </TwoColGridLayout>
-    )
+    );
   },
-})
+});

@@ -1,4 +1,6 @@
-import { cloneDeep, isEmpty } from 'es-toolkit/compat'
+import type { UserModel } from "~/models/user";
+import { useMutation } from "@tanstack/vue-query";
+import { cloneDeep, isEmpty } from "es-toolkit/compat";
 import {
   Calendar as CalendarIcon,
   Camera as CameraIcon,
@@ -9,8 +11,8 @@ import {
   Plus as PlusIcon,
   Trash2 as TrashIcon,
   User as UserIcon,
-} from 'lucide-vue-next'
-import { NButton, NInput, NSelect, NSkeleton } from 'naive-ui'
+} from "lucide-vue-next";
+import { NButton, NInput, NSelect, NSkeleton } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -19,62 +21,61 @@ import {
   ref,
   unref,
   watch,
-} from 'vue'
-import { toast } from 'vue-sonner'
-import type { UserModel } from '~/models/user'
+} from "vue";
 
-import { useMutation } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { userApi } from '~/api/user'
-import Avatar from '~/components/avatar'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { IpInfoPopover } from '~/components/ip-info'
-import { RelativeTime } from '~/components/time/relative-time'
-import { UploadWrapper } from '~/components/upload'
-import { socialKeyMap } from '~/constants/social'
-import { useLayout } from '~/layouts/content'
-import { SettingsRow, SettingsSection } from '~/layouts/settings-layout'
-import { deepDiff } from '~/utils'
+import { userApi } from "~/api/user";
+import Avatar from "~/components/avatar";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { IpInfoPopover } from "~/components/ip-info";
+import { RelativeTime } from "~/components/time/relative-time";
+import { UploadWrapper } from "~/components/upload";
+import { socialKeyMap } from "~/constants/social";
+import { useLayout } from "~/layouts/content";
+import { SettingsRow, SettingsSection } from "~/layouts/settings-layout";
+import { deepDiff } from "~/utils";
 
 export const TabUser = defineComponent(() => {
-  const data = ref({} as UserModel)
-  const loading = ref(true)
-  let origin: UserModel
+  const data = ref({} as UserModel);
+  const loading = ref(true);
+  let origin: UserModel;
 
   async function fetchOwner() {
-    loading.value = true
-    const response = await userApi.getOwner()
-    data.value = response
-    origin = cloneDeep(response)
-    loading.value = false
+    loading.value = true;
+    const response = await userApi.getOwner();
+    data.value = response;
+    origin = cloneDeep(response);
+    loading.value = false;
   }
 
   onMounted(async () => {
-    await fetchOwner()
-  })
-  const diff = computed(() => deepDiff(origin, data.value))
-  const hasChanges = computed(() => !isEmpty(diff.value))
+    await fetchOwner();
+  });
+  const diff = computed(() => deepDiff(origin, data.value));
+  const hasChanges = computed(() => !isEmpty(diff.value));
 
-  const { setActions: setHeaderButton } = useLayout()
+  const { setActions: setHeaderButton } = useLayout();
 
   const updateMutation = useMutation({
     mutationFn: userApi.updateOwner,
     onSuccess: async () => {
-      toast.success('保存成功')
-      await fetchOwner()
+      toast.success("保存成功");
+      await fetchOwner();
     },
-  })
+  });
 
   const handleSave = () => {
-    if (!hasChanges.value) return
+    if (!hasChanges.value)
+      return;
 
-    const submitData = cloneDeep(unref(diff))
+    const submitData = cloneDeep(unref(diff));
     if (submitData.socialIds) {
-      submitData.socialIds = data.value.socialIds
+      submitData.socialIds = data.value.socialIds;
     }
 
-    updateMutation.mutate(submitData)
-  }
+    updateMutation.mutate(submitData);
+  };
 
   onMounted(() => {
     setHeaderButton(
@@ -83,12 +84,12 @@ export const TabUser = defineComponent(() => {
         onClick={handleSave}
         icon={<CheckCircleOutlinedIcon />}
       />,
-    )
-  })
+    );
+  });
 
   onBeforeUnmount(() => {
-    setHeaderButton(null)
-  })
+    setHeaderButton(null);
+  });
 
   watch(
     () => hasChanges.value,
@@ -99,60 +100,62 @@ export const TabUser = defineComponent(() => {
           icon={<CheckCircleOutlinedIcon />}
           onClick={handleSave}
         />,
-      )
+      );
     },
-  )
+  );
 
-  const socialOptions = Object.keys(socialKeyMap).map((key) => ({
+  const socialOptions = Object.keys(socialKeyMap).map(key => ({
     label: key,
     value: socialKeyMap[key],
-  }))
+  }));
 
   const socialEntries = computed(() => {
-    const ids = data.value.socialIds || {}
+    const ids = data.value.socialIds || {};
     return Object.entries(ids).map(([key, value]) => ({
       key,
       value: String(value),
-    }))
-  })
+    }));
+  });
 
   const usedSocialKeys = computed(
-    () => new Set(socialEntries.value.map((e) => e.key)),
-  )
+    () => new Set(socialEntries.value.map(e => e.key)),
+  );
 
   const addSocialEntry = () => {
-    const currentIds = data.value.socialIds || {}
-    const availableKey =
-      socialOptions.find((o) => !usedSocialKeys.value.has(o.value))?.value || ''
-    if (!availableKey) return
-    data.value.socialIds = { ...currentIds, [availableKey]: '' }
-  }
+    const currentIds = data.value.socialIds || {};
+    const availableKey
+      = socialOptions.find(o => !usedSocialKeys.value.has(o.value))?.value || "";
+    if (!availableKey)
+      return;
+    data.value.socialIds = { ...currentIds, [availableKey]: "" };
+  };
 
   const updateSocialKey = (oldKey: string, newKey: string) => {
-    if (oldKey === newKey) return
-    const ids = { ...data.value.socialIds }
-    const value = ids[oldKey]
-    delete ids[oldKey]
-    ids[newKey] = value
-    data.value.socialIds = ids
-  }
+    if (oldKey === newKey)
+      return;
+    const ids = { ...data.value.socialIds };
+    const value = ids[oldKey];
+    delete ids[oldKey];
+    ids[newKey] = value;
+    data.value.socialIds = ids;
+  };
 
   const updateSocialValue = (key: string, value: string) => {
-    data.value.socialIds = { ...data.value.socialIds, [key]: value }
-  }
+    data.value.socialIds = { ...data.value.socialIds, [key]: value };
+  };
 
   const removeSocialEntry = (key: string) => {
-    const ids = { ...data.value.socialIds }
-    delete ids[key]
-    data.value.socialIds = ids
-  }
+    const ids = { ...data.value.socialIds };
+    delete ids[key];
+    data.value.socialIds = ids;
+  };
 
-  const handleAvatarUpload: import('naive-ui').UploadOnFinish = (e) => {
-    const res = JSON.parse((e.event?.target as XMLHttpRequest).responseText)
-    e.file.url = res.url
-    data.value.avatar = res.url
-    return e.file
-  }
+  const handleAvatarUpload: import("naive-ui").UploadOnFinish = (e) => {
+    const res = JSON.parse((e.event?.target as XMLHttpRequest).responseText);
+    e.file.url = res.url;
+    data.value.avatar = res.url;
+    return e.file;
+  };
 
   return () => (
     <div class="space-y-8">
@@ -161,17 +164,17 @@ export const TabUser = defineComponent(() => {
       ) : (
         <>
           {/* Profile Header */}
-          <div class="flex items-center gap-5 pb-6">
-            <div class="relative size-[80px] shrink-0 [&_.n-upload-trigger]:size-[80px] [&_.n-upload-trigger]:overflow-hidden [&_.n-upload-trigger]:rounded-full [&_.n-upload]:size-[80px] [&_.n-upload]:overflow-hidden [&_.n-upload]:rounded-full">
+          <div class="pb-6 flex gap-5 items-center">
+            <div class="shrink-0 size-[80px] relative [&_.n-upload-trigger]:rounded-full [&_.n-upload]:rounded-full [&_.n-upload-trigger]:size-[80px] [&_.n-upload]:size-[80px] [&_.n-upload-trigger]:overflow-hidden [&_.n-upload]:overflow-hidden">
               <UploadWrapper
                 onFinish={handleAvatarUpload}
                 type="avatar"
                 v-slots={{
                   default: () => (
-                    <div class="hover:ring-primary/30 dark:hover:ring-primary/30 relative size-[80px] overflow-hidden rounded-full ring-4 ring-neutral-100 transition-all dark:ring-neutral-800">
+                    <div class="rounded-full size-[80px] ring-4 ring-neutral-100 transition-all relative overflow-hidden dark:ring-neutral-800 hover:ring-primary/30 dark:hover:ring-primary/30">
                       <Avatar src={data.value.avatar} size={80} />
-                      <div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100">
-                        <CameraIcon class="size-5 text-white" />
+                      <div class="bg-black/50 opacity-0 flex transition-opacity items-center inset-0 justify-center absolute hover:opacity-100">
+                        <CameraIcon class="text-white size-5" />
                       </div>
                     </div>
                   ),
@@ -179,36 +182,39 @@ export const TabUser = defineComponent(() => {
               />
             </div>
 
-            <div class="min-w-0 flex-1">
-              <h2 class="m-0 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {data.value.name || '–'}
+            <div class="flex-1 min-w-0">
+              <h2 class="text-lg text-neutral-900 font-semibold m-0 dark:text-neutral-100">
+                {data.value.name || "–"}
               </h2>
-              <p class="m-0 mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-                @{data.value.username}
+              <p class="text-sm text-neutral-500 m-0 mt-0.5 dark:text-neutral-400">
+                @
+                {data.value.username}
               </p>
-              <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 items-center">
                 {data.value.mail && (
-                  <span class="flex shrink-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <span class="text-xs text-neutral-500 flex shrink-0 gap-1.5 items-center dark:text-neutral-400">
                     <MailIcon class="size-3.5" />
                     {data.value.mail}
                   </span>
                 )}
                 {data.value.lastLoginTime && (
-                  <span class="flex shrink-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <span class="text-xs text-neutral-500 flex shrink-0 gap-1.5 items-center dark:text-neutral-400">
                     <CalendarIcon class="size-3.5" />
-                    上次登录: <RelativeTime time={data.value.lastLoginTime} />
+                    上次登录:
+                    {" "}
+                    <RelativeTime time={data.value.lastLoginTime} />
                   </span>
                 )}
                 {data.value.lastLoginIp && (
-                  <span class="flex shrink-0 items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <span class="text-xs text-neutral-500 flex shrink-0 gap-1.5 items-center dark:text-neutral-400">
                     <GlobeIcon class="size-3.5" />
                     <IpInfoPopover
                       ip={data.value.lastLoginIp}
-                      triggerEl={
+                      triggerEl={(
                         <NButton quaternary size="tiny" type="primary">
                           {data.value.lastLoginIp}
                         </NButton>
-                      }
+                      )}
                     />
                   </span>
                 )}
@@ -221,11 +227,11 @@ export const TabUser = defineComponent(() => {
             <SettingsRow title="昵称">
               <NInput
                 value={data.value.name}
-                onInput={(v) => (data.value.name = v)}
+                onInput={v => (data.value.name = v)}
                 placeholder="输入昵称…"
                 inputProps={{
-                  id: 'user-name',
-                  autocomplete: 'name',
+                  id: "user-name",
+                  autocomplete: "name",
                 }}
               />
             </SettingsRow>
@@ -233,11 +239,11 @@ export const TabUser = defineComponent(() => {
             <SettingsRow title="用户名">
               <NInput
                 value={data.value.username}
-                onInput={(v) => (data.value.username = v)}
+                onInput={v => (data.value.username = v)}
                 placeholder="输入用户名…"
                 inputProps={{
-                  id: 'user-username',
-                  autocomplete: 'username',
+                  id: "user-username",
+                  autocomplete: "username",
                   spellcheck: false,
                 }}
               />
@@ -246,13 +252,13 @@ export const TabUser = defineComponent(() => {
             <SettingsRow title="邮箱">
               <NInput
                 value={data.value.mail}
-                onInput={(v) => (data.value.mail = v)}
+                onInput={v => (data.value.mail = v)}
                 placeholder="输入邮箱地址…"
                 inputProps={{
-                  id: 'user-mail',
-                  type: 'email',
-                  inputmode: 'email',
-                  autocomplete: 'email',
+                  id: "user-mail",
+                  type: "email",
+                  inputmode: "email",
+                  autocomplete: "email",
                   spellcheck: false,
                 }}
               />
@@ -261,13 +267,13 @@ export const TabUser = defineComponent(() => {
             <SettingsRow title="个人网站">
               <NInput
                 value={data.value.url}
-                onInput={(v) => (data.value.url = v)}
+                onInput={v => (data.value.url = v)}
                 placeholder="https://example.com"
                 inputProps={{
-                  id: 'user-url',
-                  type: 'url',
-                  inputmode: 'url',
-                  autocomplete: 'url',
+                  id: "user-url",
+                  type: "url",
+                  inputmode: "url",
+                  autocomplete: "url",
                   spellcheck: false,
                 }}
               />
@@ -276,12 +282,12 @@ export const TabUser = defineComponent(() => {
             <SettingsRow title="个人简介">
               <NInput
                 value={data.value.introduce}
-                onInput={(v) => (data.value.introduce = v)}
+                onInput={v => (data.value.introduce = v)}
                 type="textarea"
                 placeholder="介绍一下自己…"
                 autosize={{ minRows: 3, maxRows: 6 }}
                 inputProps={{
-                  id: 'user-introduce',
+                  id: "user-introduce",
                 }}
               />
             </SettingsRow>
@@ -292,12 +298,12 @@ export const TabUser = defineComponent(() => {
             >
               <NInput
                 value={data.value.avatar}
-                onInput={(v) => (data.value.avatar = v)}
+                onInput={v => (data.value.avatar = v)}
                 placeholder="https://example.com/avatar.jpg"
                 inputProps={{
-                  id: 'user-avatar',
-                  type: 'url',
-                  inputmode: 'url',
+                  id: "user-avatar",
+                  type: "url",
+                  inputmode: "url",
                   spellcheck: false,
                 }}
               />
@@ -316,7 +322,7 @@ export const TabUser = defineComponent(() => {
                   onClick={addSocialEntry}
                   disabled={
                     !socialOptions.some(
-                      (o) => !usedSocialKeys.value.has(o.value),
+                      o => !usedSocialKeys.value.has(o.value),
                     )
                   }
                 >
@@ -326,78 +332,80 @@ export const TabUser = defineComponent(() => {
               ),
             }}
           >
-            {socialEntries.value.length === 0 ? (
-              <div class="py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
-                暂未添加任何社交链接
-              </div>
-            ) : (
-              <div class="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {socialEntries.value.map(({ key, value }) => (
-                  <div class="flex items-center gap-3 py-3" key={key}>
-                    <NSelect
-                      class="w-36 shrink-0"
-                      value={key}
-                      options={socialOptions.map((opt) => ({
-                        ...opt,
-                        disabled:
-                          usedSocialKeys.value.has(opt.value) &&
-                          opt.value !== key,
-                      }))}
-                      onUpdateValue={(newKey) => updateSocialKey(key, newKey)}
-                    />
-                    <NInput
-                      class="min-w-0 flex-1"
-                      value={value}
-                      onInput={(v) => updateSocialValue(key, v)}
-                      placeholder="输入链接或 ID…"
-                      inputProps={{ spellcheck: false }}
-                    />
-                    <button
-                      type="button"
-                      class="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-neutral-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                      onClick={() => removeSocialEntry(key)}
-                    >
-                      <TrashIcon class="size-4" />
-                    </button>
+            {socialEntries.value.length === 0
+              ? (
+                  <div class="text-sm text-neutral-400 py-8 text-center dark:text-neutral-500">
+                    暂未添加任何社交链接
                   </div>
-                ))}
-              </div>
-            )}
+                )
+              : (
+                  <div class="divide-neutral-100 divide-y dark:divide-neutral-800">
+                    {socialEntries.value.map(({ key, value }) => (
+                      <div class="py-3 flex gap-3 items-center" key={key}>
+                        <NSelect
+                          class="shrink-0 w-36"
+                          value={key}
+                          options={socialOptions.map(opt => ({
+                            ...opt,
+                            disabled:
+                          usedSocialKeys.value.has(opt.value)
+                          && opt.value !== key,
+                          }))}
+                          onUpdateValue={newKey => updateSocialKey(key, newKey)}
+                        />
+                        <NInput
+                          class="flex-1 min-w-0"
+                          value={value}
+                          onInput={v => updateSocialValue(key, v)}
+                          placeholder="输入链接或 ID…"
+                          inputProps={{ spellcheck: false }}
+                        />
+                        <button
+                          type="button"
+                          class="text-neutral-400 border-0 rounded-lg bg-transparent flex shrink-0 size-8 cursor-pointer transition-colors items-center justify-center dark:text-neutral-500 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                          onClick={() => removeSocialEntry(key)}
+                        >
+                          <TrashIcon class="size-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
           </SettingsSection>
         </>
       )}
     </div>
-  )
-})
+  );
+});
 
 const UserSkeleton = defineComponent(() => {
   return () => (
     <div class="space-y-8">
-      <div class="flex items-center gap-5 pb-6">
-        <NSkeleton circle style={{ width: '80px', height: '80px' }} />
-        <div class="min-w-0 flex-1">
-          <NSkeleton text style={{ width: '120px', height: '24px' }} />
+      <div class="pb-6 flex gap-5 items-center">
+        <NSkeleton circle style={{ width: "80px", height: "80px" }} />
+        <div class="flex-1 min-w-0">
+          <NSkeleton text style={{ width: "120px", height: "24px" }} />
           <NSkeleton
             text
-            style={{ width: '80px', height: '16px', marginTop: '4px' }}
+            style={{ width: "80px", height: "16px", marginTop: "4px" }}
           />
           <div class="mt-2 flex gap-4">
-            <NSkeleton text style={{ width: '150px' }} />
-            <NSkeleton text style={{ width: '120px' }} />
+            <NSkeleton text style={{ width: "150px" }} />
+            <NSkeleton text style={{ width: "120px" }} />
           </div>
         </div>
       </div>
       <div>
-        <NSkeleton text style={{ width: '80px', height: '20px' }} />
+        <NSkeleton text style={{ width: "80px", height: "20px" }} />
         <div class="mt-4 space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} class="flex gap-8">
-              <NSkeleton text style={{ width: '80px', height: '16px' }} />
-              <NSkeleton text style={{ width: '100%', height: '34px' }} />
+              <NSkeleton text style={{ width: "80px", height: "16px" }} />
+              <NSkeleton text style={{ width: "100%", height: "34px" }} />
             </div>
           ))}
         </div>
       </div>
     </div>
-  )
-})
+  );
+});

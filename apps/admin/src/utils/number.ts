@@ -7,19 +7,19 @@
  * 1100000000 => 1.1B
  */
 export const formatNumber = (number: number) => {
-  const len = String(number).length
+  const len = String(number).length;
 
   if (len < 4) {
-    return number
+    return number;
   }
 
   if (len < 7) {
-    return `${(number / 1000).toFixed(1)}K`
+    return `${(number / 1000).toFixed(1)}K`;
   }
 
   if (len < 10) {
-    return `${(number / 1000000).toFixed(1)}M`
+    return `${(number / 1000000).toFixed(1)}M`;
   }
 
-  return `${(number / 1000000000).toFixed(1)}B`
-}
+  return `${(number / 1000000000).toFixed(1)}B`;
+};

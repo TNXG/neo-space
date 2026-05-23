@@ -1,4 +1,4 @@
 export interface SnippetGroup {
-  reference: string
-  count: number
+  reference: string;
+  count: number;
 }

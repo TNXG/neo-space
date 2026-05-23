@@ -3,19 +3,19 @@
  *
  */
 
-import { NElement } from 'naive-ui'
-import { defineComponent, onUnmounted } from 'vue'
+import { NElement } from "naive-ui";
+import { defineComponent, onUnmounted } from "vue";
 
-import { CodemirrorEditor } from '../codemirror/codemirror'
-import { useEditorStore } from '../codemirror/editor-store'
-import { editorBaseProps } from './props'
+import { CodemirrorEditor } from "../codemirror/codemirror";
+import { useEditorStore } from "../codemirror/editor-store";
+import { editorBaseProps } from "./props";
 
-import './index.css'
+import { useEditorConfig } from "./use-editor-setting";
 
-import { useEditorConfig } from './use-editor-setting'
+import "./index.css";
 
 export const Editor = defineComponent({
-  name: 'EditorX',
+  name: "EditorX",
   props: {
     ...editorBaseProps,
     loading: {
@@ -23,42 +23,42 @@ export const Editor = defineComponent({
       required: true,
     },
   },
-  expose: ['setValue'],
+  expose: ["setValue"],
   setup(props, { expose }) {
-    const { general, destory } = useEditorConfig()
+    const { general, destory } = useEditorConfig();
 
     onUnmounted(() => {
-      destory()
-    })
+      destory();
+    });
 
-    const editorStore = useEditorStore()
+    const editorStore = useEditorStore();
 
     expose({
       setValue: (value: string) => {
-        editorStore.setValue(value)
+        editorStore.setValue(value);
       },
-    })
+    });
 
     return () => {
-      const { setting: generalSetting } = general
-      const resolvedRenderMode =
-        props.renderMode ?? generalSetting.renderMode ?? 'plain'
+      const { setting: generalSetting } = general;
+      const resolvedRenderMode
+        = props.renderMode ?? generalSetting.renderMode ?? "plain";
       return (
         <NElement
           tag="div"
           style={
             {
-              '--editor-font-size': generalSetting.fontSize
+              "--editor-font-size": generalSetting.fontSize
                 ? `${generalSetting.fontSize / 14}rem`
-                : '',
-              '--editor-font-family': generalSetting.fontFamily,
+                : "",
+              "--editor-font-family": generalSetting.fontFamily,
             } as any
           }
-          class={'editor-wrapper'}
+          class="editor-wrapper"
         >
           <CodemirrorEditor {...props} renderMode={resolvedRenderMode} />
         </NElement>
-      )
-    }
+      );
+    };
   },
-})
+});

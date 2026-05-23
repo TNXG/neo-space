@@ -1,45 +1,49 @@
-import { GitCompare, X } from 'lucide-vue-next'
-import { NButton, NModal, NScrollbar, NSpin } from 'naive-ui'
-import { computed, defineComponent, onBeforeUnmount, ref, watch } from 'vue'
-import type { DraftModel } from '~/models/draft'
-import type { SerializedEditorState } from 'lexical'
-import type { PropType } from 'vue'
+import type { SerializedEditorState } from "lexical";
+import type { PropType } from "vue";
+import type { DraftModel } from "~/models/draft";
+import { computeDeltaStats } from "@haklex/rich-diff";
+import { useQuery } from "@tanstack/vue-query";
+import { GitCompare, X } from "lucide-vue-next";
 
-import { computeDeltaStats } from '@haklex/rich-diff'
-import { useQuery } from '@tanstack/vue-query'
+import { NButton, NModal, NScrollbar, NSpin } from "naive-ui";
+import { computed, defineComponent, onBeforeUnmount, ref, watch } from "vue";
 
-import { draftsApi } from '~/api/drafts'
-import { RichDiffBridge } from '~/components/editor/rich/RichDiffBridge'
-import { SplitPanel } from '~/components/layout'
+import { draftsApi } from "~/api/drafts";
+import { RichDiffBridge } from "~/components/editor/rich/RichDiffBridge";
+import { SplitPanel } from "~/components/layout";
 
-import { DiffPreview } from './diff-preview'
-import { VersionListItem } from './version-list-item'
+import { DiffPreview } from "./diff-preview";
+import { VersionListItem } from "./version-list-item";
 
 function tryParseLexicalState(raw: string): SerializedEditorState | null {
-  if (!raw?.trim()) return null
+  if (!raw?.trim())
+    return null;
   try {
-    const v = JSON.parse(raw) as unknown
-    if (!v || typeof v !== 'object') return null
-    const root = (v as { root?: unknown }).root
-    if (!root || typeof root !== 'object') return null
-    const children = (root as { children?: unknown }).children
-    if (!Array.isArray(children)) return null
-    return v as SerializedEditorState
+    const v = JSON.parse(raw) as unknown;
+    if (!v || typeof v !== "object")
+      return null;
+    const root = (v as { root?: unknown }).root;
+    if (!root || typeof root !== "object")
+      return null;
+    const children = (root as { children?: unknown }).children;
+    if (!Array.isArray(children))
+      return null;
+    return v as SerializedEditorState;
   } catch {
-    return null
+    return null;
   }
 }
 
 export interface PublishedContent {
-  title: string
-  text: string
-  contentFormat?: 'markdown' | 'lexical'
-  content?: string
-  updated: string
+  title: string;
+  text: string;
+  contentFormat?: "markdown" | "lexical";
+  content?: string;
+  updated: string;
 }
 
 export const DraftRecoveryModal = defineComponent({
-  name: 'DraftRecoveryModal',
+  name: "DraftRecoveryModal",
   props: {
     show: {
       type: Boolean,
@@ -59,112 +63,113 @@ export const DraftRecoveryModal = defineComponent({
     },
     onRecover: {
       type: Function as PropType<
-        (version: number | 'published', versionData?: DraftModel) => void
+        (version: number | "published", versionData?: DraftModel) => void
       >,
       required: true,
     },
   },
   setup(props) {
-    const selectedVersion = ref<number | 'published'>('published')
+    const selectedVersion = ref<number | "published">("published");
     const selectedVersionContent = ref<{
-      title: string
-      text: string
-      contentFormat?: 'markdown' | 'lexical'
-      content?: string
-    } | null>(null)
+      title: string;
+      text: string;
+      contentFormat?: "markdown" | "lexical";
+      content?: string;
+    } | null>(null);
 
-    type VersionContent = {
-      text: string
-      content?: string
-      contentFormat?: 'markdown' | 'lexical'
+    interface VersionContent {
+      text: string;
+      content?: string;
+      contentFormat?: "markdown" | "lexical";
     }
     const versionContentCache = ref(
-      new Map<number | 'published', VersionContent>(),
-    )
+      new Map<number | "published", VersionContent>(),
+    );
 
-    type RowDiffStats = { added: number; removed: number; unit: '词' | '字' }
+    interface RowDiffStats { added: number; removed: number; unit: "词" | "字" }
 
     // Pre-computed diff stats via frame-budgeted batch processing
-    const precomputedDiffStats = ref(new Map<number, RowDiffStats>())
-    let diffQueue: Array<{ version: number; content: VersionContent }> = []
-    let rafId: number | null = null
-    let batchGeneration = 0
+    const precomputedDiffStats = ref(new Map<number, RowDiffStats>());
+    let diffQueue: Array<{ version: number; content: VersionContent }> = [];
+    let rafId: number | null = null;
+    let batchGeneration = 0;
 
     const flushDiffQueue = () => {
-      const BUDGET = 8
-      const start = performance.now()
-      const updates = new Map(precomputedDiffStats.value)
-      let dirty = false
+      const BUDGET = 8;
+      const start = performance.now();
+      const updates = new Map(precomputedDiffStats.value);
+      let dirty = false;
 
       while (diffQueue.length > 0 && performance.now() - start < BUDGET) {
-        const { version, content } = diffQueue.shift()!
+        const { version, content } = diffQueue.shift()!;
         const stats = calcDiffStats(
-          props.publishedContent.text ?? '',
-          content.text ?? '',
+          props.publishedContent.text ?? "",
+          content.text ?? "",
           props.publishedContent.content,
           content.content,
-        )
-        updates.set(version, stats)
-        dirty = true
+        );
+        updates.set(version, stats);
+        dirty = true;
       }
 
-      if (dirty) precomputedDiffStats.value = updates
+      if (dirty)
+        precomputedDiffStats.value = updates;
       if (diffQueue.length > 0) {
-        rafId = requestAnimationFrame(flushDiffQueue)
+        rafId = requestAnimationFrame(flushDiffQueue);
       } else {
-        rafId = null
+        rafId = null;
       }
-    }
+    };
 
     const enqueueDiff = (version: number, content: VersionContent) => {
-      diffQueue.push({ version, content })
+      diffQueue.push({ version, content });
       if (rafId === null) {
-        rafId = requestAnimationFrame(flushDiffQueue)
+        rafId = requestAnimationFrame(flushDiffQueue);
       }
-    }
+    };
 
     const cancelBatch = () => {
-      diffQueue = []
+      diffQueue = [];
       if (rafId !== null) {
-        cancelAnimationFrame(rafId)
-        rafId = null
+        cancelAnimationFrame(rafId);
+        rafId = null;
       }
-    }
+    };
 
-    onBeforeUnmount(cancelBatch)
+    onBeforeUnmount(cancelBatch);
 
     // Get draft history
     const { data: historyData, isLoading: historyLoading } = useQuery({
-      queryKey: ['drafts', 'history', () => props.draft._id],
+      queryKey: ["drafts", "history", () => props.draft._id],
       queryFn: () => draftsApi.getHistory(props.draft._id),
       enabled: () => props.show,
       select: (res: any) =>
         Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [],
-    })
+    });
 
     // Compute version list: current draft + history + published
     const versionList = computed(() => {
       const list: Array<{
-        version: number | 'published' | 'current'
-        title: string
-        savedAt: string
-        isCurrent?: boolean
-        isFullSnapshot?: boolean
-      }> = []
+        version: number | "published" | "current";
+        title: string;
+        savedAt: string;
+        isCurrent?: boolean;
+        isFullSnapshot?: boolean;
+      }> = [];
 
       // Current draft (latest version)
       list.push({
-        version: 'current',
+        version: "current",
         title: props.draft.title,
         savedAt: props.draft.updatedAt,
         isCurrent: true,
-      })
+      });
 
       // History versions (excluding current)
       if (historyData.value) {
         const sortedHistory = [...historyData.value].sort(
           (a, b) => b.version - a.version,
-        )
+        );
         for (const item of sortedHistory) {
           if (item.version !== props.draft.version) {
             list.push({
@@ -172,161 +177,163 @@ export const DraftRecoveryModal = defineComponent({
               title: item.title,
               savedAt: item.savedAt,
               isFullSnapshot: item.isFullSnapshot,
-            })
+            });
           }
         }
       }
 
       // Published version as baseline
       list.push({
-        version: 'published',
+        version: "published",
         title: props.publishedContent.title,
         savedAt: props.publishedContent.updated,
-      })
+      });
 
-      return list
-    })
+      return list;
+    });
 
     // Default select current draft
     watch(
       () => props.show,
       (show) => {
         if (show) {
-          selectedVersion.value = props.draft.version
+          selectedVersion.value = props.draft.version;
           selectedVersionContent.value = {
             title: props.draft.title,
             text: props.draft.text,
             contentFormat: props.draft.contentFormat,
             content: props.draft.content,
-          }
+          };
           // Seed cache with current draft
           versionContentCache.value.set(props.draft.version, {
             text: props.draft.text,
             content: props.draft.content,
             contentFormat: props.draft.contentFormat,
-          })
+          });
         } else {
-          cancelBatch()
+          cancelBatch();
         }
       },
       { immediate: true },
-    )
+    );
 
     // Proactively fetch all version contents and batch-compute diffs
     watch([() => historyData.value, () => props.show], ([history, show]) => {
-      batchGeneration++
-      const gen = batchGeneration
-      cancelBatch()
-      precomputedDiffStats.value = new Map()
+      batchGeneration++;
+      const gen = batchGeneration;
+      cancelBatch();
+      precomputedDiffStats.value = new Map();
 
-      if (!show || !history?.length) return
+      if (!show || !history?.length)
+        return;
 
       // Current draft already available
       enqueueDiff(props.draft.version, {
         text: props.draft.text,
         content: props.draft.content,
         contentFormat: props.draft.contentFormat,
-      })
+      });
 
       // Fetch history versions with concurrency limit
       const versions = history
         .filter((item: any) => item.version !== props.draft.version)
-        .sort((a: any, b: any) => b.version - a.version)
+        .sort((a: any, b: any) => b.version - a.version);
 
-      const CONCURRENCY = 3
-      let idx = 0
+      const CONCURRENCY = 3;
+      let idx = 0;
       const fetchNext = async (): Promise<void> => {
         while (idx < versions.length) {
-          if (gen !== batchGeneration) return
-          const item = versions[idx++]
+          if (gen !== batchGeneration)
+            return;
+          const item = versions[idx++];
           try {
             const data = await draftsApi.getHistoryVersion(
               props.draft._id,
               item.version,
-            )
-            if (gen !== batchGeneration) return
+            );
+            if (gen !== batchGeneration)
+              return;
             const content: VersionContent = {
               text: data.text,
               content: data.content,
               contentFormat: data.contentFormat,
-            }
-            const cache = new Map(versionContentCache.value)
-            cache.set(item.version, content)
-            versionContentCache.value = cache
-            enqueueDiff(item.version, content)
+            };
+            const cache = new Map(versionContentCache.value);
+            cache.set(item.version, content);
+            versionContentCache.value = cache;
+            enqueueDiff(item.version, content);
           } catch {
             // skip failed versions
           }
         }
-      }
+      };
 
       Promise.all(
         Array.from({ length: Math.min(CONCURRENCY, versions.length) }, () =>
-          fetchNext(),
-        ),
-      )
-    })
+          fetchNext()),
+      );
+    });
 
     // Load version content when selection changes
     const handleSelectVersion = async (
-      version: number | 'published' | 'current',
+      version: number | "published" | "current",
     ) => {
-      const actualVersion =
-        version === 'current' ? props.draft.version : version
-      selectedVersion.value = actualVersion
+      const actualVersion
+        = version === "current" ? props.draft.version : version;
+      selectedVersion.value = actualVersion;
 
-      if (version === 'published') {
+      if (version === "published") {
         selectedVersionContent.value = {
           title: props.publishedContent.title,
           text: props.publishedContent.text,
           contentFormat: props.publishedContent.contentFormat,
           content: props.publishedContent.content,
-        }
-      } else if (version === 'current') {
+        };
+      } else if (version === "current") {
         selectedVersionContent.value = {
           title: props.draft.title,
           text: props.draft.text,
           contentFormat: props.draft.contentFormat,
           content: props.draft.content,
-        }
+        };
       } else {
         // Use cache if already fetched by batch loader
-        const cached = versionContentCache.value.get(version)
+        const cached = versionContentCache.value.get(version);
         if (cached) {
           const historyItem = historyData.value?.find(
             (h: any) => h.version === version,
-          )
+          );
           selectedVersionContent.value = {
-            title: historyItem?.title ?? '',
+            title: historyItem?.title ?? "",
             text: cached.text,
             contentFormat: cached.contentFormat,
             content: cached.content,
-          }
-          return
+          };
+          return;
         }
         try {
           const versionData = await draftsApi.getHistoryVersion(
             props.draft._id,
             version,
-          )
+          );
           selectedVersionContent.value = {
             title: versionData.title,
             text: versionData.text,
             contentFormat: versionData.contentFormat,
             content: versionData.content,
-          }
-          const cache = new Map(versionContentCache.value)
+          };
+          const cache = new Map(versionContentCache.value);
           cache.set(version, {
             text: versionData.text,
             content: versionData.content,
             contentFormat: versionData.contentFormat,
-          })
-          versionContentCache.value = cache
+          });
+          versionContentCache.value = cache;
         } catch (error) {
-          console.error('Failed to load version:', error)
+          console.error("Failed to load version:", error);
         }
       }
-    }
+    };
 
     const calcDiffStats = (
       oldText: string,
@@ -334,131 +341,136 @@ export const DraftRecoveryModal = defineComponent({
       oldContent?: string,
       newContent?: string,
     ): RowDiffStats => {
-      const oc = oldContent?.trim()
-      const nc = newContent?.trim()
+      const oc = oldContent?.trim();
+      const nc = newContent?.trim();
       if (oc && nc) {
-        const oldState = tryParseLexicalState(oc)
-        const newState = tryParseLexicalState(nc)
+        const oldState = tryParseLexicalState(oc);
+        const newState = tryParseLexicalState(nc);
         if (oldState && newState) {
-          const stats = computeDeltaStats(oldState, newState)
+          const stats = computeDeltaStats(oldState, newState);
           return {
             added: stats.words.added,
             removed: stats.words.removed,
-            unit: '词',
-          }
+            unit: "词",
+          };
         }
       }
-      const oldLen = oldText.length
-      const newLen = newText.length
+      const oldLen = oldText.length;
+      const newLen = newText.length;
       return {
         added: Math.max(0, newLen - oldLen),
         removed: Math.max(0, oldLen - newLen),
-        unit: '字',
-      }
-    }
+        unit: "字",
+      };
+    };
 
     const isRichMode = computed(() => {
-      const pub = props.publishedContent.content
-      const sel = selectedVersionContent.value?.content
-      if (!pub?.trim() || !sel?.trim()) return false
-      return !!(tryParseLexicalState(pub) && tryParseLexicalState(sel))
-    })
+      const pub = props.publishedContent.content;
+      const sel = selectedVersionContent.value?.content;
+      if (!pub?.trim() || !sel?.trim())
+        return false;
+      return !!(tryParseLexicalState(pub) && tryParseLexicalState(sel));
+    });
 
     const diffStats = computed(() => {
-      if (!selectedVersionContent.value) return null
+      if (!selectedVersionContent.value)
+        return null;
 
       if (isRichMode.value) {
-        const oldState = tryParseLexicalState(props.publishedContent.content!)
+        const oldState = tryParseLexicalState(props.publishedContent.content!);
         const newState = tryParseLexicalState(
           selectedVersionContent.value.content!,
-        )
+        );
         if (oldState && newState) {
-          const stats = computeDeltaStats(oldState, newState)
-          const isSame =
-            stats.chars.added === 0 &&
-            stats.chars.removed === 0 &&
-            stats.words.added === 0 &&
-            stats.words.removed === 0
+          const stats = computeDeltaStats(oldState, newState);
+          const isSame
+            = stats.chars.added === 0
+              && stats.chars.removed === 0
+              && stats.words.added === 0
+              && stats.words.removed === 0;
           if (isSame) {
-            return { isSame: true, added: 0, removed: 0 }
+            return { isSame: true, added: 0, removed: 0 };
           }
           return {
             isSame: false,
             added: stats.words.added,
             removed: stats.words.removed,
-          }
+          };
         }
-        return { isSame: true, added: 0, removed: 0 }
+        return { isSame: true, added: 0, removed: 0 };
       }
 
-      const currentText = selectedVersionContent.value.text ?? ''
-      const publishedText = props.publishedContent.text ?? ''
-      const diff = currentText.length - publishedText.length
-      return { diff, isSame: currentText === publishedText }
-    })
+      const currentText = selectedVersionContent.value.text ?? "";
+      const publishedText = props.publishedContent.text ?? "";
+      const diff = currentText.length - publishedText.length;
+      return { diff, isSame: currentText === publishedText };
+    });
 
     // Selected version label
     const selectedVersionLabel = computed(() => {
-      if (selectedVersion.value === 'published') return '已发布'
-      if (selectedVersion.value === props.draft.version) return '当前草稿'
-      return `v${selectedVersion.value}`
-    })
+      if (selectedVersion.value === "published")
+        return "已发布";
+      if (selectedVersion.value === props.draft.version)
+        return "当前草稿";
+      return `v${selectedVersion.value}`;
+    });
 
     const handleUsePublished = () => {
-      props.onRecover('published')
-      props.onClose()
-    }
+      props.onRecover("published");
+      props.onClose();
+    };
 
     const handleRecoverSelected = async () => {
-      if (selectedVersion.value === 'published') {
-        props.onRecover('published')
+      if (selectedVersion.value === "published") {
+        props.onRecover("published");
       } else {
         // Load the full version data and pass it
-        const version =
-          selectedVersion.value === props.draft.version
+        const version
+          = selectedVersion.value === props.draft.version
             ? props.draft.version
-            : (selectedVersion.value as number)
+            : (selectedVersion.value as number);
         try {
           const versionData = await draftsApi.getHistoryVersion(
             props.draft._id,
             version,
-          )
-          props.onRecover(version, versionData)
+          );
+          props.onRecover(version, versionData);
         } catch {
           // If loading fails, use current draft data
-          props.onRecover(version, props.draft)
+          props.onRecover(version, props.draft);
         }
       }
-      props.onClose()
-    }
+      props.onClose();
+    };
 
     return () => (
       <NModal
         show={props.show}
         onUpdateShow={(show) => {
-          if (!show) props.onClose()
+          if (!show)
+            props.onClose();
         }}
         closeOnEsc
         transformOrigin="center"
       >
         <div
-          class="flex h-[600px] w-[900px] max-w-[90vw] flex-col overflow-hidden rounded-xl bg-white shadow-xl dark:bg-neutral-900"
+          class="rounded-xl bg-white flex flex-col h-[600px] max-w-[90vw] w-[900px] shadow-xl overflow-hidden dark:bg-neutral-900"
           role="dialog"
           aria-modal="true"
         >
           {/* Header */}
-          <div class="flex flex-shrink-0 items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
+          <div class="px-5 py-4 border-b border-neutral-200 flex flex-shrink-0 items-center justify-between dark:border-neutral-800">
             <div>
-              <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              <h2 class="text-lg text-neutral-900 font-semibold dark:text-neutral-100">
                 检测到未保存的草稿
               </h2>
-              <p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+              <p class="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
                 选择要恢复的版本，与已发布内容进行对比
               </p>
             </div>
             <button
               type="button"
-              class="rounded-lg p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
+              class="text-neutral-400 p-1.5 rounded-lg transition-colors hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               onClick={props.onClose}
               aria-label="关闭"
             >
@@ -467,7 +479,7 @@ export const DraftRecoveryModal = defineComponent({
           </div>
 
           {/* Body - Split View */}
-          <div class="min-h-0 flex-1">
+          <div class="flex-1 min-h-0">
             {historyLoading.value ? (
               <div class="flex h-full items-center justify-center">
                 <NSpin size="large" />
@@ -480,47 +492,50 @@ export const DraftRecoveryModal = defineComponent({
                 max={0.4}
                 class="h-full"
               >
-                <div class="flex h-full flex-col">
+                <div class="flex flex-col h-full">
                   {/* Version list header */}
-                  <div class="flex items-center gap-2 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800">
-                    <GitCompare class="size-4 text-neutral-500" />
-                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  <div class="px-4 py-2.5 border-b border-neutral-200 flex gap-2 items-center dark:border-neutral-800">
+                    <GitCompare class="text-neutral-500 size-4" />
+                    <span class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
                       版本列表
                     </span>
                     <span class="text-xs text-neutral-400">
-                      ({versionList.value.length})
+                      (
+                      {versionList.value.length}
+                      )
                     </span>
                   </div>
 
                   {/* Version list */}
                   <NScrollbar class="flex-1">
-                    <div class="divide-y divide-neutral-100 dark:divide-neutral-800">
-                      {versionList.value.map((item) => (
+                    <div class="divide-neutral-100 divide-y dark:divide-neutral-800">
+                      {versionList.value.map(item => (
                         <VersionListItem
                           key={
-                            item.version === 'published'
-                              ? 'published'
-                              : item.version === 'current'
-                                ? 'current'
+                            item.version === "published"
+                              ? "published"
+                              : item.version === "current"
+                                ? "current"
                                 : item.version
                           }
                           version={item.version}
                           title={item.title}
                           savedAt={item.savedAt}
                           isSelected={
-                            item.version === 'current'
+                            item.version === "current"
                               ? selectedVersion.value === props.draft.version
                               : selectedVersion.value === item.version
                           }
                           isCurrent={item.isCurrent}
                           isFullSnapshot={item.isFullSnapshot}
                           diffStats={(() => {
-                            if (item.version === 'published') return undefined
-                            const vKey =
-                              item.version === 'current'
+                            if (item.version === "published")
+                              return undefined;
+                            const vKey
+                              = item.version === "current"
                                 ? props.draft.version
-                                : (item.version as number)
-                            return precomputedDiffStats.value.get(vKey)
+                                : (item.version as number);
+                            return precomputedDiffStats.value.get(vKey);
                           })()}
                           onClick={() => handleSelectVersion(item.version)}
                         />
@@ -528,10 +543,10 @@ export const DraftRecoveryModal = defineComponent({
                     </div>
                   </NScrollbar>
                 </div>
-                <div class="flex h-full flex-col bg-neutral-50 dark:bg-neutral-950">
+                <div class="bg-neutral-50 flex flex-col h-full dark:bg-neutral-950">
                   {/* Diff header */}
-                  <div class="flex flex-shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-2.5 dark:border-neutral-800 dark:bg-neutral-900">
-                    <div class="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                  <div class="px-4 py-2.5 border-b border-neutral-200 bg-white flex flex-shrink-0 items-center justify-between dark:border-neutral-800 dark:bg-neutral-900">
+                    <div class="text-xs text-neutral-600 flex gap-2 items-center dark:text-neutral-400">
                       <span>已发布</span>
                       <span class="text-neutral-400">→</span>
                       <span>{selectedVersionLabel.value}</span>
@@ -543,82 +558,90 @@ export const DraftRecoveryModal = defineComponent({
                           ? [
                               diffStats.value.added > 0 && (
                                 <span class="text-green-600">
-                                  +{diffStats.value.added}
+                                  +
+                                  {diffStats.value.added}
                                 </span>
                               ),
-                              diffStats.value.added > 0 &&
-                                diffStats.value.removed! > 0 &&
-                                ' / ',
+                              diffStats.value.added > 0
+                              && diffStats.value.removed! > 0
+                              && " / ",
                               diffStats.value.removed! > 0 && (
                                 <span class="text-red-600">
-                                  -{diffStats.value.removed}
+                                  -
+                                  {diffStats.value.removed}
                                 </span>
                               ),
-                              ' 词',
+                              " 词",
                             ]
                           : [
                               (() => {
-                                const d =
-                                  'diff' in diffStats.value
+                                const d
+                                  = "diff" in diffStats.value
                                     ? (diffStats.value.diff ?? 0)
-                                    : 0
-                                return d > 0 ? `+${d}` : d
+                                    : 0;
+                                return d > 0 ? `+${d}` : d;
                               })(),
-                              ' 字',
+                              " 字",
                             ]}
                       </div>
                     )}
                   </div>
 
                   {/* Diff content */}
-                  <div class="min-h-0 flex-1 overflow-hidden">
-                    {selectedVersionContent.value ? (
-                      diffStats.value?.isSame ? (
-                        <div class="flex h-full flex-col items-center justify-center gap-3 bg-white dark:bg-neutral-900">
-                          <div class="flex size-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-                            <GitCompare class="size-6 text-neutral-500 dark:text-neutral-400" />
+                  <div class="flex-1 min-h-0 overflow-hidden">
+                    {selectedVersionContent.value
+                      ? (
+                          diffStats.value?.isSame
+                            ? (
+                                <div class="bg-white flex flex-col gap-3 h-full items-center justify-center dark:bg-neutral-900">
+                                  <div class="rounded-full bg-neutral-100 flex size-12 items-center justify-center dark:bg-neutral-800">
+                                    <GitCompare class="text-neutral-500 size-6 dark:text-neutral-400" />
+                                  </div>
+                                  <div class="text-center">
+                                    <p class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
+                                      与已发布版本内容相同
+                                    </p>
+                                    <p class="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                                      选择其他版本进行对比
+                                    </p>
+                                  </div>
+                                </div>
+                              )
+                            : isRichMode.value
+                              ? (
+                                  <div class="h-full overflow-hidden">
+                                    <RichDiffBridge
+                                      variant="comment"
+                                      className="!border-0 !rounded-none"
+                                      oldValue={JSON.parse(
+                                        props.publishedContent.content!,
+                                      )}
+                                      newValue={JSON.parse(
+                                        selectedVersionContent.value.content!,
+                                      )}
+                                    />
+                                  </div>
+                                )
+                              : (
+                                  <div class="h-full overflow-hidden">
+                                    <DiffPreview
+                                      oldFile={{
+                                        name: "published.md",
+                                        contents: props.publishedContent.text ?? "",
+                                      }}
+                                      newFile={{
+                                        name: "draft.md",
+                                        contents: selectedVersionContent.value.text ?? "",
+                                      }}
+                                    />
+                                  </div>
+                                )
+                        )
+                      : (
+                          <div class="text-neutral-400 border border-neutral-300 rounded-lg border-dashed bg-white flex h-full items-center justify-center dark:border-neutral-700 dark:bg-neutral-900">
+                            选择一个版本查看差异
                           </div>
-                          <div class="text-center">
-                            <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                              与已发布版本内容相同
-                            </p>
-                            <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                              选择其他版本进行对比
-                            </p>
-                          </div>
-                        </div>
-                      ) : isRichMode.value ? (
-                        <div class="h-full overflow-hidden">
-                          <RichDiffBridge
-                            variant="comment"
-                            className="!rounded-none !border-0"
-                            oldValue={JSON.parse(
-                              props.publishedContent.content!,
-                            )}
-                            newValue={JSON.parse(
-                              selectedVersionContent.value.content!,
-                            )}
-                          />
-                        </div>
-                      ) : (
-                        <div class="h-full overflow-hidden">
-                          <DiffPreview
-                            oldFile={{
-                              name: 'published.md',
-                              contents: props.publishedContent.text ?? '',
-                            }}
-                            newFile={{
-                              name: 'draft.md',
-                              contents: selectedVersionContent.value.text ?? '',
-                            }}
-                          />
-                        </div>
-                      )
-                    ) : (
-                      <div class="flex h-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-white text-neutral-400 dark:border-neutral-700 dark:bg-neutral-900">
-                        选择一个版本查看差异
-                      </div>
-                    )}
+                        )}
                   </div>
                 </div>
               </SplitPanel>
@@ -626,18 +649,18 @@ export const DraftRecoveryModal = defineComponent({
           </div>
 
           {/* Footer */}
-          <div class="flex flex-shrink-0 items-center justify-end gap-2 border-t border-neutral-200 px-5 py-4 dark:border-neutral-800">
+          <div class="px-5 py-4 border-t border-neutral-200 flex flex-shrink-0 gap-2 items-center justify-end dark:border-neutral-800">
             <NButton onClick={handleUsePublished}>使用已发布版本</NButton>
             <NButton
               type="primary"
               onClick={handleRecoverSelected}
-              disabled={selectedVersion.value === 'published'}
+              disabled={selectedVersion.value === "published"}
             >
               恢复选中的草稿版本
             </NButton>
           </div>
         </div>
       </NModal>
-    )
+    );
   },
-})
+});

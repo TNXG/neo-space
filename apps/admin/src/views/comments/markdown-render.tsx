@@ -1,18 +1,18 @@
-import { marked } from 'marked'
-import { defineComponent } from 'vue'
-import xss from 'xss'
+import { marked } from "marked";
+import { defineComponent } from "vue";
+import xss from "xss";
 
 marked.use({
   renderer: {
     html({ text }) {
-      return xss(text)
+      return xss(text);
     },
   },
-})
+});
 const render = (text: string) =>
   marked.parse(text, {
     gfm: true,
-  })
+  });
 
 export const CommentMarkdownRender = defineComponent({
   props: {
@@ -22,6 +22,6 @@ export const CommentMarkdownRender = defineComponent({
     },
   },
   setup(props) {
-    return () => <div v-html={render(props.text)} />
+    return () => <div v-html={render(props.text)} />;
   },
-})
+});

@@ -1,8 +1,8 @@
-import { Search as MagnifyIcon } from 'lucide-vue-next'
-import { NButton, NPopover } from 'naive-ui'
-import { defineComponent } from 'vue'
+import { Search as MagnifyIcon } from "lucide-vue-next";
+import { NButton, NPopover } from "naive-ui";
+import { defineComponent } from "vue";
 
-import { ArticlePreview } from '~/components/preview'
+import { ArticlePreview } from "~/components/preview";
 
 export const IframePreviewButton = defineComponent({
   props: {
@@ -16,7 +16,7 @@ export const IframePreviewButton = defineComponent({
       <NPopover placement="right" class="!p-0">
         {{
           default() {
-            return <ArticlePreview url={props.path} />
+            return <ArticlePreview url={props.path} />;
           },
           trigger() {
             return (
@@ -30,15 +30,15 @@ export const IframePreviewButton = defineComponent({
                 // @ts-ignore
                 href={props.path}
                 onClick={(e) => {
-                  e.stopPropagation()
+                  e.stopPropagation();
                 }}
               >
                 <MagnifyIcon size={12} />
               </NButton>
-            )
+            );
           },
         }}
       </NPopover>
-    )
+    );
   },
-})
+});

@@ -1,13 +1,13 @@
-import { computed, toValue } from 'vue'
-import { toast } from 'vue-sonner'
-import type { CreatePageData, UpdatePageData } from '~/api/pages'
-import type { MaybeRefOrGetter } from 'vue'
+import type { MaybeRefOrGetter } from "vue";
+import type { CreatePageData, UpdatePageData } from "~/api/pages";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { computed, toValue } from "vue";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { pagesApi } from '~/api/pages'
+import { pagesApi } from "~/api/pages";
 
-import { queryKeys } from './keys'
+import { queryKeys } from "./keys";
 
 /**
  * 页面列表查询
@@ -18,8 +18,8 @@ export const usePagesQuery = (
   return useQuery({
     queryKey: computed(() => queryKeys.pages.list(toValue(params))),
     queryFn: () => pagesApi.getList(toValue(params)),
-  })
-}
+  });
+};
 
 /**
  * 单个页面查询
@@ -29,49 +29,49 @@ export const usePageQuery = (id: MaybeRefOrGetter<string>) => {
     queryKey: computed(() => queryKeys.pages.detail(toValue(id))),
     queryFn: () => pagesApi.getById(toValue(id)),
     enabled: computed(() => !!toValue(id)),
-  })
-}
+  });
+};
 
 /**
  * 创建页面
  */
 export const useCreatePageMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreatePageData) => pagesApi.create(data),
     onSuccess: () => {
-      toast.success('创建成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() })
+      toast.success("创建成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() });
     },
-  })
-}
+  });
+};
 
 /**
  * 更新页面
  */
 export const useUpdatePageMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePageData }) =>
       pagesApi.update(id, data),
     onSuccess: (_, { id }) => {
-      toast.success('修改成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.pages.detail(id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() })
+      toast.success("修改成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.pages.detail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() });
     },
-  })
-}
+  });
+};
 
 /**
  * 删除页面
  */
 export const useDeletePageMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: pagesApi.delete,
     onSuccess: () => {
-      toast.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() })
+      toast.success("删除成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.pages.lists() });
     },
-  })
-}
+  });
+};

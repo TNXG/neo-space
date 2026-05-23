@@ -1,36 +1,36 @@
-import { computed, defineComponent, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import type {
   AITranslation,
   ArticleInfo,
   GroupedTranslationData,
   GroupedTranslationResponse,
-} from '~/api/ai'
+} from "~/api/ai";
+import { useQuery } from "@tanstack/vue-query";
+import { computed, defineComponent, ref, watch } from "vue";
 
-import { useQuery } from '@tanstack/vue-query'
+import { useRoute, useRouter } from "vue-router";
 
-import { aiApi } from '~/api/ai'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { queryKeys } from '~/hooks/queries/keys'
-import { RouteName } from '~/router/name'
+import { aiApi } from "~/api/ai";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { queryKeys } from "~/hooks/queries/keys";
+import { RouteName } from "~/router/name";
 
 import {
   TranslationDetailEmptyState,
   TranslationDetailPanel,
-} from './components/translation-detail-panel'
-import { TranslationList } from './components/translation-list'
+} from "./components/translation-detail-panel";
+import { TranslationList } from "./components/translation-list";
 
 export default defineComponent({
-  name: 'AITranslationPage',
+  name: "AITranslationPage",
   setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const { isMobile } = useMasterDetailLayout()
+    const router = useRouter();
+    const route = useRoute();
+    const { isMobile } = useMasterDetailLayout();
 
-    const pageRef = ref(1)
-    const searchRef = ref('')
-    const listData = ref<GroupedTranslationData[]>([])
-    const pagerRef = ref<GroupedTranslationResponse['pagination'] | null>(null)
+    const pageRef = ref(1);
+    const searchRef = ref("");
+    const listData = ref<GroupedTranslationData[]>([]);
+    const pagerRef = ref<GroupedTranslationResponse["pagination"] | null>(null);
     const { data, refetch, isPending } = useQuery({
       queryKey: computed(() =>
         queryKeys.ai.translationsGrouped({
@@ -43,64 +43,66 @@ export default defineComponent({
           page: pageRef.value,
           search: searchRef.value || undefined,
         }),
-    })
+    });
 
-    const selectedId = ref<string | null>((route.query.id as string) || null)
-    const showDetailOnMobile = ref(false)
+    const selectedId = ref<string | null>((route.query.id as string) || null);
+    const showDetailOnMobile = ref(false);
 
     const handleSelect = (article: ArticleInfo) => {
-      selectedId.value = article.id
+      selectedId.value = article.id;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
     const handlePageChange = (page: number) => {
-      if (pageRef.value === page) return
-      pageRef.value = page
-      refetch()
-    }
+      if (pageRef.value === page)
+        return;
+      pageRef.value = page;
+      refetch();
+    };
 
     const handleSearchChange = (search: string) => {
-      if (searchRef.value === search) return
-      searchRef.value = search
-      pageRef.value = 1
-      listData.value = []
-      refetch()
-    }
+      if (searchRef.value === search)
+        return;
+      searchRef.value = search;
+      pageRef.value = 1;
+      listData.value = [];
+      refetch();
+    };
 
     const refreshList = () => {
-      pageRef.value = 1
-      refetch()
-    }
+      pageRef.value = 1;
+      refetch();
+    };
 
-    type TranslationListOptimisticUpdate =
+    type TranslationListOptimisticUpdate
+      = | {
+        type: "upsert";
+        article: ArticleInfo;
+        translations: AITranslation[];
+      }
       | {
-          type: 'upsert'
-          article: ArticleInfo
-          translations: AITranslation[]
-        }
-      | {
-          type: 'remove'
-          articleId: string
-          translationId: string
-          lang: string
-        }
+        type: "remove";
+        articleId: string;
+        translationId: string;
+        lang: string;
+      };
 
     const applyOptimisticUpdate = (update: TranslationListOptimisticUpdate) => {
-      if (update.type === 'upsert') {
+      if (update.type === "upsert") {
         const idx = listData.value.findIndex(
-          (g) => g.article.id === update.article.id,
-        )
+          g => g.article.id === update.article.id,
+        );
         if (idx === -1) {
           if (pageRef.value === 1) {
             if (
-              searchRef.value.trim().length === 0 ||
-              update.article.title
+              searchRef.value.trim().length === 0
+              || update.article.title
                 .toLowerCase()
                 .includes(searchRef.value.trim().toLowerCase())
             ) {
@@ -110,57 +112,60 @@ export default defineComponent({
                   translations: [...update.translations],
                 },
                 ...listData.value,
-              ]
+              ];
             }
           }
-          return
+          return;
         }
 
-        const group = listData.value[idx]
-        const nextTranslations = [...group.translations]
+        const group = listData.value[idx];
+        const nextTranslations = [...group.translations];
         for (const t of update.translations) {
-          const idxByLang = nextTranslations.findIndex((x) => x.lang === t.lang)
-          if (idxByLang !== -1) nextTranslations[idxByLang] = t
-          else nextTranslations.push(t)
+          const idxByLang = nextTranslations.findIndex(x => x.lang === t.lang);
+          if (idxByLang !== -1)
+            nextTranslations[idxByLang] = t;
+          else nextTranslations.push(t);
         }
 
         listData.value[idx] = {
           ...group,
           translations: nextTranslations,
-        }
-        return
+        };
+        return;
       }
 
       const idx = listData.value.findIndex(
-        (g) => g.article.id === update.articleId,
-      )
-      if (idx === -1) return
-      const group = listData.value[idx]
+        g => g.article.id === update.articleId,
+      );
+      if (idx === -1)
+        return;
+      const group = listData.value[idx];
       const nextTranslations = group.translations.filter(
-        (t) => t.id !== update.translationId && t.lang !== update.lang,
-      )
+        t => t.id !== update.translationId && t.lang !== update.lang,
+      );
       if (nextTranslations.length === 0) {
-        listData.value = listData.value.filter((_, i) => i !== idx)
+        listData.value = listData.value.filter((_, i) => i !== idx);
       } else {
-        listData.value[idx] = { ...group, translations: nextTranslations }
+        listData.value[idx] = { ...group, translations: nextTranslations };
       }
-    }
+    };
 
     watch(
       () => data.value,
       (value) => {
-        if (!value) return
-        pagerRef.value = value.pagination ?? null
+        if (!value)
+          return;
+        pagerRef.value = value.pagination ?? null;
         if (value.data !== undefined) {
           if (pageRef.value === 1) {
-            listData.value = value.data
+            listData.value = value.data;
           } else {
-            listData.value = [...listData.value, ...value.data]
+            listData.value = [...listData.value, ...value.data];
           }
         }
       },
       { immediate: true },
-    )
+    );
 
     watch(
       selectedId,
@@ -168,10 +173,10 @@ export default defineComponent({
         router.replace({
           name: RouteName.AiTranslation,
           query: (id ? { id } : {}),
-        })
+        });
       },
-      { flush: 'post' },
-    )
+      { flush: "post" },
+    );
 
     return () => (
       <MasterDetailLayout
@@ -195,18 +200,20 @@ export default defineComponent({
             />
           ),
           detail: () =>
-            selectedId.value ? (
-              <TranslationDetailPanel
-                articleId={selectedId.value}
-                isMobile={isMobile.value}
-                onBack={handleBack}
-                onRefresh={refreshList}
-                onOptimisticUpdate={applyOptimisticUpdate}
-              />
-            ) : null,
+            selectedId.value
+              ? (
+                  <TranslationDetailPanel
+                    articleId={selectedId.value}
+                    isMobile={isMobile.value}
+                    onBack={handleBack}
+                    onRefresh={refreshList}
+                    onOptimisticUpdate={applyOptimisticUpdate}
+                  />
+                )
+              : null,
           empty: () => <TranslationDetailEmptyState />,
         }}
       </MasterDetailLayout>
-    )
+    );
   },
-})
+});

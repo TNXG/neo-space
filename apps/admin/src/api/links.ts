@@ -1,20 +1,20 @@
-import type { LinkModel, LinkResponse, LinkStateCount } from '~/models/link'
+import type { LinkModel, LinkResponse, LinkStateCount } from "~/models/link";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface GetLinksParams {
-  page?: number
-  size?: number
-  state?: number
+  page?: number;
+  size?: number;
+  state?: number;
 }
 
 export interface CreateLinkData {
-  name: string
-  url: string
-  avatar?: string
-  description?: string
-  type?: number
-  state?: number
+  name: string;
+  url: string;
+  avatar?: string;
+  description?: string;
+  type?: number;
+  state?: number;
 }
 
 export interface UpdateLinkData extends Partial<CreateLinkData> {}
@@ -22,16 +22,16 @@ export interface UpdateLinkData extends Partial<CreateLinkData> {}
 export const linksApi = {
   // 获取友链列表
   getList: (params?: GetLinksParams) =>
-    request.get<LinkResponse>('/links', { params }),
+    request.get<LinkResponse>("/links", { params }),
 
   // 获取状态计数
-  getStateCount: () => request.get<LinkStateCount>('/links/state'),
+  getStateCount: () => request.get<LinkStateCount>("/links/state"),
 
   // 获取单个友链
   getById: (id: string) => request.get<LinkModel>(`/links/${id}`),
 
   // 创建友链
-  create: (data: CreateLinkData) => request.post<LinkModel>('/links', { data }),
+  create: (data: CreateLinkData) => request.post<LinkModel>("/links", { data }),
 
   // 更新友链
   update: (id: string, data: UpdateLinkData) =>
@@ -48,7 +48,7 @@ export const linksApi = {
   checkHealth: (options?: { timeout?: number }) =>
     request.get<
       Record<string, { id: string; status: number | string; message?: string }>
-    >('/links/health', { timeout: options?.timeout }),
+    >("/links/health", { timeout: options?.timeout }),
 
   // 审核通过友链
   auditPass: (id: string) => request.patch<LinkModel>(`/links/audit/${id}`),
@@ -61,5 +61,5 @@ export const linksApi = {
 
   // 迁移头像
   migrateAvatars: (options?: { timeout?: number }) =>
-    request.post<void>('/links/avatar/migrate', { timeout: options?.timeout }),
-}
+    request.post<void>("/links/avatar/migrate", { timeout: options?.timeout }),
+};

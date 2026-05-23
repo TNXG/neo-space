@@ -1,13 +1,13 @@
-import { MapPin as LocationIcon } from 'lucide-vue-next'
-import { NButton } from 'naive-ui'
-import { defineComponent, ref } from 'vue'
-import { toast } from 'vue-sonner'
-import type { Amap, Regeocode } from '~/models/amap'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { Amap, Regeocode } from "~/models/amap";
+import { Icon } from "@vicons/utils";
+import { MapPin as LocationIcon } from "lucide-vue-next";
+import { NButton } from "naive-ui";
+import { defineComponent, ref } from "vue";
 
-import { Icon } from '@vicons/utils'
+import { toast } from "vue-sonner";
 
-import { systemApi } from '~/api'
+import { systemApi } from "~/api";
 
 export const GetLocationButton = defineComponent({
   props: {
@@ -19,51 +19,51 @@ export const GetLocationButton = defineComponent({
     },
   },
   setup(props) {
-    const loading = ref(false)
+    const loading = ref(false);
     const handleGetLocation = async () => {
       const GetGeo = () =>
         new Promise<GeolocationPosition>((r, j) => {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
-              loading.value = true
-              r(pos)
-              loading.value = false
+              loading.value = true;
+              r(pos);
+              loading.value = false;
             },
             (err) => {
-              loading.value = false
-              j(err)
+              loading.value = false;
+              j(err);
             },
-          )
-        })
+          );
+        });
       if (navigator.geolocation) {
         try {
-          const coordinates = await GetGeo()
+          const coordinates = await GetGeo();
           // console.log(coordinates)
 
           const {
             coords: { latitude, longitude },
-          } = coordinates
+          } = coordinates;
 
-          const coo = [longitude, latitude] as const
-          const res = (await systemApi.callBuiltInFunction('geocode_location', {
+          const coo = [longitude, latitude] as const;
+          const res = (await systemApi.callBuiltInFunction("geocode_location", {
             longitude,
             latitude,
-          })) as Amap
+          })) as Amap;
 
-          props.onChange(res.regeocode, coo)
+          props.onChange(res.regeocode, coo);
         } catch (error: any) {
-          console.error(error)
+          console.error(error);
 
           if (error.code == 2) {
-            toast.error('获取定位失败，连接超时')
+            toast.error("获取定位失败，连接超时");
           } else {
-            toast.error('定位权限未打开')
+            toast.error("定位权限未打开");
           }
         }
       } else {
-        toast.error('浏览器不支持定位')
+        toast.error("浏览器不支持定位");
       }
-    }
+    };
     return () => (
       <NButton
         tertiary
@@ -78,13 +78,13 @@ export const GetLocationButton = defineComponent({
               <Icon>
                 <LocationIcon />
               </Icon>
-            )
+            );
           },
           default() {
-            return '定位'
+            return "定位";
           },
         }}
       </NButton>
-    )
+    );
   },
-})
+});

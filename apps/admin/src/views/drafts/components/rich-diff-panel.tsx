@@ -1,9 +1,9 @@
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent } from "vue";
 
-import { RichDiffBridge } from '~/components/editor/rich/RichDiffBridge'
+import { RichDiffBridge } from "~/components/editor/rich/RichDiffBridge";
 
 export const RichDiffPanel = defineComponent({
-  name: 'RichDiffPanel',
+  name: "RichDiffPanel",
   props: {
     oldContent: { type: String, required: true },
     newContent: { type: String, required: true },
@@ -11,31 +11,31 @@ export const RichDiffPanel = defineComponent({
   setup(props) {
     const safeParse = (json: string) => {
       try {
-        return JSON.parse(json)
+        return JSON.parse(json);
       } catch {
-        return null
+        return null;
       }
-    }
+    };
 
-    const oldValue = computed(() => safeParse(props.oldContent))
-    const newValue = computed(() => safeParse(props.newContent))
+    const oldValue = computed(() => safeParse(props.oldContent));
+    const newValue = computed(() => safeParse(props.newContent));
 
     return () => {
       if (!oldValue.value || !newValue.value) {
         return (
-          <div class="flex h-full items-center justify-center text-sm text-neutral-500">
+          <div class="text-sm text-neutral-500 flex h-full items-center justify-center">
             富文本内容解析失败
           </div>
-        )
+        );
       }
       return (
         <RichDiffBridge
           oldValue={oldValue.value}
           newValue={newValue.value}
           variant="comment"
-          className="!rounded-none !border-0"
+          className="!border-0 !rounded-none"
         />
-      )
-    }
+      );
+    };
   },
-})
+});

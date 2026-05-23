@@ -1,10 +1,10 @@
-import { BugIcon } from 'lucide-vue-next'
-import { NDrawer, NDrawerContent } from 'naive-ui'
-import { computed, defineComponent, ref } from 'vue'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import { BugIcon } from "lucide-vue-next";
+import { NDrawer, NDrawerContent } from "naive-ui";
+import { computed, defineComponent, ref } from "vue";
 
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { useAsyncLoadMonaco } from '~/components/monaco-editor'
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { useAsyncLoadMonaco } from "~/components/monaco-editor";
 
 export const LexicalDebugButton = defineComponent({
   props: {
@@ -14,7 +14,7 @@ export const LexicalDebugButton = defineComponent({
     },
   },
   setup(props) {
-    const show = ref(false)
+    const show = ref(false);
 
     return () => (
       <>
@@ -27,13 +27,13 @@ export const LexicalDebugButton = defineComponent({
 
         <LexicalDebugDrawer
           show={show.value}
-          onUpdateShow={(s) => (show.value = s)}
+          onUpdateShow={s => (show.value = s)}
           content={props.content}
         />
       </>
-    )
+    );
   },
-})
+});
 
 const LexicalDebugDrawerContent = defineComponent({
   props: {
@@ -43,28 +43,28 @@ const LexicalDebugDrawerContent = defineComponent({
     },
   },
   setup(props) {
-    const htmlRef = ref<HTMLElement>()
+    const htmlRef = ref<HTMLElement>();
     const formatted = computed(() => {
       try {
-        return JSON.stringify(JSON.parse(props.content), null, 2)
+        return JSON.stringify(JSON.parse(props.content), null, 2);
       } catch {
-        return props.content || '{}'
+        return props.content || "{}";
       }
-    })
+    });
 
     const editor = useAsyncLoadMonaco(htmlRef, formatted, () => {}, {
-      language: 'json',
+      language: "json",
       readOnly: true,
       unSaveConfirm: false,
-    })
+    });
 
     return () => (
       <div ref={htmlRef} class="h-full min-h-[calc(100vh-100px)]">
         <editor.Snip />
       </div>
-    )
+    );
   },
-})
+});
 
 const LexicalDebugDrawer = defineComponent({
   props: {
@@ -99,6 +99,6 @@ const LexicalDebugDrawer = defineComponent({
           {props.show && <LexicalDebugDrawerContent content={props.content} />}
         </NDrawerContent>
       </NDrawer>
-    )
+    );
   },
-})
+});

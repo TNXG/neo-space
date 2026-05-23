@@ -1,30 +1,30 @@
-import { defineStore } from 'pinia'
-import { onMounted, ref } from 'vue'
-import type { AppInfo } from '~/models/system'
+import type { AppInfo } from "~/models/system";
+import { defineStore } from "pinia";
+import { onMounted, ref } from "vue";
 
-import { systemApi } from '~/api/system'
+import { systemApi } from "~/api/system";
 
 export interface ViewportRecord {
-  w: number
-  h: number
-  mobile: boolean
-  pad: boolean
-  hpad: boolean
-  wider: boolean
-  widest: boolean
-  phone: boolean
+  w: number;
+  h: number;
+  mobile: boolean;
+  pad: boolean;
+  hpad: boolean;
+  wider: boolean;
+  widest: boolean;
+  phone: boolean;
 }
 
-export const useAppStore = defineStore('app', () => {
-  const app = ref<AppInfo>()
+export const useAppStore = defineStore("app", () => {
+  const app = ref<AppInfo>();
   onMounted(() => {
     systemApi.getAppInfo().then((res) => {
-      app.value = res
-    })
-  })
+      app.value = res;
+    });
+  });
   return {
     app,
-  }
-})
+  };
+});
 
-export { useAppStore as AppStore }
+export { useAppStore as AppStore };

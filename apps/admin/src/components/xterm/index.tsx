@@ -1,22 +1,22 @@
-import { defineComponent, onBeforeUnmount, ref } from 'vue'
-import { Material, MaterialDark } from 'xterm-theme'
-import type { ITerminalOptions, Terminal } from '@xterm/xterm'
-import type { PropType } from 'vue'
+import type { ITerminalOptions, Terminal } from "@xterm/xterm";
+import type { PropType } from "vue";
+import { defineComponent, onBeforeUnmount, ref } from "vue";
+import { Material, MaterialDark } from "xterm-theme";
 
-import { useMountAndUnmount } from '~/hooks/use-lifecycle'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { UIStore } from '~/stores/ui'
+import { useMountAndUnmount } from "~/hooks/use-lifecycle";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { UIStore } from "~/stores/ui";
 
-import '@xterm/xterm/css/xterm.css'
+import "@xterm/xterm/css/xterm.css";
 
-const xtermThemeDark = { ...MaterialDark, background: 'rgba(0,0,0,0)' }
-const xtermThemeLight = { ...Material, background: 'rgba(0,0,0,0)' }
+const xtermThemeDark = { ...MaterialDark, background: "rgba(0,0,0,0)" };
+const xtermThemeLight = { ...Material, background: "rgba(0,0,0,0)" };
 
 export const Xterm = defineComponent({
   props: {
     colorScheme: {
-      type: String as PropType<'light' | 'dark' | 'auto'>,
-      default: 'dark',
+      type: String as PropType<"light" | "dark" | "auto">,
+      default: "dark",
     },
     darkMode: {
       type: Boolean,
@@ -46,51 +46,51 @@ export const Xterm = defineComponent({
     },
   },
   setup(props) {
-    let term: Terminal
+    let term: Terminal;
 
-    const termRef = ref<HTMLElement>()
-    const { onlyToggleNaiveUIDark, isDark } = useStoreRef(UIStore)
+    const termRef = ref<HTMLElement>();
+    const { onlyToggleNaiveUIDark, isDark } = useStoreRef(UIStore);
 
     if (props.darkMode) {
       useMountAndUnmount(() => {
-        onlyToggleNaiveUIDark(true)
+        onlyToggleNaiveUIDark(true);
         return () => {
-          onlyToggleNaiveUIDark(false)
-        }
-      })
+          onlyToggleNaiveUIDark(false);
+        };
+      });
     }
     useMountAndUnmount(async () => {
       const [{ Terminal }, { FitAddon }] = await Promise.all([
-        import('@xterm/xterm'),
-        import('@xterm/addon-fit'),
-      ])
+        import("@xterm/xterm"),
+        import("@xterm/addon-fit"),
+      ]);
 
       const themes = {
         dark: xtermThemeDark,
         light: xtermThemeLight,
         auto: isDark.value ? xtermThemeDark : xtermThemeLight,
-      }
+      };
 
       term = new Terminal({
         rows: 40,
         scrollback: 100000,
         disableStdin: true,
         allowTransparency: true,
-        fontFamily: 'Operator Mono SSm Lig Book,Operator Mono,Monaco,monospace',
+        fontFamily: "Operator Mono SSm Lig Book,Operator Mono,Monaco,monospace",
         convertEol: true,
-        cursorStyle: 'underline',
+        cursorStyle: "underline",
         theme: themes[props.colorScheme],
         ...props.terminalOptions,
-      })
-      const fitAddon = new FitAddon()
-      term.loadAddon(fitAddon)
+      });
+      const fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
 
-      term.open(termRef.value!)
-      fitAddon.fit()
+      term.open(termRef.value!);
+      fitAddon.fit();
 
       const observer = new ResizeObserver(() => {
         try {
-          fitAddon.fit()
+          fitAddon.fit();
         } catch {
           // noop
         }
@@ -99,28 +99,28 @@ export const Xterm = defineComponent({
           props.onResize({
             cols: term.cols,
             rows: term.rows,
-          })
+          });
         }
-      })
+      });
 
-      observer.observe(termRef.value!)
+      observer.observe(termRef.value!);
 
-      props.onReady?.(term)
+      props.onReady?.(term);
 
       return () => {
-        observer.disconnect()
-      }
-    })
+        observer.disconnect();
+      };
+    });
 
     onBeforeUnmount(() => {
-      props.onDestory?.()
-    })
+      props.onDestory?.();
+    });
     return () => (
       <div
         id="xterm"
-        class={['max-h-[70vh] !bg-transparent', props.class]}
+        class={["max-h-[70vh] !bg-transparent", props.class]}
         ref={termRef}
       />
-    )
+    );
   },
-})
+});

@@ -1,3 +1,5 @@
+import type { PropType } from "vue";
+import { useStorage } from "@vueuse/core";
 import {
   NButton,
   NForm,
@@ -6,13 +8,11 @@ import {
   NPopover,
   NSelect,
   NSpace,
-} from 'naive-ui'
-import { OpenAI } from 'openai'
-import { defineComponent, ref } from 'vue'
-import { toast } from 'vue-sonner'
-import type { PropType } from 'vue'
+} from "naive-ui";
+import { OpenAI } from "openai";
+import { defineComponent, ref } from "vue";
 
-import { useStorage } from '@vueuse/core'
+import { toast } from "vue-sonner";
 
 export const AISummaryDialog = defineComponent({
   props: {
@@ -26,49 +26,49 @@ export const AISummaryDialog = defineComponent({
     },
   },
   setup(props) {
-    const token = useStorage('openai-token', '')
-    const baseUrl = useStorage('openai-base-url', 'https://api.openai.com/v1/')
+    const token = useStorage("openai-token", "");
+    const baseUrl = useStorage("openai-base-url", "https://api.openai.com/v1/");
 
     const prompt = useStorage(
-      'openai-prompt',
+      "openai-prompt",
       `Summarize this in Chinese language:
 "{text}"
 CONCISE SUMMARY:`,
-    )
-    const model = useStorage('openai-model', 'gpt-3.5-turbo')
+    );
+    const model = useStorage("openai-model", "gpt-3.5-turbo");
     const defaultModels = [
       {
-        label: 'GPT 3.5 Turbo',
-        value: 'gpt-3.5-turbo',
+        label: "GPT 3.5 Turbo",
+        value: "gpt-3.5-turbo",
       },
       {
-        label: 'GPT 3.5 Turbo 16k',
-        value: 'gpt-3.5-turbo-16k',
+        label: "GPT 3.5 Turbo 16k",
+        value: "gpt-3.5-turbo-16k",
       },
       {
-        label: 'GPT 4 Turbo',
-        value: 'gpt-4-turbo-preview',
+        label: "GPT 4 Turbo",
+        value: "gpt-4-turbo-preview",
       },
-    ]
-    const isOtherModel = ref(false)
-    isOtherModel.value = !defaultModels.some((m) => m.value === model.value)
-    const isLoading = ref(false)
+    ];
+    const isOtherModel = ref(false);
+    isOtherModel.value = !defaultModels.some(m => m.value === model.value);
+    const isLoading = ref(false);
     const handleAskAI = async () => {
       const ai = new OpenAI({
         apiKey: token.value,
         baseURL: baseUrl.value,
         dangerouslyAllowBrowser: true,
-      })
+      });
 
-      const finalPrompt = prompt.value.replace('{text}', props.article)
-      const messageIns = toast.loading('AI 正在生成摘要...')
-      isLoading.value = true
+      const finalPrompt = prompt.value.replace("{text}", props.article);
+      const messageIns = toast.loading("AI 正在生成摘要...");
+      isLoading.value = true;
       const response = await ai.chat.completions
         .create({
           messages: [
             {
               content: finalPrompt,
-              role: 'user',
+              role: "user",
             },
           ],
           model: model.value,
@@ -76,25 +76,26 @@ CONCISE SUMMARY:`,
           stream: false,
         })
         .catch((error) => {
-          toast.dismiss(messageIns)
-          toast.error(`AI 生成摘要失败： ${error.message}`)
+          toast.dismiss(messageIns);
+          toast.error(`AI 生成摘要失败： ${error.message}`);
         })
         .finally(() => {
-          isLoading.value = false
-        })
+          isLoading.value = false;
+        });
 
-      if (!response) return
-      const summary = response.choices[0].message?.content as string
+      if (!response)
+        return;
+      const summary = response.choices[0].message?.content as string;
       if (!summary) {
-        toast.dismiss(messageIns)
-        toast.error('AI 生成摘要失败')
-        return
+        toast.dismiss(messageIns);
+        toast.error("AI 生成摘要失败");
+        return;
       }
 
-      toast.dismiss(messageIns)
-      toast.success(`AI 生成的摘要： ${summary}`)
-      props.onSuccess(summary)
-    }
+      toast.dismiss(messageIns);
+      toast.success(`AI 生成的摘要： ${summary}`);
+      props.onSuccess(summary);
+    };
 
     return () => (
       <NForm>
@@ -107,7 +108,7 @@ CONCISE SUMMARY:`,
             type="textarea"
             value={prompt.value}
             onUpdateValue={(val) => {
-              prompt.value = val
+              prompt.value = val;
             }}
           />
         </NFormItem>
@@ -119,21 +120,21 @@ CONCISE SUMMARY:`,
                 return (
                   <NInput
                     inputProps={{
-                      name: 'openai-token',
-                      autocapitalize: 'off',
-                      autocomplete: 'new-password',
+                      name: "openai-token",
+                      autocapitalize: "off",
+                      autocomplete: "new-password",
                     }}
                     showPasswordOn="click"
                     type="password"
                     value={token.value}
                     onUpdateValue={(val) => {
-                      token.value = val
+                      token.value = val;
                     }}
                   />
-                )
+                );
               },
               default() {
-                return 'OpenAI Token 用于调用 OpenAI API，Token 只会保存在本地'
+                return "OpenAI Token 用于调用 OpenAI API，Token 只会保存在本地";
               },
             }}
           </NPopover>
@@ -146,19 +147,19 @@ CONCISE SUMMARY:`,
                 return (
                   <NInput
                     inputProps={{
-                      name: 'openai-base_url',
-                      autocapitalize: 'off',
+                      name: "openai-base_url",
+                      autocapitalize: "off",
                     }}
                     showPasswordOn="click"
                     value={baseUrl.value}
                     onUpdateValue={(val) => {
-                      baseUrl.value = val
+                      baseUrl.value = val;
                     }}
                   />
-                )
+                );
               },
               default() {
-                return 'OpenAI Base URL 用于调用 OpenAI API，默认为 https://api.openai.com/v1/'
+                return "OpenAI Base URL 用于调用 OpenAI API，默认为 https://api.openai.com/v1/";
               },
             }}
           </NPopover>
@@ -169,43 +170,43 @@ CONCISE SUMMARY:`,
             {{
               trigger() {
                 return (
-                  <NSpace vertical class={'w-full'}>
+                  <NSpace vertical class="w-full">
                     <NSelect
                       filterable
                       options={[
                         ...defaultModels,
                         {
-                          label: '其他',
-                          value: '',
+                          label: "其他",
+                          value: "",
                         },
                       ]}
-                      value={!isOtherModel.value ? model.value : ''}
-                      defaultValue={'gpt-3.5-turbo'}
+                      value={!isOtherModel.value ? model.value : ""}
+                      defaultValue="gpt-3.5-turbo"
                       onUpdateValue={(val) => {
-                        isOtherModel.value = val === ''
-                        model.value = val
+                        isOtherModel.value = val === "";
+                        model.value = val;
                       }}
                     />
                     <NInput
                       value={model.value}
                       disabled={!isOtherModel.value}
-                      class={!isOtherModel.value ? 'hidden' : ''}
+                      class={!isOtherModel.value ? "hidden" : ""}
                       placeholder="自定义 Model 名称"
                       onUpdateValue={(val) => {
-                        model.value = val
+                        model.value = val;
                       }}
                     />
                   </NSpace>
-                )
+                );
               },
               default() {
-                return 'OpenAI Model 用于调用 OpenAI API，默认为 gpt-3.5-turbo'
+                return "OpenAI Model 用于调用 OpenAI API，默认为 gpt-3.5-turbo";
               },
             }}
           </NPopover>
         </NFormItem>
 
-        <div class={'flex flex-grow justify-center'}>
+        <div class="flex flex-grow justify-center">
           <NButton
             loading={isLoading.value}
             type="primary"
@@ -217,6 +218,6 @@ CONCISE SUMMARY:`,
           </NButton>
         </div>
       </NForm>
-    )
+    );
   },
-})
+});

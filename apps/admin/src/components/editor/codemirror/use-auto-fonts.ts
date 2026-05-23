@@ -1,14 +1,14 @@
-import { watch } from 'vue'
-import type { EditorView } from '@codemirror/view'
-import type { Ref } from 'vue'
+import type { EditorView } from "@codemirror/view";
+import type { Ref } from "vue";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { tags } from '@lezer/highlight'
+import { tags } from "@lezer/highlight";
+import { watch } from "vue";
 
-import { useEditorConfig } from '../universal/use-editor-setting'
-import { codemirrorReconfigureExtensionMap } from './extension'
+import { useEditorConfig } from "../universal/use-editor-setting";
+import { codemirrorReconfigureExtensionMap } from "./extension";
 
-export const monospaceFonts = `"OperatorMonoSSmLig Nerd Font","Cascadia Code PL","FantasqueSansMono Nerd Font","operator mono","Fira code Retina","Fira code","Consolas", Monaco, "Hannotate SC", monospace, -apple-system`
+export const monospaceFonts = `"OperatorMonoSSmLig Nerd Font","Cascadia Code PL","FantasqueSansMono Nerd Font","operator mono","Fira code Retina","Fira code","Consolas", Monaco, "Hannotate SC", monospace, -apple-system`;
 
 const markdownTags = [
   tags.heading1,
@@ -23,18 +23,19 @@ const markdownTags = [
   tags.content,
   tags.url,
   tags.link,
-]
+];
 
 export const useCodeMirrorConfigureFonts = (
   editorView: Ref<EditorView | undefined>,
 ) => {
-  const { general } = useEditorConfig()
+  const { general } = useEditorConfig();
 
   watch(
     () => [general.setting.fontFamily, editorView.value],
     ([fontFamily]) => {
-      if (!editorView.value) return
-      const sansFonts = fontFamily || 'var(--sans-font)'
+      if (!editorView.value)
+        return;
+      const sansFonts = fontFamily || "var(--sans-font)";
 
       const fontStyles = HighlightStyle.define([
         {
@@ -42,7 +43,7 @@ export const useCodeMirrorConfigureFonts = (
           fontFamily: monospaceFonts,
         },
         { tag: markdownTags, fontFamily: sansFonts },
-      ])
+      ]);
 
       editorView.value.dispatch({
         effects: [
@@ -50,11 +51,11 @@ export const useCodeMirrorConfigureFonts = (
             syntaxHighlighting(fontStyles),
           ]),
         ],
-      })
+      });
     },
     {
       immediate: true,
-      flush: 'post',
+      flush: "post",
     },
-  )
-}
+  );
+};

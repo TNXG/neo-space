@@ -3,22 +3,19 @@
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     <script type="module">
-      import favicon from './favicon.png'
+      import favicon from "./favicon.png";
 
-      const link = document.createElement('link')
-      link.rel = 'icon'
-      link.href = favicon
-      document.head.appendChild(link)
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = favicon;
+      document.head.appendChild(link);
     </script>
     <title>Mx Space Admin Vue 3 v2</title>
     <script>
-      window.version = 'N/A'
-      window.pageSource = 'self'
+      window.version = "N/A";
+      window.pageSource = "self";
     </script>
   </head>
 
@@ -94,31 +91,29 @@
     </div>
     <noscript>
       <strong
-        >We're sorry but MX Space Admin Vue 3 doesn't work properly without
-        JavaScript enabled. Please enable it to continue.</strong
+        >We're sorry but MX Space Admin Vue 3 doesn't work properly without JavaScript enabled. Please enable it to
+        continue.</strong
       >
-      <strong>
-        It may be a network problem that caused the failure to load the JS file.
-      </strong>
+      <strong> It may be a network problem that caused the failure to load the JS file. </strong>
     </noscript>
     <script>
       // Initialize theme before Vue loads to prevent flash
-      ;(function () {
-        var themeMode = localStorage.getItem('theme-mode')
+      (function () {
+        var themeMode = localStorage.getItem("theme-mode");
         // Remove quotes if stored as JSON string
         if (themeMode) {
-          themeMode = themeMode.replace(/^"|"$/g, '')
+          themeMode = themeMode.replace(/^"|"$/g, "");
         }
-        var isDark = false
-        if (themeMode === 'dark') {
-          isDark = true
-        } else if (themeMode === 'system' || !themeMode) {
-          isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var isDark = false;
+        if (themeMode === "dark") {
+          isDark = true;
+        } else if (themeMode === "system" || !themeMode) {
+          isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         }
         if (isDark) {
-          document.documentElement.classList.add('dark')
+          document.documentElement.classList.add("dark");
         }
-      })()
+      })();
     </script>
     <script type="module" src="/src/main.ts"></script>
   </body>

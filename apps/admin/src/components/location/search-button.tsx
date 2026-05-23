@@ -1,5 +1,9 @@
-import { debounce } from 'es-toolkit/compat'
-import { Search as SearchIcon } from 'lucide-vue-next'
+import type { AutoCompleteOption } from "naive-ui/lib/auto-complete/src/interface";
+import type { PropType } from "vue";
+import type { AMapSearch } from "~/models/amap";
+import { Icon } from "@vicons/utils";
+import { debounce } from "es-toolkit/compat";
+import { Search as SearchIcon } from "lucide-vue-next";
 import {
   NAutoComplete,
   NButton,
@@ -8,29 +12,25 @@ import {
   NFormItem,
   NModal,
   NSpace,
-} from 'naive-ui'
-import { defineComponent, ref, watch } from 'vue'
-import type { AMapSearch } from '~/models/amap'
-import type { AutoCompleteOption } from 'naive-ui/lib/auto-complete/src/interface'
-import type { PropType } from 'vue'
+} from "naive-ui";
 
-import { Icon } from '@vicons/utils'
+import { defineComponent, ref, watch } from "vue";
 
-import { systemApi } from '~/api'
+import { systemApi } from "~/api";
 
 export const SearchLocationButton = defineComponent({
   props: {
     placeholder: {
       type: String as PropType<string | undefined | null>,
-      default: '',
+      default: "",
     },
     onChange: {
       type: Function as PropType<
         (
           location: string,
           coordinates: {
-            latitude: number
-            longitude: number
+            latitude: number;
+            longitude: number;
           },
         ) => any
       >,
@@ -38,43 +38,43 @@ export const SearchLocationButton = defineComponent({
     },
   },
   setup(props) {
-    const loading = ref(false)
-    const modalOpen = ref(false)
-    const keyword = ref('')
+    const loading = ref(false);
+    const modalOpen = ref(false);
+    const keyword = ref("");
     const searchLocation = async (keyword: string) => {
-      const res = (await systemApi.callBuiltInFunction('geocode_search', {
+      const res = (await systemApi.callBuiltInFunction("geocode_search", {
         keywords: keyword,
-      })) as AMapSearch
-      return res
-    }
+      })) as AMapSearch;
+      return res;
+    };
 
-    const autocompleteOption = ref([] as AutoCompleteOption[])
+    const autocompleteOption = ref([] as AutoCompleteOption[]);
 
     watch(
       () => keyword.value,
       debounce(
         async (keyword) => {
-          loading.value = true
+          loading.value = true;
 
-          const res = await searchLocation(keyword)
-          autocompleteOption.value = []
+          const res = await searchLocation(keyword);
+          autocompleteOption.value = [];
           res.pois.forEach((p) => {
-            const label = p.cityname + p.adname + p.address + p.name
-            const [longitude, latitude] = p.location.split(',').map(Number)
+            const label = p.cityname + p.adname + p.address + p.name;
+            const [longitude, latitude] = p.location.split(",").map(Number);
             autocompleteOption.value.push({
               key: p.cityname,
               label,
               value: JSON.stringify([label, { latitude, longitude }]),
-            })
-          })
-          loading.value = false
+            });
+          });
+          loading.value = false;
         },
         400,
         { trailing: true, leading: true },
       ),
-    )
+    );
 
-    let json: any
+    let json: any;
 
     return () => (
       <>
@@ -82,7 +82,7 @@ export const SearchLocationButton = defineComponent({
           tertiary
           size="tiny"
           onClick={() => {
-            modalOpen.value = true
+            modalOpen.value = true;
           }}
         >
           {{
@@ -91,24 +91,24 @@ export const SearchLocationButton = defineComponent({
                 <Icon>
                   <SearchIcon />
                 </Icon>
-              )
+              );
             },
             default() {
-              return '自定义'
+              return "自定义";
             },
           }}
         </NButton>
         <NModal
           transformOrigin="center"
           show={modalOpen.value}
-          onUpdateShow={(e) => void (modalOpen.value = e)}
+          onUpdateShow={e => void (modalOpen.value = e)}
         >
           <NCard
             class="modal-card sm"
             bordered={false}
             closable
             onClose={() => {
-              modalOpen.value = false
+              modalOpen.value = false;
             }}
             title="搜索关键字查找地点"
           >
@@ -118,14 +118,14 @@ export const SearchLocationButton = defineComponent({
                   <NForm labelPlacement="top">
                     <NFormItem label="搜索地点">
                       <NAutoComplete
-                        placeholder={props.placeholder || ''}
+                        placeholder={props.placeholder || ""}
                         onSelect={(j) => {
-                          json = j
+                          json = j;
                         }}
                         options={autocompleteOption.value}
                         loading={loading.value}
                         onUpdateValue={(e) => {
-                          keyword.value = e
+                          keyword.value = e;
                         }}
                         value={keyword.value}
                       />
@@ -136,10 +136,10 @@ export const SearchLocationButton = defineComponent({
                       round
                       type="primary"
                       onClick={() => {
-                        const parsed = JSON.parse(json as string)
-                        props.onChange.apply(this, parsed)
+                        const parsed = JSON.parse(json as string);
+                        props.onChange.apply(this, parsed);
 
-                        modalOpen.value = false
+                        modalOpen.value = false;
                       }}
                       disabled={loading.value}
                     >
@@ -152,6 +152,6 @@ export const SearchLocationButton = defineComponent({
           </NCard>
         </NModal>
       </>
-    )
+    );
   },
-})
+});

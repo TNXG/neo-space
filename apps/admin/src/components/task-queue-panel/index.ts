@@ -1,1 +1,1 @@
-export { TaskQueuePanel } from './TaskQueuePanel'
+export { TaskQueuePanel } from "./TaskQueuePanel";

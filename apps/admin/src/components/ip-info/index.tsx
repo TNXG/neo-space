@@ -1,11 +1,11 @@
-import { NPopover } from 'naive-ui'
-import { defineComponent, ref } from 'vue'
-import type { PopoverTrigger } from 'naive-ui'
-import type { PropType, VNode } from 'vue'
+import type { PopoverTrigger } from "naive-ui";
+import type { PropType, VNode } from "vue";
+import { NPopover } from "naive-ui";
+import { defineComponent, ref } from "vue";
 
-import { systemApi } from '~/api'
+import { systemApi } from "~/api";
 
-const ipLocationCacheMap = new Map<string, IP>()
+const ipLocationCacheMap = new Map<string, IP>();
 
 export const IpInfoPopover = defineComponent({
   props: {
@@ -19,44 +19,44 @@ export const IpInfoPopover = defineComponent({
     },
     trigger: {
       type: String as PropType<PopoverTrigger>,
-      default: 'click',
+      default: "click",
     },
   },
   setup(props) {
-    const ipInfoText = ref('获取中..')
+    const ipInfoText = ref("获取中..");
     const setIpInfoText = (info: IP) => {
       ipInfoText.value = `IP: ${info.ip}<br />
       城市：${
         [info.countryName, info.regionName, info.cityName]
           .filter(Boolean)
-          .join(' - ') || 'N/A'
+          .join(" - ") || "N/A"
       }<br />
-      ISP: ${info.ispDomain || 'N/A'}<br />
-      组织：${info.ownerDomain || 'N/A'}<br />
-      范围：${info.range ? Object.values(info.range).join(' - ') : 'N/A'}
-      `
-    }
-    const resetIpInfoText = () => (ipInfoText.value = '获取中..')
+      ISP: ${info.ispDomain || "N/A"}<br />
+      组织：${info.ownerDomain || "N/A"}<br />
+      范围：${info.range ? Object.values(info.range).join(" - ") : "N/A"}
+      `;
+    };
+    const resetIpInfoText = () => (ipInfoText.value = "获取中..");
 
     const onIpInfoShow = async (show: boolean, ip: string) => {
       if (!ip) {
-        return
+        return;
       }
       if (show) {
         if (ipLocationCacheMap.has(ip)) {
-          const ipInfo = ipLocationCacheMap.get(ip)!
-          setIpInfoText(ipInfo)
-          return
+          const ipInfo = ipLocationCacheMap.get(ip)!;
+          setIpInfoText(ipInfo);
+          return;
         }
 
-        const data: any = await systemApi.callBuiltInFunction('ip', { ip })
+        const data: any = await systemApi.callBuiltInFunction("ip", { ip });
 
-        setIpInfoText(data)
-        ipLocationCacheMap.set(ip, data)
+        setIpInfoText(data);
+        ipLocationCacheMap.set(ip, data);
       } else {
-        resetIpInfoText()
+        resetIpInfoText();
       }
-    }
+    };
 
     return () => (
       <NPopover
@@ -64,35 +64,35 @@ export const IpInfoPopover = defineComponent({
         placement="top"
         onUpdateShow={async (show) => {
           if (!props.ip) {
-            return
+            return;
           }
-          await onIpInfoShow(show, props.ip)
+          await onIpInfoShow(show, props.ip);
         }}
       >
         {{
           trigger() {
-            return typeof props.triggerEl == 'function'
+            return typeof props.triggerEl == "function"
               ? props.triggerEl()
-              : props.triggerEl
+              : props.triggerEl;
           },
           default() {
-            return <div innerHTML={ipInfoText.value} />
+            return <div innerHTML={ipInfoText.value} />;
           },
         }}
       </NPopover>
-    )
+    );
   },
-})
+});
 
 interface IP {
-  ip: string
-  countryName: string
-  regionName: string
-  cityName: string
-  ownerDomain: string
-  ispDomain: string
+  ip: string;
+  countryName: string;
+  regionName: string;
+  cityName: string;
+  ownerDomain: string;
+  ispDomain: string;
   range?: {
-    from: string
-    to: string
-  }
+    from: string;
+    to: string;
+  };
 }

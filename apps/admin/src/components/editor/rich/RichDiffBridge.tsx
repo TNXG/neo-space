@@ -1,14 +1,14 @@
-import { mountRichDiff } from '@neo-space/rich-react'
-import { defineComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { RichDiffHandle } from '@neo-space/rich-react'
-import type { SerializedEditorState } from 'lexical'
-import type { PropType } from 'vue'
+import type { RichDiffHandle } from "@neo-space/rich-react";
+import type { SerializedEditorState } from "lexical";
+import type { PropType } from "vue";
+import { mountRichDiff } from "@neo-space/rich-react";
+import { defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import { enrichmentApi } from '~/api/enrichment'
-import { useUIStore } from '~/stores/ui'
+import { enrichmentApi } from "~/api/enrichment";
+import { useUIStore } from "~/stores/ui";
 
 const fetchEnrichment = (url: string) =>
-  enrichmentApi.resolve(url).catch(() => null)
+  enrichmentApi.resolve(url).catch(() => null);
 
 export const RichDiffBridge = defineComponent({
   props: {
@@ -20,17 +20,18 @@ export const RichDiffBridge = defineComponent({
       type: Object as PropType<SerializedEditorState>,
       required: true,
     },
-    variant: String as PropType<'article' | 'comment' | 'note'>,
+    variant: String as PropType<"article" | "comment" | "note">,
     className: String,
   },
   setup(props) {
-    const containerRef = ref<HTMLDivElement | null>(null)
-    let handle: RichDiffHandle | null = null
+    const containerRef = ref<HTMLDivElement | null>(null);
+    let handle: RichDiffHandle | null = null;
 
     onMounted(() => {
-      if (!containerRef.value) return
-      const uiStore = useUIStore()
-      const resolveTheme = () => (uiStore.isDark ? 'dark' : 'light')
+      if (!containerRef.value)
+        return;
+      const uiStore = useUIStore();
+      const resolveTheme = () => (uiStore.isDark ? "dark" : "light");
 
       handle = mountRichDiff(containerRef.value, {
         oldValue: props.oldValue,
@@ -39,7 +40,7 @@ export const RichDiffBridge = defineComponent({
         className: props.className,
         theme: resolveTheme(),
         fetchEnrichment,
-      })
+      });
 
       watch(
         () => [
@@ -58,14 +59,14 @@ export const RichDiffBridge = defineComponent({
             theme: resolveTheme(),
             fetchEnrichment,
           }),
-      )
-    })
+      );
+    });
 
     onBeforeUnmount(() => {
-      handle?.unmount()
-      handle = null
-    })
+      handle?.unmount();
+      handle = null;
+    });
 
-    return () => <div class="h-full w-full overflow-auto" ref={containerRef} />
+    return () => <div class="h-full w-full overflow-auto" ref={containerRef} />;
   },
-})
+});

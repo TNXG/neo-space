@@ -1,24 +1,24 @@
-import type { CommentModel, CommentsResponse } from '~/models/comment'
+import type { CommentModel, CommentsResponse } from "~/models/comment";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface GetCommentsParams {
-  page?: number
-  size?: number
-  state?: number
+  page?: number;
+  size?: number;
+  state?: number;
 }
 
 export interface ReplyCommentData {
-  text: string
-  author: string
-  mail: string
-  source?: string
+  text: string;
+  author: string;
+  mail: string;
+  source?: string;
 }
 
 export const commentsApi = {
   // 获取评论列表
   getList: (params?: GetCommentsParams) =>
-    request.get<CommentsResponse>('/comments', { params }),
+    request.get<CommentsResponse>("/comments", { params }),
 
   // 获取单个评论
   getById: (id: string) => request.get<CommentModel>(`/comments/${id}`),
@@ -42,12 +42,12 @@ export const commentsApi = {
     options:
       | { ids: string[]; state: number }
       | { all: true; state: number; currentState: number },
-  ) => request.patch<void>('/comments/batch/state', { data: options }),
+  ) => request.patch<void>("/comments/batch/state", { data: options }),
 
   // 删除评论
   delete: (id: string) => request.delete<void>(`/comments/${id}`),
 
   // 批量删除
   batchDelete: (options: { ids: string[] } | { all: true; state: number }) =>
-    request.delete<void>('/comments/batch', { data: options }),
-}
+    request.delete<void>("/comments/batch", { data: options }),
+};

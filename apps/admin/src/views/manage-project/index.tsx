@@ -1,34 +1,34 @@
-import { Plus as PlusIcon } from 'lucide-vue-next'
-import { defineComponent, ref, watch, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { ProjectModel } from '~/models/project'
+import type { ProjectModel } from "~/models/project";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { Plus as PlusIcon } from "lucide-vue-next";
+import { defineComponent, ref, watch, watchEffect } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { projectsApi } from '~/api/projects'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { queryKeys } from '~/hooks/queries/keys'
-import { useDataTable } from '~/hooks/use-data-table'
-import { useLayout } from '~/layouts/content'
-import { RouteName } from '~/router/name'
+import { projectsApi } from "~/api/projects";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { queryKeys } from "~/hooks/queries/keys";
+import { useDataTable } from "~/hooks/use-data-table";
+import { useLayout } from "~/layouts/content";
+import { RouteName } from "~/router/name";
 
 import {
   ProjectCreatePanel,
   ProjectDetailEmptyState,
   ProjectDetailPanel,
-} from './components/project-detail-panel'
-import { ProjectList } from './components/project-list'
+} from "./components/project-detail-panel";
+import { ProjectList } from "./components/project-list";
 
 export default defineComponent({
-  name: 'ProjectListPage',
+  name: "ProjectListPage",
   setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const queryClient = useQueryClient()
-    const { setActions } = useLayout()
-    const { isMobile } = useMasterDetailLayout()
+    const router = useRouter();
+    const route = useRoute();
+    const queryClient = useQueryClient();
+    const { setActions } = useLayout();
+    const { isMobile } = useMasterDetailLayout();
 
     const {
       data: projects,
@@ -36,65 +36,65 @@ export default defineComponent({
       isLoading: loading,
       setPage,
     } = useDataTable<ProjectModel>({
-      queryKey: (params) => queryKeys.projects.list(params),
-      queryFn: (params) =>
+      queryKey: params => queryKeys.projects.list(params),
+      queryFn: params =>
         projectsApi.getList({ page: params.page, size: params.size }),
       pageSize: 20,
-    })
+    });
 
-    const selectedId = ref<string | null>((route.query.id as string) || null)
-    const showDetailOnMobile = ref(false)
-    const isCreating = ref(false)
+    const selectedId = ref<string | null>((route.query.id as string) || null);
+    const showDetailOnMobile = ref(false);
+    const isCreating = ref(false);
 
     const handleAddProject = () => {
-      isCreating.value = true
-      selectedId.value = null
+      isCreating.value = true;
+      selectedId.value = null;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleCancelCreate = () => {
-      isCreating.value = false
-    }
+      isCreating.value = false;
+    };
 
     const handleCreated = (project: ProjectModel) => {
-      isCreating.value = false
-      selectedId.value = project.id
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-    }
+      isCreating.value = false;
+      selectedId.value = project.id;
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+    };
 
     const deleteMutation = useMutation({
       mutationFn: projectsApi.delete,
       onSuccess: () => {
-        toast.success('删除成功')
+        toast.success("删除成功");
         if (selectedId.value) {
-          selectedId.value = null
-          showDetailOnMobile.value = false
+          selectedId.value = null;
+          showDetailOnMobile.value = false;
         }
-        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       },
-    })
+    });
 
     const handleDelete = (id: string) => {
-      deleteMutation.mutate(id)
-    }
+      deleteMutation.mutate(id);
+    };
 
     const handleSelect = (project: ProjectModel) => {
-      isCreating.value = false
-      selectedId.value = project.id!
+      isCreating.value = false;
+      selectedId.value = project.id!;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
     const handleSaved = () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-    }
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+    };
 
     watch(
       selectedId,
@@ -102,10 +102,10 @@ export default defineComponent({
         router.replace({
           name: RouteName.ListProject,
           query: (id ? { id } : {}),
-        })
+        });
       },
-      { flush: 'post' },
-    )
+      { flush: "post" },
+    );
 
     watchEffect(() => {
       setActions(
@@ -115,8 +115,8 @@ export default defineComponent({
           variant="success"
           name="新建项目"
         />,
-      )
-    })
+      );
+    });
 
     return () => (
       <MasterDetailLayout
@@ -137,25 +137,29 @@ export default defineComponent({
             />
           ),
           detail: () =>
-            isCreating.value ? (
-              <ProjectCreatePanel
-                isMobile={isMobile.value}
-                onBack={handleBack}
-                onCancel={handleCancelCreate}
-                onCreated={handleCreated}
-              />
-            ) : selectedId.value ? (
-              <ProjectDetailPanel
-                projectId={selectedId.value}
-                isMobile={isMobile.value}
-                onBack={handleBack}
-                onDelete={handleDelete}
-                onSaved={handleSaved}
-              />
-            ) : null,
+            isCreating.value
+              ? (
+                  <ProjectCreatePanel
+                    isMobile={isMobile.value}
+                    onBack={handleBack}
+                    onCancel={handleCancelCreate}
+                    onCreated={handleCreated}
+                  />
+                )
+              : selectedId.value
+                ? (
+                    <ProjectDetailPanel
+                      projectId={selectedId.value}
+                      isMobile={isMobile.value}
+                      onBack={handleBack}
+                      onDelete={handleDelete}
+                      onSaved={handleSaved}
+                    />
+                  )
+                : null,
           empty: () => <ProjectDetailEmptyState />,
         }}
       </MasterDetailLayout>
-    )
+    );
   },
-})
+});

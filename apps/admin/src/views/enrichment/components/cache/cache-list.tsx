@@ -1,18 +1,18 @@
-import { Loader2 as LoaderIcon } from 'lucide-vue-next'
-import { NScrollbar } from 'naive-ui'
-import { defineComponent } from 'vue'
-import type { EnrichmentRow } from '~/models/enrichment'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { EnrichmentRow } from "~/models/enrichment";
+import { Loader2 as LoaderIcon } from "lucide-vue-next";
+import { NScrollbar } from "naive-ui";
+import { defineComponent } from "vue";
 
-import { CompactPagination } from '~/components/pagination/compact-pagination'
+import { CompactPagination } from "~/components/pagination/compact-pagination";
 
-import { CacheEmptyState } from './cache-empty-state'
-import { CacheListItem } from './cache-list-item'
+import { CacheEmptyState } from "./cache-empty-state";
+import { CacheListItem } from "./cache-list-item";
 
-export type CacheFilterMode = 'all' | 'failed'
+export type CacheFilterMode = "all" | "failed";
 
 export const CacheList = defineComponent({
-  name: 'CacheList',
+  name: "CacheList",
   props: {
     rows: {
       type: Array as PropType<EnrichmentRow[]>,
@@ -45,42 +45,46 @@ export const CacheList = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full min-h-0 flex-col">
-        <div class="min-h-0 flex-1">
-          {props.loading && props.rows.length === 0 ? (
-            <div class="flex items-center justify-center py-16">
-              <LoaderIcon class="size-5 animate-spin text-neutral-400" />
-            </div>
-          ) : props.rows.length === 0 ? (
-            <CacheEmptyState filtered={props.filterMode === 'failed'} />
-          ) : (
-            <NScrollbar class="h-full">
-              <div>
-                {props.rows.map((row) => (
-                  <CacheListItem
-                    key={row.id}
-                    row={row}
-                    selected={props.selectedId === row.id}
-                    onSelect={() => props.onSelect(row)}
-                  />
-                ))}
-              </div>
-            </NScrollbar>
-          )}
+      <div class="flex flex-col h-full min-h-0">
+        <div class="flex-1 min-h-0">
+          {props.loading && props.rows.length === 0
+            ? (
+                <div class="py-16 flex items-center justify-center">
+                  <LoaderIcon class="text-neutral-400 size-5 animate-spin" />
+                </div>
+              )
+            : props.rows.length === 0
+              ? (
+                  <CacheEmptyState filtered={props.filterMode === "failed"} />
+                )
+              : (
+                  <NScrollbar class="h-full">
+                    <div>
+                      {props.rows.map(row => (
+                        <CacheListItem
+                          key={row.id}
+                          row={row}
+                          selected={props.selectedId === row.id}
+                          onSelect={() => props.onSelect(row)}
+                        />
+                      ))}
+                    </div>
+                  </NScrollbar>
+                )}
         </div>
 
         {props.pageCount > 1 && (
-          <div class="flex shrink-0 items-center justify-end border-t border-neutral-200 px-3 py-1.5 dark:border-neutral-800">
+          <div class="px-3 py-1.5 border-t border-neutral-200 flex shrink-0 items-center justify-end dark:border-neutral-800">
             <CompactPagination
               page={props.page}
               pageCount={props.pageCount}
               pageSize={props.pageSize}
-              onPageChange={(p) => props.onPageChange(p)}
-              onPageSizeChange={(s) => props.onPageSizeChange(s)}
+              onPageChange={p => props.onPageChange(p)}
+              onPageSizeChange={s => props.onPageSizeChange(s)}
             />
           </div>
         )}
       </div>
-    )
+    );
   },
-})
+});

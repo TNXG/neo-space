@@ -1,10 +1,10 @@
-import hljs from 'highlight.js/lib/core'
-import json from 'highlight.js/lib/languages/json'
-import { defineComponent, onMounted, ref, watch } from 'vue'
+import hljs from "highlight.js/lib/core";
+import json from "highlight.js/lib/languages/json";
+import { defineComponent, onMounted, ref, watch } from "vue";
 
-import 'highlight.js/styles/atom-one-dark.css'
+import "highlight.js/styles/atom-one-dark.css";
 
-hljs.registerLanguage('json', json)
+hljs.registerLanguage("json", json);
 
 export const JSONHighlight = defineComponent({
   props: {
@@ -14,34 +14,35 @@ export const JSONHighlight = defineComponent({
     },
   },
   setup(props) {
-    const $ref = ref<HTMLElement>()
+    const $ref = ref<HTMLElement>();
 
     const highlight = () => {
-      const result = hljs.highlight('json', props.code)
-      if (!$ref.value) return
+      const result = hljs.highlight("json", props.code);
+      if (!$ref.value)
+        return;
 
-      $ref.value.innerHTML = result.value
-    }
+      $ref.value.innerHTML = result.value;
+    };
     onMounted(() => {
-      highlight()
-    })
+      highlight();
+    });
     watch(
       () => props.code,
       () => {
-        highlight()
+        highlight();
       },
-    )
+    );
 
     return () => {
       return (
         <pre
-          class={'bg-dark-800 overflow-auto rounded-xl p-4'}
+          class="p-4 rounded-xl bg-dark-800 overflow-auto"
           style={{
-            color: '#bbb',
+            color: "#bbb",
           }}
           ref={$ref}
         />
-      )
-    }
+      );
+    };
   },
-})
+});

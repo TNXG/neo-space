@@ -1,41 +1,41 @@
-import { onMounted } from 'vue'
+import { onMounted } from "vue";
 
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { UIStore } from '~/stores/ui'
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { UIStore } from "~/stores/ui";
 
-import Dark from './theme/dark.json'
-import Light from './theme/light.json'
+import Dark from "./theme/dark.json";
+import Light from "./theme/light.json";
 
-const set = new Set()
+const set = new Set();
 export const useDefineTheme = (
   theme: string,
   json: any,
   cb: (m: any) => any,
 ) => {
   if (set.has(theme)) {
-    return
+    return;
   }
 
   onMounted(() => {
-    import('monaco-editor').then((monaco) => {
-      monaco.editor.defineTheme(theme, json)
-      set.add(theme)
+    import("monaco-editor").then((monaco) => {
+      monaco.editor.defineTheme(theme, json);
+      set.add(theme);
 
-      cb(monaco)
-    })
-  })
-}
+      cb(monaco);
+    });
+  });
+};
 
 export const useDefineMyThemes = () => {
-  const ui = useStoreRef(UIStore)
-  const isDark = ui.isDark
+  const ui = useStoreRef(UIStore);
+  const isDark = ui.isDark;
   const cb = (monaco: any) => {
     if (isDark.value) {
-      monaco.editor.setTheme('dark')
+      monaco.editor.setTheme("dark");
     } else {
-      monaco.editor.setTheme('light')
+      monaco.editor.setTheme("light");
     }
-  }
-  useDefineTheme('light', Light, cb)
-  useDefineTheme('dark', Dark, cb)
-}
+  };
+  useDefineTheme("light", Light, cb);
+  useDefineTheme("dark", Dark, cb);
+};

@@ -1,12 +1,12 @@
-import { NAvatar, NCheckbox } from 'naive-ui'
-import { computed, defineComponent } from 'vue'
-import type { CommentModel } from '~/models/comment'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { CommentModel } from "~/models/comment";
+import { NAvatar, NCheckbox } from "naive-ui";
+import { computed, defineComponent } from "vue";
 
-import { RelativeTime } from '~/components/time/relative-time'
+import { RelativeTime } from "~/components/time/relative-time";
 
 export const CommentListItem = defineComponent({
-  name: 'CommentListItem',
+  name: "CommentListItem",
   props: {
     data: {
       type: Object as PropType<CommentModel>,
@@ -30,33 +30,33 @@ export const CommentListItem = defineComponent({
     },
   },
   setup(props) {
-    const comment = computed(() => props.data)
-    const isReply = computed(() => !!comment.value.parentCommentId)
+    const comment = computed(() => props.data);
+    const isReply = computed(() => !!comment.value.parentCommentId);
     const previewText = computed(() =>
-      comment.value.isDeleted ? '该评论已删除' : comment.value.text,
-    )
+      comment.value.isDeleted ? "该评论已删除" : comment.value.text,
+    );
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.closest('.n-checkbox')) {
-        return
+      const target = e.target as HTMLElement;
+      if (target.closest(".n-checkbox")) {
+        return;
       }
-      props.onSelect()
-    }
+      props.onSelect();
+    };
 
     const handleCheckboxClick = (e: MouseEvent) => {
-      e.stopPropagation()
-    }
+      e.stopPropagation();
+    };
 
     return () => (
       <div
         class={[
-          'flex cursor-pointer items-start gap-2.5 px-4 py-3 transition-colors',
+          "flex cursor-pointer items-start gap-2.5 px-4 py-3 transition-colors",
           props.selected
-            ? 'bg-neutral-100 dark:bg-neutral-800'
+            ? "bg-neutral-100 dark:bg-neutral-800"
             : props.checked
-              ? 'bg-neutral-50 dark:bg-neutral-800/50'
-              : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30',
+              ? "bg-neutral-50 dark:bg-neutral-800/50"
+              : "hover:bg-neutral-50 dark:hover:bg-neutral-800/30",
         ]}
         onClick={handleClick}
       >
@@ -72,31 +72,31 @@ export const CommentListItem = defineComponent({
           circle
           src={comment.value.avatar}
           size={32}
-          class="mt-0.5 shrink-0 bg-neutral-100 dark:bg-neutral-800"
+          class="mt-0.5 bg-neutral-100 shrink-0 dark:bg-neutral-800"
         />
 
-        <div class="min-w-0 flex-1">
-          <div class="flex items-baseline gap-1.5">
-            <span class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <div class="flex-1 min-w-0">
+          <div class="flex gap-1.5 items-baseline">
+            <span class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
               {comment.value.author}
             </span>
             {isReply.value && (
-              <span class="shrink-0 text-xs text-neutral-400">回复</span>
+              <span class="text-xs text-neutral-400 shrink-0">回复</span>
             )}
-            <span class="ml-auto shrink-0 text-xs text-neutral-400">
+            <span class="text-xs text-neutral-400 ml-auto shrink-0">
               <RelativeTime time={comment.value.createdAt} />
             </span>
           </div>
-          <p class="mt-0.5 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
+          <p class="text-sm text-neutral-600 mt-0.5 line-clamp-2 dark:text-neutral-400">
             {previewText.value}
           </p>
           {comment.value.isWhispers && (
-            <span class="mt-1 inline-flex items-center rounded-full bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500">
+            <span class="text-xs text-yellow-800 font-medium mt-1 px-1.5 py-0.5 rounded-full bg-yellow-100 inline-flex items-center dark:text-yellow-500 dark:bg-yellow-900/30">
               悄悄话
             </span>
           )}
         </div>
       </div>
-    )
+    );
   },
-})
+});

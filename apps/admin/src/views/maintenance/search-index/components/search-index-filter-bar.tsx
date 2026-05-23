@@ -1,13 +1,13 @@
-import { Search as SearchIcon } from 'lucide-vue-next'
-import { NButton, NInput, NSelect } from 'naive-ui'
-import { defineComponent } from 'vue'
-import type { SearchIndexRefType } from '~/models/search-index'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { SearchIndexRefType } from "~/models/search-index";
+import { Search as SearchIcon } from "lucide-vue-next";
+import { NButton, NInput, NSelect } from "naive-ui";
+import { defineComponent } from "vue";
 
-import { refTypeOptions } from './constants'
+import { refTypeOptions } from "./constants";
 
 export const SearchIndexFilterBar = defineComponent({
-  name: 'SearchIndexFilterBar',
+  name: "SearchIndexFilterBar",
   props: {
     refType: { type: String as PropType<SearchIndexRefType | undefined> },
     lang: { type: String, required: true },
@@ -37,39 +37,40 @@ export const SearchIndexFilterBar = defineComponent({
           size="small"
           placeholder="标题 / 正文关键词"
           value={props.keyword}
-          onUpdateValue={(v) => props.onKeywordInput(v)}
+          onUpdateValue={v => props.onKeywordInput(v)}
           onKeyup={(e: KeyboardEvent) => {
-            if (e.key === 'Enter') props.onKeywordCommit()
+            if (e.key === "Enter")
+              props.onKeywordCommit();
           }}
           clearable
         >
           {{
             prefix: () => (
               <SearchIcon
-                class="size-3.5 text-neutral-400"
+                class="text-neutral-400 size-3.5"
                 aria-hidden="true"
               />
             ),
           }}
         </NInput>
-        <div class="flex items-center gap-2">
+        <div class="flex gap-2 items-center">
           <NSelect
             size="small"
             class="flex-1"
             value={props.refType}
             options={refTypeOptions}
-            onUpdateValue={(v) => props.onRefTypeChange(v as any)}
+            onUpdateValue={v => props.onRefTypeChange(v as any)}
           />
           <NInput
             size="small"
             class="flex-1"
             placeholder="lang (zh/en)"
             value={props.lang}
-            onUpdateValue={(v) => props.onLangChange(v)}
+            onUpdateValue={v => props.onLangChange(v)}
             clearable
           />
         </div>
-        <div class="flex items-center justify-end gap-1">
+        <div class="flex gap-1 items-center justify-end">
           <NButton size="tiny" quaternary onClick={() => props.onReset()}>
             重置
           </NButton>
@@ -82,6 +83,6 @@ export const SearchIndexFilterBar = defineComponent({
           </NButton>
         </div>
       </div>
-    )
+    );
   },
-})
+});

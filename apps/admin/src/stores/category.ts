@@ -1,30 +1,30 @@
-import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import type { CategoryModel } from '~/models/category'
+import type { CategoryModel } from "~/models/category";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
 
-import { categoriesApi } from '~/api/categories'
+import { categoriesApi } from "~/api/categories";
 
-export const useCategoryStore = defineStore('category', () => {
-  const data = ref<CategoryModel[]>()
+export const useCategoryStore = defineStore("category", () => {
+  const data = ref<CategoryModel[]>();
 
   const map = computed(
-    () => new Map(data.value?.map((i) => [i.id, i])) || new Map(),
-  )
+    () => new Map(data.value?.map(i => [i.id, i])) || new Map(),
+  );
 
   return {
     data,
     map,
     get(id: string) {
-      return map.value.get(id)
+      return map.value.get(id);
     },
     async fetch(force?: boolean) {
       if (!data.value || force) {
-        data.value = await categoriesApi.getList({ type: 'Category' })
+        data.value = await categoriesApi.getList({ type: "Category" });
       } else {
-        return data.value
+        return data.value;
       }
     },
-  }
-})
+  };
+});
 
-export { useCategoryStore as CategoryStore }
+export { useCategoryStore as CategoryStore };

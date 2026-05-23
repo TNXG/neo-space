@@ -1,15 +1,15 @@
-import { Copy as CopyIcon, Github as GithubIcon } from 'lucide-vue-next'
-import { NButton, NForm, NFormItem, NInput, NSwitch } from 'naive-ui'
-import { defineComponent, ref, watchEffect } from 'vue'
-import { toast } from 'vue-sonner'
-import type { AuthSocialProviders } from '~/utils/authjs/auth'
-import type { FormInst } from 'naive-ui/lib'
+import type { FormInst } from "naive-ui/lib";
+import type { AuthSocialProviders } from "~/utils/authjs/auth";
+import { Copy as CopyIcon, Github as GithubIcon } from "lucide-vue-next";
+import { NButton, NForm, NFormItem, NInput, NSwitch } from "naive-ui";
+import { defineComponent, ref, watchEffect } from "vue";
+import { toast } from "vue-sonner";
 
-import { optionsApi } from '~/api/options'
-import { API_URL } from '~/constants/env'
-import { authClient } from '~/utils/authjs/auth'
+import { optionsApi } from "~/api/options";
+import { API_URL } from "~/constants/env";
+import { authClient } from "~/utils/authjs/auth";
 
-import { useInjectOauthData } from '../providers/oauth'
+import { useInjectOauthData } from "../providers/oauth";
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" class="size-5">
@@ -30,17 +30,17 @@ const GoogleIcon = () => (
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
   </svg>
-)
+);
 
 const providerIcons: Record<string, any> = {
   github: GithubIcon,
   google: GoogleIcon,
-}
+};
 
 export const createProvideSectionComponent = (
   type: AuthSocialProviders,
   options: {
-    name: string
+    name: string;
   },
 ) =>
   defineComponent({
@@ -49,33 +49,34 @@ export const createProvideSectionComponent = (
         await authClient.signIn.social({
           provider: type,
           callbackURL: `${location.href}?validate=true`,
-        })
-      }
+        });
+      };
 
-      const oauthData = useInjectOauthData()
+      const oauthData = useInjectOauthData();
       const formValueRef = ref({
-        clientId: '',
-        secret: '',
-      })
-      const isEnabled = ref(false)
+        clientId: "",
+        secret: "",
+      });
+      const isEnabled = ref(false);
 
       watchEffect(() => {
-        if (oauthData.value[type] === undefined) return
-        const { clientId, enabled } = oauthData.value[type]
-        isEnabled.value = enabled
-        formValueRef.value.clientId = clientId
-      })
+        if (oauthData.value[type] === undefined)
+          return;
+        const { clientId, enabled } = oauthData.value[type];
+        isEnabled.value = enabled;
+        formValueRef.value.clientId = clientId;
+      });
 
-      const formRef = ref<null | FormInst>(null)
+      const formRef = ref<null | FormInst>(null);
       const rules = {
-        clientId: [{ required: true, message: 'Client Id 不能为空' }],
-        secret: [{ required: true, message: 'Client Secret 不能为空' }],
-      }
+        clientId: [{ required: true, message: "Client Id 不能为空" }],
+        secret: [{ required: true, message: "Client Secret 不能为空" }],
+      };
 
       const handleSave = async () => {
-        await formRef.value?.validate()
+        await formRef.value?.validate();
 
-        await optionsApi.patch('oauth', {
+        await optionsApi.patch("oauth", {
           providers: [
             {
               type,
@@ -92,31 +93,31 @@ export const createProvideSectionComponent = (
               clientId: formValueRef.value.clientId,
             },
           },
-        })
-        toast.success('保存成功')
-      }
+        });
+        toast.success("保存成功");
+      };
 
       const copyCallbackUrl = async () => {
-        const url = `${API_URL}/auth/callback/${type}`
+        const url = `${API_URL}/auth/callback/${type}`;
         try {
-          await navigator.clipboard.writeText(url)
-          toast.success('已复制到剪贴板')
+          await navigator.clipboard.writeText(url);
+          toast.success("已复制到剪贴板");
         } catch {
-          toast.error('复制失败')
+          toast.error("复制失败");
         }
-      }
+      };
 
-      const IconComponent = providerIcons[type] || GithubIcon
+      const IconComponent = providerIcons[type] || GithubIcon;
 
       return () => (
         <div class="px-4 py-4">
           {/* Header */}
-          <div class="mb-4 flex items-center gap-3">
-            <div class="flex size-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+          <div class="mb-4 flex gap-3 items-center">
+            <div class="text-neutral-500 rounded-lg bg-neutral-100 flex size-8 items-center justify-center dark:text-neutral-400 dark:bg-neutral-800">
               <IconComponent class="size-4" />
             </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm text-neutral-900 font-semibold dark:text-neutral-100">
                 {options.name}
               </h3>
             </div>
@@ -124,7 +125,7 @@ export const createProvideSectionComponent = (
               size="small"
               value={isEnabled.value}
               onUpdateValue={(v) => {
-                isEnabled.value = v
+                isEnabled.value = v;
               }}
             />
           </div>
@@ -142,7 +143,7 @@ export const createProvideSectionComponent = (
                 size="small"
                 value={formValueRef.value.clientId}
                 onUpdateValue={(v) => {
-                  formValueRef.value.clientId = v
+                  formValueRef.value.clientId = v;
                 }}
                 placeholder="输入 Client ID"
               />
@@ -155,7 +156,7 @@ export const createProvideSectionComponent = (
                 type="password"
                 value={formValueRef.value.secret}
                 onUpdateValue={(v) => {
-                  formValueRef.value.secret = v
+                  formValueRef.value.secret = v;
                 }}
                 placeholder="输入 Client Secret"
               />
@@ -164,16 +165,18 @@ export const createProvideSectionComponent = (
 
           {/* Callback URL */}
           <div class="mb-4 mt-2">
-            <div class="mb-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <div class="text-xs text-neutral-500 mb-1 dark:text-neutral-400">
               Callback URL
             </div>
-            <div class="flex items-center gap-2">
-              <span class="flex-1 truncate font-mono text-xs text-neutral-600 dark:text-neutral-400">
-                {API_URL}/auth/callback/{type}
+            <div class="flex gap-2 items-center">
+              <span class="text-xs text-neutral-600 font-mono flex-1 truncate dark:text-neutral-400">
+                {API_URL}
+                /auth/callback/
+                {type}
               </span>
               <button
                 type="button"
-                class="hover:text-primary text-neutral-400 transition-colors"
+                class="text-neutral-400 transition-colors hover:text-primary"
                 onClick={copyCallbackUrl}
               >
                 <CopyIcon class="size-3.5" />
@@ -182,7 +185,7 @@ export const createProvideSectionComponent = (
           </div>
 
           {/* Actions */}
-          <div class="flex items-center justify-end gap-2">
+          <div class="flex gap-2 items-center justify-end">
             <NButton onClick={handleValidate} size="tiny" quaternary>
               验证连接
             </NButton>
@@ -191,14 +194,14 @@ export const createProvideSectionComponent = (
             </NButton>
           </div>
         </div>
-      )
+      );
     },
-  })
+  });
 
-export const GitHubProvider = createProvideSectionComponent('github', {
-  name: 'GitHub',
-})
+export const GitHubProvider = createProvideSectionComponent("github", {
+  name: "GitHub",
+});
 
-export const GoogleProvider = createProvideSectionComponent('google', {
-  name: 'Google',
-})
+export const GoogleProvider = createProvideSectionComponent("google", {
+  name: "Google",
+});

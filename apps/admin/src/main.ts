@@ -1,63 +1,63 @@
-import './monaco'
-import 'virtual:uno.css'
+import { VueQueryPlugin } from "@tanstack/vue-query";
+import { createApp } from "vue";
 
-import { createApp } from 'vue'
+import { queryClient } from "~/lib/query-client";
 
-import { VueQueryPlugin } from '@tanstack/vue-query'
+import { piniaStore } from "~/stores";
 
-import { queryClient } from '~/lib/query-client'
-import { piniaStore } from '~/stores'
-import { bus } from '~/utils/event-bus'
+import { bus } from "~/utils/event-bus";
+import App from "./App";
+import { router } from "./router";
 
-import App from './App'
+import "./monaco";
 
-import './index.css'
+import "virtual:uno.css";
 
-import { router } from './router'
+import "./index.css";
 
-const app = createApp(App)
+const app = createApp(App);
 
-app.use(router)
-app.use(piniaStore)
-app.use(VueQueryPlugin, { queryClient })
+app.use(router);
+app.use(piniaStore);
+app.use(VueQueryPlugin, { queryClient });
 
 // Fade out initial loader before mounting
-const loader = document.getElementById('initial-loader')
+const loader = document.getElementById("initial-loader");
 if (loader) {
-  loader.classList.add('fade-out')
+  loader.classList.add("fade-out");
   setTimeout(() => {
-    app.mount('#app')
-  }, 200)
+    app.mount("#app");
+  }, 200);
 } else {
-  app.mount('#app')
+  app.mount("#app");
 }
 
 if (__DEV__) {
-  window.app = app
-  window.bus = bus
+  window.app = app;
+  window.bus = bus;
 }
 
 // cjs webpack compatibility
 // @ts-ignore
-window.global = window
+window.global = window;
 // @ts-ignore
 window.process = {
   env: {},
-}
+};
 // @ts-ignore
 window.module = {
   exports: {},
-}
+};
 
 declare global {
   interface JSON {
-    safeParse: typeof JSON.parse
+    safeParse: typeof JSON.parse;
   }
 }
 JSON.safeParse = (...rest) => {
   try {
-    return JSON.parse(...rest)
+    return JSON.parse(...rest);
   } catch {
-    return null
+    return null;
   }
-}
+};

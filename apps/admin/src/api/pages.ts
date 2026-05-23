@@ -1,23 +1,23 @@
-import type { PaginateResult } from '~/models/base'
-import type { PageModel } from '~/models/page'
+import type { PaginateResult } from "~/models/base";
+import type { PageModel } from "~/models/page";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface GetPagesParams {
-  page?: number
-  size?: number
-  select?: string
+  page?: number;
+  size?: number;
+  select?: string;
 }
 
 export interface CreatePageData {
-  title: string
-  text: string
-  slug: string
-  subtitle?: string
-  order?: number
-  meta?: Record<string, unknown>
+  title: string;
+  text: string;
+  slug: string;
+  subtitle?: string;
+  order?: number;
+  meta?: Record<string, unknown>;
   /** 关联的草稿 ID，发布时传递以标记草稿为已发布 */
-  draftId?: string
+  draftId?: string;
 }
 
 export interface UpdatePageData extends Partial<CreatePageData> {}
@@ -25,13 +25,13 @@ export interface UpdatePageData extends Partial<CreatePageData> {}
 export const pagesApi = {
   // 获取页面列表
   getList: (params?: GetPagesParams) =>
-    request.get<PaginateResult<PageModel>>('/pages', { params }),
+    request.get<PaginateResult<PageModel>>("/pages", { params }),
 
   // 获取单个页面
   getById: (id: string) => request.get<PageModel>(`/pages/${id}`),
 
   // 创建页面
-  create: (data: CreatePageData) => request.post<PageModel>('/pages', { data }),
+  create: (data: CreatePageData) => request.post<PageModel>("/pages", { data }),
 
   // 更新页面
   update: (id: string, data: UpdatePageData) =>
@@ -42,5 +42,5 @@ export const pagesApi = {
 
   // 重新排序
   reorder: (seq: Array<{ id: string; order: number }>) =>
-    request.patch<void>('/pages/reorder', { data: { seq } }),
-}
+    request.patch<void>("/pages/reorder", { data: { seq } }),
+};

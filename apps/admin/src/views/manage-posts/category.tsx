@@ -1,3 +1,7 @@
+import type { PropType, Ref } from "vue";
+import type { CategoryModel, TagModel } from "~/models/category";
+import type { PostModel } from "~/models/post";
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import {
   Plus as AddIcon,
   ArrowLeft as ArrowLeftIcon,
@@ -6,7 +10,7 @@ import {
   Pencil,
   Tag as TagIcon,
   Trash2,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -17,7 +21,7 @@ import {
   NPopconfirm,
   NScrollbar,
   NSkeleton,
-} from 'naive-ui'
+} from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -26,92 +30,90 @@ import {
   ref,
   watch,
   watchEffect,
-} from 'vue'
-import { RouterLink } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { CategoryModel, TagModel } from '~/models/category'
-import type { PostModel } from '~/models/post'
-import type { PropType, Ref } from 'vue'
+} from "vue";
+import { RouterLink } from "vue-router";
 
-import { useMutation, useQuery } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { categoriesApi } from '~/api/categories'
-import { postsApi } from '~/api/posts'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { RelativeTime } from '~/components/time/relative-time'
-import { queryKeys } from '~/hooks/queries/keys'
+import { categoriesApi } from "~/api/categories";
+import { postsApi } from "~/api/posts";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { RelativeTime } from "~/components/time/relative-time";
+import { queryKeys } from "~/hooks/queries/keys";
 import {
   usePostsByTagQuery,
   useTagsQuery,
-} from '~/hooks/queries/use-categories'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { useLayout } from '~/layouts/content'
-import { CategoryStore } from '~/stores/category'
+} from "~/hooks/queries/use-categories";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { useLayout } from "~/layouts/content";
+import { CategoryStore } from "~/stores/category";
 
-type CategoryState = {
-  name: string
-  slug: string
+interface CategoryState {
+  name: string;
+  slug: string;
 }
 
-type SelectedItem =
+type SelectedItem
+  = | {
+    kind: "category";
+    id: string;
+  }
   | {
-      kind: 'category'
-      id: string
-    }
-  | {
-      kind: 'tag'
-      name: string
-    }
+    kind: "tag";
+    name: string;
+  };
 
 export const CategoryView = defineComponent({
-  name: 'CategoryView',
+  name: "CategoryView",
   setup() {
-    const categoryStore = useStoreRef(CategoryStore)
-    const { setActions } = useLayout()
-    const { isMobile } = useMasterDetailLayout()
+    const categoryStore = useStoreRef(CategoryStore);
+    const { setActions } = useLayout();
+    const { isMobile } = useMasterDetailLayout();
 
-    const categoriesLoading = ref(true)
+    const categoriesLoading = ref(true);
     const fetchCategories = async (force?: boolean) => {
-      categoriesLoading.value = true
+      categoriesLoading.value = true;
       try {
-        await categoryStore.fetch(force)
+        await categoryStore.fetch(force);
       } finally {
-        categoriesLoading.value = false
+        categoriesLoading.value = false;
       }
-    }
+    };
 
-    const { data: tagsData, isLoading: tagsLoading } = useTagsQuery()
-    const tags = computed(() => tagsData.value ?? [])
-    const categories = computed(() => categoryStore.data.value ?? [])
+    const { data: tagsData, isLoading: tagsLoading } = useTagsQuery();
+    const tags = computed(() => tagsData.value ?? []);
+    const categories = computed(() => categoryStore.data.value ?? []);
 
     onMounted(async () => {
-      await fetchCategories()
-    })
+      await fetchCategories();
+    });
 
-    const selectedItem = ref<SelectedItem | null>(null)
-    const showDetailOnMobile = ref(false)
+    const selectedItem = ref<SelectedItem | null>(null);
+    const showDetailOnMobile = ref(false);
 
     const selectedCategory = computed(() => {
-      const current = selectedItem.value
-      if (!current || current.kind !== 'category') return null
-      return categories.value.find((item) => item.id === current.id)
-    })
+      const current = selectedItem.value;
+      if (!current || current.kind !== "category")
+        return null;
+      return categories.value.find(item => item.id === current.id);
+    });
 
     const selectedTag = computed(() => {
-      const current = selectedItem.value
-      if (!current || current.kind !== 'tag') return null
-      return tags.value.find((item) => item.name === current.name)
-    })
+      const current = selectedItem.value;
+      if (!current || current.kind !== "tag")
+        return null;
+      return tags.value.find(item => item.name === current.name);
+    });
 
-    const selectedCategoryId = computed(() => selectedCategory.value?.id ?? '')
-    const selectedTagName = computed(() => selectedTag.value?.name ?? '')
+    const selectedCategoryId = computed(() => selectedCategory.value?.id ?? "");
+    const selectedTagName = computed(() => selectedTag.value?.name ?? "");
 
-    const { data: categoryPostsData, isLoading: categoryPostsLoading } =
-      useQuery({
+    const { data: categoryPostsData, isLoading: categoryPostsLoading }
+      = useQuery({
         queryKey: computed(() =>
           queryKeys.posts.list({
-            scope: 'category-detail',
+            scope: "category-detail",
             categoryId: selectedCategoryId.value,
             page: 1,
             size: 20,
@@ -122,138 +124,143 @@ export const CategoryView = defineComponent({
             page: 1,
             size: 20,
             categoryIds: [selectedCategoryId.value],
-            select: 'id title created count category slug',
-          })
-          return res.data ?? []
+            select: "id title created count category slug",
+          });
+          return res;
         },
         enabled: computed(() => !!selectedCategoryId.value),
-      })
+      });
 
-    const { data: tagPostsData, isLoading: tagPostsLoading } =
-      usePostsByTagQuery(selectedTagName)
+    const { data: tagPostsData, isLoading: tagPostsLoading }
+      = usePostsByTagQuery(selectedTagName);
 
-    const selectedCategoryPosts = computed(() => categoryPostsData.value ?? [])
-    const selectedTagPosts = computed(() => tagPostsData.value ?? [])
+    const selectedCategoryPosts = computed(() => categoryPostsData.value?.data ?? []);
+    const selectedCategoryPostCount = computed(
+      () => categoryPostsData.value?.pagination.total ?? selectedCategoryPosts.value.length,
+    );
+    const selectedTagPosts = computed(() => tagPostsData.value ?? []);
 
     watch(
       categories,
       (list) => {
-        const current = selectedItem.value
-        if (!current || current.kind !== 'category') return
-        const exists = list.some((item) => item.id === current.id)
+        const current = selectedItem.value;
+        if (!current || current.kind !== "category")
+          return;
+        const exists = list.some(item => item.id === current.id);
         if (!exists) {
-          selectedItem.value = null
-          showDetailOnMobile.value = false
+          selectedItem.value = null;
+          showDetailOnMobile.value = false;
         }
       },
       { immediate: true },
-    )
+    );
 
     watch(
       tags,
       (list) => {
-        const current = selectedItem.value
-        if (!current || current.kind !== 'tag') return
-        const exists = list.some((item) => item.name === current.name)
+        const current = selectedItem.value;
+        if (!current || current.kind !== "tag")
+          return;
+        const exists = list.some(item => item.name === current.name);
         if (!exists) {
-          selectedItem.value = null
-          showDetailOnMobile.value = false
+          selectedItem.value = null;
+          showDetailOnMobile.value = false;
         }
       },
       { immediate: true },
-    )
+    );
 
     const handleSelectCategory = (id: string) => {
-      selectedItem.value = { kind: 'category', id }
+      selectedItem.value = { kind: "category", id };
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleSelectTag = (name: string) => {
-      selectedItem.value = { kind: 'tag', name }
+      selectedItem.value = { kind: "tag", name };
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
-    const resetState = () => ({ name: '', slug: '' })
-    const showDialog = ref<boolean | string>(false)
-    const editCategoryState = ref<CategoryState>(resetState())
+    const resetState = () => ({ name: "", slug: "" });
+    const showDialog = ref<boolean | string>(false);
+    const editCategoryState = ref<CategoryState>(resetState());
 
     const openCreateDialog = () => {
-      editCategoryState.value = resetState()
-      showDialog.value = true
-    }
+      editCategoryState.value = resetState();
+      showDialog.value = true;
+    };
 
     const deleteMutation = useMutation({
       mutationFn: categoriesApi.delete,
       onSuccess: async (_, id) => {
-        toast.success('删除成功')
+        toast.success("删除成功");
         if (
-          selectedItem.value?.kind === 'category' &&
-          selectedItem.value.id === id
+          selectedItem.value?.kind === "category"
+          && selectedItem.value.id === id
         ) {
-          selectedItem.value = null
-          showDetailOnMobile.value = false
+          selectedItem.value = null;
+          showDetailOnMobile.value = false;
         }
-        await fetchCategories(true)
+        await fetchCategories(true);
       },
-    })
+    });
 
     const createMutation = useMutation({
       mutationFn: categoriesApi.create,
       onSuccess: (category) => {
-        toast.success('创建成功')
+        toast.success("创建成功");
 
         if (!categoryStore.data.value) {
-          categoryStore.data.value = [category]
+          categoryStore.data.value = [category];
         } else {
-          categoryStore.data.value.push(category)
+          categoryStore.data.value.push(category);
         }
 
-        selectedItem.value = { kind: 'category', id: category.id }
+        selectedItem.value = { kind: "category", id: category.id };
         if (isMobile.value) {
-          showDetailOnMobile.value = true
+          showDetailOnMobile.value = true;
         }
 
-        showDialog.value = false
+        showDialog.value = false;
       },
-    })
+    });
 
     const updateMutation = useMutation({
       mutationFn: ({
         id,
         data,
       }: {
-        id: string
-        data: { name: string; slug: string; type: number }
+        id: string;
+        data: { name: string; slug: string; type: number };
       }) => categoriesApi.update(id, data),
       onSuccess: (_, { id, data }) => {
-        toast.success('修改成功')
+        toast.success("修改成功");
         const index = categoryStore.data.value?.findIndex(
-          (item) => item.id === id,
-        )
+          item => item.id === id,
+        );
 
         if (
-          typeof index === 'number' &&
-          index > -1 &&
-          categoryStore.data.value
+          typeof index === "number"
+          && index > -1
+          && categoryStore.data.value
         ) {
           categoryStore.data.value[index] = {
             ...categoryStore.data.value[index],
             name: data.name,
             slug: data.slug,
-          }
+          };
         }
 
-        showDialog.value = false
+        showDialog.value = false;
       },
-    })
+    });
 
     watchEffect(() => {
       setActions(
@@ -263,15 +270,15 @@ export const CategoryView = defineComponent({
           name="新建分类"
           onClick={openCreateDialog}
         />,
-      )
-    })
+      );
+    });
 
     return () => (
       <>
         <MasterDetailLayout
           showDetailOnMobile={showDetailOnMobile.value}
-          defaultSize={'300px'}
-          min={'200px'}
+          defaultSize="300px"
+          min="200px"
           max={0.42}
         >
           {{
@@ -288,35 +295,41 @@ export const CategoryView = defineComponent({
               />
             ),
             detail: () =>
-              selectedCategory.value ? (
-                <CategoryDetailPanel
-                  category={selectedCategory.value}
-                  posts={selectedCategoryPosts.value}
-                  postsLoading={categoryPostsLoading.value}
-                  isMobile={isMobile.value}
-                  onBack={handleBack}
-                  onEdit={(id) => {
-                    const current = categories.value.find(
-                      (item) => item.id === id,
+              selectedCategory.value
+                ? (
+                    <CategoryDetailPanel
+                      category={selectedCategory.value}
+                      posts={selectedCategoryPosts.value}
+                      postCount={selectedCategoryPostCount.value}
+                      postsLoading={categoryPostsLoading.value}
+                      isMobile={isMobile.value}
+                      onBack={handleBack}
+                      onEdit={(id) => {
+                        const current = categories.value.find(
+                          item => item.id === id,
+                        );
+                        if (!current)
+                          return;
+                        editCategoryState.value = {
+                          name: current.name,
+                          slug: current.slug,
+                        };
+                        showDialog.value = id;
+                      }}
+                      onDelete={id => deleteMutation.mutate(id)}
+                    />
+                  )
+                : selectedTag.value
+                  ? (
+                      <TagDetailPanel
+                        tag={selectedTag.value}
+                        posts={selectedTagPosts.value}
+                        postsLoading={tagPostsLoading.value}
+                        isMobile={isMobile.value}
+                        onBack={handleBack}
+                      />
                     )
-                    if (!current) return
-                    editCategoryState.value = {
-                      name: current.name,
-                      slug: current.slug,
-                    }
-                    showDialog.value = id
-                  }}
-                  onDelete={(id) => deleteMutation.mutate(id)}
-                />
-              ) : selectedTag.value ? (
-                <TagDetailPanel
-                  tag={selectedTag.value}
-                  posts={selectedTagPosts.value}
-                  postsLoading={tagPostsLoading.value}
-                  isMobile={isMobile.value}
-                  onBack={handleBack}
-                />
-              ) : null,
+                  : null,
             empty: () => <CategoryDetailEmptyState />,
           }}
         </MasterDetailLayout>
@@ -325,11 +338,11 @@ export const CategoryView = defineComponent({
           show={showDialog}
           initialState={editCategoryState.value}
           onSubmit={(state) => {
-            const id =
-              typeof showDialog.value === 'string' ? showDialog.value : null
+            const id
+              = typeof showDialog.value === "string" ? showDialog.value : null;
             if (!id) {
-              createMutation.mutate({ name: state.name, slug: state.slug })
-              return
+              createMutation.mutate({ name: state.name, slug: state.slug });
+              return;
             }
 
             updateMutation.mutate({
@@ -339,16 +352,16 @@ export const CategoryView = defineComponent({
                 slug: state.slug,
                 type: 0,
               },
-            })
+            });
           }}
         />
       </>
-    )
+    );
   },
-})
+});
 
 const CategoryTagListPanel = defineComponent({
-  name: 'CategoryTagListPanel',
+  name: "CategoryTagListPanel",
   props: {
     categories: {
       type: Array as PropType<CategoryModel[]>,
@@ -385,23 +398,26 @@ const CategoryTagListPanel = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-          <span class="flex items-center gap-1.5 text-base font-semibold text-neutral-900 dark:text-neutral-100">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex h-12 items-center justify-between dark:border-neutral-800">
+          <span class="text-base text-neutral-900 font-semibold flex gap-1.5 items-center dark:text-neutral-100">
             <FolderOpen class="size-4" />
             分类与标签
           </span>
 
           <span class="text-xs text-neutral-400">
-            {props.categories.length} / {props.tags.length}
+            {props.categories.length}
+            {" "}
+            /
+            {props.tags.length}
           </span>
         </div>
 
-        <NScrollbar class="min-h-0 flex-1">
+        <NScrollbar class="flex-1 min-h-0">
           <div>
             <section>
-              <div class="flex h-9 items-center justify-between border-b border-neutral-100 bg-neutral-50/70 px-4 dark:border-neutral-800/60 dark:bg-neutral-900/60">
-                <h3 class="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <div class="px-4 border-b border-neutral-100 bg-neutral-50/70 flex h-9 items-center justify-between dark:border-neutral-800/60 dark:bg-neutral-900/60">
+                <h3 class="text-xs text-neutral-500 tracking-wide font-medium uppercase">
                   分类
                 </h3>
                 <span class="text-xs text-neutral-400">
@@ -409,40 +425,44 @@ const CategoryTagListPanel = defineComponent({
                 </span>
               </div>
 
-              {props.categoriesLoading ? (
-                <ListSectionSkeleton count={4} />
-              ) : props.categories.length === 0 ? (
-                <div class="border-b border-neutral-100 px-4 py-8 text-center dark:border-neutral-800/60">
-                  <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                    暂无分类
-                  </p>
-                  <NButton
-                    size="small"
-                    type="primary"
-                    class="mt-3"
-                    onClick={props.onAddCategory}
-                  >
-                    创建分类
-                  </NButton>
-                </div>
-              ) : (
-                props.categories.map((item) => (
-                  <CategoryListRow
-                    key={item.id}
-                    category={item}
-                    selected={
-                      props.selectedItem?.kind === 'category' &&
-                      props.selectedItem.id === item.id
-                    }
-                    onSelect={() => props.onSelectCategory(item.id)}
-                  />
-                ))
-              )}
+              {props.categoriesLoading
+                ? (
+                    <ListSectionSkeleton count={4} />
+                  )
+                : props.categories.length === 0
+                  ? (
+                      <div class="px-4 py-8 text-center border-b border-neutral-100 dark:border-neutral-800/60">
+                        <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                          暂无分类
+                        </p>
+                        <NButton
+                          size="small"
+                          type="primary"
+                          class="mt-3"
+                          onClick={props.onAddCategory}
+                        >
+                          创建分类
+                        </NButton>
+                      </div>
+                    )
+                  : (
+                      props.categories.map(item => (
+                        <CategoryListRow
+                          key={item.id}
+                          category={item}
+                          selected={
+                            props.selectedItem?.kind === "category"
+                            && props.selectedItem.id === item.id
+                          }
+                          onSelect={() => props.onSelectCategory(item.id)}
+                        />
+                      ))
+                    )}
             </section>
 
             <section>
-              <div class="flex h-9 items-center justify-between border-b border-neutral-100 bg-neutral-50/70 px-4 dark:border-neutral-800/60 dark:bg-neutral-900/60">
-                <h3 class="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <div class="px-4 border-b border-neutral-100 bg-neutral-50/70 flex h-9 items-center justify-between dark:border-neutral-800/60 dark:bg-neutral-900/60">
+                <h3 class="text-xs text-neutral-500 tracking-wide font-medium uppercase">
                   标签
                 </h3>
                 <span class="text-xs text-neutral-400">
@@ -450,37 +470,41 @@ const CategoryTagListPanel = defineComponent({
                 </span>
               </div>
 
-              {props.tagsLoading ? (
-                <ListSectionSkeleton count={6} compact />
-              ) : props.tags.length === 0 ? (
-                <div class="border-b border-neutral-100 px-4 py-8 text-center dark:border-neutral-800/60">
-                  <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                    暂无标签
-                  </p>
-                </div>
-              ) : (
-                props.tags.map((tag) => (
-                  <TagListRow
-                    key={tag.name}
-                    tag={tag}
-                    selected={
-                      props.selectedItem?.kind === 'tag' &&
-                      props.selectedItem.name === tag.name
-                    }
-                    onSelect={() => props.onSelectTag(tag.name)}
-                  />
-                ))
-              )}
+              {props.tagsLoading
+                ? (
+                    <ListSectionSkeleton count={6} compact />
+                  )
+                : props.tags.length === 0
+                  ? (
+                      <div class="px-4 py-8 text-center border-b border-neutral-100 dark:border-neutral-800/60">
+                        <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                          暂无标签
+                        </p>
+                      </div>
+                    )
+                  : (
+                      props.tags.map(tag => (
+                        <TagListRow
+                          key={tag.name}
+                          tag={tag}
+                          selected={
+                            props.selectedItem?.kind === "tag"
+                            && props.selectedItem.name === tag.name
+                          }
+                          onSelect={() => props.onSelectTag(tag.name)}
+                        />
+                      ))
+                    )}
             </section>
           </div>
         </NScrollbar>
       </div>
-    )
+    );
   },
-})
+});
 
 const CategoryListRow = defineComponent({
-  name: 'CategoryListRow',
+  name: "CategoryListRow",
   props: {
     category: {
       type: Object as PropType<CategoryModel>,
@@ -500,33 +524,33 @@ const CategoryListRow = defineComponent({
       <button
         type="button"
         class={[
-          'flex w-full items-center gap-3 border-b border-neutral-100 px-4 py-3 text-left transition-colors dark:border-neutral-800/60',
+          "flex w-full items-center gap-3 border-b border-neutral-100 px-4 py-3 text-left transition-colors dark:border-neutral-800/60",
           props.selected
-            ? 'bg-neutral-100 dark:bg-neutral-800'
-            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/40',
+            ? "bg-neutral-100 dark:bg-neutral-800"
+            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/40",
         ]}
         onClick={props.onSelect}
       >
-        <FolderOpen class="size-4 shrink-0 text-neutral-400" />
+        <FolderOpen class="text-neutral-400 shrink-0 size-4" />
 
-        <div class="min-w-0 flex-1">
-          <h4 class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
             {props.category.name}
           </h4>
-          <div class="mt-0.5 flex items-center gap-1 text-xs text-neutral-400">
-            <Hash class="size-3 shrink-0" />
-            <span class="truncate font-mono">{props.category.slug}</span>
+          <div class="text-xs text-neutral-400 mt-0.5 flex gap-1 items-center">
+            <Hash class="shrink-0 size-3" />
+            <span class="font-mono truncate">{props.category.slug}</span>
           </div>
         </div>
 
         <span class="text-xs text-neutral-400">{props.category.count}</span>
       </button>
-    )
+    );
   },
-})
+});
 
 const TagListRow = defineComponent({
-  name: 'TagListRow',
+  name: "TagListRow",
   props: {
     tag: {
       type: Object as PropType<TagModel>,
@@ -546,30 +570,30 @@ const TagListRow = defineComponent({
       <button
         type="button"
         class={[
-          'flex w-full items-center gap-3 border-b border-neutral-100 px-4 py-3 text-left transition-colors dark:border-neutral-800/60',
+          "flex w-full items-center gap-3 border-b border-neutral-100 px-4 py-3 text-left transition-colors dark:border-neutral-800/60",
           props.selected
-            ? 'bg-neutral-100 dark:bg-neutral-800'
-            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/40',
+            ? "bg-neutral-100 dark:bg-neutral-800"
+            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/40",
         ]}
         onClick={props.onSelect}
       >
-        <TagIcon class="size-4 shrink-0 text-neutral-400" />
+        <TagIcon class="text-neutral-400 shrink-0 size-4" />
 
-        <div class="min-w-0 flex-1">
-          <h4 class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
             {props.tag.name}
           </h4>
-          <p class="mt-0.5 text-xs text-neutral-400">标签</p>
+          <p class="text-xs text-neutral-400 mt-0.5">标签</p>
         </div>
 
         <span class="text-xs text-neutral-400">{props.tag.count}</span>
       </button>
-    )
+    );
   },
-})
+});
 
 const CategoryDetailPanel = defineComponent({
-  name: 'CategoryDetailPanel',
+  name: "CategoryDetailPanel",
   props: {
     category: {
       type: Object as PropType<CategoryModel>,
@@ -577,6 +601,10 @@ const CategoryDetailPanel = defineComponent({
     },
     posts: {
       type: Array as PropType<PostModel[]>,
+      required: true,
+    },
+    postCount: {
+      type: Number,
       required: true,
     },
     postsLoading: {
@@ -601,23 +629,23 @@ const CategoryDetailPanel = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 flex-shrink-0 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-          <div class="flex items-center gap-3">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex flex-shrink-0 h-12 items-center justify-between dark:border-neutral-800">
+          <div class="flex gap-3 items-center">
             {props.isMobile && props.onBack && (
               <button
                 onClick={props.onBack}
-                class="-ml-2 flex size-8 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                class="text-neutral-500 rounded-md flex size-8 items-center justify-center dark:text-neutral-400 hover:text-neutral-900 -ml-2 hover:bg-neutral-100 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
               >
                 <ArrowLeftIcon class="size-5" />
               </button>
             )}
-            <h2 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <h2 class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
               分类详情
             </h2>
           </div>
 
-          <div class="flex items-center gap-1">
+          <div class="flex gap-1 items-center">
             <NButton
               size="small"
               quaternary
@@ -625,7 +653,7 @@ const CategoryDetailPanel = defineComponent({
             >
               {{
                 icon: () => <Pencil class="size-4" />,
-                default: () => '编辑',
+                default: () => "编辑",
               }}
             </NButton>
 
@@ -639,7 +667,7 @@ const CategoryDetailPanel = defineComponent({
                   <NButton size="small" quaternary type="error">
                     {{
                       icon: () => <Trash2 class="size-4" />,
-                      default: () => '删除',
+                      default: () => "删除",
                     }}
                   </NButton>
                 ),
@@ -649,26 +677,30 @@ const CategoryDetailPanel = defineComponent({
           </div>
         </div>
 
-        <NScrollbar class="min-h-0 flex-1">
-          <div class="mx-auto max-w-3xl space-y-6 p-6">
-            <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-              <div class="flex items-start gap-4">
-                <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                  <FolderOpen class="size-6 text-neutral-500" />
+        <NScrollbar class="flex-1 min-h-0">
+          <div class="mx-auto p-6 max-w-3xl space-y-6">
+            <div class="p-4 border border-neutral-200 rounded-xl bg-white dark:border-neutral-800 dark:bg-neutral-900">
+              <div class="flex gap-4 items-start">
+                <div class="rounded-xl bg-neutral-100 flex shrink-0 size-12 items-center justify-center dark:bg-neutral-800">
+                  <FolderOpen class="text-neutral-500 size-6" />
                 </div>
 
-                <div class="min-w-0 flex-1">
-                  <h3 class="truncate text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg text-neutral-900 font-semibold truncate dark:text-neutral-100">
                     {props.category.name}
                   </h3>
-                  <div class="mt-1 flex items-center gap-1 text-xs text-neutral-400">
-                    <Hash class="size-3 shrink-0" />
-                    <span class="truncate font-mono">
+                  <div class="text-xs text-neutral-400 mt-1 flex gap-1 items-center">
+                    <Hash class="shrink-0 size-3" />
+                    <span class="font-mono truncate">
                       {props.category.slug}
                     </span>
                   </div>
-                  <div class="mt-2 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                    <span>{props.category.count} 篇文章</span>
+                  <div class="text-xs text-neutral-500 mt-2 flex gap-3 items-center dark:text-neutral-400">
+                    <span>
+                      {props.postCount}
+                      {" "}
+                      篇文章
+                    </span>
                   </div>
                 </div>
               </div>
@@ -683,12 +715,12 @@ const CategoryDetailPanel = defineComponent({
           </div>
         </NScrollbar>
       </div>
-    )
+    );
   },
-})
+});
 
 const TagDetailPanel = defineComponent({
-  name: 'TagDetailPanel',
+  name: "TagDetailPanel",
   props: {
     tag: {
       type: Object as PropType<TagModel>,
@@ -712,35 +744,39 @@ const TagDetailPanel = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 flex-shrink-0 items-center gap-3 border-b border-neutral-200 px-4 dark:border-neutral-800">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex flex-shrink-0 gap-3 h-12 items-center dark:border-neutral-800">
           {props.isMobile && props.onBack && (
             <button
               onClick={props.onBack}
-              class="-ml-2 flex size-8 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+              class="text-neutral-500 rounded-md flex size-8 items-center justify-center dark:text-neutral-400 hover:text-neutral-900 -ml-2 hover:bg-neutral-100 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
             >
               <ArrowLeftIcon class="size-5" />
             </button>
           )}
-          <h2 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          <h2 class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
             标签详情
           </h2>
         </div>
 
-        <NScrollbar class="min-h-0 flex-1">
-          <div class="mx-auto max-w-3xl space-y-6 p-6">
-            <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-              <div class="flex items-start gap-4">
-                <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                  <TagIcon class="size-6 text-neutral-500" />
+        <NScrollbar class="flex-1 min-h-0">
+          <div class="mx-auto p-6 max-w-3xl space-y-6">
+            <div class="p-4 border border-neutral-200 rounded-xl bg-white dark:border-neutral-800 dark:bg-neutral-900">
+              <div class="flex gap-4 items-start">
+                <div class="rounded-xl bg-neutral-100 flex shrink-0 size-12 items-center justify-center dark:bg-neutral-800">
+                  <TagIcon class="text-neutral-500 size-6" />
                 </div>
 
-                <div class="min-w-0 flex-1">
-                  <h3 class="truncate text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg text-neutral-900 font-semibold truncate dark:text-neutral-100">
                     {props.tag.name}
                   </h3>
-                  <p class="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                    共 {props.tag.count} 篇文章使用该标签
+                  <p class="text-xs text-neutral-500 mt-2 dark:text-neutral-400">
+                    共
+                    {" "}
+                    {props.tag.count}
+                    {" "}
+                    篇文章使用该标签
                   </p>
                 </div>
               </div>
@@ -755,12 +791,12 @@ const TagDetailPanel = defineComponent({
           </div>
         </NScrollbar>
       </div>
-    )
+    );
   },
-})
+});
 
 const PostListSection = defineComponent({
-  name: 'PostListSection',
+  name: "PostListSection",
   props: {
     title: {
       type: String,
@@ -776,96 +812,106 @@ const PostListSection = defineComponent({
     },
     emptyText: {
       type: String,
-      default: '暂无文章',
+      default: "暂无文章",
     },
   },
   setup(props) {
     return () => (
       <section>
         <div class="mb-3 flex items-center justify-between">
-          <h4 class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <h4 class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
             {props.title}
           </h4>
           {!props.loading && props.posts.length > 0 && (
             <span class="text-xs text-neutral-400">
-              {props.posts.length} 篇
+              {props.posts.length}
+              {" "}
+              篇
             </span>
           )}
         </div>
 
-        {props.loading ? (
-          <div class="space-y-2">
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                class="h-11 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-800"
-              />
-            ))}
-          </div>
-        ) : props.posts.length === 0 ? (
-          <p class="rounded-lg border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-6 text-center text-sm text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-400">
-            {props.emptyText}
-          </p>
-        ) : (
-          <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-            {props.posts.map((post) => (
-              <RouterLink
-                key={post._id}
-                to={`/posts/edit?id=${post._id}`}
-                class="flex items-center justify-between gap-4 border-b border-neutral-100 px-4 py-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
-              >
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {post.title}
-                  </p>
-                  <div class="mt-1 flex items-center gap-2 text-xs text-neutral-400">
-                    <RelativeTime time={post.createdAt} />
-                    {typeof post.readCount === 'number' && (
-                      <>
-                        <span>·</span>
-                        <span>{post.readCount} 阅读</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+        {props.loading
+          ? (
+              <div class="space-y-2">
+                {[1, 2, 3, 4].map(item => (
+                  <div
+                    key={item}
+                    class="rounded-lg bg-neutral-100 h-11 animate-pulse dark:bg-neutral-800"
+                  />
+                ))}
+              </div>
+            )
+          : props.posts.length === 0
+            ? (
+                <p class="text-sm text-neutral-500 px-4 py-6 text-center border border-neutral-200 rounded-lg border-dashed bg-neutral-50/60 dark:text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900/50">
+                  {props.emptyText}
+                </p>
+              )
+            : (
+                <div class="border border-neutral-200 rounded-lg bg-white overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
+                  {props.posts.map(post => (
+                    <RouterLink
+                      key={post._id}
+                      to={`/posts/edit?id=${post._id}`}
+                      class="px-4 py-3 border-b border-neutral-100 flex gap-4 transition-colors items-center justify-between last:border-b-0 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                    >
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
+                          {post.title}
+                        </p>
+                        <div class="text-xs text-neutral-400 mt-1 flex gap-2 items-center">
+                          <RelativeTime time={post.createdAt} />
+                          {typeof post.readCount === "number" && (
+                            <>
+                              <span>·</span>
+                              <span>
+                                {post.readCount}
+                                {" "}
+                                阅读
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
 
-                {post.category?.name && (
-                  <span class="shrink-0 text-xs text-neutral-500">
-                    {post.category.name}
-                  </span>
-                )}
-              </RouterLink>
-            ))}
-          </div>
-        )}
+                      {post.category?.name && (
+                        <span class="text-xs text-neutral-500 shrink-0">
+                          {post.category.name}
+                        </span>
+                      )}
+                    </RouterLink>
+                  ))}
+                </div>
+              )}
       </section>
-    )
+    );
   },
-})
+});
 
 const CategoryDetailEmptyState = defineComponent({
-  name: 'CategoryDetailEmptyState',
+  name: "CategoryDetailEmptyState",
   setup() {
     return () => (
       <div class="flex h-full items-center justify-center">
         <div class="text-center">
-          <div class="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-            <FolderOpen class="size-7 text-neutral-400" />
+          <div class="mx-auto mb-4 rounded-full bg-neutral-100 flex size-14 items-center justify-center dark:bg-neutral-800">
+            <FolderOpen class="text-neutral-400 size-7" />
           </div>
-          <h3 class="text-base font-medium text-neutral-900 dark:text-neutral-100">
+          <h3 class="text-base text-neutral-900 font-medium dark:text-neutral-100">
             选择一个分类或标签
           </h3>
-          <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p class="text-sm text-neutral-500 mt-1 dark:text-neutral-400">
             左侧点击项目后在这里查看详情
           </p>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 const ListSectionSkeleton = defineComponent({
-  name: 'ListSectionSkeleton',
+  name: "ListSectionSkeleton",
   props: {
     count: {
       type: Number,
@@ -883,8 +929,8 @@ const ListSectionSkeleton = defineComponent({
           <div
             key={index}
             class={[
-              'flex items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800/60',
-              props.compact ? 'py-2.5' : 'py-3',
+              "flex items-center gap-3 border-b border-neutral-100 px-4 dark:border-neutral-800/60",
+              props.compact ? "py-2.5" : "py-3",
             ]}
           >
             <NSkeleton width={16} height={16} class="rounded" />
@@ -896,53 +942,54 @@ const ListSectionSkeleton = defineComponent({
           </div>
         ))}
       </div>
-    )
+    );
   },
-})
+});
 
 const EditCategoryDialog = defineComponent<{
-  initialState?: CategoryState
-  onSubmit: (state: CategoryState) => void
-  show: Ref<boolean | string>
+  initialState?: CategoryState;
+  onSubmit: (state: CategoryState) => void;
+  show: Ref<boolean | string>;
 }>((props) => {
   const state = reactive<CategoryState>(
-    props.initialState ?? { name: '', slug: '' },
-  )
+    props.initialState ?? { name: "", slug: "" },
+  );
 
   watch(
     () => props.initialState,
     (next) => {
-      if (!next) return
-      state.name = next.name
-      state.slug = next.slug
+      if (!next)
+        return;
+      state.name = next.name;
+      state.slug = next.slug;
     },
     { immediate: true },
-  )
+  );
 
   const handleSubmit = () => {
     if (!state.name || !state.slug) {
-      toast.error('名称和路径不能为空')
-      return
+      toast.error("名称和路径不能为空");
+      return;
     }
 
-    props.onSubmit(state)
-  }
+    props.onSubmit(state);
+  };
 
   return () => (
     <NModal
       transformOrigin="center"
       show={!!props.show.value}
       onUpdateShow={(next) => {
-        props.show.value = next
+        props.show.value = next;
       }}
     >
       {{
         default: () => (
           <NCard
             style="width: 480px; max-width: 90vw"
-            headerStyle={{ textAlign: 'center' }}
+            headerStyle={{ textAlign: "center" }}
             title={
-              typeof props.show.value === 'string' ? '编辑分类' : '新建分类'
+              typeof props.show.value === "string" ? "编辑分类" : "新建分类"
             }
             bordered={false}
             class="!rounded-xl"
@@ -953,18 +1000,18 @@ const EditCategoryDialog = defineComponent<{
                 label="名称"
                 rule={{
                   required: true,
-                  message: '请输入分类名称',
-                  trigger: ['input', 'blur'],
+                  message: "请输入分类名称",
+                  trigger: ["input", "blur"],
                 }}
               >
                 <NInput
                   placeholder="输入分类名称..."
                   onInput={(value) => {
-                    state.name = value
+                    state.name = value;
                   }}
                   value={state.name}
                   autofocus
-                  inputProps={{ autocomplete: 'off' }}
+                  inputProps={{ autocomplete: "off" }}
                 />
               </NFormItemRow>
 
@@ -973,21 +1020,21 @@ const EditCategoryDialog = defineComponent<{
                 label="路径"
                 rule={{
                   required: true,
-                  message: '请输入分类路径',
-                  trigger: ['input', 'blur'],
+                  message: "请输入分类路径",
+                  trigger: ["input", "blur"],
                 }}
               >
                 <NInput
                   placeholder="输入分类路径..."
                   onInput={(value) => {
-                    state.slug = value
+                    state.slug = value;
                   }}
                   value={state.slug}
-                  inputProps={{ autocomplete: 'off' }}
+                  inputProps={{ autocomplete: "off" }}
                 />
               </NFormItemRow>
 
-              <div class="mt-6 flex justify-end gap-3">
+              <div class="mt-6 flex gap-3 justify-end">
                 <NButton onClick={() => (props.show.value = false)} round>
                   取消
                 </NButton>
@@ -1000,10 +1047,10 @@ const EditCategoryDialog = defineComponent<{
         ),
       }}
     </NModal>
-  )
+  );
 })
 ;(EditCategoryDialog as any).props = [
-  'initialState',
-  'onSubmit',
-  'show',
-] as const
+  "initialState",
+  "onSubmit",
+  "show",
+] as const;

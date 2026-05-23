@@ -1,198 +1,200 @@
-import { omit } from 'es-toolkit/compat'
-import { dump, load } from 'js-yaml'
-import JSON5 from 'json5'
-import { computed, nextTick, reactive, ref, watch } from 'vue'
-import { toast } from 'vue-sonner'
-import type { Ref } from 'vue'
+import type { Ref } from "vue";
+import { omit } from "es-toolkit/compat";
+import { dump, load } from "js-yaml";
+import JSON5 from "json5";
+import { computed, nextTick, reactive, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
-import { snippetsApi } from '~/api'
+import { snippetsApi } from "~/api";
 
 import {
   defaultServerlessFunction,
   SnippetModel,
   SnippetType,
-} from '../../../../models/snippet'
+} from "../../../../models/snippet";
 
 export function useSnippetEditor(selectedId: Ref<string | null>) {
-  const editData = ref<SnippetModel>(new SnippetModel())
+  const editData = ref<SnippetModel>(new SnippetModel());
 
   const typeToValueMap = reactive<Record<SnippetType, string>>({
-    [SnippetType.JSON]: JSON.stringify({ name: 'hello world' }, null, 2),
-    [SnippetType.JSON5]: JSON5.stringify({ name: 'hello world' }, null, 2),
-    [SnippetType.YAML]: 'name: hello world',
+    [SnippetType.JSON]: JSON.stringify({ name: "hello world" }, null, 2),
+    [SnippetType.JSON5]: JSON5.stringify({ name: "hello world" }, null, 2),
+    [SnippetType.YAML]: "name: hello world",
     [SnippetType.Function]: defaultServerlessFunction,
-    [SnippetType.Text]: '',
-  })
+    [SnippetType.Text]: "",
+  });
 
-  let jsonFormatBeforeType: SnippetType = SnippetType.JSON
-  let isFetching = false
+  let jsonFormatBeforeType: SnippetType = SnippetType.JSON;
+  let isFetching = false;
 
-  const isNew = computed(() => !selectedId.value)
+  const isNew = computed(() => !selectedId.value);
   const isFunctionType = computed(
     () => editData.value.type === SnippetType.Function,
-  )
+  );
   const isBuiltFunction = computed(
     () =>
-      editData.value.type === SnippetType.Function &&
-      editData.value.builtIn &&
-      !!selectedId.value,
-  )
+      editData.value.type === SnippetType.Function
+      && editData.value.builtIn
+      && !!selectedId.value,
+  );
 
   watch(
     () => editData.value.type,
     (type, beforeType) => {
-      if (isFetching) return
+      if (isFetching)
+        return;
 
-      if (type === 'function' || type === 'text') {
-        editData.value.raw = typeToValueMap[type]
+      if (type === "function" || type === "text") {
+        editData.value.raw = typeToValueMap[type];
 
-        if (type !== 'text') {
-          editData.value.method ??= 'GET'
-          editData.value.enable ??= true
+        if (type !== "text") {
+          editData.value.method ??= "GET";
+          editData.value.enable ??= true;
         }
-        return
+        return;
       }
 
-      if (beforeType !== 'function' && beforeType !== 'text') {
-        jsonFormatBeforeType = beforeType
+      if (beforeType !== "function" && beforeType !== "text") {
+        jsonFormatBeforeType = beforeType;
       }
 
       const object = (() => {
         switch (jsonFormatBeforeType) {
-          case 'json':
-            return JSON.parse(typeToValueMap.json)
-          case 'yaml':
-            return load(typeToValueMap.yaml)
-          case 'json5':
-            return JSON5.parse(typeToValueMap.json5)
-          case 'function':
-            delete editData.value.method
-            delete editData.value.enable
-            return ''
+          case "json":
+            return JSON.parse(typeToValueMap.json);
+          case "yaml":
+            return load(typeToValueMap.yaml);
+          case "json5":
+            return JSON5.parse(typeToValueMap.json5);
+          case "function":
+            delete editData.value.method;
+            delete editData.value.enable;
+            return "";
         }
-      })()
+      })();
 
       const current = (() => {
         switch (type) {
-          case 'json':
-            return JSON.stringify(object, null, 2)
-          case 'yaml':
-            return dump(object)
-          case 'json5':
-            return JSON5.stringify(object, null, 2)
+          case "json":
+            return JSON.stringify(object, null, 2);
+          case "yaml":
+            return dump(object);
+          case "json5":
+            return JSON5.stringify(object, null, 2);
         }
-      })()
+      })();
 
-      editData.value.raw = current || ''
-      typeToValueMap[type] = current || ''
+      editData.value.raw = current || "";
+      typeToValueMap[type] = current || "";
     },
-  )
+  );
 
   const fetchSnippet = async (id: string) => {
-    const data = await snippetsApi.getById(id)
+    const data = await snippetsApi.getById(id);
 
     if (data.type === SnippetType.JSON) {
-      data.raw = JSON.stringify(JSON5.parse(data.raw), null, 2)
+      data.raw = JSON.stringify(JSON5.parse(data.raw), null, 2);
     }
 
-    isFetching = true
-    editData.value = data
-    jsonFormatBeforeType = data.type
-    typeToValueMap[data.type] = data.raw
-    await nextTick()
-    isFetching = false
-  }
+    isFetching = true;
+    editData.value = data;
+    jsonFormatBeforeType = data.type;
+    typeToValueMap[data.type] = data.raw;
+    await nextTick();
+    isFetching = false;
+  };
 
   const reset = (reference?: string) => {
-    editData.value = new SnippetModel()
+    editData.value = new SnippetModel();
     if (reference) {
-      editData.value.reference = reference
+      editData.value.reference = reference;
     }
 
     typeToValueMap[SnippetType.JSON] = JSON.stringify(
-      { name: 'hello world' },
+      { name: "hello world" },
       null,
       2,
-    )
+    );
     typeToValueMap[SnippetType.JSON5] = JSON5.stringify(
-      { name: 'hello world' },
+      { name: "hello world" },
       null,
       2,
-    )
-    typeToValueMap[SnippetType.YAML] = 'name: hello world'
-    typeToValueMap[SnippetType.Function] = defaultServerlessFunction
-    typeToValueMap[SnippetType.Text] = ''
+    );
+    typeToValueMap[SnippetType.YAML] = "name: hello world";
+    typeToValueMap[SnippetType.Function] = defaultServerlessFunction;
+    typeToValueMap[SnippetType.Text] = "";
 
-    jsonFormatBeforeType = SnippetType.JSON
-  }
+    jsonFormatBeforeType = SnippetType.JSON;
+  };
 
   const save = async (): Promise<SnippetModel | null> => {
     const tinyJson = (text: string) => {
       try {
-        return JSON.stringify(JSON.parse(text), null, 0)
+        return JSON.stringify(JSON.parse(text), null, 0);
       } catch {
-        toast.error('JSON 格式错误')
-        return null
+        toast.error("JSON 格式错误");
+        return null;
       }
-    }
+    };
 
     const handleRawText = () => {
-      const currentTypeText = typeToValueMap[editData.value.type]
+      const currentTypeText = typeToValueMap[editData.value.type];
       switch (editData.value.type) {
         case SnippetType.JSON:
-          return tinyJson(currentTypeText)
+          return tinyJson(currentTypeText);
         case SnippetType.YAML:
           try {
-            load(currentTypeText)
+            load(currentTypeText);
           } catch {
-            toast.error('YAML 格式错误')
-            return null
+            toast.error("YAML 格式错误");
+            return null;
           }
-          return currentTypeText
+          return currentTypeText;
         case SnippetType.Function:
-          return currentTypeText
+          return currentTypeText;
         default:
-          return currentTypeText
+          return currentTypeText;
       }
-    }
+    };
 
-    const rawText = handleRawText()
-    if (rawText === null) return null
+    const rawText = handleRawText();
+    if (rawText === null)
+      return null;
 
     const omitData = omit(editData.value, [
-      'id',
-      'createdAt',
-      'updatedAt',
-      'compiledCode',
-      'builtIn',
-    ])
-    const finalData = { ...omitData, raw: rawText }
+      "id",
+      "createdAt",
+      "updatedAt",
+      "compiledCode",
+      "builtIn",
+    ]);
+    const finalData = { ...omitData, raw: rawText };
 
     if (!finalData.metatype) {
-      delete finalData.metatype
+      delete finalData.metatype;
     }
 
     try {
-      let result: SnippetModel
+      let result: SnippetModel;
       if (selectedId.value) {
-        result = await snippetsApi.update(selectedId.value, finalData as any)
-        toast.success('更新成功')
+        result = await snippetsApi.update(selectedId.value, finalData as any);
+        toast.success("更新成功");
       } else {
-        result = await snippetsApi.create(finalData as any)
-        toast.success('创建成功')
+        result = await snippetsApi.create(finalData as any);
+        toast.success("创建成功");
       }
-      return result
+      return result;
     } catch (error) {
-      toast.error('保存失败')
-      return null
+      toast.error("保存失败");
+      return null;
     }
-  }
+  };
 
   const updateEditorValue = (value: string) => {
-    typeToValueMap[editData.value.type] = value
-  }
+    typeToValueMap[editData.value.type] = value;
+  };
 
-  const editorValue = computed(() => typeToValueMap[editData.value.type])
+  const editorValue = computed(() => typeToValueMap[editData.value.type]);
 
   return {
     editData,
@@ -205,5 +207,5 @@ export function useSnippetEditor(selectedId: Ref<string | null>) {
     reset,
     save,
     updateEditorValue,
-  }
+  };
 }

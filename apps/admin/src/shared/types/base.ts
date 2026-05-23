@@ -1,17 +1,17 @@
-import type { Image } from '~/models/base'
+import type { Image } from "~/models/base";
 
-export type ContentFormat = 'markdown' | 'lexical'
+export type ContentFormat = "markdown" | "lexical";
 
-export type WriteBaseType = {
-  title: string
-  text: string
-  contentFormat?: ContentFormat
-  content?: string
+export interface WriteBaseType {
+  title: string;
+  text: string;
+  contentFormat?: ContentFormat;
+  content?: string;
 
-  id?: string
-  images: Image[]
-  createdAt?: string
-  modifiedAt?: string
+  id?: string;
+  images: Image[];
+  createdAt?: string;
+  modifiedAt?: string;
 
-  meta?: any
+  meta?: any;
 }

@@ -1,316 +1,316 @@
-import type { ContentFormat } from '~/shared/types/base'
+import type { ContentFormat } from "~/shared/types/base";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 // AI Writer 类型
 export enum AiQueryType {
-  TitleSlug = 'title-slug',
-  Slug = 'slug',
+  TitleSlug = "title-slug",
+  Slug = "slug",
 }
 
 export interface AIWriterGenerateData {
-  type: AiQueryType
-  text?: string // 当 type 为 title-slug 时需要
-  title?: string // 当 type 为 slug 时需要
+  type: AiQueryType;
+  text?: string; // 当 type 为 title-slug 时需要
+  title?: string; // 当 type 为 slug 时需要
 }
 
 export interface AIWriterGenerateResponse {
-  title?: string
-  slug?: string
+  title?: string;
+  slug?: string;
 }
 
 // AI Summary 类型
 export interface AISummary {
-  id: string
-  createdAt: string
-  summary: string
-  hash: string
-  refId: string
-  lang: string
+  id: string;
+  createdAt: string;
+  summary: string;
+  hash: string;
+  refId: string;
+  lang: string;
 }
 
 export interface GroupedSummary {
-  type: string
-  items: AISummary[]
+  type: string;
+  items: AISummary[];
 }
 
 export interface ArticleInfo {
-  type: 'Post' | 'Note' | 'Page' | 'Recently'
-  title: string
-  id: string
+  type: "Post" | "Note" | "Page" | "Recently";
+  title: string;
+  id: string;
 }
 
 export interface GroupedSummaryData {
-  article: ArticleInfo
-  summaries: AISummary[]
+  article: ArticleInfo;
+  summaries: AISummary[];
 }
 
 export interface GroupedSummaryResponse {
-  data: GroupedSummaryData[]
+  data: GroupedSummaryData[];
   pagination: {
-    total: number
-    currentPage: number
-    totalPage: number
-    size: number
-    hasNextPage: boolean
-    hasPrevPage: boolean
-  }
+    total: number;
+    currentPage: number;
+    totalPage: number;
+    size: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export interface SummaryByRefResponse {
-  summaries: AISummary[]
+  summaries: AISummary[];
   article: {
-    type: 'Post' | 'Note' | 'Page' | 'Recently'
-    document: { title: string }
-  }
+    type: "Post" | "Note" | "Page" | "Recently";
+    document: { title: string };
+  };
 }
 
 // AI Insights 类型
 export interface AIInsights {
-  id: string
-  createdAt: string
-  refId: string
-  lang: string
-  hash: string
-  content: string
-  isTranslation: boolean
-  sourceInsightsId?: string
-  sourceLang?: string
+  id: string;
+  createdAt: string;
+  refId: string;
+  lang: string;
+  hash: string;
+  content: string;
+  isTranslation: boolean;
+  sourceInsightsId?: string;
+  sourceLang?: string;
 }
 
 export interface GroupedInsightsData {
-  article: ArticleInfo
-  insights: AIInsights[]
+  article: ArticleInfo;
+  insights: AIInsights[];
 }
 
 export interface GroupedInsightsResponse {
-  data: GroupedInsightsData[]
+  data: GroupedInsightsData[];
   pagination: {
-    total: number
-    currentPage: number
-    totalPage: number
-    size: number
-    hasNextPage: boolean
-    hasPrevPage: boolean
-  }
+    total: number;
+    currentPage: number;
+    totalPage: number;
+    size: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export interface InsightsByRefResponse {
-  insights: AIInsights[]
+  insights: AIInsights[];
   article: {
-    type: 'Post' | 'Note' | 'Page' | 'Recently'
-    document: { title: string }
-  } | null
+    type: "Post" | "Note" | "Page" | "Recently";
+    document: { title: string };
+  } | null;
 }
 
 // AI Translation 类型
 export interface AITranslation {
-  id: string
-  createdAt: string
-  hash: string
-  refId: string
-  refType: string
-  lang: string
-  sourceLang: string
-  title: string
-  subtitle?: string
-  text: string
-  summary?: string
-  tags?: string[]
-  aiModel?: string
-  aiProvider?: string
-  contentFormat?: ContentFormat
-  content?: string
+  id: string;
+  createdAt: string;
+  hash: string;
+  refId: string;
+  refType: string;
+  lang: string;
+  sourceLang: string;
+  title: string;
+  subtitle?: string;
+  text: string;
+  summary?: string;
+  tags?: string[];
+  aiModel?: string;
+  aiProvider?: string;
+  contentFormat?: ContentFormat;
+  content?: string;
 }
 
 export interface GroupedTranslationData {
-  article: ArticleInfo
-  translations: AITranslation[]
+  article: ArticleInfo;
+  translations: AITranslation[];
 }
 
 export interface GroupedTranslationResponse {
-  data: GroupedTranslationData[]
+  data: GroupedTranslationData[];
   pagination: {
-    total: number
-    currentPage: number
-    totalPage: number
-    size: number
-    hasNextPage: boolean
-    hasPrevPage: boolean
-  }
+    total: number;
+    currentPage: number;
+    totalPage: number;
+    size: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export interface TranslationByRefResponse {
-  translations: AITranslation[]
+  translations: AITranslation[];
   article: {
-    type: 'Post' | 'Note' | 'Page' | 'Recently'
-    document: { title: string }
-  }
+    type: "Post" | "Note" | "Page" | "Recently";
+    document: { title: string };
+  };
 }
 
 export interface ProviderModel {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export interface ProviderModelsResponse {
-  providerId: string
-  providerName: string
-  providerType: string
-  models: ProviderModel[]
-  error?: string
+  providerId: string;
+  providerName: string;
+  providerType: string;
+  models: ProviderModel[];
+  error?: string;
 }
 
 export interface AITestData {
-  providerId: string
-  type: string
-  apiKey?: string
-  endpoint?: string
-  model?: string
+  providerId: string;
+  type: string;
+  apiKey?: string;
+  endpoint?: string;
+  model?: string;
 }
 
 export interface AIModelListData {
-  providerId: string
-  type: string
-  apiKey?: string
-  endpoint?: string
+  providerId: string;
+  type: string;
+  apiKey?: string;
+  endpoint?: string;
 }
 
 // AI Task 类型
 export enum AITaskType {
-  Summary = 'ai:summary',
-  Translation = 'ai:translation',
-  TranslationBatch = 'ai:translation:batch',
-  TranslationAll = 'ai:translation:all',
-  SlugBackfill = 'ai:slug:backfill',
-  Insights = 'ai:insights',
-  InsightsTranslation = 'ai:insights:translation',
+  Summary = "ai:summary",
+  Translation = "ai:translation",
+  TranslationBatch = "ai:translation:batch",
+  TranslationAll = "ai:translation:all",
+  SlugBackfill = "ai:slug:backfill",
+  Insights = "ai:insights",
+  InsightsTranslation = "ai:insights:translation",
 }
 
 export enum AITaskStatus {
-  Pending = 'pending',
-  Running = 'running',
-  Completed = 'completed',
-  PartialFailed = 'partial_failed',
-  Failed = 'failed',
-  Cancelled = 'cancelled',
+  Pending = "pending",
+  Running = "running",
+  Completed = "completed",
+  PartialFailed = "partial_failed",
+  Failed = "failed",
+  Cancelled = "cancelled",
 }
 
 export interface AITaskLog {
-  timestamp: number
-  level: 'info' | 'warn' | 'error'
-  message: string
+  timestamp: number;
+  level: "info" | "warn" | "error";
+  message: string;
 }
 
 export interface SubTaskStats {
-  total: number
-  completed: number
-  failed: number
-  running: number
-  pending: number
+  total: number;
+  completed: number;
+  failed: number;
+  running: number;
+  pending: number;
 }
 
 export interface AITask {
-  id: string
-  type: AITaskType
-  status: AITaskStatus
-  payload: Record<string, unknown>
-  groupId?: string
+  id: string;
+  type: AITaskType;
+  status: AITaskStatus;
+  payload: Record<string, unknown>;
+  groupId?: string;
 
-  progress?: number
-  progressMessage?: string
-  totalItems?: number
-  completedItems?: number
-  tokensGenerated?: number
+  progress?: number;
+  progressMessage?: string;
+  totalItems?: number;
+  completedItems?: number;
+  tokensGenerated?: number;
 
-  createdAt: number
-  startedAt?: number
-  completedAt?: number
+  createdAt: number;
+  startedAt?: number;
+  completedAt?: number;
 
-  result?: unknown
-  error?: string
-  logs: AITaskLog[]
+  result?: unknown;
+  error?: string;
+  logs: AITaskLog[];
 
-  workerId?: string
-  retryCount: number
+  workerId?: string;
+  retryCount: number;
 
   // For batch tasks: sub-task statistics
-  subTaskStats?: SubTaskStats
+  subTaskStats?: SubTaskStats;
 }
 
 export interface AITasksResponse {
-  data: AITask[]
-  total: number
+  data: AITask[];
+  total: number;
 }
 
 export interface CreateTaskResponse {
-  taskId: string
-  created: boolean
+  taskId: string;
+  created: boolean;
 }
 
 export interface AICommentReviewTestData {
-  text: string
-  author?: string
+  text: string;
+  author?: string;
 }
 
 export interface AICommentReviewTestResponse {
-  isSpam: boolean
-  score?: number
-  reason?: string
+  isSpam: boolean;
+  score?: number;
+  reason?: string;
 }
 
 // Translation Entry (词表) 类型
-export type TranslationEntryKeyPath =
-  | 'category.name'
-  | 'topic.name'
-  | 'topic.introduce'
-  | 'note.mood'
-  | 'note.weather'
+export type TranslationEntryKeyPath
+  = | "category.name"
+    | "topic.name"
+    | "topic.introduce"
+    | "note.mood"
+    | "note.weather";
 
 export interface TranslationEntry {
-  id: string
-  createdAt: string
-  keyPath: TranslationEntryKeyPath
-  lang: string
-  keyType: 'entity' | 'dict'
-  lookupKey: string
-  sourceText: string
-  translatedText: string
-  sourceUpdatedAt?: string
+  id: string;
+  createdAt: string;
+  keyPath: TranslationEntryKeyPath;
+  lang: string;
+  keyType: "entity" | "dict";
+  lookupKey: string;
+  sourceText: string;
+  translatedText: string;
+  sourceUpdatedAt?: string;
 }
 
 export interface TranslationEntriesResponse {
-  data: TranslationEntry[]
+  data: TranslationEntry[];
   pagination: {
-    total: number
-    page: number
-    size: number
-  }
+    total: number;
+    page: number;
+    size: number;
+  };
 }
 
 export interface GenerateEntriesResponse {
-  created: number
-  skipped: number
+  created: number;
+  skipped: number;
 }
 
 export const aiApi = {
   // AI 评论审核测试
   testCommentReview: (data: AICommentReviewTestData) =>
-    request.post<AICommentReviewTestResponse>('/ai/comment-review/test', {
+    request.post<AICommentReviewTestResponse>("/ai/comment-review/test", {
       data,
     }),
 
   // AI 写作生成标题/Slug
   writerGenerate: (data: AIWriterGenerateData) =>
-    request.post<AIWriterGenerateResponse>('/ai/writer/generate', { data }),
+    request.post<AIWriterGenerateResponse>("/ai/writer/generate", { data }),
 
   // 获取摘要列表（分组）
   getSummariesGrouped: (params?: {
-    page?: number
-    size?: number
-    search?: string
+    page?: number;
+    size?: number;
+    search?: string;
   }) =>
-    request.get<GroupedSummaryResponse>('/ai/summaries/grouped', { params }),
+    request.get<GroupedSummaryResponse>("/ai/summaries/grouped", { params }),
 
   // 根据引用获取摘要
   getSummaryByRef: (refId: string) =>
@@ -325,17 +325,17 @@ export const aiApi = {
 
   // 生成摘要（创建任务）
   createSummaryTask: (data: { refId: string; lang?: string }) =>
-    request.post<CreateTaskResponse>('/ai/summaries/task', { data }),
+    request.post<CreateTaskResponse>("/ai/summaries/task", { data }),
 
   // === AI Insights ===
 
   // 获取精读列表（分组）
   getInsightsGrouped: (params: {
-    page: number
-    size?: number
-    search?: string
+    page: number;
+    size?: number;
+    search?: string;
   }) =>
-    request.get<GroupedInsightsResponse>('/ai/insights/grouped', { params }),
+    request.get<GroupedInsightsResponse>("/ai/insights/grouped", { params }),
 
   // 根据引用获取精读
   getInsightsByRef: (refId: string) =>
@@ -350,37 +350,37 @@ export const aiApi = {
 
   // 生成精读（创建任务）
   createInsightsTask: (data: { refId: string }) =>
-    request.post<CreateTaskResponse>('/ai/insights/task', { data }),
+    request.post<CreateTaskResponse>("/ai/insights/task", { data }),
 
   // 翻译精读（创建任务）
   createInsightsTranslationTask: (data: {
-    refId: string
-    targetLang: string
+    refId: string;
+    targetLang: string;
   }) =>
-    request.post<CreateTaskResponse>('/ai/insights/task/translate', { data }),
+    request.post<CreateTaskResponse>("/ai/insights/task/translate", { data }),
 
   // 获取可用模型列表
-  getModels: () => request.get<ProviderModelsResponse[]>('/ai/models'),
+  getModels: () => request.get<ProviderModelsResponse[]>("/ai/models"),
 
   // 获取指定 provider 的模型列表
   getModelList: (data: AIModelListData) =>
     request.post<{ models: ProviderModel[]; error?: string }>(
-      '/ai/models/list',
+      "/ai/models/list",
       { data },
     ),
 
   // 测试 AI 配置
-  testConfig: (data: AITestData) => request.post<void>('/ai/test', { data }),
+  testConfig: (data: AITestData) => request.post<void>("/ai/test", { data }),
 
   // === AI Translation ===
 
   // 获取翻译列表（分组）
   getTranslationsGrouped: (params?: {
-    page?: number
-    size?: number
-    search?: string
+    page?: number;
+    size?: number;
+    search?: string;
   }) =>
-    request.get<GroupedTranslationResponse>('/ai/translations/grouped', {
+    request.get<GroupedTranslationResponse>("/ai/translations/grouped", {
       params,
     }),
 
@@ -396,41 +396,41 @@ export const aiApi = {
   updateTranslation: (
     id: string,
     data: {
-      title?: string
-      subtitle?: string
-      text?: string
-      summary?: string
-      tags?: string[]
-      content?: string
+      title?: string;
+      subtitle?: string;
+      text?: string;
+      summary?: string;
+      tags?: string[];
+      content?: string;
     },
   ) => request.patch<AITranslation>(`/ai/translations/${id}`, { data }),
 
   // 生成翻译（创建任务）
   createTranslationTask: (data: {
-    refId: string
-    targetLanguages?: string[]
-  }) => request.post<CreateTaskResponse>('/ai/translations/task', { data }),
+    refId: string;
+    targetLanguages?: string[];
+  }) => request.post<CreateTaskResponse>("/ai/translations/task", { data }),
 
   // 批量生成翻译（创建任务）
   createTranslationBatchTask: (data: {
-    refIds: string[]
-    targetLanguages?: string[]
+    refIds: string[];
+    targetLanguages?: string[];
   }) =>
-    request.post<CreateTaskResponse>('/ai/translations/task/batch', { data }),
+    request.post<CreateTaskResponse>("/ai/translations/task/batch", { data }),
 
   // 为全部文章生成翻译（创建任务）
   createTranslationAllTask: (data: { targetLanguages?: string[] }) =>
-    request.post<CreateTaskResponse>('/ai/translations/task/all', { data }),
+    request.post<CreateTaskResponse>("/ai/translations/task/all", { data }),
 
   // === AI Tasks ===
 
   // 获取任务列表
   getTasks: (params?: {
-    status?: AITaskStatus
-    type?: AITaskType
-    page?: number
-    size?: number
-  }) => request.get<AITasksResponse>('/ai/tasks', { params }),
+    status?: AITaskStatus;
+    type?: AITaskType;
+    page?: number;
+    size?: number;
+  }) => request.get<AITasksResponse>("/ai/tasks", { params }),
 
   // 获取单个任务
   getTask: (taskId: string) => request.get<AITask>(`/ai/tasks/${taskId}`),
@@ -449,10 +449,10 @@ export const aiApi = {
 
   // 批量删除任务
   deleteTasks: (params: {
-    status?: AITaskStatus
-    type?: AITaskType
-    before: number
-  }) => request.delete<{ deleted: number }>('/ai/tasks', { params }),
+    status?: AITaskStatus;
+    type?: AITaskType;
+    before: number;
+  }) => request.delete<{ deleted: number }>("/ai/tasks", { params }),
 
   // 获取组内所有任务（子任务）
   getTasksByGroupId: (groupId: string) =>
@@ -465,20 +465,20 @@ export const aiApi = {
   // === Translation Entries (词表) ===
 
   getTranslationEntries: (params?: {
-    keyPath?: TranslationEntryKeyPath
-    lang?: string
-    page?: number
-    size?: number
+    keyPath?: TranslationEntryKeyPath;
+    lang?: string;
+    page?: number;
+    size?: number;
   }) =>
-    request.get<TranslationEntriesResponse>('/ai/translations/entries', {
+    request.get<TranslationEntriesResponse>("/ai/translations/entries", {
       params,
     }),
 
   generateTranslationEntries: (data?: {
-    keyPaths?: TranslationEntryKeyPath[]
-    targetLanguages?: string[]
+    keyPaths?: TranslationEntryKeyPath[];
+    targetLanguages?: string[];
   }) =>
-    request.post<GenerateEntriesResponse>('/ai/translations/entries/generate', {
+    request.post<GenerateEntriesResponse>("/ai/translations/entries/generate", {
       data,
     }),
 
@@ -492,40 +492,40 @@ export const aiApi = {
 
   getSlugBackfillStatus: () =>
     request.get<{
-      count: number
-      notes: Array<{ id: string; title: string; nid: number }>
-    }>('/ai/writer/backfill-slugs/status'),
+      count: number;
+      notes: Array<{ id: string; title: string; nid: number }>;
+    }>("/ai/writer/backfill-slugs/status"),
 
   createSlugBackfillTask: () =>
-    request.post<CreateTaskResponse>('/ai/writer/backfill-slugs'),
+    request.post<CreateTaskResponse>("/ai/writer/backfill-slugs"),
 
   // === Time Capsule（时光胶囊：内容时效性分析）===
 
   analyzeTimeCapsule: (data: TimeCapsuleRequest) =>
-    request.post<TimeCapsuleResult>('/ai/time-capsule', { data }),
+    request.post<TimeCapsuleResult>("/ai/time-capsule", { data }),
 
   getTimeCapsule: (refId: string, params?: GetTimeCapsuleParams) =>
     request.get<TimeCapsuleResult | null>(`/ai/time-capsule/${refId}`, {
       params,
     }),
-}
+};
 
-export type TimeSensitivity = 'high' | 'medium' | 'low'
+export type TimeSensitivity = "high" | "medium" | "low";
 
 export interface TimeCapsuleRequest {
-  refId: string
-  refType: 'Post' | 'Note' | 'Page' | 'Recently' | string
-  lang?: string
+  refId: string;
+  refType: "Post" | "Note" | "Page" | "Recently" | string;
+  lang?: string;
 }
 
 export interface GetTimeCapsuleParams {
-  refType?: string
-  lang?: string
+  refType?: string;
+  lang?: string;
 }
 
 export interface TimeCapsuleResult {
-  sensitivity: TimeSensitivity
-  reason: string
-  markers: string[]
-  isNew: boolean
+  sensitivity: TimeSensitivity;
+  reason: string;
+  markers: string[];
+  isNew: boolean;
 }

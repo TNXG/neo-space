@@ -1,3 +1,6 @@
+import type { ToolCallGroupItem } from "@haklex/rich-agent-core";
+import type { PropType } from "vue";
+import type { ReplayStateMap } from "../composables/use-agent-reapply";
 import {
   Check,
   ChevronRight,
@@ -5,21 +8,18 @@ import {
   Loader2,
   RotateCw,
   X,
-} from 'lucide-vue-next'
-import { defineComponent, ref } from 'vue'
-import { toast } from 'vue-sonner'
-import type { ToolCallGroupItem } from '@haklex/rich-agent-core'
-import type { PropType } from 'vue'
-import type { ReplayStateMap } from '../composables/use-agent-reapply'
+} from "lucide-vue-next";
+import { defineComponent, ref } from "vue";
+import { toast } from "vue-sonner";
 
-import { itemReplayKey } from '../composables/use-agent-reapply'
+import { itemReplayKey } from "../composables/use-agent-reapply";
 
 async function copyText(text: string) {
   try {
-    await navigator.clipboard.writeText(text)
-    toast.success('已复制')
+    await navigator.clipboard.writeText(text);
+    toast.success("已复制");
   } catch {
-    toast.error('复制失败')
+    toast.error("复制失败");
   }
 }
 
@@ -38,20 +38,20 @@ function serializeItem(item: ToolCallGroupItem): string {
     },
     null,
     2,
-  )
+  );
 }
 
-function StatusIcon({ status }: { status: ToolCallGroupItem['status'] }) {
+function StatusIcon({ status }: { status: ToolCallGroupItem["status"] }) {
   return (
-    <span class="flex h-4 w-4 flex-shrink-0 items-center justify-center">
-      {status === 'pending' && (
-        <span class="h-1.5 w-1.5 rounded-full bg-neutral-300 opacity-40" />
+    <span class="flex flex-shrink-0 h-4 w-4 items-center justify-center">
+      {status === "pending" && (
+        <span class="rounded-full bg-neutral-300 opacity-40 h-1.5 w-1.5" />
       )}
-      {status === 'running' && <Loader2 size={14} class="animate-spin" />}
-      {status === 'completed' && <Check size={14} />}
-      {status === 'error' && <X size={14} class="text-red-600" />}
+      {status === "running" && <Loader2 size={14} class="animate-spin" />}
+      {status === "completed" && <Check size={14} />}
+      {status === "error" && <X size={14} class="text-red-600" />}
     </span>
-  )
+  );
 }
 
 function Section({
@@ -59,25 +59,25 @@ function Section({
   text,
   tone,
 }: {
-  label: string
-  text: string
-  tone?: 'error'
+  label: string;
+  text: string;
+  tone?: "error";
 }) {
-  const isError = tone === 'error'
+  const isError = tone === "error";
   return (
-    <div class="group/section relative min-w-0 max-w-full">
-      <div class="mb-0.5 flex min-w-0 items-center justify-between gap-2">
-        <span class="font-mono text-[10px] uppercase tracking-wide text-neutral-400">
+    <div class="group/section max-w-full min-w-0 relative">
+      <div class="mb-0.5 flex gap-2 min-w-0 items-center justify-between">
+        <span class="text-[10px] text-neutral-400 tracking-wide font-mono uppercase">
           {label}
         </span>
         <span
           role="button"
           tabindex={0}
           title={`复制 ${label}`}
-          class="flex h-5 cursor-pointer items-center gap-1 rounded px-1 text-[10px] text-neutral-400 opacity-0 transition-opacity hover:bg-neutral-100 hover:text-neutral-700 group-hover/section:opacity-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+          class="text-[10px] text-neutral-400 px-1 rounded opacity-0 flex gap-1 h-5 cursor-pointer transition-opacity items-center hover:text-neutral-700 hover:bg-neutral-100 group-hover/section:opacity-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800"
           onClick={(e: MouseEvent) => {
-            e.stopPropagation()
-            copyText(text)
+            e.stopPropagation();
+            copyText(text);
           }}
         >
           <Copy size={10} />
@@ -86,25 +86,26 @@ function Section({
       </div>
       <pre
         class={[
-          'm-0 max-h-64 max-w-full overflow-auto whitespace-pre-wrap break-all rounded p-1.5 font-mono text-[11px]',
+          "m-0 max-h-64 max-w-full overflow-auto whitespace-pre-wrap break-all rounded p-1.5 font-mono text-[11px]",
           isError
-            ? 'bg-red-50 text-red-600 dark:bg-red-950/20'
-            : 'bg-neutral-50 text-neutral-500 dark:bg-neutral-900',
+            ? "bg-red-50 text-red-600 dark:bg-red-950/20"
+            : "bg-neutral-50 text-neutral-500 dark:bg-neutral-900",
         ]}
       >
         {text}
       </pre>
     </div>
-  )
+  );
 }
 
 function formatDuration(item: ToolCallGroupItem): string | null {
-  if (!item.startedAt || !item.finishedAt) return null
-  return `${item.finishedAt - item.startedAt}ms`
+  if (!item.startedAt || !item.finishedAt)
+    return null;
+  return `${item.finishedAt - item.startedAt}ms`;
 }
 
 export const ToolCall = defineComponent({
-  name: 'ToolCall',
+  name: "ToolCall",
   props: {
     item: { type: Object as PropType<ToolCallGroupItem>, required: true },
     defaultExpanded: { type: Boolean, default: false },
@@ -114,51 +115,51 @@ export const ToolCall = defineComponent({
     },
     isReplayable: { type: Boolean, default: false },
   },
-  emits: ['reapply'],
+  emits: ["reapply"],
   setup(props, { emit }) {
-    const expanded = ref(props.defaultExpanded)
+    const expanded = ref(props.defaultExpanded);
 
     return () => {
-      const item = props.item
-      const hasContent =
-        Object.keys(item.params).length > 0 || item.result || item.error
-      const duration = formatDuration(item)
-      const rKey = itemReplayKey(item.id)
-      const rState = props.replayState?.[rKey]
-      const isReplayRunning = rState?.status === 'running'
+      const item = props.item;
+      const hasContent
+        = Object.keys(item.params).length > 0 || item.result || item.error;
+      const duration = formatDuration(item);
+      const rKey = itemReplayKey(item.id);
+      const rState = props.replayState?.[rKey];
+      const isReplayRunning = rState?.status === "running";
 
       return (
-        <div class="group/toolcall min-w-0 max-w-full">
+        <div class="group/toolcall max-w-full min-w-0">
           <button
             class={[
-              'font-inherit flex w-full min-w-0 max-w-full items-center gap-2 border-none bg-transparent py-1 text-left text-[13px] leading-snug text-neutral-400 transition-colors',
+              "font-inherit flex w-full min-w-0 max-w-full items-center gap-2 border-none bg-transparent py-1 text-left text-[13px] leading-snug text-neutral-400 transition-colors",
               hasContent
-                ? 'cursor-pointer hover:text-neutral-800 dark:hover:text-neutral-200'
-                : 'cursor-default',
+                ? "cursor-pointer hover:text-neutral-800 dark:hover:text-neutral-200"
+                : "cursor-default",
             ]}
             type="button"
             onClick={() => hasContent && (expanded.value = !expanded.value)}
           >
             <StatusIcon status={item.status} />
-            <span class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+            <span class="flex flex-1 gap-2 min-w-0 items-center overflow-hidden">
               <span
-                class="truncate font-mono text-[13px]"
+                class="text-[13px] font-mono truncate"
                 style={
-                  item.status === 'running'
-                    ? { color: 'var(--n-text-color)' }
+                  item.status === "running"
+                    ? { color: "var(--n-text-color)" }
                     : undefined
                 }
               >
                 {item.toolName}
               </span>
               {item.description && (
-                <span class="min-w-0 flex-1 truncate text-[13px] text-neutral-300">
+                <span class="text-[13px] text-neutral-300 flex-1 min-w-0 truncate">
                   {item.description}
                 </span>
               )}
             </span>
             {duration && (
-              <span class="flex-shrink-0 font-mono text-xs text-neutral-300 opacity-50">
+              <span class="text-xs text-neutral-300 font-mono opacity-50 flex-shrink-0">
                 {duration}
               </span>
             )}
@@ -166,46 +167,46 @@ export const ToolCall = defineComponent({
               role="button"
               tabindex={0}
               title="复制此 tool call JSON"
-              class="flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded opacity-0 transition-opacity hover:bg-neutral-100 hover:opacity-100 group-hover/toolcall:opacity-60 dark:hover:bg-neutral-800"
+              class="rounded opacity-0 flex flex-shrink-0 h-5 w-5 cursor-pointer transition-opacity items-center justify-center hover:bg-neutral-100 group-hover/toolcall:opacity-60 hover:opacity-100 dark:hover:bg-neutral-800"
               onClick={(e: MouseEvent) => {
-                e.stopPropagation()
-                copyText(serializeItem(item))
+                e.stopPropagation();
+                copyText(serializeItem(item));
               }}
             >
               <Copy size={12} />
             </span>
             {props.isReplayable && (
               <>
-                {rState?.status === 'success' && (
-                  <span class="flex-shrink-0 text-xs text-green-600">
+                {rState?.status === "success" && (
+                  <span class="text-xs text-green-600 flex-shrink-0">
                     Re-applied
                   </span>
                 )}
-                {rState?.status === 'conflict' && (
+                {rState?.status === "conflict" && (
                   <span
-                    class="flex-shrink-0 text-xs text-amber-600"
+                    class="text-xs text-amber-600 flex-shrink-0"
                     title={rState.message}
                   >
                     Conflict
                   </span>
                 )}
-                {rState?.status === 'error' && (
+                {rState?.status === "error" && (
                   <span
-                    class="flex-shrink-0 text-xs text-red-600"
+                    class="text-xs text-red-600 flex-shrink-0"
                     title={rState.message}
                   >
                     Failed
                   </span>
                 )}
-                {(!rState || rState.status === 'idle') && (
+                {(!rState || rState.status === "idle") && (
                   <span
                     role="button"
                     tabindex={0}
                     title="Re-apply this tool call"
-                    class="flex h-5 flex-shrink-0 cursor-pointer items-center gap-1 rounded px-1 text-xs text-neutral-400 opacity-0 transition-opacity hover:bg-neutral-100 hover:text-neutral-700 hover:!opacity-100 group-hover/toolcall:opacity-60 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                    class="text-xs text-neutral-400 px-1 rounded opacity-0 flex flex-shrink-0 gap-1 h-5 cursor-pointer transition-opacity items-center hover:text-neutral-700 hover:bg-neutral-100 group-hover/toolcall:opacity-60 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 hover:!opacity-100"
                     onClick={(e: MouseEvent) => {
-                      e.stopPropagation()
-                      emit('reapply')
+                      e.stopPropagation();
+                      emit("reapply");
                     }}
                   >
                     <RotateCw size={11} />
@@ -213,7 +214,7 @@ export const ToolCall = defineComponent({
                   </span>
                 )}
                 {isReplayRunning && (
-                  <span class="flex flex-shrink-0 items-center gap-1 text-xs text-neutral-400">
+                  <span class="text-xs text-neutral-400 flex flex-shrink-0 gap-1 items-center">
                     <Loader2 size={11} class="animate-spin" />
                   </span>
                 )}
@@ -223,15 +224,15 @@ export const ToolCall = defineComponent({
               <ChevronRight
                 size={12}
                 class={[
-                  'flex-shrink-0 text-neutral-400 opacity-40 transition-transform',
-                  expanded.value && 'rotate-90',
+                  "flex-shrink-0 text-neutral-400 opacity-40 transition-transform",
+                  expanded.value && "rotate-90",
                 ]}
               />
             )}
           </button>
 
           {hasContent && expanded.value && (
-            <div class="flex min-w-0 max-w-full flex-col gap-2 pb-2 pl-6">
+            <div class="pb-2 pl-6 flex flex-col gap-2 max-w-full min-w-0">
               {Object.keys(item.params).length > 0 && (
                 <Section
                   label="params"
@@ -242,19 +243,19 @@ export const ToolCall = defineComponent({
               {item.error && (
                 <Section label="error" text={item.error} tone="error" />
               )}
-              {rState &&
-                (rState.status === 'conflict' || rState.status === 'error') &&
-                rState.message && (
-                  <Section
-                    label="replay"
-                    text={rState.message}
-                    tone={rState.status === 'error' ? 'error' : undefined}
-                  />
-                )}
+              {rState
+                && (rState.status === "conflict" || rState.status === "error")
+                && rState.message && (
+                <Section
+                  label="replay"
+                  text={rState.message}
+                  tone={rState.status === "error" ? "error" : undefined}
+                />
+              )}
             </div>
           )}
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});

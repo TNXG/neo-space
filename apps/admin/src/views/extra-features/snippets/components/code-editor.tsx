@@ -1,8 +1,8 @@
-import { defineComponent, ref, watch } from 'vue'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import { defineComponent, ref, watch } from "vue";
 
-import { FunctionCodeEditor } from '~/components/monaco-editor'
-import { usePropsValueToRef } from '~/hooks/use-props-value-to-ref'
+import { FunctionCodeEditor } from "~/components/monaco-editor";
+import { usePropsValueToRef } from "~/hooks/use-props-value-to-ref";
 
 export const CodeEditorForSnippet = defineComponent({
   props: {
@@ -24,24 +24,24 @@ export const CodeEditorForSnippet = defineComponent({
     },
   },
   setup(props) {
-    const value = usePropsValueToRef(props)
+    const value = usePropsValueToRef(props);
 
-    const editorRef = ref()
+    const editorRef = ref();
 
     watch(
       () => value.value,
       () => {
         if (!editorRef.value) {
-          return
+          return;
         }
         if (editorRef.value.loaded) {
-          props.onChange?.(value.value)
+          props.onChange?.(value.value);
         }
       },
-    )
+    );
 
     return () => (
-      <div class={'relative h-full w-full'}>
+      <div class="h-full w-full relative">
         <FunctionCodeEditor
           ref={editorRef}
           value={value}
@@ -49,6 +49,6 @@ export const CodeEditorForSnippet = defineComponent({
           language={props.language}
         />
       </div>
-    )
+    );
   },
-})
+});

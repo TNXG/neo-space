@@ -1,3 +1,5 @@
+import type { PropType } from "vue";
+import type { BackupFile } from "~/api/backup";
 import {
   ArrowLeft,
   Calendar,
@@ -7,221 +9,220 @@ import {
   History,
   Trash2,
   Upload,
-} from 'lucide-vue-next'
-import { NButton, NCheckbox, NPopconfirm, NScrollbar, NTooltip } from 'naive-ui'
-import { computed, defineComponent, onMounted, ref, watchEffect } from 'vue'
-import { toast } from 'vue-sonner'
-import type { BackupFile } from '~/api/backup'
-import type { PropType } from 'vue'
+} from "lucide-vue-next";
+import { NButton, NCheckbox, NPopconfirm, NScrollbar, NTooltip } from "naive-ui";
+import { computed, defineComponent, onMounted, ref, watchEffect } from "vue";
+import { toast } from "vue-sonner";
 
-import { backupApi } from '~/api/backup'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { DeleteConfirmButton } from '~/components/special-button/delete-confirm'
-import { useLayout } from '~/layouts/content'
-import { responseBlobToFile } from '~/utils'
+import { backupApi } from "~/api/backup";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { DeleteConfirmButton } from "~/components/special-button/delete-confirm";
+import { useLayout } from "~/layouts/content";
+import { responseBlobToFile } from "~/utils";
 
 const formatDate = (filename: string) => {
-  const match = filename.match(/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})/)
+  const match = filename.match(/(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})/);
   if (match) {
-    const date = match[1]
-    const time = match[2].replace(/-/g, ':')
-    return `${date} ${time}`
+    const date = match[1];
+    const time = match[2].replace(/-/g, ":");
+    return `${date} ${time}`;
   }
-  return filename
-}
+  return filename;
+};
 
 export default defineComponent({
   setup() {
-    const { setActions } = useLayout()
-    const { isMobile } = useMasterDetailLayout()
+    const { setActions } = useLayout();
+    const { isMobile } = useMasterDetailLayout();
 
-    const data = ref<BackupFile[]>([])
-    const loading = ref(false)
-    const selectedFilename = ref<string | null>(null)
-    const showDetailOnMobile = ref(false)
-    const selectedKeys = ref<Set<string>>(new Set())
+    const data = ref<BackupFile[]>([]);
+    const loading = ref(false);
+    const selectedFilename = ref<string | null>(null);
+    const showDetailOnMobile = ref(false);
+    const selectedKeys = ref<Set<string>>(new Set());
 
     const selectedItem = computed(() =>
-      data.value.find((item) => item.filename === selectedFilename.value),
-    )
+      data.value.find(item => item.filename === selectedFilename.value),
+    );
 
     const fetchData = async () => {
-      loading.value = true
+      loading.value = true;
       try {
-        const list = await backupApi.getList()
-        list.sort((b, a) => a.filename.localeCompare(b.filename))
-        data.value = list
+        const list = await backupApi.getList();
+        list.sort((b, a) => a.filename.localeCompare(b.filename));
+        data.value = list;
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     onMounted(() => {
-      fetchData()
-    })
+      fetchData();
+    });
 
     const handleBackup = async () => {
-      const info = toast.info('备份中...', {
+      const info = toast.info("备份中...", {
         duration: 10e8,
         closeButton: true,
-      })
+      });
       try {
-        const blob = await backupApi.createNew()
-        toast.dismiss(info)
-        toast.success('备份完成')
-        responseBlobToFile(blob, 'backup.zip')
-        fetchData()
+        const blob = await backupApi.createNew();
+        toast.dismiss(info);
+        toast.success("备份完成");
+        responseBlobToFile(blob, "backup.zip");
+        fetchData();
       } catch {
-        toast.dismiss(info)
-        toast.error('备份失败')
+        toast.dismiss(info);
+        toast.error("备份失败");
       }
-    }
+    };
 
     const handleUploadAndRestore = async () => {
-      const $file = document.createElement('input')
-      $file.type = 'file'
-      $file.style.cssText = `position: absolute; opacity: 0; z-index: -9999; top: 0; left: 0`
-      $file.accept = '.zip'
-      document.body.append($file)
-      $file.click()
-      $file.addEventListener('change', async () => {
-        const file = $file.files![0]
-        if (!file) return
-        $file.remove()
+      const $file = document.createElement("input");
+      $file.type = "file";
+      $file.style.cssText = `position: absolute; opacity: 0; z-index: -9999; top: 0; left: 0`;
+      $file.accept = ".zip";
+      document.body.append($file);
+      $file.click();
+      $file.addEventListener("change", async () => {
+        const file = $file.files![0];
+        if (!file)
+          return;
+        $file.remove();
 
-        const info = toast.info('上传恢复中...', {
+        const info = toast.info("上传恢复中...", {
           duration: 10e8,
           closeButton: true,
-        })
+        });
         try {
-          await backupApi.uploadAndRestore(file)
-          toast.dismiss(info)
-          toast.success('恢复成功，页面将会重载')
+          await backupApi.uploadAndRestore(file);
+          toast.dismiss(info);
+          toast.success("恢复成功，页面将会重载");
           setTimeout(() => {
-            location.reload()
-          }, 1000)
+            location.reload();
+          }, 1000);
         } catch {
-          toast.dismiss(info)
-          toast.error('上传恢复失败')
+          toast.dismiss(info);
+          toast.error("上传恢复失败");
         }
-      })
-    }
+      });
+    };
 
     const handleDelete = async (filename: string) => {
-      await backupApi.delete(filename)
-      toast.success('删除成功')
-      const index = data.value.findIndex((i) => i.filename === filename)
+      await backupApi.delete(filename);
+      toast.success("删除成功");
+      const index = data.value.findIndex(i => i.filename === filename);
       if (index !== -1) {
-        data.value.splice(index, 1)
+        data.value.splice(index, 1);
       }
-      selectedKeys.value.delete(filename)
+      selectedKeys.value.delete(filename);
       if (selectedFilename.value === filename) {
-        selectedFilename.value = null
-        showDetailOnMobile.value = false
+        selectedFilename.value = null;
+        showDetailOnMobile.value = false;
       }
-    }
+    };
 
     const handleBatchDelete = async () => {
-      const toDelete = Array.from(selectedKeys.value)
+      const toDelete = Array.from(selectedKeys.value);
       const results = await Promise.allSettled(
-        toDelete.map((filename) => backupApi.delete(filename)),
-      )
+        toDelete.map(filename => backupApi.delete(filename)),
+      );
 
-      let successCount = 0
+      let successCount = 0;
       for (const [i, result] of results.entries()) {
-        if (result.status === 'fulfilled') {
-          successCount++
+        if (result.status === "fulfilled") {
+          successCount++;
           const index = data.value.findIndex(
-            (item) => item.filename === toDelete[i],
-          )
+            item => item.filename === toDelete[i],
+          );
           if (index !== -1) {
-            data.value.splice(index, 1)
+            data.value.splice(index, 1);
           }
         }
       }
 
       if (toDelete.includes(selectedFilename.value!)) {
-        selectedFilename.value = null
-        showDetailOnMobile.value = false
+        selectedFilename.value = null;
+        showDetailOnMobile.value = false;
       }
 
-      selectedKeys.value.clear()
+      selectedKeys.value.clear();
       if (successCount === toDelete.length) {
-        toast.success(`成功删除 ${successCount} 个备份`)
+        toast.success(`成功删除 ${successCount} 个备份`);
       } else {
         toast.warning(
           `删除完成：成功 ${successCount}，失败 ${toDelete.length - successCount}`,
-        )
+        );
       }
-    }
+    };
 
     const toggleSelect = (filename: string, e?: Event) => {
-      e?.stopPropagation()
+      e?.stopPropagation();
       if (selectedKeys.value.has(filename)) {
-        selectedKeys.value.delete(filename)
+        selectedKeys.value.delete(filename);
       } else {
-        selectedKeys.value.add(filename)
+        selectedKeys.value.add(filename);
       }
-    }
+    };
 
     const isAllSelected = computed(
       () =>
         data.value.length > 0 && selectedKeys.value.size === data.value.length,
-    )
+    );
 
     const toggleSelectAll = () => {
       if (isAllSelected.value) {
-        selectedKeys.value.clear()
+        selectedKeys.value.clear();
       } else {
-        selectedKeys.value = new Set(data.value.map((item) => item.filename))
+        selectedKeys.value = new Set(data.value.map(item => item.filename));
       }
-    }
+    };
 
     const handleRollback = async (filename: string) => {
-      const info = toast.info('回滚中...', {
+      const info = toast.info("回滚中...", {
         duration: 10e8,
         closeButton: true,
-      })
+      });
       try {
-        await backupApi.rollback(filename)
-        toast.dismiss(info)
-        toast.success('回滚成功，页面将会重载')
+        await backupApi.rollback(filename);
+        toast.dismiss(info);
+        toast.success("回滚成功，页面将会重载");
         setTimeout(() => {
-          location.reload()
-        }, 1000)
+          location.reload();
+        }, 1000);
       } catch {
-        toast.dismiss(info)
-        toast.error('回滚失败')
+        toast.dismiss(info);
+        toast.error("回滚失败");
       }
-    }
+    };
 
     const handleDownload = async (filename: string) => {
-      const info = toast.info('下载中...', {
+      const info = toast.info("下载中...", {
         duration: 10e8,
         closeButton: true,
-      })
+      });
       try {
-        const blob = await backupApi.download(filename)
-        toast.dismiss(info)
-        toast.success('下载完成')
-        responseBlobToFile(blob, `${filename}.zip`)
+        const blob = await backupApi.download(filename);
+        toast.dismiss(info);
+        toast.success("下载完成");
+        responseBlobToFile(blob, `${filename}.zip`);
       } catch {
-        toast.dismiss(info)
-        toast.error('下载失败')
+        toast.dismiss(info);
+        toast.error("下载失败");
       }
-    }
+    };
 
     const handleSelectItem = (item: BackupFile) => {
-      selectedFilename.value = item.filename
+      selectedFilename.value = item.filename;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
     watchEffect(() => {
       setActions(
@@ -245,8 +246,8 @@ export default defineComponent({
             onClick={handleBackup}
           />
         </>,
-      )
-    })
+      );
+    });
 
     return () => (
       <MasterDetailLayout
@@ -271,22 +272,24 @@ export default defineComponent({
             />
           ),
           detail: () =>
-            selectedItem.value ? (
-              <BackupDetailPanel
-                item={selectedItem.value}
-                isMobile={isMobile.value}
-                onBack={handleBack}
-                onDownload={() => handleDownload(selectedItem.value!.filename)}
-                onRollback={() => handleRollback(selectedItem.value!.filename)}
-                onDelete={() => handleDelete(selectedItem.value!.filename)}
-              />
-            ) : null,
+            selectedItem.value
+              ? (
+                  <BackupDetailPanel
+                    item={selectedItem.value}
+                    isMobile={isMobile.value}
+                    onBack={handleBack}
+                    onDownload={() => handleDownload(selectedItem.value!.filename)}
+                    onRollback={() => handleRollback(selectedItem.value!.filename)}
+                    onDelete={() => handleDelete(selectedItem.value!.filename)}
+                  />
+                )
+              : null,
           empty: () => <BackupDetailEmptyState />,
         }}
       </MasterDetailLayout>
-    )
+    );
   },
-})
+});
 
 const BackupListPanel = defineComponent({
   props: {
@@ -318,9 +321,9 @@ const BackupListPanel = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-          <div class="flex items-center gap-3">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex h-12 items-center justify-between dark:border-neutral-800">
+          <div class="flex gap-3 items-center">
             <NCheckbox
               checked={props.isAllSelected}
               indeterminate={
@@ -331,67 +334,73 @@ const BackupListPanel = defineComponent({
             <span class="text-sm text-neutral-500 dark:text-neutral-400">
               {props.selectedKeys.size > 0
                 ? `已选 ${props.selectedKeys.size} 项`
-                : '全选'}
+                : "全选"}
             </span>
           </div>
           <span class="text-xs text-neutral-400">
-            {props.data.length} 个备份
+            {props.data.length}
+            {" "}
+            个备份
           </span>
         </div>
 
-        <div class="min-h-0 flex-1">
-          {props.loading ? (
-            <div class="flex items-center justify-center py-24">
-              <div class="size-6 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900 dark:border-neutral-700 dark:border-t-white" />
-            </div>
-          ) : props.data.length === 0 ? (
-            <BackupListEmptyState
-              onCreate={props.onCreate}
-              onRestore={props.onRestore}
-            />
-          ) : (
-            <NScrollbar class="h-full">
-              {props.data.map((item) => (
-                <div
-                  key={item.filename}
-                  class={[
-                    'flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3',
-                    'transition-colors last:border-b-0 dark:border-neutral-800/50',
-                    props.selectedFilename === item.filename
-                      ? 'bg-neutral-100 dark:bg-neutral-800'
-                      : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30',
-                  ]}
-                  onClick={() => props.onSelect(item)}
-                >
-                  <span
-                    onClick={(e: Event) => e.stopPropagation()}
-                    class="shrink-0"
-                  >
-                    <NCheckbox
-                      checked={props.selectedKeys.has(item.filename)}
-                      onUpdateChecked={() => props.onToggleCheck(item.filename)}
-                    />
-                  </span>
-                  <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500 dark:bg-blue-950/50 dark:text-blue-400">
-                    <HardDrive class="size-4" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {formatDate(item.filename)}
-                    </div>
-                    <div class="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
-                      {item.size}
-                    </div>
-                  </div>
+        <div class="flex-1 min-h-0">
+          {props.loading
+            ? (
+                <div class="py-24 flex items-center justify-center">
+                  <div class="border-2 border-neutral-300 border-t-neutral-900 rounded-full size-6 animate-spin dark:border-neutral-700 dark:border-t-white" />
                 </div>
-              ))}
-            </NScrollbar>
-          )}
+              )
+            : props.data.length === 0
+              ? (
+                  <BackupListEmptyState
+                    onCreate={props.onCreate}
+                    onRestore={props.onRestore}
+                  />
+                )
+              : (
+                  <NScrollbar class="h-full">
+                    {props.data.map(item => (
+                      <div
+                        key={item.filename}
+                        class={[
+                          "flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3",
+                          "transition-colors last:border-b-0 dark:border-neutral-800/50",
+                          props.selectedFilename === item.filename
+                            ? "bg-neutral-100 dark:bg-neutral-800"
+                            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/30",
+                        ]}
+                        onClick={() => props.onSelect(item)}
+                      >
+                        <span
+                          onClick={(e: Event) => e.stopPropagation()}
+                          class="shrink-0"
+                        >
+                          <NCheckbox
+                            checked={props.selectedKeys.has(item.filename)}
+                            onUpdateChecked={() => props.onToggleCheck(item.filename)}
+                          />
+                        </span>
+                        <div class="text-blue-500 rounded-lg bg-blue-50 flex shrink-0 size-8 items-center justify-center dark:text-blue-400 dark:bg-blue-950/50">
+                          <HardDrive class="size-4" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
+                            {formatDate(item.filename)}
+                          </div>
+                          <div class="text-xs text-neutral-400 mt-0.5 dark:text-neutral-500">
+                            {item.size}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </NScrollbar>
+                )}
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 const BackupDetailPanel = defineComponent({
   props: {
@@ -404,22 +413,22 @@ const BackupDetailPanel = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 shrink-0 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-          <div class="flex items-center gap-3">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex shrink-0 h-12 items-center justify-between dark:border-neutral-800">
+          <div class="flex gap-3 items-center">
             {props.isMobile && (
               <button
                 onClick={props.onBack}
-                class="-ml-2 flex size-8 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                class="text-neutral-500 rounded-md flex size-8 items-center justify-center dark:text-neutral-400 hover:text-neutral-900 -ml-2 hover:bg-neutral-100 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
               >
                 <ArrowLeft class="size-5" />
               </button>
             )}
-            <h2 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <h2 class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
               备份详情
             </h2>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex gap-1 items-center">
             <DetailActionButton
               icon={Download}
               label="下载"
@@ -456,55 +465,55 @@ const BackupDetailPanel = defineComponent({
           </div>
         </div>
 
-        <NScrollbar class="min-h-0 flex-1">
-          <div class="mx-auto max-w-3xl space-y-6 p-6">
-            <div class="flex flex-col items-center py-8">
-              <div class="mb-4 flex size-20 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/50">
-                <HardDrive class="size-10 text-blue-500 dark:text-blue-400" />
+        <NScrollbar class="flex-1 min-h-0">
+          <div class="mx-auto p-6 max-w-3xl space-y-6">
+            <div class="py-8 flex flex-col items-center">
+              <div class="mb-4 rounded-2xl bg-blue-50 flex size-20 items-center justify-center dark:bg-blue-950/50">
+                <HardDrive class="text-blue-500 size-10 dark:text-blue-400" />
               </div>
-              <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              <h3 class="text-lg text-neutral-900 font-semibold dark:text-neutral-100">
                 {formatDate(props.item.filename)}
               </h3>
-              <p class="mt-1 font-mono text-xs text-neutral-400 dark:text-neutral-500">
+              <p class="text-xs text-neutral-400 font-mono mt-1 dark:text-neutral-500">
                 {props.item.filename}
               </p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div class="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-                <div class="mb-2 flex items-center gap-2 text-neutral-400 dark:text-neutral-500">
+            <div class="gap-4 grid grid-cols-2">
+              <div class="p-4 border border-neutral-200 rounded-xl dark:border-neutral-800">
+                <div class="text-neutral-400 mb-2 flex gap-2 items-center dark:text-neutral-500">
                   <HardDrive class="size-4" />
                   <span class="text-xs">文件大小</span>
                 </div>
-                <div class="text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+                <div class="text-lg text-neutral-900 font-semibold tabular-nums dark:text-neutral-100">
                   {props.item.size}
                 </div>
               </div>
-              <div class="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-                <div class="mb-2 flex items-center gap-2 text-neutral-400 dark:text-neutral-500">
+              <div class="p-4 border border-neutral-200 rounded-xl dark:border-neutral-800">
+                <div class="text-neutral-400 mb-2 flex gap-2 items-center dark:text-neutral-500">
                   <Calendar class="size-4" />
                   <span class="text-xs">创建时间</span>
                 </div>
-                <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <div class="text-lg text-neutral-900 font-semibold dark:text-neutral-100">
                   {formatDate(props.item.filename)}
                 </div>
               </div>
             </div>
 
             <div class="space-y-3">
-              <h4 class="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+              <h4 class="text-sm text-neutral-500 font-medium dark:text-neutral-400">
                 操作
               </h4>
               <div class="space-y-2">
                 <button
                   onClick={props.onDownload}
-                  class="flex w-full items-center gap-3 rounded-xl border border-neutral-200 p-4 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
+                  class="p-4 text-left border border-neutral-200 rounded-xl flex gap-3 w-full transition-colors items-center dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                 >
-                  <div class="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-blue-500 dark:bg-blue-950/50 dark:text-blue-400">
+                  <div class="text-blue-500 rounded-lg bg-blue-50 flex size-10 items-center justify-center dark:text-blue-400 dark:bg-blue-950/50">
                     <Download class="size-5" />
                   </div>
                   <div>
-                    <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <div class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
                       下载备份
                     </div>
                     <div class="text-xs text-neutral-400 dark:text-neutral-500">
@@ -520,12 +529,12 @@ const BackupDetailPanel = defineComponent({
                 >
                   {{
                     trigger: () => (
-                      <button class="flex w-full items-center gap-3 rounded-xl border border-neutral-200 p-4 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50">
-                        <div class="flex size-10 items-center justify-center rounded-lg bg-amber-50 text-amber-500 dark:bg-amber-950/50 dark:text-amber-400">
+                      <button class="p-4 text-left border border-neutral-200 rounded-xl flex gap-3 w-full transition-colors items-center dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                        <div class="text-amber-500 rounded-lg bg-amber-50 flex size-10 items-center justify-center dark:text-amber-400 dark:bg-amber-950/50">
                           <History class="size-5" />
                         </div>
                         <div>
-                          <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          <div class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
                             回滚到此备份
                           </div>
                           <div class="text-xs text-neutral-400 dark:text-neutral-500">
@@ -549,12 +558,12 @@ const BackupDetailPanel = defineComponent({
                 >
                   {{
                     trigger: () => (
-                      <button class="flex w-full items-center gap-3 rounded-xl border border-neutral-200 p-4 text-left transition-colors hover:bg-red-50 dark:border-neutral-800 dark:hover:bg-red-950/20">
-                        <div class="flex size-10 items-center justify-center rounded-lg bg-red-50 text-red-500 dark:bg-red-950/50 dark:text-red-400">
+                      <button class="p-4 text-left border border-neutral-200 rounded-xl flex gap-3 w-full transition-colors items-center dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/20">
+                        <div class="text-red-500 rounded-lg bg-red-50 flex size-10 items-center justify-center dark:text-red-400 dark:bg-red-950/50">
                           <Trash2 class="size-5" />
                         </div>
                         <div>
-                          <div class="text-sm font-medium text-red-600 dark:text-red-400">
+                          <div class="text-sm text-red-600 font-medium dark:text-red-400">
                             删除备份
                           </div>
                           <div class="text-xs text-neutral-400 dark:text-neutral-500">
@@ -571,9 +580,9 @@ const BackupDetailPanel = defineComponent({
           </div>
         </NScrollbar>
       </div>
-    )
+    );
   },
-})
+});
 
 const DetailActionButton = defineComponent({
   props: {
@@ -590,10 +599,10 @@ const DetailActionButton = defineComponent({
             <button
               onClick={props.onClick}
               class={[
-                'flex size-8 items-center justify-center rounded-md transition-colors',
+                "flex size-8 items-center justify-center rounded-md transition-colors",
                 props.danger
-                  ? 'text-neutral-500 hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-900/20 dark:hover:text-red-500'
-                  : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+                  ? "text-neutral-500 hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-900/20 dark:hover:text-red-500"
+                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100",
               ]}
             >
               <props.icon class="size-4" />
@@ -602,27 +611,27 @@ const DetailActionButton = defineComponent({
           default: () => props.label,
         }}
       </NTooltip>
-    )
+    );
   },
-})
+});
 
 const BackupDetailEmptyState = defineComponent({
   setup() {
     return () => (
-      <div class="flex h-full flex-col items-center justify-center bg-neutral-50 text-center dark:bg-neutral-950">
-        <div class="mb-4 flex size-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-          <Database class="size-8 text-neutral-400" />
+      <div class="text-center bg-neutral-50 flex flex-col h-full items-center justify-center dark:bg-neutral-950">
+        <div class="mb-4 rounded-full bg-neutral-100 flex size-16 items-center justify-center dark:bg-neutral-800">
+          <Database class="text-neutral-400 size-8" />
         </div>
-        <h3 class="mb-1 text-base font-medium text-neutral-900 dark:text-neutral-100">
+        <h3 class="text-base text-neutral-900 font-medium mb-1 dark:text-neutral-100">
           选择一个备份
         </h3>
         <p class="text-sm text-neutral-500 dark:text-neutral-400">
           从左侧列表选择查看详情
         </p>
       </div>
-    )
+    );
   },
-})
+});
 
 const BackupListEmptyState = defineComponent({
   props: {
@@ -631,22 +640,22 @@ const BackupListEmptyState = defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="flex flex-col items-center justify-center py-24 text-center">
-        <Database class="mb-4 size-10 text-neutral-300 dark:text-neutral-700" />
+      <div class="py-24 text-center flex flex-col items-center justify-center">
+        <Database class="text-neutral-300 mb-4 size-10 dark:text-neutral-700" />
         <p class="text-sm text-neutral-500">暂无备份</p>
-        <p class="mb-4 mt-1 text-xs text-neutral-400">创建备份以保护你的数据</p>
-        <div class="flex items-center gap-2">
+        <p class="text-xs text-neutral-400 mb-4 mt-1">创建备份以保护你的数据</p>
+        <div class="flex gap-2 items-center">
           <NButton size="small" type="primary" onClick={props.onCreate}>
             立即备份
           </NButton>
           <NButton size="small" onClick={props.onRestore}>
             {{
               icon: () => <Upload class="size-3.5" />,
-              default: () => '上传恢复',
+              default: () => "上传恢复",
             }}
           </NButton>
         </div>
       </div>
-    )
+    );
   },
-})
+});

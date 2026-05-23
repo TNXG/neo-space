@@ -1,3 +1,5 @@
+import type { PropType, VNode } from "vue";
+import { useQuery } from "@tanstack/vue-query";
 import {
   Mail as MailIcon,
   MailX as MailXIcon,
@@ -5,7 +7,7 @@ import {
   Search as SearchIcon,
   Trash2 as TrashIcon,
   Users as UsersIcon,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 import {
   NCheckbox,
   NEmpty,
@@ -14,25 +16,23 @@ import {
   NPopconfirm,
   NSkeleton,
   NSwitch,
-} from 'naive-ui'
-import { computed, defineComponent, ref, watchEffect } from 'vue'
-import { toast } from 'vue-sonner'
-import type { PropType, VNode } from 'vue'
+} from "naive-ui";
+import { computed, defineComponent, ref, watchEffect } from "vue";
 
-import { useQuery } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { optionsApi } from '~/api/options'
-import { subscribeApi } from '~/api/subscribe'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { RelativeTime } from '~/components/time/relative-time'
-import { useLayout } from '~/layouts/content'
+import { optionsApi } from "~/api/options";
+import { subscribeApi } from "~/api/subscribe";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { RelativeTime } from "~/components/time/relative-time";
+import { useLayout } from "~/layouts/content";
 
 import {
   SubscribeNoteCreateBit,
   SubscribePostCreateBit,
   SubscribeRecentCreateBit,
   SubscribeSayCreateBit,
-} from './constants'
+} from "./constants";
 
 const SubscribeTags = defineComponent({
   props: {
@@ -40,30 +40,30 @@ const SubscribeTags = defineComponent({
   },
   setup(props) {
     const bits = [
-      { bit: SubscribePostCreateBit, label: '博文', color: 'blue' },
-      { bit: SubscribeNoteCreateBit, label: '手记', color: 'green' },
-      { bit: SubscribeRecentCreateBit, label: '速记', color: 'amber' },
-      { bit: SubscribeSayCreateBit, label: '说说', color: 'purple' },
-    ]
+      { bit: SubscribePostCreateBit, label: "博文", color: "blue" },
+      { bit: SubscribeNoteCreateBit, label: "手记", color: "green" },
+      { bit: SubscribeRecentCreateBit, label: "速记", color: "amber" },
+      { bit: SubscribeSayCreateBit, label: "说说", color: "purple" },
+    ];
 
     const colorStyles: Record<string, string> = {
-      blue: 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400',
+      blue: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400",
       green:
-        'bg-green-50 text-green-600 dark:bg-green-950/50 dark:text-green-400',
+        "bg-green-50 text-green-600 dark:bg-green-950/50 dark:text-green-400",
       amber:
-        'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400',
+        "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400",
       purple:
-        'bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400',
-    }
+        "bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400",
+    };
 
     return () => (
-      <div class="flex items-center gap-1.5">
+      <div class="flex gap-1.5 items-center">
         {bits
           .filter(({ bit }) => bit & props.subscribe)
           .map(({ label, color }) => (
             <span
               class={[
-                'rounded px-1.5 py-0.5 text-xs font-medium',
+                "rounded px-1.5 py-0.5 text-xs font-medium",
                 colorStyles[color],
               ]}
             >
@@ -71,9 +71,9 @@ const SubscribeTags = defineComponent({
             </span>
           ))}
       </div>
-    )
+    );
   },
-})
+});
 
 const SubscriberRow = defineComponent({
   props: {
@@ -88,35 +88,35 @@ const SubscriberRow = defineComponent({
     return () => (
       <div
         class={[
-          'group relative flex cursor-default items-center gap-4 border-b border-neutral-100 px-4 py-3.5 transition-colors last:border-b-0 dark:border-neutral-800',
+          "group relative flex cursor-default items-center gap-4 border-b border-neutral-100 px-4 py-3.5 transition-colors last:border-b-0 dark:border-neutral-800",
           props.selected
-            ? 'bg-neutral-100 dark:bg-neutral-800'
-            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50',
+            ? "bg-neutral-100 dark:bg-neutral-800"
+            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
         ]}
         onClick={() => props.onSelect?.(!props.selected)}
       >
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={e => e.stopPropagation()}>
           <NCheckbox
             checked={props.selected}
-            onUpdateChecked={(checked) => props.onSelect?.(checked)}
+            onUpdateChecked={checked => props.onSelect?.(checked)}
           />
         </div>
 
-        <div class="min-w-0 flex-1">
-          <div class="truncate text-sm text-neutral-800 dark:text-neutral-100">
+        <div class="flex-1 min-w-0">
+          <div class="text-sm text-neutral-800 truncate dark:text-neutral-100">
             {props.email}
           </div>
         </div>
 
-        <div class="hidden shrink-0 sm:block">
+        <div class="shrink-0 hidden sm:block">
           <SubscribeTags subscribe={props.subscribe} />
         </div>
 
-        <div class="w-16 shrink-0 text-right text-sm tabular-nums text-neutral-400 transition-opacity group-hover:opacity-0">
+        <div class="text-sm text-neutral-400 text-right shrink-0 w-16 transition-opacity tabular-nums group-hover:opacity-0">
           <RelativeTime time={props.createdAt} />
         </div>
 
-        <div class="absolute right-4 opacity-0 transition-opacity group-hover:opacity-100">
+        <div class="opacity-0 transition-opacity right-4 absolute group-hover:opacity-100">
           <NPopconfirm
             positiveText="取消"
             negativeText="删除"
@@ -125,8 +125,8 @@ const SubscriberRow = defineComponent({
             {{
               trigger: () => (
                 <button
-                  class="flex size-8 items-center justify-center rounded-lg text-neutral-400 transition-all hover:bg-neutral-100 hover:text-red-500 dark:hover:bg-neutral-700"
-                  onClick={(e) => e.stopPropagation()}
+                  class="text-neutral-400 rounded-lg flex size-8 transition-all items-center justify-center hover:text-red-500 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                  onClick={e => e.stopPropagation()}
                 >
                   <TrashIcon class="size-4" />
                 </button>
@@ -136,28 +136,28 @@ const SubscriberRow = defineComponent({
           </NPopconfirm>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 const SubscriberSkeleton = defineComponent({
   setup() {
     return () => (
-      <div class="flex items-center gap-4 border-b border-neutral-100 px-4 py-4 last:border-b-0 dark:border-neutral-800">
+      <div class="px-4 py-4 border-b border-neutral-100 flex gap-4 items-center last:border-b-0 dark:border-neutral-800">
         <NSkeleton circle width={20} height={20} />
         <div class="flex-1">
           <NSkeleton text width="45%" />
         </div>
-        <div class="hidden gap-1.5 sm:flex">
+        <div class="gap-1.5 hidden sm:flex">
           <NSkeleton text width={40} />
           <NSkeleton text width={40} />
         </div>
         <NSkeleton text width={70} />
         <div class="w-8" />
       </div>
-    )
+    );
   },
-})
+});
 
 const StatCard = defineComponent({
   props: {
@@ -165,168 +165,172 @@ const StatCard = defineComponent({
     label: { type: String, required: true },
     value: { type: [String, Number], required: true },
     variant: {
-      type: String as PropType<'default' | 'success' | 'warning'>,
-      default: 'default',
+      type: String as PropType<"default" | "success" | "warning">,
+      default: "default",
     },
   },
   setup(props) {
     const bgStyles = {
-      default: 'bg-neutral-50 dark:bg-neutral-800/50',
-      success: 'bg-green-50 dark:bg-green-950/30',
-      warning: 'bg-amber-50 dark:bg-amber-950/30',
-    }
+      default: "bg-neutral-50 dark:bg-neutral-800/50",
+      success: "bg-green-50 dark:bg-green-950/30",
+      warning: "bg-amber-50 dark:bg-amber-950/30",
+    };
     const iconStyles = {
-      default: 'text-neutral-400',
-      success: 'text-green-500',
-      warning: 'text-amber-500',
-    }
+      default: "text-neutral-400",
+      success: "text-green-500",
+      warning: "text-amber-500",
+    };
     return () => (
       <div
         class={[
-          'flex items-center gap-4 rounded-lg p-4',
+          "flex items-center gap-4 rounded-lg p-4",
           bgStyles[props.variant],
         ]}
       >
-        <div class={['shrink-0 text-2xl', iconStyles[props.variant]]}>
+        <div class={["shrink-0 text-2xl", iconStyles[props.variant]]}>
           {props.icon}
         </div>
-        <div class="min-w-0 flex-1">
-          <div class="text-2xl font-semibold tabular-nums text-neutral-800 dark:text-neutral-100">
-            {typeof props.value === 'number'
-              ? Intl.NumberFormat('zh-CN').format(props.value)
+        <div class="flex-1 min-w-0">
+          <div class="text-2xl text-neutral-800 font-semibold tabular-nums dark:text-neutral-100">
+            {typeof props.value === "number"
+              ? Intl.NumberFormat("zh-CN").format(props.value)
               : props.value}
           </div>
           <div class="text-xs text-neutral-500">{props.label}</div>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 export default defineComponent({
   setup() {
     const { data: statusData, refetch: refetchStatus } = useQuery({
-      queryKey: ['subscribe', 'status'],
+      queryKey: ["subscribe", "status"],
       queryFn: () => subscribeApi.getStatus(),
-    })
+    });
 
-    const subscribeEnabled = computed(() => statusData.value?.enable ?? false)
+    const subscribeEnabled = computed(() => statusData.value?.enable ?? false);
 
-    const page = ref(1)
-    const pageSize = 50
-    const searchQuery = ref('')
+    const page = ref(1);
+    const pageSize = 50;
+    const searchQuery = ref("");
 
     const {
       data: listData,
       isLoading,
       refetch: refetchList,
     } = useQuery({
-      queryKey: computed(() => ['subscribe', 'list', page.value]),
+      queryKey: computed(() => ["subscribe", "list", page.value]),
       queryFn: () => subscribeApi.getList({ page: page.value, size: pageSize }),
-    })
+    });
 
-    const subscribers = computed(() => listData.value?.data ?? [])
-    const pagination = computed(() => listData.value?.pagination)
-    const totalCount = computed(() => pagination.value?.total ?? 0)
+    const subscribers = computed(() => listData.value?.data ?? []);
+    const pagination = computed(() => listData.value?.pagination);
+    const totalCount = computed(() => pagination.value?.total ?? 0);
 
     const filteredSubscribers = computed(() => {
-      if (!searchQuery.value.trim()) return subscribers.value
-      const query = searchQuery.value.toLowerCase()
-      return subscribers.value.filter((s) =>
+      if (!searchQuery.value.trim())
+        return subscribers.value;
+      const query = searchQuery.value.toLowerCase();
+      return subscribers.value.filter(s =>
         s.email.toLowerCase().includes(query),
-      )
-    })
+      );
+    });
 
-    const selectedIds = ref<Set<string>>(new Set())
-    const isDeleting = ref(false)
+    const selectedIds = ref<Set<string>>(new Set());
+    const isDeleting = ref(false);
 
     const isAllSelected = computed(() => {
-      if (filteredSubscribers.value.length === 0) return false
-      return filteredSubscribers.value.every((s) => selectedIds.value.has(s.id))
-    })
+      if (filteredSubscribers.value.length === 0)
+        return false;
+      return filteredSubscribers.value.every(s => selectedIds.value.has(s.id));
+    });
 
     const isPartialSelected = computed(() => {
-      if (selectedIds.value.size === 0) return false
-      return !isAllSelected.value
-    })
+      if (selectedIds.value.size === 0)
+        return false;
+      return !isAllSelected.value;
+    });
 
-    const selectedCount = computed(() => selectedIds.value.size)
+    const selectedCount = computed(() => selectedIds.value.size);
 
     const toggleSelect = (id: string, checked: boolean) => {
       if (checked) {
-        selectedIds.value.add(id)
+        selectedIds.value.add(id);
       } else {
-        selectedIds.value.delete(id)
+        selectedIds.value.delete(id);
       }
-      selectedIds.value = new Set(selectedIds.value)
-    }
+      selectedIds.value = new Set(selectedIds.value);
+    };
 
     const toggleSelectAll = () => {
       if (isAllSelected.value) {
-        selectedIds.value = new Set()
+        selectedIds.value = new Set();
       } else {
-        selectedIds.value = new Set(filteredSubscribers.value.map((s) => s.id))
+        selectedIds.value = new Set(filteredSubscribers.value.map(s => s.id));
       }
-    }
+    };
 
     const clearSelection = () => {
-      selectedIds.value = new Set()
-    }
+      selectedIds.value = new Set();
+    };
 
     const toggleSubscribeEnable = async () => {
-      await optionsApi.patch('featureList', {
+      await optionsApi.patch("featureList", {
         emailSubscribe: !subscribeEnabled.value,
-      })
-      refetchStatus()
-    }
+      });
+      refetchStatus();
+    };
 
     const handleDelete = async (email: string) => {
-      await subscribeApi.unsubscribeBatch({ emails: [email] })
-      toast.success('已移除订阅者')
-      refetchList()
-    }
+      await subscribeApi.unsubscribeBatch({ emails: [email] });
+      toast.success("已移除订阅者");
+      refetchList();
+    };
 
     const handleBatchDelete = async () => {
       const emails = subscribers.value
-        .filter((s) => selectedIds.value.has(s.id))
-        .map((s) => s.email)
-      if (emails.length === 0) return
+        .filter(s => selectedIds.value.has(s.id))
+        .map(s => s.email);
+      if (emails.length === 0)
+        return;
 
-      isDeleting.value = true
+      isDeleting.value = true;
       try {
-        const { deletedCount } = await subscribeApi.unsubscribeBatch({ emails })
-        toast.success(`已移除 ${deletedCount} 位订阅者`)
-        clearSelection()
-        refetchList()
+        const { deletedCount } = await subscribeApi.unsubscribeBatch({ emails });
+        toast.success(`已移除 ${deletedCount} 位订阅者`);
+        clearSelection();
+        refetchList();
       } catch {
-        toast.error('批量删除失败')
+        toast.error("批量删除失败");
       } finally {
-        isDeleting.value = false
+        isDeleting.value = false;
       }
-    }
+    };
 
     const handleDeleteAll = async () => {
-      isDeleting.value = true
+      isDeleting.value = true;
       try {
         const { deletedCount } = await subscribeApi.unsubscribeBatch({
           all: true,
-        })
-        toast.success(`已移除全部 ${deletedCount} 位订阅者`)
-        clearSelection()
-        refetchList()
+        });
+        toast.success(`已移除全部 ${deletedCount} 位订阅者`);
+        clearSelection();
+        refetchList();
       } catch {
-        toast.error('删除失败')
+        toast.error("删除失败");
       } finally {
-        isDeleting.value = false
+        isDeleting.value = false;
       }
-    }
+    };
 
     const handleRefresh = () => {
-      refetchList()
-      refetchStatus()
-    }
+      refetchList();
+      refetchStatus();
+    };
 
-    const { setActions } = useLayout()
+    const { setActions } = useLayout();
     watchEffect(() => {
       setActions(
         <HeaderActionButton
@@ -334,13 +338,13 @@ export default defineComponent({
           onClick={handleRefresh}
           name="刷新"
         />,
-      )
-    })
+      );
+    });
 
     return () => (
-      <div class="flex h-full flex-col gap-6">
+      <div class="flex flex-col gap-6 h-full">
         {/* 概览 */}
-        <div class="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="shrink-0 gap-4 grid grid-cols-1 sm:grid-cols-3">
           <StatCard
             icon={<UsersIcon />}
             label="总订阅者"
@@ -350,15 +354,15 @@ export default defineComponent({
           <StatCard
             icon={subscribeEnabled.value ? <MailIcon /> : <MailXIcon />}
             label="订阅功能"
-            value={subscribeEnabled.value ? '已启用' : '已禁用'}
-            variant={subscribeEnabled.value ? 'success' : 'warning'}
+            value={subscribeEnabled.value ? "已启用" : "已禁用"}
+            variant={subscribeEnabled.value ? "success" : "warning"}
           />
-          <div class="flex items-center justify-between rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800/50">
+          <div class="p-4 rounded-lg bg-neutral-50 flex items-center justify-between dark:bg-neutral-800/50">
             <div>
-              <div class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <div class="text-sm text-neutral-700 font-medium dark:text-neutral-300">
                 启用邮件订阅
               </div>
-              <div class="mt-1 text-xs text-neutral-500">
+              <div class="text-xs text-neutral-500 mt-1">
                 允许访客订阅新内容通知
               </div>
             </div>
@@ -370,9 +374,9 @@ export default defineComponent({
         </div>
 
         {/* 订阅者列表 */}
-        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+        <div class="border border-neutral-200 rounded-xl bg-white flex flex-1 flex-col min-h-0 overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
           {/* 工具栏 */}
-          <div class="flex shrink-0 items-center gap-4 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
+          <div class="px-4 py-3 border-b border-neutral-100 flex shrink-0 gap-4 items-center dark:border-neutral-800">
             {/* 全选 */}
             <NCheckbox
               checked={isAllSelected.value}
@@ -383,134 +387,156 @@ export default defineComponent({
             {/* 搜索框 */}
             <NInput
               value={searchQuery.value}
-              onUpdateValue={(val) => (searchQuery.value = val)}
+              onUpdateValue={val => (searchQuery.value = val)}
               placeholder="搜索订阅者..."
               clearable
               class="flex-1"
             >
               {{
-                prefix: () => <SearchIcon class="size-4 text-neutral-400" />,
+                prefix: () => <SearchIcon class="text-neutral-400 size-4" />,
               }}
             </NInput>
 
             {/* 选中状态 & 操作 */}
-            {selectedCount.value > 0 ? (
-              <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                  已选择 {selectedCount.value} 项
-                </span>
-                <div class="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-                <button
-                  class="rounded-lg px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                  onClick={clearSelection}
-                >
-                  取消选择
-                </button>
-                <NPopconfirm
-                  positiveText="取消"
-                  negativeText="删除"
-                  onNegativeClick={handleBatchDelete}
-                >
-                  {{
-                    trigger: () => (
-                      <button
-                        class="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950"
-                        disabled={isDeleting.value}
+            {selectedCount.value > 0
+              ? (
+                  <div class="flex gap-3 items-center">
+                    <span class="text-sm text-neutral-600 font-medium dark:text-neutral-400">
+                      已选择
+                      {" "}
+                      {selectedCount.value}
+                      {" "}
+                      项
+                    </span>
+                    <div class="bg-neutral-200 h-4 w-px dark:bg-neutral-700" />
+                    <button
+                      class="text-sm text-neutral-600 px-3 py-1.5 rounded-lg transition-colors dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      onClick={clearSelection}
+                    >
+                      取消选择
+                    </button>
+                    <NPopconfirm
+                      positiveText="取消"
+                      negativeText="删除"
+                      onNegativeClick={handleBatchDelete}
+                    >
+                      {{
+                        trigger: () => (
+                          <button
+                            class="text-sm text-red-600 font-medium px-3 py-1.5 rounded-lg bg-red-50 transition-colors dark:text-red-400 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-950"
+                            disabled={isDeleting.value}
+                          >
+                            {isDeleting.value ? "删除中..." : "删除选中"}
+                          </button>
+                        ),
+                        default: () => (
+                          <span>
+                            确定要删除选中的
+                            {" "}
+                            {selectedCount.value}
+                            {" "}
+                            位订阅者吗？
+                          </span>
+                        ),
+                      }}
+                    </NPopconfirm>
+                    {isAllSelected.value && totalCount.value > 0 && (
+                      <NPopconfirm
+                        positiveText="取消"
+                        negativeText="删除全部"
+                        onNegativeClick={handleDeleteAll}
                       >
-                        {isDeleting.value ? '删除中...' : '删除选中'}
-                      </button>
-                    ),
-                    default: () => (
-                      <span>
-                        确定要删除选中的 {selectedCount.value} 位订阅者吗？
-                      </span>
-                    ),
-                  }}
-                </NPopconfirm>
-                {isAllSelected.value && totalCount.value > 0 && (
-                  <NPopconfirm
-                    positiveText="取消"
-                    negativeText="删除全部"
-                    onNegativeClick={handleDeleteAll}
-                  >
-                    {{
-                      trigger: () => (
-                        <button
-                          class="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
-                          disabled={isDeleting.value}
-                        >
-                          删除全部 ({totalCount.value})
-                        </button>
-                      ),
-                      default: () => (
-                        <span>
-                          确定要删除全部 {totalCount.value}{' '}
-                          位订阅者吗？此操作不可撤销！
-                        </span>
-                      ),
-                    }}
-                  </NPopconfirm>
+                        {{
+                          trigger: () => (
+                            <button
+                              class="text-sm text-white font-medium px-3 py-1.5 rounded-lg bg-red-600 transition-colors hover:bg-red-700"
+                              disabled={isDeleting.value}
+                            >
+                              删除全部 (
+                              {totalCount.value}
+                              )
+                            </button>
+                          ),
+                          default: () => (
+                            <span>
+                              确定要删除全部
+                              {" "}
+                              {totalCount.value}
+                              {" "}
+                              位订阅者吗？此操作不可撤销！
+                            </span>
+                          ),
+                        }}
+                      </NPopconfirm>
+                    )}
+                  </div>
+                )
+              : (
+                  <span class="text-sm text-neutral-500">
+                    共
+                    {" "}
+                    {totalCount.value}
+                    {" "}
+                    位订阅者
+                  </span>
                 )}
-              </div>
-            ) : (
-              <span class="text-sm text-neutral-500">
-                共 {totalCount.value} 位订阅者
-              </span>
-            )}
           </div>
 
           {/* 列表 */}
-          <div class="min-h-0 flex-1 overflow-y-auto">
-            {isLoading.value ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <SubscriberSkeleton key={i} />
-              ))
-            ) : filteredSubscribers.value.length === 0 ? (
-              <div class="py-16">
-                <NEmpty
-                  description={
-                    searchQuery.value ? '未找到匹配的订阅者' : '暂无订阅者'
-                  }
-                >
-                  {{
-                    extra: () =>
-                      !searchQuery.value && (
-                        <p class="mt-2 text-sm text-neutral-400">
-                          开启订阅功能后，访客可以订阅您的内容更新
-                        </p>
-                      ),
-                  }}
-                </NEmpty>
-              </div>
-            ) : (
-              filteredSubscribers.value.map((subscriber) => (
-                <SubscriberRow
-                  key={subscriber.id}
-                  email={subscriber.email}
-                  subscribe={subscriber.subscribe}
-                  createdAt={subscriber.createdAt}
-                  selected={selectedIds.value.has(subscriber.id)}
-                  onSelect={(checked: boolean) =>
-                    toggleSelect(subscriber.id, checked)
-                  }
-                  onDelete={() => handleDelete(subscriber.email)}
-                />
-              ))
-            )}
+          <div class="flex-1 min-h-0 overflow-y-auto">
+            {isLoading.value
+              ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <SubscriberSkeleton key={i} />
+                  ))
+                )
+              : filteredSubscribers.value.length === 0
+                ? (
+                    <div class="py-16">
+                      <NEmpty
+                        description={
+                          searchQuery.value ? "未找到匹配的订阅者" : "暂无订阅者"
+                        }
+                      >
+                        {{
+                          extra: () =>
+                            !searchQuery.value && (
+                              <p class="text-sm text-neutral-400 mt-2">
+                                开启订阅功能后，访客可以订阅您的内容更新
+                              </p>
+                            ),
+                        }}
+                      </NEmpty>
+                    </div>
+                  )
+                : (
+                    filteredSubscribers.value.map(subscriber => (
+                      <SubscriberRow
+                        key={subscriber.id}
+                        email={subscriber.email}
+                        subscribe={subscriber.subscribe}
+                        createdAt={subscriber.createdAt}
+                        selected={selectedIds.value.has(subscriber.id)}
+                        onSelect={(checked: boolean) =>
+                          toggleSelect(subscriber.id, checked)}
+                        onDelete={() => handleDelete(subscriber.email)}
+                      />
+                    ))
+                  )}
           </div>
 
           {/* 分页 */}
           {pagination.value && pagination.value.totalPage > 1 && (
-            <div class="justify-right flex shrink-0 items-center border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
+            <div class="px-4 py-3 border-t border-neutral-100 flex shrink-0 items-center justify-right dark:border-neutral-800">
               <NPagination
                 page={pagination.value.currentPage}
                 pageCount={pagination.value.totalPage}
-                onUpdatePage={(p) => (page.value = p)}
+                onUpdatePage={p => (page.value = p)}
               />
             </div>
           )}
         </div>
       </div>
-    )
+    );
   },
-})
+});

@@ -1,27 +1,17 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "strict": true,
     "jsx": "preserve",
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "esModuleInterop": true,
-    "noImplicitAny": false,
-    "allowJs": true,
-    "skipLibCheck": true,
     "jsxImportSource": "vue",
-    "noEmit": true,
-    "skipDefaultLibCheck": true,
     "lib": [
       "esnext",
       "dom",
       "dom.iterable"
     ],
-    "types": [],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "paths": {
       "~": [
         "./src"
@@ -29,7 +19,17 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "resolveJsonModule": true,
+    "types": [],
+    "allowJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

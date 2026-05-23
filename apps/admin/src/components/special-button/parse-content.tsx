@@ -1,8 +1,10 @@
-import { load } from 'js-yaml'
+import type { PropType } from "vue";
+import { Icon } from "@vicons/utils";
+import { load } from "js-yaml";
 import {
   CircleHelp as QuestionCircleIcon,
   Hash as SlackHashIcon,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -12,14 +14,12 @@ import {
   NPopover,
   NSpace,
   NText,
-} from 'naive-ui'
-import { defineComponent, ref } from 'vue'
-import type { PropType } from 'vue'
+} from "naive-ui";
 
-import { Icon } from '@vicons/utils'
+import { defineComponent, ref } from "vue";
 
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { PlainEditor } from '~/components/editor/plain/plain'
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { PlainEditor } from "~/components/editor/plain/plain";
 
 export const ParseContentButton = defineComponent({
   props: {
@@ -33,39 +33,39 @@ export const ParseContentButton = defineComponent({
     },
   },
   setup(props) {
-    const parseContentDialogShow = ref(false)
-    const unparsedValue = ref('')
+    const parseContentDialogShow = ref(false);
+    const unparsedValue = ref("");
     const handleParseContent = (value: string) => {
-      value = value.trim()
+      value = value.trim();
 
-      const hasHeaderYaml = /^---\n((.|\n)*?)\n---/.exec(value)
+      const hasHeaderYaml = /^---\n((.|\n)*?)\n---/.exec(value);
 
       if (hasHeaderYaml?.length) {
-        const headerYaml = hasHeaderYaml[1]
-        const meta: Record<string, any> = load(headerYaml) as any
+        const headerYaml = hasHeaderYaml[1];
+        const meta: Record<string, any> = load(headerYaml) as any;
 
-        props.onHandleYamlParsedMeta && props.onHandleYamlParsedMeta(meta)
+        props.onHandleYamlParsedMeta && props.onHandleYamlParsedMeta(meta);
 
         // remove header yaml
-        value = value.replace(hasHeaderYaml[0], '')
+        value = value.replace(hasHeaderYaml[0], "");
       }
       // trim value again
-      const str = value.trim()
-      const lines = str.split('\n')
+      const str = value.trim();
+      const lines = str.split("\n");
       // if first line is not empty, start with `#`
-      const title = lines[0].startsWith('#')
-        ? lines[0].replace(/^#/, '').trim()
-        : ''
+      const title = lines[0].startsWith("#")
+        ? lines[0].replace(/^#/, "").trim()
+        : "";
 
       if (title) {
-        props.data.title = title
-        lines.shift()
+        props.data.title = title;
+        lines.shift();
       }
 
-      props.data.text = lines.join('\n').trim()
+      props.data.text = lines.join("\n").trim();
 
-      parseContentDialogShow.value = false
-    }
+      parseContentDialogShow.value = false;
+    };
 
     return () => (
       <>
@@ -78,7 +78,7 @@ export const ParseContentButton = defineComponent({
         <NModal
           transformOrigin="center"
           show={parseContentDialogShow.value}
-          onUpdateShow={(s) => (parseContentDialogShow.value = s)}
+          onUpdateShow={s => (parseContentDialogShow.value = s)}
         >
           <NCard
             class="modal-card"
@@ -88,7 +88,7 @@ export const ParseContentButton = defineComponent({
             {{
               header() {
                 return (
-                  <div class="relative flex items-center space-x-4">
+                  <div class="flex items-center relative space-x-4">
                     <NText>解析 Markdown</NText>
                     <NPopover trigger="hover" placement="right">
                       {{
@@ -113,27 +113,27 @@ permalink: posts/visualize-list-scroll-restoration
 虚拟列表是为了提高页面性能而出现的。`}
                               />
                             </div>
-                          )
+                          );
                         },
                         trigger() {
                           return (
                             <Icon>
                               <QuestionCircleIcon />
                             </Icon>
-                          )
+                          );
                         },
                       }}
                     </NPopover>
                   </div>
-                )
+                );
               },
 
               default() {
                 return (
-                  <NSpace vertical size={'large'}>
+                  <NSpace vertical size="large">
                     <PlainEditor
                       class="h-[70vh]"
-                      onChange={(e) => void (unparsedValue.value = e)}
+                      onChange={e => void (unparsedValue.value = e)}
                       text={unparsedValue.value}
                       unSaveConfirm={false}
                     />
@@ -147,7 +147,7 @@ permalink: posts/visualize-list-scroll-restoration
                       </NButton>
                       <NButton
                         onClick={(_) => {
-                          unparsedValue.value = ''
+                          unparsedValue.value = "";
                         }}
                         round
                       >
@@ -155,12 +155,12 @@ permalink: posts/visualize-list-scroll-restoration
                       </NButton>
                     </NSpace>
                   </NSpace>
-                )
+                );
               },
             }}
           </NCard>
         </NModal>
       </>
-    )
+    );
   },
-})
+});

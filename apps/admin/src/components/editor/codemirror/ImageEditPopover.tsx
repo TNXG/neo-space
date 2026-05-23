@@ -1,4 +1,4 @@
-import { NButton, NInput, NSpace } from 'naive-ui'
+import { NButton, NInput, NSpace } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -7,168 +7,172 @@ import {
   ref,
   Teleport,
   watch,
-} from 'vue'
+} from "vue";
 
-import { hideImagePopover, imagePopoverState } from './image-popover-state'
+import { hideImagePopover, imagePopoverState } from "./image-popover-state";
 
 export const ImageEditPopover = defineComponent({
-  name: 'ImageEditPopover',
+  name: "ImageEditPopover",
   setup() {
-    const altValue = ref('')
-    const urlValue = ref('')
-    const popoverRef = ref<HTMLElement>()
-    const altInputRef = ref<InstanceType<typeof NInput>>()
-    const popoverStyle = ref({ left: '0px', top: '0px' })
+    const altValue = ref("");
+    const urlValue = ref("");
+    const popoverRef = ref<HTMLElement>();
+    const altInputRef = ref<InstanceType<typeof NInput>>();
+    const popoverStyle = ref({ left: "0px", top: "0px" });
 
     // 从 data-* 属性读取数据
     const popoverData = computed(() => {
-      const el = imagePopoverState.targetEl
-      if (!el) return null
+      const el = imagePopoverState.targetEl;
+      if (!el)
+        return null;
       return {
-        alt: el.dataset.alt || '',
-        url: el.dataset.url || '',
+        alt: el.dataset.alt || "",
+        url: el.dataset.url || "",
         matchStart: Number(el.dataset.matchStart),
         matchEnd: Number(el.dataset.matchEnd),
-      }
-    })
+      };
+    });
 
     // 控制 body 的 pointer-events 和滚动
     const disableBodyInteraction = () => {
-      document.body.style.pointerEvents = 'none'
-      document.body.style.overflow = 'hidden'
-    }
+      document.body.style.pointerEvents = "none";
+      document.body.style.overflow = "hidden";
+    };
 
     const enableBodyInteraction = () => {
-      document.body.style.pointerEvents = ''
-      document.body.style.overflow = ''
-    }
+      document.body.style.pointerEvents = "";
+      document.body.style.overflow = "";
+    };
 
     // 监听 state 变化，初始化表单值并控制交互
     watch(
       () => imagePopoverState.visible,
       (visible) => {
         if (visible && popoverData.value) {
-          altValue.value = popoverData.value.alt
-          urlValue.value = popoverData.value.url
-          disableBodyInteraction()
+          altValue.value = popoverData.value.alt;
+          urlValue.value = popoverData.value.url;
+          disableBodyInteraction();
           nextTick(() => {
-            updatePosition()
-            altInputRef.value?.focus()
-          })
+            updatePosition();
+            altInputRef.value?.focus();
+          });
         } else {
-          enableBodyInteraction()
+          enableBodyInteraction();
         }
       },
-    )
+    );
 
     // 组件卸载时确保恢复 body 交互
     onUnmounted(() => {
-      enableBodyInteraction()
-    })
+      enableBodyInteraction();
+    });
 
     const updatePosition = () => {
-      const el = imagePopoverState.targetEl
-      if (!el || !popoverRef.value) return
+      const el = imagePopoverState.targetEl;
+      if (!el || !popoverRef.value)
+        return;
 
-      const rect = el.getBoundingClientRect()
-      const popoverRect = popoverRef.value.getBoundingClientRect()
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
+      const rect = el.getBoundingClientRect();
+      const popoverRect = popoverRef.value.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-      let left = rect.left
-      let top = rect.bottom + 8
+      let left = rect.left;
+      let top = rect.bottom + 8;
 
       // Horizontal adjustment
       if (left + popoverRect.width > viewportWidth - 16) {
-        left = viewportWidth - popoverRect.width - 16
+        left = viewportWidth - popoverRect.width - 16;
       }
       if (left < 16) {
-        left = 16
+        left = 16;
       }
 
       // Vertical adjustment - show above if not enough space below
       if (top + popoverRect.height > viewportHeight - 16) {
-        top = rect.top - popoverRect.height - 8
+        top = rect.top - popoverRect.height - 8;
       }
 
       popoverStyle.value = {
         left: `${left}px`,
         top: `${top}px`,
-      }
-    }
+      };
+    };
 
     const handleSave = () => {
-      const data = popoverData.value
-      const view = imagePopoverState.view
-      if (!data || !view) return
+      const data = popoverData.value;
+      const view = imagePopoverState.view;
+      if (!data || !view)
+        return;
 
-      const newMarkdown = `![${altValue.value}](${urlValue.value})`
+      const newMarkdown = `![${altValue.value}](${urlValue.value})`;
       view.dispatch({
         changes: {
           from: data.matchStart,
           to: data.matchEnd,
           insert: newMarkdown,
         },
-      })
-      hideImagePopover()
-    }
+      });
+      hideImagePopover();
+    };
 
     const handleCancel = () => {
-      hideImagePopover()
-    }
+      hideImagePopover();
+    };
 
     const handleDelete = () => {
-      const data = popoverData.value
-      const view = imagePopoverState.view
-      if (!data || !view) return
+      const data = popoverData.value;
+      const view = imagePopoverState.view;
+      if (!data || !view)
+        return;
 
       // Find the line containing the image and check if it's the only content
-      const doc = view.state.doc
-      const line = doc.lineAt(data.matchStart)
-      const lineText = line.text.trim()
-      const imageMarkdown = doc.sliceString(data.matchStart, data.matchEnd)
+      const doc = view.state.doc;
+      const line = doc.lineAt(data.matchStart);
+      const lineText = line.text.trim();
+      const imageMarkdown = doc.sliceString(data.matchStart, data.matchEnd);
 
       // If the line only contains this image, delete the entire line
-      const isOnlyContentOnLine = lineText === imageMarkdown.trim()
+      const isOnlyContentOnLine = lineText === imageMarkdown.trim();
 
       if (isOnlyContentOnLine) {
         // Delete the entire line including the newline
-        const deleteFrom = line.from
-        const deleteTo = Math.min(line.to + 1, doc.length)
+        const deleteFrom = line.from;
+        const deleteTo = Math.min(line.to + 1, doc.length);
         view.dispatch({
           changes: {
             from: deleteFrom,
             to: deleteTo,
-            insert: '',
+            insert: "",
           },
-        })
+        });
       } else {
         // Just delete the image markdown
         view.dispatch({
           changes: {
             from: data.matchStart,
             to: data.matchEnd,
-            insert: '',
+            insert: "",
           },
-        })
+        });
       }
 
-      hideImagePopover()
-    }
+      hideImagePopover();
+    };
 
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleSave()
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSave();
       }
-      if (e.key === 'Escape') {
-        handleCancel()
+      if (e.key === "Escape") {
+        handleCancel();
       }
-    }
+    };
 
     return () => {
       if (!imagePopoverState.visible || !imagePopoverState.targetEl) {
-        return null
+        return null;
       }
 
       return (
@@ -179,7 +183,7 @@ export const ImageEditPopover = defineComponent({
             ref={popoverRef}
             class="cm-image-edit-popover"
             style={popoverStyle.value}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             onKeydown={handleKeydown}
           >
             <div class="space-y-3">
@@ -216,7 +220,7 @@ export const ImageEditPopover = defineComponent({
             </div>
           </div>
         </Teleport>
-      )
-    }
+      );
+    };
   },
-})
+});

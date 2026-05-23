@@ -1,3 +1,12 @@
+import type {
+  FilterOption,
+  FilterState,
+  TableColumns,
+} from "naive-ui/lib/data-table/src/interface";
+import type { ComputedRef, PropType } from "vue";
+import type { PostModel } from "../../models/post";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { debouncedRef } from "@vueuse/core";
 import {
   Plus as AddIcon,
   Book as BookIcon,
@@ -7,8 +16,8 @@ import {
   Search as SearchIcon,
   ThumbsUp as ThumbsUpIcon,
   Trash2,
-} from 'lucide-vue-next'
-import { NButton, NIcon, NInput, NPopconfirm, NPopover, NSpace } from 'naive-ui'
+} from "lucide-vue-next";
+import { NButton, NIcon, NInput, NPopconfirm, NPopover, NSpace } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -16,40 +25,31 @@ import {
   reactive,
   ref,
   watchEffect,
-} from 'vue'
-import { RouterLink } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type {
-  FilterOption,
-  FilterState,
-  TableColumns,
-} from 'naive-ui/lib/data-table/src/interface'
-import type { ComputedRef, PropType } from 'vue'
-import type { PostModel } from '../../models/post'
+} from "vue";
 
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { debouncedRef } from '@vueuse/core'
+import { RouterLink } from "vue-router";
+import { toast } from "vue-sonner";
 
-import { postsApi } from '~/api/posts'
-import { TableTitleLink } from '~/components/link/title-link'
-import { DeleteConfirmButton } from '~/components/special-button/delete-confirm'
-import { StatusToggle } from '~/components/status-toggle'
-import { Table } from '~/components/table'
-import { EditColumn } from '~/components/table/edit-column'
-import { RelativeTime } from '~/components/time/relative-time'
-import { WEB_URL } from '~/constants/env'
-import { queryKeys } from '~/hooks/queries/keys'
-import { useDataTable } from '~/hooks/use-data-table'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { CategoryStore } from '~/stores/category'
-import { UIStore } from '~/stores/ui'
-import { parseDate } from '~/utils'
+import { postsApi } from "~/api/posts";
+import { TableTitleLink } from "~/components/link/title-link";
+import { DeleteConfirmButton } from "~/components/special-button/delete-confirm";
+import { StatusToggle } from "~/components/status-toggle";
+import { Table } from "~/components/table";
+import { EditColumn } from "~/components/table/edit-column";
+import { RelativeTime } from "~/components/time/relative-time";
+import { WEB_URL } from "~/constants/env";
+import { queryKeys } from "~/hooks/queries/keys";
+import { useDataTable } from "~/hooks/use-data-table";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { CategoryStore } from "~/stores/category";
+import { UIStore } from "~/stores/ui";
+import { parseDate } from "~/utils";
 
-import { HeaderActionButton } from '../../components/button/header-action-button'
-import { useLayout } from '../../layouts/content'
+import { HeaderActionButton } from "../../components/button/header-action-button";
+import { useLayout } from "../../layouts/content";
 
 const PostItem = defineComponent({
-  name: 'PostItem',
+  name: "PostItem",
   props: {
     data: {
       type: Object as PropType<PostModel>,
@@ -61,45 +61,45 @@ const PostItem = defineComponent({
     },
     categoryName: {
       type: String,
-      default: '',
+      default: "",
     },
   },
   setup(props) {
-    const row = computed(() => props.data)
-    const postId = computed(() => row.value._id)
+    const row = computed(() => props.data);
+    const postId = computed(() => row.value._id);
 
     return () => (
-      <div class="flex items-center gap-2 border-b border-neutral-200 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900/50">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5">
+      <div class="px-3 py-2.5 border-b border-neutral-200 flex gap-2 transition-colors items-center last:border-b-0 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50">
+        <div class="flex-1 min-w-0">
+          <div class="flex gap-1.5 items-center">
             {row.value.pinAt && (
-              <PhPushPin class="h-3 w-3 shrink-0 text-orange-400" />
+              <PhPushPin class="text-orange-400 shrink-0 h-3 w-3" />
             )}
             <RouterLink
               to={`/posts/edit?id=${postId.value}`}
-              class="truncate text-sm font-medium text-neutral-900 hover:text-blue-600 dark:text-neutral-100 dark:hover:text-blue-400"
+              class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400"
             >
               {row.value.title}
             </RouterLink>
           </div>
 
-          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <div class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 items-center">
             {props.categoryName && (
-              <span class="rounded bg-neutral-100 px-1 py-px text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+              <span class="text-xs text-neutral-600 px-1 py-px rounded bg-neutral-100 dark:text-neutral-400 dark:bg-neutral-800">
                 {props.categoryName}
               </span>
             )}
             {row.value.tags && row.value.tags.length > 0 && (
-              <span class="max-w-24 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                {row.value.tags.slice(0, 2).join('、')}
-                {row.value.tags.length > 2 && '…'}
+              <span class="text-xs text-neutral-500 max-w-24 truncate dark:text-neutral-400">
+                {row.value.tags.slice(0, 2).join("、")}
+                {row.value.tags.length > 2 && "…"}
               </span>
             )}
-            <span class="flex items-center gap-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+            <span class="text-xs text-neutral-400 flex gap-0.5 items-center dark:text-neutral-500">
               <BookIcon class="h-2.5 w-2.5" />
               {row.value.readCount || 0}
             </span>
-            <span class="flex items-center gap-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+            <span class="text-xs text-neutral-400 flex gap-0.5 items-center dark:text-neutral-500">
               <ThumbsUpIcon class="h-2.5 w-2.5" />
               {row.value.likeCount || 0}
             </span>
@@ -119,7 +119,7 @@ const PostItem = defineComponent({
 
         <div class="flex shrink-0 items-center">
           <a
-            href={`${WEB_URL}/posts/${row.value.category?.slug ?? '_'}/${row.value.slug}`}
+            href={`${WEB_URL}/posts/${row.value.category?.slug ?? "_"}/${row.value.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="在新窗口打开文章"
@@ -127,7 +127,7 @@ const PostItem = defineComponent({
             <NButton quaternary size="tiny" class="!px-1.5">
               {{
                 icon: () => (
-                  <ExternalLink class="h-3.5 w-3.5 text-neutral-500" />
+                  <ExternalLink class="text-neutral-500 h-3.5 w-3.5" />
                 ),
               }}
             </NButton>
@@ -139,7 +139,7 @@ const PostItem = defineComponent({
           >
             <NButton quaternary size="tiny" class="!px-1.5">
               {{
-                icon: () => <Pencil class="h-3.5 w-3.5 text-neutral-500" />,
+                icon: () => <Pencil class="text-neutral-500 h-3.5 w-3.5" />,
               }}
             </NButton>
           </RouterLink>
@@ -158,28 +158,32 @@ const PostItem = defineComponent({
                   aria-label="删除文章"
                 >
                   {{
-                    icon: () => <Trash2 class="h-3.5 w-3.5 text-red-500" />,
+                    icon: () => <Trash2 class="text-red-500 h-3.5 w-3.5" />,
                   }}
                 </NButton>
               ),
               default: () => (
-                <span class="max-w-48">确定要删除「{row.value.title}」？</span>
+                <span class="max-w-48">
+                  确定要删除「
+                  {row.value.title}
+                  」？
+                </span>
               ),
             }}
           </NPopconfirm>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 export const ManagePostListView = defineComponent({
-  name: 'PostList',
+  name: "PostList",
   setup() {
-    const queryClient = useQueryClient()
-    const searchKeyword = ref('')
-    const debouncedSearch = debouncedRef(searchKeyword, 300)
-    const categoryFilter = ref<string[] | undefined>(undefined)
+    const queryClient = useQueryClient();
+    const searchKeyword = ref("");
+    const debouncedSearch = debouncedRef(searchKeyword, 300);
+    const categoryFilter = ref<string[] | undefined>(undefined);
 
     const {
       isLoading: loading,
@@ -190,15 +194,15 @@ export const ManagePostListView = defineComponent({
       setSort,
       setPage,
     } = useDataTable<PostModel>({
-      queryKey: (params) => queryKeys.posts.list(params),
+      queryKey: params => queryKeys.posts.list(params),
       queryFn: (params) => {
-        const keyword = params.filters?.search
+        const keyword = params.filters?.search;
         return postsApi.getList({
           page: params.page,
           size: params.size,
           keyword,
           select:
-            'title id createdAt modifiedAt slug categoryId copyright tags readCount likeCount pinAt meta isPublished',
+            "title id createdAt modifiedAt slug categoryId copyright tags readCount likeCount pinAt meta isPublished",
           categoryIds: params.filters?.categoryIds,
           ...(params.sortBy
             ? {
@@ -206,94 +210,101 @@ export const ManagePostListView = defineComponent({
                 sortOrder: params.sortOrder,
               }
             : {}),
-        })
+        });
       },
       pageSize: 20,
       filters: () => ({
         categoryIds: categoryFilter.value,
         search: debouncedSearch.value || undefined,
       }),
-    })
+    });
 
-    const ui = useStoreRef(UIStore)
+    const ui = useStoreRef(UIStore);
     const isMobile = computed(
       () => ui.viewport.value.mobile || ui.viewport.value.pad,
-    )
+    );
 
-    const categoryStore = useStoreRef(CategoryStore)
+    const categoryStore = useStoreRef(CategoryStore);
 
     onMounted(async () => {
-      await categoryStore.fetch()
-    })
+      await categoryStore.fetch();
+    });
 
     const deleteMutation = useMutation({
       mutationFn: postsApi.delete,
       onSuccess: () => {
-        toast.success('删除成功')
-        queryClient.invalidateQueries({ queryKey: queryKeys.posts.all })
+        toast.success("删除成功");
+        queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
       },
-    })
+    });
 
     const handleDelete = (id: string) => {
-      deleteMutation.mutate(id)
-    }
+      deleteMutation.mutate(id);
+    };
     const CardList = defineComponent({
       setup() {
         return () => (
-          <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-            {loading.value ? (
-              <div class="flex items-center justify-center py-16">
-                <span class="text-sm text-neutral-400">加载中…</span>
-              </div>
-            ) : data.value.length === 0 ? (
-              <div class="flex flex-col items-center justify-center py-16">
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  暂无文章
-                </p>
-                <RouterLink
-                  to="/posts/edit"
-                  class="mt-4 text-sm text-blue-500 hover:text-blue-600 hover:underline"
-                >
-                  创建第一篇文章
-                </RouterLink>
-              </div>
-            ) : (
-              <div>
-                {data.value.map((item) => (
-                  <PostItem
-                    key={item._id}
-                    data={item}
-                    categoryName={
-                      categoryStore.map.value?.get(item.categoryId)?.name ?? ''
-                    }
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
-            )}
+          <div class="border border-neutral-200 rounded-lg bg-white overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
+            {loading.value
+              ? (
+                  <div class="py-16 flex items-center justify-center">
+                    <span class="text-sm text-neutral-400">加载中…</span>
+                  </div>
+                )
+              : data.value.length === 0
+                ? (
+                    <div class="py-16 flex flex-col items-center justify-center">
+                      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                        暂无文章
+                      </p>
+                      <RouterLink
+                        to="/posts/edit"
+                        class="text-sm text-blue-500 mt-4 hover:text-blue-600 hover:underline"
+                      >
+                        创建第一篇文章
+                      </RouterLink>
+                    </div>
+                  )
+                : (
+                    <div>
+                      {data.value.map(item => (
+                        <PostItem
+                          key={item._id}
+                          data={item}
+                          categoryName={
+                            categoryStore.map.value?.get(item.categoryId)?.name ?? ""
+                          }
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </div>
+                  )}
 
             {pager.value && pager.value.totalPage > 1 && (
-              <div class="flex items-center justify-center gap-4 border-t border-neutral-200 py-4 dark:border-neutral-800">
+              <div class="py-4 border-t border-neutral-200 flex gap-4 items-center justify-center dark:border-neutral-800">
                 <button
-                  class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  class="text-sm px-3 py-1.5 border border-neutral-200 rounded-md dark:border-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-neutral-800"
                   disabled={!pager.value.hasPrevPage}
                   onClick={() => {
                     if (pager.value?.hasPrevPage) {
-                      setPage(pager.value.currentPage - 1)
+                      setPage(pager.value.currentPage - 1);
                     }
                   }}
                 >
                   上一页
                 </button>
                 <span class="text-sm text-neutral-500 dark:text-neutral-400">
-                  {pager.value.currentPage} / {pager.value.totalPage}
+                  {pager.value.currentPage}
+                  {" "}
+                  /
+                  {pager.value.totalPage}
                 </span>
                 <button
-                  class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  class="text-sm px-3 py-1.5 border border-neutral-200 rounded-md dark:border-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-neutral-800"
                   disabled={!pager.value.hasNextPage}
                   onClick={() => {
                     if (pager.value?.hasNextPage) {
-                      setPage(pager.value.currentPage + 1)
+                      setPage(pager.value.currentPage + 1);
                     }
                   }}
                 >
@@ -302,60 +313,62 @@ export const ManagePostListView = defineComponent({
               </div>
             )}
           </div>
-        )
+        );
       },
-    })
+    });
 
     const DataTable = defineComponent({
       setup() {
         const categoryFilterOptions: ComputedRef<FilterOption[]> = computed(
           () =>
-            categoryStore.data.value?.map((i) => ({
+            categoryStore.data.value?.map(i => ({
               label: i.name,
               value: i.id,
             })) || [],
-        )
+        );
 
         const columns = reactive<TableColumns<PostModel>>([
           {
-            type: 'selection',
-            fixed: 'left',
-            options: ['none', 'all'],
+            type: "selection",
+            fixed: "left",
+            options: ["none", "all"],
           },
           {
-            title: '标题',
-            key: 'title',
+            title: "标题",
+            key: "title",
             width: 280,
-            fixed: 'left',
+            fixed: "left",
             render(row) {
               return (
-                <div class={'flex flex-grow items-center space-x-2'}>
+                <div class="flex flex-grow items-center space-x-2">
                   {row.pinAt && (
                     <NPopover>
                       {{
                         trigger() {
                           return (
-                            <NIcon class={'shrink-0 text-orange-400'}>
+                            <NIcon class="text-orange-400 shrink-0">
                               <PhPushPin />
                             </NIcon>
-                          )
+                          );
                         },
                         default() {
-                          if (!row.pinAt) return null
+                          if (!row.pinAt)
+                            return null;
                           return (
                             <span>
-                              置顶于{' '}
+                              置顶于
+                              {" "}
                               {parseDate(
                                 row.pinAt,
-                                'yyyy 年 M 月 d 日 HH:mm:ss',
+                                "yyyy 年 M 月 d 日 HH:mm:ss",
                               )}
                             </span>
-                          )
+                          );
                         },
                       }}
                     </NPopover>
                   )}
-                  <div class={'w-0 flex-grow'}>
+                  <div class="flex-grow w-0">
                     <TableTitleLink
                       id={row._id}
                       title={row.title}
@@ -368,112 +381,112 @@ export const ManagePostListView = defineComponent({
                     />
                   </div>
                 </div>
-              )
+              );
             },
           },
           {
-            title: '分类',
+            title: "分类",
             sortOrder: false,
-            sorter: 'default',
-            key: 'category',
+            sorter: "default",
+            key: "category",
             width: 100,
             ellipsis: true,
             // @ts-expect-error
             filterOptions: categoryFilterOptions,
             filter: true,
             render(row) {
-              const map = categoryStore.map.value
+              const map = categoryStore.map.value;
 
               if (!map) {
-                return ''
+                return "";
               }
 
               return (
                 <EditColumn
                   returnToConfrim={false}
                   initialValue={
-                    categoryStore.map.value.get(row.categoryId)?.name ?? ''
+                    categoryStore.map.value.get(row.categoryId)?.name ?? ""
                   }
                   onSubmit={async (v) => {
-                    await postsApi.patch(row._id, { categoryId: v })
-                    toast.success('修改成功')
-                    data.value.find((i) => i._id === row._id)!.categoryId = v
+                    await postsApi.patch(row._id, { categoryId: v });
+                    toast.success("修改成功");
+                    data.value.find(i => i._id === row._id)!.categoryId = v;
                   }}
                   type="select"
                   options={
-                    categoryStore.data.value?.map((i) => ({
+                    categoryStore.data.value?.map(i => ({
                       label: i.name,
                       value: i.id,
                       key: i.id,
                     })) || []
                   }
                 />
-              )
+              );
             },
           },
           {
-            title: '标签',
-            key: 'tags',
+            title: "标签",
+            key: "tags",
             width: 100,
             ellipsis: true,
             render(row) {
-              return row.tags?.join('，')
+              return row.tags?.join("，");
             },
           },
           {
             title: () => <BookIcon class="h-4 w-4" />,
-            key: 'readCount',
+            key: "readCount",
             width: 50,
             render(row) {
-              return row.readCount || 0
+              return row.readCount || 0;
             },
           },
           {
             title: () => <ThumbsUpIcon class="h-4 w-4" />,
             width: 50,
-            key: 'likeCount',
+            key: "likeCount",
             render(row) {
-              return row.likeCount || 0
+              return row.likeCount || 0;
             },
           },
           {
-            title: '创建于',
+            title: "创建于",
             width: 100,
-            key: 'createdAt',
-            sortOrder: 'descend',
-            sorter: 'default',
+            key: "createdAt",
+            sortOrder: "descend",
+            sorter: "default",
             render(row) {
-              return <RelativeTime time={row.createdAt} />
+              return <RelativeTime time={row.createdAt} />;
             },
           },
           {
-            title: '修改于',
-            key: 'modifiedAt',
-            sorter: 'default',
+            title: "修改于",
+            key: "modifiedAt",
+            sorter: "default",
             sortOrder: false,
             width: 100,
             render(row) {
-              return <RelativeTime time={row.modifiedAt ?? row.createdAt} />
+              return <RelativeTime time={row.modifiedAt ?? row.createdAt} />;
             },
           },
           {
-            title: '状态',
-            key: 'isPublished',
+            title: "状态",
+            key: "isPublished",
             width: 120,
             render(row) {
-              return <StatusToggle isPublished={row.isPublished ?? false} />
+              return <StatusToggle isPublished={row.isPublished ?? false} />;
             },
           },
           {
-            title: '操作',
-            fixed: 'right',
+            title: "操作",
+            fixed: "right",
             width: 60,
-            key: '_id',
+            key: "_id",
             render(row) {
               return (
                 <NSpace>
                   <NPopconfirm
-                    positiveText={'取消'}
+                    positiveText="取消"
                     negativeText="删除"
                     onNegativeClick={() => handleDelete(row._id)}
                   >
@@ -485,15 +498,20 @@ export const ManagePostListView = defineComponent({
                       ),
 
                       default: () => (
-                        <span class="max-w-48">确定要删除 {row.title} ?</span>
+                        <span class="max-w-48">
+                          确定要删除
+                          {row.title}
+                          {" "}
+                          ?
+                        </span>
                       ),
                     }}
                   </NPopconfirm>
                 </NSpace>
-              )
+              );
             },
           },
-        ])
+        ]);
 
         return () => (
           <Table
@@ -503,28 +521,28 @@ export const ManagePostListView = defineComponent({
             checkedRowKey="_id"
             nTableProps={{
               onUpdateFilters: (filterState: FilterState) => {
-                const categoryIds = filterState.category as string[] | null
-                categoryFilter.value =
-                  categoryIds && categoryIds.length > 0
+                const categoryIds = filterState.category as string[] | null;
+                categoryFilter.value
+                  = categoryIds && categoryIds.length > 0
                     ? categoryIds
-                    : undefined
-                setPage(1)
+                    : undefined;
+                setPage(1);
               },
             }}
             onFetchData={refresh}
             pager={pager as any}
             onUpdateCheckedRowKeys={(keys) => {
-              checkedRowKeys.value = keys
+              checkedRowKeys.value = keys;
             }}
             onUpdateSorter={async (props) => {
-              setSort(props.sortBy, props.sortOrder as 0 | 1 | -1)
+              setSort(props.sortBy, props.sortOrder as 0 | 1 | -1);
             }}
           />
-        )
+        );
       },
-    })
+    });
 
-    const { setActions } = useLayout()
+    const { setActions } = useLayout();
 
     watchEffect(() => {
       setActions(
@@ -533,28 +551,28 @@ export const ManagePostListView = defineComponent({
             checkedRowKeys={checkedRowKeys.value}
             onDelete={async () => {
               const status = await Promise.allSettled(
-                checkedRowKeys.value.map((id) => postsApi.delete(id as string)),
-              )
+                checkedRowKeys.value.map(id => postsApi.delete(id as string)),
+              );
 
               for (const s of status) {
-                if (s.status === 'rejected') {
-                  toast.success(`删除失败，${(s.reason as Error).message}`)
+                if (s.status === "rejected") {
+                  toast.success(`删除失败，${(s.reason as Error).message}`);
                 }
               }
 
-              checkedRowKeys.value.length = 0
-              queryClient.invalidateQueries({ queryKey: queryKeys.posts.all })
+              checkedRowKeys.value.length = 0;
+              queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
             }}
           />
 
-          <HeaderActionButton to={'/posts/edit'} icon={<AddIcon />} />
+          <HeaderActionButton to="/posts/edit" icon={<AddIcon />} />
         </>,
-      )
-    })
+      );
+    });
 
     return () => (
       <div class="flex flex-col gap-4">
-        <div class="flex items-center gap-2">
+        <div class="flex gap-2 items-center">
           <NInput
             v-model:value={searchKeyword.value}
             placeholder="搜索标题..."
@@ -562,13 +580,13 @@ export const ManagePostListView = defineComponent({
             class="max-w-xs"
           >
             {{
-              prefix: () => <SearchIcon class="h-4 w-4 text-neutral-400" />,
+              prefix: () => <SearchIcon class="text-neutral-400 h-4 w-4" />,
             }}
           </NInput>
         </div>
 
         {isMobile.value ? <CardList /> : <DataTable />}
       </div>
-    )
+    );
   },
-})
+});

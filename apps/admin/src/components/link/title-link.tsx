@@ -1,17 +1,17 @@
 import {
   ExternalLink as ExternalLinkIcon,
   Sparkles as SparklesIcon,
-} from 'lucide-vue-next'
-import { NButton, NEllipsis } from 'naive-ui'
-import { computed, defineComponent } from 'vue'
-import { RouterLink } from 'vue-router'
+} from "lucide-vue-next";
+import { NButton, NEllipsis } from "naive-ui";
+import { computed, defineComponent } from "vue";
+import { RouterLink } from "vue-router";
 
-import { IframePreviewButton } from '~/components/special-button/iframe-preview'
-import { WEB_URL } from '~/constants/env'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { RouteName } from '~/router/name'
-import { UIStore } from '~/stores/ui'
-import { buildMarkdownRenderUrl } from '~/utils/endpoint'
+import { IframePreviewButton } from "~/components/special-button/iframe-preview";
+import { WEB_URL } from "~/constants/env";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { RouteName } from "~/router/name";
+import { UIStore } from "~/stores/ui";
+import { buildMarkdownRenderUrl } from "~/utils/endpoint";
 
 export const TableTitleLink = defineComponent({
   props: {
@@ -38,24 +38,24 @@ export const TableTitleLink = defineComponent({
     },
   },
   setup(props, { slots }) {
-    const { viewport } = useStoreRef(UIStore)
-    const isPC = computed(() => viewport.value.widest || viewport.value.wider)
+    const { viewport } = useStoreRef(UIStore);
+    const isPC = computed(() => viewport.value.widest || viewport.value.wider);
     const fullExternalLinkTo = computed(() => {
       if (!props.externalLinkTo) {
-        return null
+        return null;
       }
       try {
         const url = new URL(
           props.externalLinkTo,
-          props.externalLinkTo.startsWith('/') ? WEB_URL : undefined,
-        )
-        return url.toString()
+          props.externalLinkTo.startsWith("/") ? WEB_URL : undefined,
+        );
+        return url.toString();
       } catch {
-        return null
+        return null;
       }
-    })
+    });
 
-    const path = buildMarkdownRenderUrl(props.id!, props.withToken)
+    const path = buildMarkdownRenderUrl(props.id!, props.withToken);
 
     return () => (
       <RouterLink to={props.inPageTo} class="inline-flex items-center">
@@ -72,7 +72,7 @@ export const TableTitleLink = defineComponent({
             href={fullExternalLinkTo.value}
             target="_blank"
             type="primary"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <ExternalLinkIcon size={12} />
           </NButton>
@@ -95,6 +95,6 @@ export const TableTitleLink = defineComponent({
           <SparklesIcon size={12} />
         </RouterLink>
       </RouterLink>
-    )
+    );
   },
-})
+});

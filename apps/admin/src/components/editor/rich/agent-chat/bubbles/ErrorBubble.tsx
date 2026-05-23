@@ -1,23 +1,23 @@
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export const ErrorBubble = defineComponent({
-  name: 'ErrorBubble',
+  name: "ErrorBubble",
   props: {
     message: { type: String, required: true },
   },
-  emits: ['retry'],
+  emits: ["retry"],
   setup(props, { emit }) {
     return () => (
-      <div class="my-2 flex items-baseline gap-2 text-[13px] leading-relaxed text-red-600">
+      <div class="text-[13px] text-red-600 leading-relaxed my-2 flex gap-2 items-baseline">
         <span>{props.message}</span>
         <button
-          class="font-inherit cursor-pointer border-none bg-transparent p-0 text-xs text-red-600 underline hover:opacity-80"
+          class="text-xs text-red-600 font-inherit p-0 border-none bg-transparent underline cursor-pointer hover:opacity-80"
           type="button"
-          onClick={() => emit('retry')}
+          onClick={() => emit("retry")}
         >
           Retry
         </button>
       </div>
-    )
+    );
   },
-})
+});

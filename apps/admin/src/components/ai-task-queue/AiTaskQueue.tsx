@@ -1,3 +1,4 @@
+import type { TrackedTask } from "./types";
 import {
   AlertCircle,
   AlertTriangle,
@@ -6,32 +7,31 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
-} from 'lucide-vue-next'
-import { NProgress } from 'naive-ui'
-import { defineComponent } from 'vue'
-import type { TrackedTask } from './types'
+} from "lucide-vue-next";
+import { NProgress } from "naive-ui";
+import { defineComponent } from "vue";
 
-import { AITaskStatus, AITaskType } from '~/api/ai'
-import { TaskQueuePanel } from '~/components/task-queue-panel'
+import { AITaskStatus, AITaskType } from "~/api/ai";
+import { TaskQueuePanel } from "~/components/task-queue-panel";
 
-import { useAiTaskQueue } from './use-ai-task-queue'
+import { useAiTaskQueue } from "./use-ai-task-queue";
 
 const TaskTypeLabels: Record<AITaskType, string> = {
-  [AITaskType.Summary]: '摘要',
-  [AITaskType.Translation]: '翻译',
-  [AITaskType.TranslationBatch]: '批量翻译',
-  [AITaskType.TranslationAll]: '全量翻译',
-  [AITaskType.SlugBackfill]: 'Slug 回填',
-  [AITaskType.Insights]: '精读',
-  [AITaskType.InsightsTranslation]: '精读翻译',
-}
+  [AITaskType.Summary]: "摘要",
+  [AITaskType.Translation]: "翻译",
+  [AITaskType.TranslationBatch]: "批量翻译",
+  [AITaskType.TranslationAll]: "全量翻译",
+  [AITaskType.SlugBackfill]: "Slug 回填",
+  [AITaskType.Insights]: "精读",
+  [AITaskType.InsightsTranslation]: "精读翻译",
+};
 
-const ITEM_HEIGHT = 56
+const ITEM_HEIGHT = 56;
 
 function isBatchTask(type: AITaskType): boolean {
   return (
     type === AITaskType.TranslationBatch || type === AITaskType.TranslationAll
-  )
+  );
 }
 
 const TaskItem = defineComponent({
@@ -46,37 +46,39 @@ const TaskItem = defineComponent({
   },
   setup(props) {
     return () => {
-      const task = props.task
-      const stats = task.subTaskStats
-      const hasBatchSubTasks = isBatchTask(task.type) && stats
+      const task = props.task;
+      const stats = task.subTaskStats;
+      const hasBatchSubTasks = isBatchTask(task.type) && stats;
 
       // For batch tasks with active sub-tasks, show as running
-      const hasActiveSubTasks =
-        hasBatchSubTasks && (stats.pending > 0 || stats.running > 0)
+      const hasActiveSubTasks
+        = hasBatchSubTasks && (stats.pending > 0 || stats.running > 0);
 
-      const isFailed =
-        task.status === AITaskStatus.Failed ||
-        task.status === AITaskStatus.Cancelled
-      const isPartialFailed = task.status === AITaskStatus.PartialFailed
-      const isRunning =
-        task.status === AITaskStatus.Running || hasActiveSubTasks
-      const isCompleted =
-        (task.status === AITaskStatus.Completed ||
-          task.status === AITaskStatus.PartialFailed) &&
-        !hasActiveSubTasks
-      const canRetry = isFailed && task.retryFn
+      const isFailed
+        = task.status === AITaskStatus.Failed
+          || task.status === AITaskStatus.Cancelled;
+      const isPartialFailed = task.status === AITaskStatus.PartialFailed;
+      const isRunning
+        = task.status === AITaskStatus.Running || hasActiveSubTasks;
+      const isCompleted
+        = (task.status === AITaskStatus.Completed
+          || task.status === AITaskStatus.PartialFailed)
+        && !hasActiveSubTasks;
+      const canRetry = isFailed && task.retryFn;
 
       const getStatusIcon = () => {
         if (task.status === AITaskStatus.Pending)
-          return <Clock class="size-4 text-neutral-400" />
+          return <Clock class="text-neutral-400 size-4" />;
         if (isRunning)
-          return <Loader2 class="size-4 animate-spin text-blue-500" />
+          return <Loader2 class="text-blue-500 size-4 animate-spin" />;
         if (isPartialFailed)
-          return <AlertTriangle class="size-4 text-yellow-500" />
-        if (isCompleted) return <CheckCircle2 class="size-4 text-green-500" />
-        if (isFailed) return <AlertCircle class="size-4 text-red-500" />
-        return <Clock class="size-4 text-neutral-400" />
-      }
+          return <AlertTriangle class="text-yellow-500 size-4" />;
+        if (isCompleted)
+          return <CheckCircle2 class="text-green-500 size-4" />;
+        if (isFailed)
+          return <AlertCircle class="text-red-500 size-4" />;
+        return <Clock class="text-neutral-400 size-4" />;
+      };
 
       // Calculate progress for batch tasks
       const progressInfo = hasBatchSubTasks
@@ -88,65 +90,67 @@ const TaskItem = defineComponent({
           }
         : task.progress !== undefined
           ? { percent: task.progress, text: `${task.progress}%` }
-          : null
+          : null;
 
       return (
         <div
-          class="phone:gap-2 group flex items-center gap-3 border-b border-neutral-100 px-1 dark:border-neutral-800"
+          class="group px-1 border-b border-neutral-100 flex gap-3 items-center dark:border-neutral-800 phone:gap-2"
           style={{ height: `${ITEM_HEIGHT}px` }}
         >
           {/* Status Icon */}
-          <div class="phone:size-7 flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-50 dark:bg-neutral-800">
+          <div class="rounded-full bg-neutral-50 flex shrink-0 size-8 items-center justify-center dark:bg-neutral-800 phone:size-7">
             {getStatusIcon()}
           </div>
 
           {/* Content */}
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="flex gap-2 items-center">
               <span
                 class={[
-                  'phone:text-xs truncate text-sm font-medium',
+                  "phone:text-xs truncate text-sm font-medium",
                   isFailed
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-neutral-800 dark:text-neutral-100',
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-neutral-800 dark:text-neutral-100",
                 ]}
                 title={task.label}
               >
                 {task.label}
               </span>
             </div>
-            <div class="phone:h-4 phone:gap-1.5 mt-0.5 flex h-5 items-center gap-2">
-              <span class="shrink-0 text-xs text-neutral-400">
+            <div class="mt-0.5 flex gap-2 h-5 items-center phone:gap-1.5 phone:h-4">
+              <span class="text-xs text-neutral-400 shrink-0">
                 {TaskTypeLabels[task.type] || task.type}
               </span>
               {isRunning && progressInfo && (
                 <>
-                  <span class="phone:hidden text-neutral-300 dark:text-neutral-600">
+                  <span class="text-neutral-300 dark:text-neutral-600 phone:hidden">
                     ·
                   </span>
                   <span class="text-xs text-blue-500">{progressInfo.text}</span>
                 </>
               )}
-              {isRunning &&
-                !hasBatchSubTasks &&
-                task.tokensGenerated !== undefined &&
-                task.tokensGenerated > 0 && (
-                  <>
-                    <span class="phone:hidden text-neutral-300 dark:text-neutral-600">
-                      ·
-                    </span>
-                    <span class="phone:hidden text-xs tabular-nums text-blue-500">
-                      {task.tokensGenerated} tokens
-                    </span>
-                  </>
-                )}
+              {isRunning
+                && !hasBatchSubTasks
+                && task.tokensGenerated !== undefined
+                && task.tokensGenerated > 0 && (
+                <>
+                  <span class="text-neutral-300 dark:text-neutral-600 phone:hidden">
+                    ·
+                  </span>
+                  <span class="text-xs text-blue-500 tabular-nums phone:hidden">
+                    {task.tokensGenerated}
+                    {" "}
+                    tokens
+                  </span>
+                </>
+              )}
               {isFailed && task.error && (
                 <>
-                  <span class="phone:hidden text-neutral-300 dark:text-neutral-600">
+                  <span class="text-neutral-300 dark:text-neutral-600 phone:hidden">
                     ·
                   </span>
                   <span
-                    class="truncate text-xs text-red-500"
+                    class="text-xs text-red-500 truncate"
                     title={task.error}
                   >
                     {task.error}
@@ -158,7 +162,7 @@ const TaskItem = defineComponent({
 
           {/* Progress bar for running tasks */}
           {isRunning && progressInfo && (
-            <div class="phone:w-12 w-16 shrink-0">
+            <div class="shrink-0 w-16 phone:w-12">
               <NProgress
                 type="line"
                 percentage={progressInfo.percent}
@@ -172,18 +176,18 @@ const TaskItem = defineComponent({
           {/* Retry button */}
           {canRetry && (
             <button
-              class="phone:opacity-100 phone:p-1 shrink-0 rounded-md p-1.5 text-neutral-400 opacity-0 transition-all hover:bg-neutral-100 hover:text-neutral-600 group-hover:opacity-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+              class="text-neutral-400 p-1.5 rounded-md opacity-0 shrink-0 transition-all hover:text-neutral-600 phone:p-1 hover:bg-neutral-100 group-hover:opacity-100 phone:opacity-100 dark:hover:text-neutral-300 dark:hover:bg-neutral-700"
               onClick={() => props.onRetry?.(task.id)}
               title="重试"
             >
-              <RefreshCw class="phone:size-3.5 size-4" />
+              <RefreshCw class="size-4 phone:size-3.5" />
             </button>
           )}
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 // Mock data for preview
 // const mockTasks: TrackedTask[] = [
@@ -229,47 +233,49 @@ const TaskItem = defineComponent({
 // ]
 
 export const AiTaskQueue = defineComponent({
-  name: 'AiTaskQueue',
+  name: "AiTaskQueue",
   setup() {
-    const queue = useAiTaskQueue()
+    const queue = useAiTaskQueue();
 
     const handleClose = () => {
       if (!queue.isProcessing.value) {
-        queue.clearAll()
+        queue.clearAll();
       } else {
-        queue.hide()
+        queue.hide();
       }
-    }
+    };
 
     const handleRetry = (taskId: string) => {
-      queue.retryTask(taskId)
-    }
+      queue.retryTask(taskId);
+    };
 
     return () => {
-      const tasks = queue.tasks.value
-      const isProcessing = queue.isProcessing.value
-      const progress = queue.progress.value
-      const completedCount = queue.completedCount.value
-      const failedCount = queue.failedCount.value
+      const tasks = queue.tasks.value;
+      const isProcessing = queue.isProcessing.value;
+      const progress = queue.progress.value;
+      const completedCount = queue.completedCount.value;
+      const failedCount = queue.failedCount.value;
 
       return (
         <TaskQueuePanel
           visible={queue.visible.value}
           isProcessing={isProcessing}
           tasks={tasks}
-          closeTitle={isProcessing ? '隐藏' : '关闭'}
+          closeTitle={isProcessing ? "隐藏" : "关闭"}
           showCloseWhenProcessing
           onClose={handleClose}
         >
           {{
             icon: () => (
-              <Sparkles class="size-3.5 text-neutral-600 dark:text-neutral-300" />
+              <Sparkles class="text-neutral-600 size-3.5 dark:text-neutral-300" />
             ),
             title: () => (
               <>
                 AI 任务
-                <span class="ml-1.5 text-neutral-400">
-                  {progress.completed}/{progress.total}
+                <span class="text-neutral-400 ml-1.5">
+                  {progress.completed}
+                  /
+                  {progress.total}
                 </span>
               </>
             ),
@@ -277,31 +283,37 @@ export const AiTaskQueue = defineComponent({
               <TaskItem task={task} onRetry={handleRetry} />
             ),
             footer: () =>
-              !isProcessing && tasks.length > 0 ? (
-                <div class="phone:px-3 phone:py-2 flex items-center justify-between border-t border-neutral-100 px-4 py-2.5 text-xs dark:border-neutral-800">
-                  <div class="text-neutral-400">
-                    {completedCount > 0 && (
-                      <span class="text-green-600 dark:text-green-400">
-                        {completedCount} 成功
-                      </span>
-                    )}
-                    {failedCount > 0 && (
-                      <span class="ml-2 text-red-600 dark:text-red-400">
-                        {failedCount} 失败
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    class="text-neutral-500 transition-colors hover:text-neutral-700 dark:hover:text-neutral-300"
-                    onClick={() => queue.clearCompleted()}
-                  >
-                    清除
-                  </button>
-                </div>
-              ) : null,
+              !isProcessing && tasks.length > 0
+                ? (
+                    <div class="text-xs px-4 py-2.5 border-t border-neutral-100 flex items-center justify-between phone:px-3 phone:py-2 dark:border-neutral-800">
+                      <div class="text-neutral-400">
+                        {completedCount > 0 && (
+                          <span class="text-green-600 dark:text-green-400">
+                            {completedCount}
+                            {" "}
+                            成功
+                          </span>
+                        )}
+                        {failedCount > 0 && (
+                          <span class="text-red-600 ml-2 dark:text-red-400">
+                            {failedCount}
+                            {" "}
+                            失败
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        class="text-neutral-500 transition-colors hover:text-neutral-700 dark:hover:text-neutral-300"
+                        onClick={() => queue.clearCompleted()}
+                      >
+                        清除
+                      </button>
+                    </div>
+                  )
+                : null,
           }}
         </TaskQueuePanel>
-      )
-    }
+      );
+    };
   },
-})
+});

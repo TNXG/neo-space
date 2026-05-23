@@ -1,22 +1,22 @@
-import { NDataTable } from 'naive-ui'
-import { defineComponent, reactive, ref, watch } from 'vue'
-import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
-import type { Pager } from '~/models/base'
-import type dataTableProps from 'naive-ui/lib/data-table/src/DataTable'
+import type dataTableProps from "naive-ui/lib/data-table/src/DataTable";
 import type {
   RowKey,
   SortState,
   TableColumns,
-} from 'naive-ui/lib/data-table/src/interface'
-import type { PropType, Ref } from 'vue'
-import type { LocationQueryValue } from 'vue-router'
+} from "naive-ui/lib/data-table/src/interface";
+import type { PropType, Ref } from "vue";
+import type { LocationQueryValue } from "vue-router";
+import type { Pager } from "~/models/base";
+import { NDataTable } from "naive-ui";
+import { defineComponent, reactive, ref, watch } from "vue";
+import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { UIStore } from '~/stores/ui'
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { UIStore } from "~/stores/ui";
 
-import styles from './index.module.css'
+import styles from "./index.module.css";
 
-export const tableRowStyle = styles['table-row']
+export const tableRowStyle = styles["table-row"];
 
 export const Table = defineComponent({
   props: {
@@ -71,35 +71,35 @@ export const Table = defineComponent({
     },
     checkedRowKey: {
       type: String,
-      default: 'id',
+      default: "id",
     },
   },
   setup(props) {
-    const router = useRouter()
-    const route = useRoute()
-    const checkedRowKeys = ref<RowKey[]>([])
+    const router = useRouter();
+    const route = useRoute();
+    const checkedRowKeys = ref<RowKey[]>([]);
     const sortProps = reactive({
-      sortBy: '',
+      sortBy: "",
       sortOrder: 0,
-    })
-    const loading = ref(true)
+    });
+    const loading = ref(true);
 
     // HACK
     const clean = watch(
       () => props.data.value,
       (_n) => {
-        loading.value = false
-        clean()
+        loading.value = false;
+        clean();
       },
-    )
+    );
 
     onBeforeRouteUpdate((_to, _from, next) => {
-      loading.value = true
-      next()
-      loading.value = false
-    })
+      loading.value = true;
+      next();
+      loading.value = false;
+    });
 
-    const ui = useStoreRef(UIStore)
+    const ui = useStoreRef(UIStore);
 
     return () => {
       const {
@@ -111,9 +111,9 @@ export const Table = defineComponent({
         nTableProps,
         columns,
         onFetchData: fetchData,
-        checkedRowKey = 'id',
+        checkedRowKey = "id",
         maxWidth = 1200,
-      } = props
+      } = props;
       return (
         <NDataTable
           loading={props.loading ?? loading.value}
@@ -123,68 +123,69 @@ export const Table = defineComponent({
             noPagination
               ? undefined
               : pager?.value && {
-                  page: pager.value.currentPage,
-                  pageSize: pager.value.size,
-                  pageCount: pager.value.totalPage,
-                  // showQuickJumper: ui.viewport.value.mobile ? false : true,
-                  showQuickJumper: true,
-                  pageSlot: ui.viewport.value.mobile
-                    ? ui.contentInsetWidth.value < 400
-                      ? 2
-                      : 3
-                    : undefined,
-                  onChange: async (page) => {
-                    router.push({
-                      query: { ...route.query, page },
-                      path: route.path,
-                    })
-                  },
-                }
+                page: pager.value.currentPage,
+                pageSize: pager.value.size,
+                pageCount: pager.value.totalPage,
+                // showQuickJumper: ui.viewport.value.mobile ? false : true,
+                showQuickJumper: true,
+                pageSlot: ui.viewport.value.mobile
+                  ? ui.contentInsetWidth.value < 400
+                    ? 2
+                    : 3
+                  : undefined,
+                onChange: async (page) => {
+                  router.push({
+                    query: { ...route.query, page },
+                    path: route.path,
+                  });
+                },
+              }
           }
           bordered
           data={data.value}
           rowClassName={() => tableRowStyle}
           checkedRowKeys={checkedRowKeys.value}
-          rowKey={(r) => r[checkedRowKey]}
+          rowKey={r => r[checkedRowKey]}
           onUpdateCheckedRowKeys={(keys) => {
-            checkedRowKeys.value = keys
-            onUpdateCheckedRowKeys?.(keys as any)
+            checkedRowKeys.value = keys;
+            onUpdateCheckedRowKeys?.(keys as any);
           }}
           onUpdateSorter={async (status: SortState) => {
             if (!status) {
-              return
+              return;
             }
 
             columns.forEach((column) => {
               /** column.sortOrder !== undefined means it is uncontrolled */
-              if (!('sortOrder' in column)) {
-                return
+              if (!("sortOrder" in column)) {
+                return;
               }
-              if (column.sortOrder === undefined) return
+              if (column.sortOrder === undefined)
+                return;
               if (!status) {
-                column.sortOrder = false
-                return
+                column.sortOrder = false;
+                return;
               }
               if (column.key === status.columnKey)
-                column.sortOrder = status.order
-              else column.sortOrder = false
-            })
+                column.sortOrder = status.order;
+              else column.sortOrder = false;
+            });
 
-            const { columnKey, order } = status
+            const { columnKey, order } = status;
 
             // 如果改列状态变为未排序状态了，order 变成了 false
-            sortProps.sortBy = order === false ? '' : columnKey.toString() || ''
+            sortProps.sortBy = order === false ? "" : columnKey.toString() || "";
 
-            sortProps.sortOrder = order ? { descend: -1, ascend: 1 }[order] : 1
-            onUpdateSorter?.(sortProps, status)
+            sortProps.sortOrder = order ? { descend: -1, ascend: 1 }[order] : 1;
+            onUpdateSorter?.(sortProps, status);
             if (fetchData) {
-              await fetchData()
+              await fetchData();
             }
           }}
           columns={columns}
           {...nTableProps}
         />
-      )
-    }
+      );
+    };
   },
-})
+});

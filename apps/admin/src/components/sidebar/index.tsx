@@ -1,3 +1,8 @@
+import type { DropdownOption } from "naive-ui";
+import type { PropType } from "vue";
+import type { MenuModel } from "../../utils/build-menus";
+import type { ThemeMode } from "~/stores/ui";
+import { onClickOutside } from "@vueuse/core";
 import {
   ExternalLink,
   LogOut,
@@ -5,8 +10,8 @@ import {
   Moon,
   PanelLeftClose,
   Sun,
-} from 'lucide-vue-next'
-import { NAvatar, NDropdown, NLayoutContent } from 'naive-ui'
+} from "lucide-vue-next";
+import { NAvatar, NDropdown, NLayoutContent } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -15,30 +20,25 @@ import {
   onMounted,
   ref,
   watch,
-} from 'vue'
-import { useRouter } from 'vue-router'
-import type { ThemeMode } from '~/stores/ui'
-import type { DropdownOption } from 'naive-ui'
-import type { PropType } from 'vue'
-import type { MenuModel } from '../../utils/build-menus'
+} from "vue";
 
-import { onClickOutside } from '@vueuse/core'
+import { useRouter } from "vue-router";
 
-import { userApi } from '~/api'
-import { WEB_URL } from '~/constants/env'
-import { RouteName } from '~/router/name'
-import { AppStore } from '~/stores/app'
-import { UIStore } from '~/stores/ui'
+import { userApi } from "~/api";
+import { WEB_URL } from "~/constants/env";
+import { RouteName } from "~/router/name";
+import { AppStore } from "~/stores/app";
+import { UIStore } from "~/stores/ui";
 
-import { useStoreRef } from '../../hooks/use-store-ref'
-import { UserStore } from '../../stores/user'
-import { buildMenuModel, buildMenus } from '../../utils/build-menus'
-import { Avatar } from '../avatar'
-import { useSidebarStatusInjection } from './hooks'
-import styles from './index.module.css'
+import { useStoreRef } from "../../hooks/use-store-ref";
+import { UserStore } from "../../stores/user";
+import { buildMenuModel, buildMenus } from "../../utils/build-menus";
+import { Avatar } from "../avatar";
+import { useSidebarStatusInjection } from "./hooks";
+import styles from "./index.module.css";
 
 export const Sidebar = defineComponent({
-  name: 'SideBar',
+  name: "SideBar",
   props: {
     collapse: {
       type: Boolean,
@@ -50,225 +50,229 @@ export const Sidebar = defineComponent({
     },
   },
   setup(props) {
-    const router = useRouter()
-    const { user } = useStoreRef(UserStore)
-    const route = computed(() => router.currentRoute.value)
-    const menus = ref<MenuModel[]>([])
-    const app = useStoreRef(AppStore)
+    const router = useRouter();
+    const { user } = useStoreRef(UserStore);
+    const route = computed(() => router.currentRoute.value);
+    const menus = ref<MenuModel[]>([]);
+    const app = useStoreRef(AppStore);
     onMounted(() => {
       // @ts-expect-error
-      menus.value = buildMenus(router.getRoutes())
-    })
+      menus.value = buildMenus(router.getRoutes());
+    });
 
     watch(
       () => app.app.value?.version,
       () => {
-        const version = app.app.value?.version
-        if (!version) return
+        const version = app.app.value?.version;
+        if (!version)
+          return;
 
-        if (version === 'dev') {
+        if (version === "dev") {
           const route = router
             .getRoutes()
-            .find((item) => item.path === '/debug') as any
+            .find(item => item.path === "/debug") as any;
 
-          menus.value.unshift(buildMenuModel(route, false, ''))
+          menus.value.unshift(buildMenuModel(route, false, ""));
         }
       },
-    )
+    );
 
-    const indexRef = ref(0)
+    const indexRef = ref(0);
 
     function updateIndex(nextIndex: number) {
       if (nextIndex === indexRef.value) {
-        indexRef.value = -1
-        return
+        indexRef.value = -1;
+        return;
       }
-      indexRef.value = nextIndex
+      indexRef.value = nextIndex;
     }
 
     function handleRoute(item: MenuModel, nextIndex?: number) {
       if (item.subItems?.length) {
-        return
+        return;
       }
 
       if (route.value.path === item.fullPath) {
-        return
+        return;
       }
 
       router.push({
         path: item.fullPath,
         query: item.query,
-      })
-      if (typeof nextIndex === 'number') {
-        updateIndex(nextIndex)
+      });
+      if (typeof nextIndex === "number") {
+        updateIndex(nextIndex);
       }
     }
 
-    const sidebarRef = ref<HTMLDivElement>()
-    const uiStore = useStoreRef(UIStore)
+    const sidebarRef = ref<HTMLDivElement>();
+    const uiStore = useStoreRef(UIStore);
     onClickOutside(sidebarRef, () => {
-      const v = uiStore.viewport
-      const isM = v.value.pad || v.value.mobile
+      const v = uiStore.viewport;
+      const isM = v.value.pad || v.value.mobile;
       if (isM) {
-        props.onCollapseChange(true)
+        props.onCollapseChange(true);
       }
-    })
-    const { isDark, themeMode, setThemeMode } = useStoreRef(UIStore)
+    });
+    const { isDark, themeMode, setThemeMode } = useStoreRef(UIStore);
 
     const userDropdownOptions = computed<DropdownOption[]>(() => [
       {
-        key: 'header',
-        type: 'render',
+        key: "header",
+        type: "render",
         render: () =>
-          h('div', { class: 'flex items-center gap-3 px-3 py-2.5' }, [
+          h("div", { class: "flex items-center gap-3 px-3 py-2.5" }, [
             h(Avatar, {
               src: user.value?.avatar,
               size: 36,
-              class: 'rounded-full flex-shrink-0',
+              class: "rounded-full flex-shrink-0",
             }),
-            h('div', { class: 'flex flex-col min-w-0' }, [
+            h("div", { class: "flex flex-col min-w-0" }, [
               h(
-                'span',
+                "span",
                 {
                   class:
-                    'text-sm font-medium text-[var(--sidebar-text-active)] truncate',
+                    "text-sm font-medium text-[var(--sidebar-text-active)] truncate",
                 },
                 user.value?.name,
               ),
-              user.value?.mail &&
-                h(
-                  'span',
-                  {
-                    class: 'text-xs text-[var(--sidebar-text)] truncate',
-                  },
-                  user.value.mail,
-                ),
+              user.value?.mail
+              && h(
+                "span",
+                {
+                  class: "text-xs text-[var(--sidebar-text)] truncate",
+                },
+                user.value.mail,
+              ),
             ]),
           ]),
       },
-      { type: 'divider', key: 'd1' },
+      { type: "divider", key: "d1" },
       {
-        label: '前往主站',
-        key: 'visit-site',
+        label: "前往主站",
+        key: "visit-site",
         icon: () => h(ExternalLink, { size: 14 }),
       },
       {
-        label: '登出',
-        key: 'logout',
+        label: "登出",
+        key: "logout",
         icon: () => h(LogOut, { size: 14 }),
       },
-    ])
+    ]);
 
     const handleUserDropdownSelect = async (key: string) => {
-      if (key === 'visit-site') {
-        window.open(WEB_URL)
-      } else if (key === 'logout') {
-        await userApi.logout()
-        router.push({ name: RouteName.Login })
+      if (key === "visit-site") {
+        window.open(WEB_URL);
+      } else if (key === "logout") {
+        await userApi.logout();
+        router.push({ name: RouteName.Login });
       }
-    }
+    };
 
     const themeDropdownOptions = computed<DropdownOption[]>(() => [
       {
-        label: 'Light',
-        key: 'light',
+        label: "Light",
+        key: "light",
         icon: () => h(Sun, { size: 14 }),
       },
       {
-        label: 'Dark',
-        key: 'dark',
+        label: "Dark",
+        key: "dark",
         icon: () => h(Moon, { size: 14 }),
       },
       {
-        label: 'System',
-        key: 'system',
+        label: "System",
+        key: "system",
         icon: () => h(Monitor, { size: 14 }),
       },
-    ])
+    ]);
 
     const handleThemeSelect = (key: string) => {
-      setThemeMode(key as ThemeMode)
-    }
+      setThemeMode(key as ThemeMode);
+    };
 
     const { onTransitionEnd, statusRef } = useSidebarStatusInjection(
       () => props.collapse,
-    )
+    );
 
     // iOS-style drag to dismiss
-    const dragStartY = ref(0)
-    const dragCurrentY = ref(0)
-    const isDragging = ref(false)
-    const dragOffset = ref(0)
+    const dragStartY = ref(0);
+    const dragCurrentY = ref(0);
+    const isDragging = ref(false);
+    const dragOffset = ref(0);
 
     const handleTouchStart = (e: TouchEvent) => {
-      const v = uiStore.viewport
-      const isMobile = v.value.pad || v.value.mobile
-      if (!isMobile || props.collapse) return
+      const v = uiStore.viewport;
+      const isMobile = v.value.pad || v.value.mobile;
+      if (!isMobile || props.collapse)
+        return;
 
-      dragStartY.value = e.touches[0].clientY
-      isDragging.value = true
-      dragOffset.value = 0
-    }
+      dragStartY.value = e.touches[0].clientY;
+      isDragging.value = true;
+      dragOffset.value = 0;
+    };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging.value) return
+      if (!isDragging.value)
+        return;
 
-      dragCurrentY.value = e.touches[0].clientY
-      const delta = dragCurrentY.value - dragStartY.value
+      dragCurrentY.value = e.touches[0].clientY;
+      const delta = dragCurrentY.value - dragStartY.value;
 
       // Only allow dragging down (positive delta)
       if (delta > 0) {
         // Apply rubber band effect for resistance
-        dragOffset.value = delta * 0.6
-        e.preventDefault()
+        dragOffset.value = delta * 0.6;
+        e.preventDefault();
       }
-    }
+    };
 
     const handleTouchEnd = () => {
-      if (!isDragging.value) return
+      if (!isDragging.value)
+        return;
 
-      const threshold = 100 // px threshold to trigger close
+      const threshold = 100; // px threshold to trigger close
       if (dragOffset.value > threshold) {
-        props.onCollapseChange(true)
+        props.onCollapseChange(true);
       }
 
       // Reset
-      isDragging.value = false
-      dragOffset.value = 0
-    }
+      isDragging.value = false;
+      dragOffset.value = 0;
+    };
 
     onMounted(() => {
-      const sidebar = sidebarRef.value
+      const sidebar = sidebarRef.value;
 
       if (sidebar) {
-        sidebar.addEventListener('touchstart', handleTouchStart, {
+        sidebar.addEventListener("touchstart", handleTouchStart, {
           passive: true,
-        })
-        sidebar.addEventListener('touchmove', handleTouchMove, {
+        });
+        sidebar.addEventListener("touchmove", handleTouchMove, {
           passive: false,
-        })
-        sidebar.addEventListener('touchend', handleTouchEnd, { passive: true })
+        });
+        sidebar.addEventListener("touchend", handleTouchEnd, { passive: true });
       }
-    })
+    });
 
     onBeforeUnmount(() => {
-      const sidebar = sidebarRef.value
+      const sidebar = sidebarRef.value;
       if (sidebar) {
-        sidebar.removeEventListener('touchstart', handleTouchStart)
-        sidebar.removeEventListener('touchmove', handleTouchMove)
-        sidebar.removeEventListener('touchend', handleTouchEnd)
+        sidebar.removeEventListener("touchstart", handleTouchStart);
+        sidebar.removeEventListener("touchmove", handleTouchMove);
+        sidebar.removeEventListener("touchend", handleTouchEnd);
       }
-    })
+    });
 
     const sidebarInnerStyle = computed(() => {
       if (isDragging.value && dragOffset.value > 0) {
         return {
           transform: `translateY(${dragOffset.value}px)`,
-          transition: 'none',
-        }
+          transition: "none",
+        };
       }
-      return {}
-    })
+      return {};
+    });
 
     return () => {
       return (
@@ -290,31 +294,31 @@ export const Sidebar = defineComponent({
                 trigger="click"
               >
                 <button
-                  class={styles['user-avatar-btn']}
-                  title={user.value?.name || 'User'}
+                  class={styles["user-avatar-btn"]}
+                  title={user.value?.name || "User"}
                 >
                   <NAvatar
                     src={user.value?.avatar}
                     size={20}
                     class="!rounded-lg"
                   />
-                  <span class={styles['user-name']}>
-                    {user.value?.name || 'User'}
+                  <span class={styles["user-name"]}>
+                    {user.value?.name || "User"}
                   </span>
                 </button>
               </NDropdown>
 
-              <div class={styles['header-actions']}>
+              <div class={styles["header-actions"]}>
                 <button
-                  class={styles['header-btn']}
+                  class={styles["header-btn"]}
                   onClick={() => props.onCollapseChange(!props.collapse)}
-                  title={props.collapse ? '展开' : '收起'}
+                  title={props.collapse ? "展开" : "收起"}
                 >
                   <PanelLeftClose
                     size={16}
                     class={[
-                      'transition-transform duration-200',
-                      props.collapse && 'rotate-180',
+                      "transition-transform duration-200",
+                      props.collapse && "rotate-180",
                     ]}
                   />
                 </button>
@@ -322,14 +326,14 @@ export const Sidebar = defineComponent({
             </div>
 
             <NLayoutContent
-              class={[styles.menu, '!bg-transparent']}
+              class={[styles.menu, "!bg-transparent"]}
               nativeScrollbar={false}
             >
               <nav class={styles.items}>
                 {menus.value.map((item, index) => {
-                  const isActive =
-                    route.value.fullPath === item.fullPath ||
-                    route.value.fullPath.startsWith(item.fullPath)
+                  const isActive
+                    = route.value.fullPath === item.fullPath
+                      || route.value.fullPath.startsWith(item.fullPath);
 
                   return (
                     <div
@@ -342,8 +346,7 @@ export const Sidebar = defineComponent({
                         onClick={() =>
                           item.subItems?.length
                             ? updateIndex(index)
-                            : handleRoute(item, index)
-                        }
+                            : handleRoute(item, index)}
                         collapse={props.collapse}
                       >
                         {{
@@ -354,20 +357,20 @@ export const Sidebar = defineComponent({
                       {item.subItems && item.subItems.length > 0 && (
                         <div
                           class={[
-                            styles['has-child'],
+                            styles["has-child"],
                             indexRef.value === index && styles.expand,
                           ]}
                           style={{
                             maxHeight:
                               indexRef.value === index
                                 ? `${item.subItems.length * 2.75}rem`
-                                : '0',
+                                : "0",
                           }}
                         >
                           {item.subItems.map((child) => {
-                            const isChildActive =
-                              route.value.fullPath === child.fullPath ||
-                              route.value.fullPath.startsWith(child.fullPath)
+                            const isChildActive
+                              = route.value.fullPath === child.fullPath
+                                || route.value.fullPath.startsWith(child.fullPath);
 
                             return (
                               <div
@@ -387,17 +390,17 @@ export const Sidebar = defineComponent({
                                   }}
                                 </MenuItem>
                               </div>
-                            )
+                            );
                           })}
                         </div>
                       )}
                     </div>
-                  )
+                  );
                 })}
               </nav>
             </NLayoutContent>
 
-            <div class={styles['sidebar-footer']}>
+            <div class={styles["sidebar-footer"]}>
               <NDropdown
                 options={themeDropdownOptions.value}
                 onSelect={handleThemeSelect}
@@ -405,23 +408,27 @@ export const Sidebar = defineComponent({
                 trigger="click"
                 value={themeMode.value}
               >
-                <button class={styles['theme-toggle-btn']} title="切换主题">
-                  {themeMode.value === 'system' ? (
-                    <Monitor size={16} />
-                  ) : isDark.value ? (
-                    <Moon size={16} />
-                  ) : (
-                    <Sun size={16} />
-                  )}
+                <button class={styles["theme-toggle-btn"]} title="切换主题">
+                  {themeMode.value === "system"
+                    ? (
+                        <Monitor size={16} />
+                      )
+                    : isDark.value
+                      ? (
+                          <Moon size={16} />
+                        )
+                      : (
+                          <Sun size={16} />
+                        )}
                 </button>
               </NDropdown>
             </div>
           </div>
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 const MenuItem = defineComponent({
   props: {
@@ -445,8 +452,8 @@ const MenuItem = defineComponent({
         <span class="flex items-center justify-center [&>svg]:h-[18px] [&>svg]:w-[18px]">
           {slots.icon!()}
         </span>
-        <span class={styles['item-title']}>{props.title}</span>
+        <span class={styles["item-title"]}>{props.title}</span>
       </button>
-    )
+    );
   },
-})
+});

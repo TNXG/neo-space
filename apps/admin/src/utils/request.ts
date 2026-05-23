@@ -1,22 +1,22 @@
-import { ofetch } from 'ofetch'
-import { toast } from 'vue-sonner'
-import type { FetchOptions } from 'ofetch'
+import type { FetchOptions } from "ofetch";
+import { ofetch } from "ofetch";
+import { toast } from "vue-sonner";
 
-import { simpleCamelcaseKeys } from './camelcase-keys'
+import { API_URL } from "~/constants/env";
 
-import { API_URL } from '~/constants/env'
-import { getAdminAuthToken } from '~/utils/admin-auth'
+import { getAdminAuthToken } from "~/utils/admin-auth";
+import { router } from "../router/router";
 
-import { router } from '../router/router'
-import { uuid } from './index'
+import { simpleCamelcaseKeys } from "./camelcase-keys";
+import { uuid } from "./index";
 
 export class SystemError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
   ) {
-    super(message)
-    this.name = 'SystemError'
+    super(message);
+    this.name = "SystemError";
   }
 }
 
@@ -26,70 +26,70 @@ export class BusinessError extends Error {
     public statusCode: number,
     public data?: unknown,
   ) {
-    super(Array.isArray(message) ? message.join(', ') : message)
-    this.name = 'BusinessError'
+    super(Array.isArray(message) ? message.join(", ") : message);
+    this.name = "BusinessError";
   }
 }
 
-const _uuid = uuid()
+const _uuid = uuid();
 
 export const $api = ofetch.create({
   baseURL: API_URL,
   timeout: 60_000,
-  credentials: 'include',
+  credentials: "include",
 
   onRequest({ options }) {
-    const headers = new Headers(options.headers)
-    headers.set('x-uuid', _uuid)
-    const token = getAdminAuthToken()
+    const headers = new Headers(options.headers);
+    headers.set("x-uuid", _uuid);
+    const token = getAdminAuthToken();
     if (token) {
-      headers.set('Authorization', `Bearer ${token}`)
+      headers.set("Authorization", `Bearer ${token}`);
     }
 
     // GET 请求添加时间戳防缓存
-    if (options.method?.toUpperCase() === 'GET') {
+    if (options.method?.toUpperCase() === "GET") {
       options.query = {
         ...options.query,
         t: Date.now(),
-      }
+      };
     }
 
-    options.headers = headers
+    options.headers = headers;
   },
 
   onResponseError({ response }) {
     if (!response) {
-      toast.error('网络错误')
-      throw new SystemError('网络错误')
+      toast.error("网络错误");
+      throw new SystemError("网络错误");
     }
 
-    const status = response.status
+    const status = response.status;
 
     if (status === 401) {
       router.push(
         `/login?from=${encodeURIComponent(router.currentRoute.value.fullPath)}`,
-      )
-      throw new SystemError('未授权，请重新登录', 401)
+      );
+      throw new SystemError("未授权，请重新登录", 401);
     }
 
     if (status >= 500) {
-      toast.error('服务器错误，请稍后重试')
-      throw new SystemError('服务器错误', status)
+      toast.error("服务器错误，请稍后重试");
+      throw new SystemError("服务器错误", status);
     }
 
-    const data = response._data
-    const message = data?.message || '请求失败'
-    const displayMsg = Array.isArray(message) ? message.join(', ') : message
-    toast.error(displayMsg)
-    throw new BusinessError(message, status, data)
+    const data = response._data;
+    const message = data?.message || "请求失败";
+    const displayMsg = Array.isArray(message) ? message.join(", ") : message;
+    toast.error(displayMsg);
+    throw new BusinessError(message, status, data);
   },
-})
+});
 
-export type RequestOptions<T = unknown> = Omit<FetchOptions<'json'>, 'body'> & {
-  data?: T
+export type RequestOptions<T = unknown> = Omit<FetchOptions<"json">, "body"> & {
+  data?: T;
   /** 跳过响应转换（camelCase 转换和数组解包） */
-  bypassTransform?: boolean
-}
+  bypassTransform?: boolean;
+};
 
 /**
  * 转换响应数据
@@ -97,85 +97,85 @@ export type RequestOptions<T = unknown> = Omit<FetchOptions<'json'>, 'body'> & {
  * 2. 解包后端包装的数组响应 { data: [...] } -> [...]
  */
 function transformResponse<T>(data: unknown, bypass?: boolean): T {
-  if (bypass || !data || typeof data !== 'object') {
-    return data as T
+  if (bypass || !data || typeof data !== "object") {
+    return data as T;
   }
 
-  let result = simpleCamelcaseKeys(data as Record<string, unknown>)
+  let result = simpleCamelcaseKeys(data as Record<string, unknown>);
 
   if (
-    result &&
-    typeof result === 'object' &&
-    !Array.isArray(result) &&
-    'data' in result &&
-    Array.isArray(result.data) &&
-    Object.keys(result).length === 1
+    result
+    && typeof result === "object"
+    && !Array.isArray(result)
+    && "data" in result
+    && Array.isArray(result.data)
+    && Object.keys(result).length === 1
   ) {
-    result = result.data
+    result = result.data;
   }
 
-  return result as T
+  return result as T;
 }
 
 export const request = {
   async get<T>(url: string, options?: RequestOptions): Promise<T> {
-    const { bypassTransform, ...rest } = options || {}
-    const result = await $api<unknown>(url, { method: 'GET', ...rest })
-    return transformResponse<T>(result, bypassTransform)
+    const { bypassTransform, ...rest } = options || {};
+    const result = await $api<unknown>(url, { method: "GET", ...rest });
+    return transformResponse<T>(result, bypassTransform);
   },
 
   async post<T, D = unknown>(
     url: string,
     options?: RequestOptions<D>,
   ): Promise<T> {
-    const { data, bypassTransform, ...rest } = options || {}
+    const { data, bypassTransform, ...rest } = options || {};
     const result = await $api<unknown>(url, {
-      method: 'POST',
+      method: "POST",
       body: data as BodyInit,
       ...rest,
-    })
-    return transformResponse<T>(result, bypassTransform)
+    });
+    return transformResponse<T>(result, bypassTransform);
   },
 
   async put<T, D = unknown>(
     url: string,
     options?: RequestOptions<D>,
   ): Promise<T> {
-    const { data, bypassTransform, ...rest } = options || {}
+    const { data, bypassTransform, ...rest } = options || {};
     const result = await $api<unknown>(url, {
-      method: 'PUT',
+      method: "PUT",
       body: data as BodyInit,
       ...rest,
-    })
-    return transformResponse<T>(result, bypassTransform)
+    });
+    return transformResponse<T>(result, bypassTransform);
   },
 
   async patch<T, D = unknown>(
     url: string,
     options?: RequestOptions<D>,
   ): Promise<T> {
-    const { data, bypassTransform, ...rest } = options || {}
+    const { data, bypassTransform, ...rest } = options || {};
     const result = await $api<unknown>(url, {
-      method: 'PATCH',
+      method: "PATCH",
       body: data as BodyInit,
       ...rest,
-    })
-    return transformResponse<T>(result, bypassTransform)
+    });
+    return transformResponse<T>(result, bypassTransform);
   },
 
   async delete<T, D = unknown>(
     url: string,
     options?: RequestOptions<D>,
   ): Promise<T> {
-    const { data, bypassTransform, ...rest } = options || {}
+    const { data, bypassTransform, ...rest } = options || {};
     const result = await $api<unknown>(url, {
-      method: 'DELETE',
+      method: "DELETE",
       body: data as BodyInit,
       ...rest,
-    })
-    return transformResponse<T>(result, bypassTransform)
+    });
+    return transformResponse<T>(result, bypassTransform);
   },
-}
+};
 
 // Alias for compatibility
-export const apiClient = request
+export const apiClient = request;

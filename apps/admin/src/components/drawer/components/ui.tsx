@@ -1,10 +1,10 @@
+import type { Component, PropType } from "vue";
 /**
  * Drawer 统一 UI 组件系统
  * 提供一致的视觉语言和交互模式
  */
-import { NSwitch } from 'naive-ui'
-import { defineComponent, h } from 'vue'
-import type { Component, PropType } from 'vue'
+import { NSwitch } from "naive-ui";
+import { defineComponent, h } from "vue";
 
 /**
  * 分组标题
@@ -18,19 +18,19 @@ export const SectionTitle = defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <div class="mb-4 mt-8 flex items-center gap-2 first:mt-0">
-        {props.icon &&
-          h(props.icon, {
-            class: 'size-4 text-neutral-400',
-            'aria-hidden': 'true',
+      <div class="mb-4 mt-8 flex gap-2 items-center first:mt-0">
+        {props.icon
+          && h(props.icon, {
+            "class": "size-4 text-neutral-400",
+            "aria-hidden": "true",
           })}
-        <span class="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <span class="text-xs text-neutral-500 tracking-wide font-medium uppercase">
           {slots.default?.()}
         </span>
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * 表单字段 - Label 在上方
@@ -53,18 +53,18 @@ export const FormField = defineComponent({
   setup(props, { slots }) {
     return () => (
       <div class="mb-3">
-        <label class="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
+        <label class="text-xs text-neutral-500 mb-1 block dark:text-neutral-400">
           {props.label}
-          {props.required && <span class="ml-0.5 text-red-500">*</span>}
+          {props.required && <span class="text-red-500 ml-0.5">*</span>}
         </label>
         {props.description && (
-          <p class="mb-1 text-xs text-neutral-400">{props.description}</p>
+          <p class="text-xs text-neutral-400 mb-1">{props.description}</p>
         )}
         <div class="w-full">{slots.default?.()}</div>
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * Switch 行 - 用于开关类设置项，label 和 switch 两端对齐
@@ -99,16 +99,16 @@ export const SwitchRow = defineComponent({
   setup(props) {
     return () => (
       <div
-        class="-mx-2 flex cursor-pointer items-center justify-between px-2 py-2"
+        class="px-2 py-2 flex cursor-pointer items-center justify-between -mx-2"
         onClick={() => props.onUpdate(!props.modelValue)}
         role="switch"
         aria-checked={props.modelValue}
         aria-label={props.label}
         tabindex={0}
         onKeydown={(e: KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            props.onUpdate(!props.modelValue)
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            props.onUpdate(!props.modelValue);
           }
         }}
       >
@@ -135,9 +135,9 @@ export const SwitchRow = defineComponent({
           </NSwitch>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * 内联字段行 - Label 和控件在同一行
@@ -155,8 +155,8 @@ export const InlineField = defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <div class="mb-4 flex items-start justify-between gap-4">
-        <div class="flex flex-col pt-1.5">
+      <div class="mb-4 flex gap-4 items-start justify-between">
+        <div class="pt-1.5 flex flex-col">
           <span class="text-sm text-neutral-600 dark:text-neutral-300">
             {props.label}
           </span>
@@ -166,9 +166,9 @@ export const InlineField = defineComponent({
         </div>
         <div class="flex-1">{slots.default?.()}</div>
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * 字段组 - 用于将多个相关字段组合在一起
@@ -182,17 +182,17 @@ export const FieldGroup = defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <div class="mb-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+      <div class="mb-4 p-3 border border-neutral-200 rounded-lg dark:border-neutral-700">
         {props.label && (
-          <div class="mb-2 text-xs font-medium text-neutral-500">
+          <div class="text-xs text-neutral-500 font-medium mb-2">
             {props.label}
           </div>
         )}
         {slots.default?.()}
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * 操作按钮组
@@ -212,20 +212,20 @@ export const ActionRow = defineComponent({
             {props.label}
           </span>
         )}
-        <div class={props.label ? '' : 'w-full'}>{slots.default?.()}</div>
+        <div class={props.label ? "" : "w-full"}>{slots.default?.()}</div>
       </div>
-    )
+    );
   },
-})
+});
 
 /**
  * 分隔线
  */
 export const Divider = defineComponent({
   setup() {
-    return () => <div class="my-4 h-px bg-neutral-100 dark:bg-neutral-800" />
+    return () => <div class="my-4 bg-neutral-100 h-px dark:bg-neutral-800" />;
   },
-})
+});
 
 /**
  * 信息展示
@@ -239,12 +239,12 @@ export const InfoDisplay = defineComponent({
   },
   setup(props, { slots }) {
     return () => (
-      <div class="mb-2 flex items-center justify-between text-sm">
+      <div class="text-sm mb-2 flex items-center justify-between">
         <span class="text-neutral-500">{props.label}</span>
         <span class="text-neutral-700 dark:text-neutral-200">
           {slots.default?.()}
         </span>
       </div>
-    )
+    );
   },
-})
+});

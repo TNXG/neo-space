@@ -1,12 +1,12 @@
-import { computed, toValue } from 'vue'
-import type { AIModelListData, ProviderModel } from '~/api/ai'
-import type { MaybeRefOrGetter } from 'vue'
+import type { MaybeRefOrGetter } from "vue";
+import type { AIModelListData, ProviderModel } from "~/api/ai";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 
-import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, toValue } from "vue";
 
-import { aiApi } from '~/api/ai'
+import { aiApi } from "~/api/ai";
 
-import { queryKeys } from './keys'
+import { queryKeys } from "./keys";
 
 /**
  * 获取所有 AI Provider 的模型列表
@@ -16,20 +16,20 @@ export const useAIModelsQuery = (enabled?: MaybeRefOrGetter<boolean>) => {
   return useQuery({
     queryKey: queryKeys.ai.models(),
     queryFn: async () => {
-      const response = await aiApi.getModels()
-      const result: Record<string, ProviderModel[]> = {}
+      const response = await aiApi.getModels();
+      const result: Record<string, ProviderModel[]> = {};
       for (const providerData of response) {
         if (providerData.models) {
-          result[providerData.providerId] = providerData.models
+          result[providerData.providerId] = providerData.models;
         }
       }
-      return result
+      return result;
     },
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
     gcTime: 24 * 60 * 60 * 1000,
     enabled: computed(() => (enabled !== undefined ? toValue(enabled) : true)),
-  })
-}
+  });
+};
 
 /**
  * 获取单个 Provider 的模型列表
@@ -41,50 +41,51 @@ export const useProviderModelsQuery = (
   return useQuery({
     queryKey: computed(() => [
       ...queryKeys.ai.models(),
-      'provider',
+      "provider",
       toValue(data)?.providerId,
     ]),
     queryFn: async () => {
-      const params = toValue(data)
-      if (!params) return { models: [] as ProviderModel[], error: undefined }
-      return aiApi.getModelList(params)
+      const params = toValue(data);
+      if (!params)
+        return { models: [] as ProviderModel[], error: undefined };
+      return aiApi.getModelList(params);
     },
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
     enabled: computed(
       () =>
-        !!toValue(data)?.providerId &&
-        (options?.enabled !== undefined ? toValue(options.enabled) : true),
+        !!toValue(data)?.providerId
+        && (options?.enabled !== undefined ? toValue(options.enabled) : true),
     ),
-  })
-}
+  });
+};
 
 /**
  * 刷新 AI 模型缓存
  */
 export const useRefreshAIModelsCache = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.ai.models() })
-  }
-}
+    queryClient.invalidateQueries({ queryKey: queryKeys.ai.models() });
+  };
+};
 
 /**
  * 手动更新模型缓存
  */
 export const useUpdateModelsCache = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return (providerId: string, models: ProviderModel[]) => {
-    const currentData =
-      queryClient.getQueryData<Record<string, ProviderModel[]>>(
+    const currentData
+      = queryClient.getQueryData<Record<string, ProviderModel[]>>(
         queryKeys.ai.models(),
-      ) || {}
+      ) || {};
 
     queryClient.setQueryData(queryKeys.ai.models(), {
       ...currentData,
       [providerId]: models,
-    })
-  }
-}
+    });
+  };
+};

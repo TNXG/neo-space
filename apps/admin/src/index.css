@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;1,300&display=swap');
-@import 'vue-sonner/style.css';
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;1,300&display=swap");
+@import "vue-sonner/style.css";
 
 body,
 html {
@@ -7,8 +7,7 @@ html {
   font-size: 14px !important;
   padding: 0;
 
-  --sans-font: 'Segoe UI', 'Helvetica Neue', sans-serif, -apple-system,
-    system-ui;
+  --sans-font: "Segoe UI", "Helvetica Neue", sans-serif, -apple-system, system-ui;
 
   font-family: var(--sans-font);
   background: var(--page-bg);
@@ -36,7 +35,7 @@ button {
   outline: unset;
 }
 
-button:where(:not(.n-button):not([class*='n-'])) {
+button:where(:not(.n-button):not([class*="n-"])) {
   border: none;
   background: transparent;
   padding: 0;
@@ -134,31 +133,31 @@ html.dark [data-sonner-toast].sonner-toast {
 }
 
 /* 成功状态图标 */
-[data-sonner-toast][data-type='success'] [data-icon] svg {
+[data-sonner-toast][data-type="success"] [data-icon] svg {
   color: #22c55e !important;
 }
 
 /* 错误状态图标 */
-[data-sonner-toast][data-type='error'] [data-icon] svg {
+[data-sonner-toast][data-type="error"] [data-icon] svg {
   color: #ef4444 !important;
 }
 
 /* 警告状态图标 */
-[data-sonner-toast][data-type='warning'] [data-icon] svg {
+[data-sonner-toast][data-type="warning"] [data-icon] svg {
   color: #f59e0b !important;
 }
 
 /* 信息状态图标 */
-[data-sonner-toast][data-type='info'] [data-icon] svg {
+[data-sonner-toast][data-type="info"] [data-icon] svg {
   color: #3b82f6 !important;
 }
 
 /* 加载状态图标 */
-[data-sonner-toast][data-type='loading'] [data-icon] svg {
+[data-sonner-toast][data-type="loading"] [data-icon] svg {
   color: var(--n-color-primary, #18181b) !important;
 }
 
-html.dark [data-sonner-toast][data-type='loading'] [data-icon] svg {
+html.dark [data-sonner-toast][data-type="loading"] [data-icon] svg {
   color: var(--n-color-primary, #fafafa) !important;
 }
 
@@ -195,7 +194,7 @@ html.dark .sonner-description {
 }
 
 /* Toast 关闭按钮 - 20x20px */
-[data-sonner-toast][data-styled='true'] [data-close-button] {
+[data-sonner-toast][data-styled="true"] [data-close-button] {
   @apply !border-0 !bg-transparent;
   width: 20px !important;
   height: 20px !important;
@@ -419,7 +418,7 @@ html.dark .n-modal .n-card {
 }
 
 /* Naive UI 动画加速 - 全局 transition duration 覆盖 */
-[class*='n-'] {
+[class*="n-"] {
   --n-duration: 0.2s !important;
 }
 

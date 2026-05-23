@@ -1,8 +1,8 @@
-import type { VNode } from 'vue'
+import type { VNode } from "vue";
 
-import { LayoutStore } from '~/stores/layout'
+import { LayoutStore } from "~/stores/layout";
 
-import { useStoreRef } from './use-store-ref'
+import { useStoreRef } from "./use-store-ref";
 
 /**
  * 用于页面组件设置 ContentLayout 的状态
@@ -27,42 +27,42 @@ import { useStoreRef } from './use-store-ref'
  * ```
  */
 export const useLayout = () => {
-  const layout = useStoreRef(LayoutStore)
+  const layout = useStoreRef(LayoutStore);
 
   return {
     /** 设置 header 右侧操作按钮 */
     setActions: (el: VNode | null) => {
-      layout.headerActions.value = el
+      layout.headerActions.value = el;
     },
 
     /** 设置自定义页面标题（覆盖 route.meta.title） */
     setTitle: (title: string | null) => {
-      layout.pageTitle.value = title
+      layout.pageTitle.value = title;
     },
 
     /** 设置是否隐藏 header */
     setHideHeader: (hide: boolean) => {
-      layout.hideHeader.value = hide
+      layout.hideHeader.value = hide;
     },
 
     /** 设置自定义 header class */
     setHeaderClass: (cls: string | null) => {
-      layout.headerClass.value = cls
+      layout.headerClass.value = cls;
     },
 
     /** 设置 header 副标题/元信息（如 slug 编辑器） */
     setHeaderSubtitle: (el: VNode | null) => {
-      layout.headerSubtitle.value = el
+      layout.headerSubtitle.value = el;
     },
 
     /** 设置内容区域是否有 padding（沉浸式编辑时设为 false） */
     setContentPadding: (hasPadding: boolean) => {
-      layout.contentPadding.value = hasPadding
+      layout.contentPadding.value = hasPadding;
     },
 
     /** 设置内容区域是否强制 min-h-full（需要撑满高度时设为 true） */
     setContentMinFullHeight: (isFull: boolean) => {
-      layout.contentMinFullHeight.value = isFull
+      layout.contentMinFullHeight.value = isFull;
     },
-  }
-}
+  };
+};

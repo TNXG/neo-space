@@ -75,8 +75,8 @@
       padding-top: 36px;
       padding-bottom: 36px;
       font-family:
-        'Noto Serif SC', 'Source Han Serif SC', 'Source Han Serif',
-        'Noto Serif CJK SC', Georgia, 'Times New Roman', serif;
+        "Noto Serif SC", "Source Han Serif SC", "Source Han Serif", "Noto Serif CJK SC", Georgia, "Times New Roman",
+        serif;
       font-size: 1rem;
       line-height: 1.75;
       letter-spacing: 0.01em;
@@ -111,19 +111,11 @@
 
     /* Selection style */
     & > .cm-scroller > .cm-content .cm-selectionBackground {
-      background-color: color-mix(
-        in srgb,
-        var(--primary-default) 20%,
-        transparent
-      ) !important;
+      background-color: color-mix(in srgb, var(--primary-default) 20%, transparent) !important;
     }
 
     &.cm-focused > .cm-scroller > .cm-content .cm-selectionBackground {
-      background-color: color-mix(
-        in srgb,
-        var(--primary-default) 30%,
-        transparent
-      ) !important;
+      background-color: color-mix(in srgb, var(--primary-default) 30%, transparent) !important;
     }
 
     /* Cursor style */
@@ -136,13 +128,13 @@
     /* Page title is text-2xl (1.5rem = 24px), so article headings should be smaller */
     & .cm-wysiwyg-heading {
       font-family:
-        'Noto Sans SC',
-        'Source Han Sans SC',
-        'Source Han Sans',
-        'Noto Sans CJK SC',
+        "Noto Sans SC",
+        "Source Han Sans SC",
+        "Source Han Sans",
+        "Noto Sans CJK SC",
         -apple-system,
         BlinkMacSystemFont,
-        'Segoe UI',
+        "Segoe UI",
         Roboto,
         sans-serif;
     }
@@ -208,11 +200,7 @@
     /* Enhanced details block for article */
     & .cm-wysiwyg-details {
       border-radius: 0.625rem;
-      border-color: color-mix(
-        in srgb,
-        var(--primary-default) 25%,
-        transparent
-      );
+      border-color: color-mix(in srgb, var(--primary-default) 25%, transparent);
     }
 
     /* Enhanced code block for article */
@@ -352,9 +340,7 @@
 
   /* Inline code styles */
   .cm-wysiwyg-inline-code {
-    font-family:
-      ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      'Liberation Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.9em;
     padding: 0.125em 0.375em;
     border-radius: 0.25rem;
@@ -370,9 +356,7 @@
 
   /* Code block styles - editing mode */
   .cm-wysiwyg-codeblock-line {
-    font-family:
-      ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      'Liberation Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.9em;
   }
 
@@ -432,8 +416,7 @@
     outline: none;
     padding: 0;
     min-width: 0;
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   .cm-wysiwyg-details-summary-input::placeholder {
@@ -535,11 +518,7 @@
     opacity: 0.85;
     font-style: italic;
     border-radius: 0;
-    background-color: color-mix(
-      in srgb,
-      var(--primary-default) 8%,
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--primary-default) 8%, transparent);
     margin: 0;
   }
 
@@ -657,11 +636,7 @@
   /* Keep blockquote shape/background stable on active line */
   & > .cm-scroller > .cm-content .cm-wysiwyg-blockquote-line.cm-activeLine {
     border-radius: 0 !important;
-    background-color: color-mix(
-      in srgb,
-      var(--primary-default) 8%,
-      transparent
-    ) !important;
+    background-color: color-mix(in srgb, var(--primary-default) 8%, transparent) !important;
   }
 
   /* Prevent active-line highlight from altering alert shape/height */
@@ -678,9 +653,7 @@
   }
 
   .cm-wysiwyg-math-inline-editing {
-    font-family:
-      ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      'Liberation Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     background-color: color-mix(in srgb, currentColor 8%, transparent);
     border-radius: 0.25rem;
     padding: 0 0.25em;
@@ -702,9 +675,7 @@
   }
 
   .cm-wysiwyg-math-block-line {
-    font-family:
-      ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      'Liberation Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.9em;
   }
 
@@ -714,9 +685,7 @@
 
   .cm-wysiwyg-math-error {
     color: #ef4444;
-    font-family:
-      ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      'Liberation Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.9em;
   }
 

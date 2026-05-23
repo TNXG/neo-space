@@ -1,9 +1,9 @@
-import type { Extension } from '@codemirror/state'
+import type { Extension } from "@codemirror/state";
 
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { languages } from '@codemirror/language-data'
-import { Compartment } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { languages } from "@codemirror/language-data";
+import { Compartment } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 
 const extensionMap = {
   theme: new Compartment(),
@@ -12,12 +12,12 @@ const extensionMap = {
   wysiwyg: new Compartment(),
   wysiwygMode: new Compartment(),
   slashMenu: new Compartment(),
-}
+};
 
 // Extension to add wysiwyg class to editor
 export const wysiwygModeExtension = EditorView.editorAttributes.of({
-  class: 'cm-wysiwyg-mode',
-})
+  class: "cm-wysiwyg-mode",
+});
 
 export const codemirrorReconfigureExtension: Extension[] = [
   extensionMap.theme.of([]),
@@ -32,6 +32,6 @@ export const codemirrorReconfigureExtension: Extension[] = [
   extensionMap.wysiwyg.of([]),
   extensionMap.wysiwygMode.of([]),
   extensionMap.slashMenu.of([]),
-]
+];
 
-export { extensionMap as codemirrorReconfigureExtensionMap }
+export { extensionMap as codemirrorReconfigureExtensionMap };

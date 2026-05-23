@@ -1,14 +1,14 @@
-import { computed, toValue } from 'vue'
-import { toast } from 'vue-sonner'
-import type { CreatePostData, UpdatePostData } from '~/api/posts'
-import type { PostModel } from '~/models/post'
-import type { MaybeRefOrGetter } from 'vue'
+import type { MaybeRefOrGetter } from "vue";
+import type { CreatePostData, UpdatePostData } from "~/api/posts";
+import type { PostModel } from "~/models/post";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { computed, toValue } from "vue";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { postsApi } from '~/api/posts'
+import { postsApi } from "~/api/posts";
 
-import { queryKeys } from './keys'
+import { queryKeys } from "./keys";
 
 /**
  * 文章列表查询
@@ -19,8 +19,8 @@ export const usePostsQuery = (
   return useQuery({
     queryKey: computed(() => queryKeys.posts.list(toValue(params))),
     queryFn: () => postsApi.getList(toValue(params)),
-  })
-}
+  });
+};
 
 /**
  * 单篇文章查询
@@ -30,64 +30,64 @@ export const usePostQuery = (id: MaybeRefOrGetter<string>) => {
     queryKey: computed(() => queryKeys.posts.detail(toValue(id))),
     queryFn: () => postsApi.getById(toValue(id)),
     enabled: computed(() => !!toValue(id)),
-  })
-}
+  });
+};
 
 /**
  * 创建文章
  */
 export const useCreatePostMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreatePostData) => postsApi.create(data),
     onSuccess: () => {
-      toast.success('发布成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() })
+      toast.success("发布成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
-  })
-}
+  });
+};
 
 /**
  * 更新文章
  */
 export const useUpdatePostMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePostData }) =>
       postsApi.update(id, data),
     onSuccess: (_, { id }) => {
-      toast.success('修改成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() })
+      toast.success("修改成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
-  })
-}
+  });
+};
 
 /**
  * 部分更新文章
  */
 export const usePatchPostMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<PostModel> }) =>
       postsApi.patch(id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.detail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
-  })
-}
+  });
+};
 
 /**
  * 删除文章
  */
 export const useDeletePostMutation = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: postsApi.delete,
     onSuccess: () => {
-      toast.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() })
+      toast.success("删除成功");
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
-  })
-}
+  });
+};

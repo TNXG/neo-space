@@ -1,40 +1,40 @@
-import type { Pager } from './base'
+import type { Pager } from "./base";
 
 export enum EnumPageType {
-  md = 'md',
-  html = 'html',
-  frame = 'frame',
+  md = "md",
+  html = "html",
+  frame = "frame",
 }
 export interface PageModel {
-  createdAt: string
-  modifiedAt: string | null
-  id: string
+  createdAt: string;
+  modifiedAt: string | null;
+  id: string;
   /** Slug */
-  slug: string
+  slug: string;
 
   /** Title */
-  title: string
+  title: string;
 
   /** SubTitle */
-  subtitle?: string
+  subtitle?: string;
 
   /** Order */
-  order?: number
+  order?: number;
 
   /** Text */
-  text: string
+  text: string;
 
-  contentFormat?: 'markdown' | 'lexical'
-  content?: string
+  contentFormat?: "markdown" | "lexical";
+  content?: string;
 
   /** Type (MD | html | frame) */
-  type?: EnumPageType
+  type?: EnumPageType;
 
   /** Other Options */
-  options?: object
+  options?: object;
 }
 
 export interface PageResponse {
-  data: PageModel[]
-  pagination: Pager
+  data: PageModel[];
+  pagination: Pager;
 }

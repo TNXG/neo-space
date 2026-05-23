@@ -1,5 +1,5 @@
 export const enum EmitKeyMap {
-  EditDataUpdate = 'editDataUpdate',
+  EditDataUpdate = "editDataUpdate",
 }
 
-export const SESSION_WITH_LOGIN = 'session-with-login'
+export const SESSION_WITH_LOGIN = "session-with-login";

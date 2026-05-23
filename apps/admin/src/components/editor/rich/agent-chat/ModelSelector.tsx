@@ -1,7 +1,7 @@
-import { ChevronDown, Search } from 'lucide-vue-next'
-import { NPopselect } from 'naive-ui'
-import { computed, defineComponent, nextTick, ref, watch } from 'vue'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import { ChevronDown, Search } from "lucide-vue-next";
+import { NPopselect } from "naive-ui";
+import { computed, defineComponent, nextTick, ref, watch } from "vue";
 
 import {
   filterRecentModelsWithin,
@@ -9,23 +9,23 @@ import {
   rememberRecentModel,
   toModelValue,
   writeRecentModels,
-} from './model-selector-recents'
+} from "./model-selector-recents";
 
 export interface ProviderGroup {
-  id: string
-  name: string
-  providerType: 'claude' | 'openai-compatible'
-  models: { id: string; displayName: string }[]
+  id: string;
+  name: string;
+  providerType: "claude" | "openai-compatible";
+  models: { id: string; displayName: string }[];
 }
 
 export interface SelectedModel {
-  modelId: string
-  providerId: string
-  providerType: 'claude' | 'openai-compatible'
+  modelId: string;
+  providerId: string;
+  providerType: "claude" | "openai-compatible";
 }
 
 export const ModelSelector = defineComponent({
-  name: 'ModelSelector',
+  name: "ModelSelector",
   props: {
     providerGroups: {
       type: Array as PropType<ProviderGroup[]>,
@@ -36,144 +36,147 @@ export const ModelSelector = defineComponent({
       default: null,
     },
   },
-  emits: ['selectModel'],
+  emits: ["selectModel"],
   setup(props, { emit }) {
-    const searchQuery = ref('')
-    const showPopselect = ref(false)
-    const inputRef = ref<HTMLInputElement | null>(null)
-    const recentModels = ref<SelectedModel[]>(readRecentModels())
+    const searchQuery = ref("");
+    const showPopselect = ref(false);
+    const inputRef = ref<HTMLInputElement | null>(null);
+    const recentModels = ref<SelectedModel[]>(readRecentModels());
 
     function getModelLabel(
-      model: Pick<SelectedModel, 'providerId' | 'modelId'>,
+      model: Pick<SelectedModel, "providerId" | "modelId">,
     ): string {
       const group = props.providerGroups.find(
-        (item) => item.id === model.providerId,
-      )
+        item => item.id === model.providerId,
+      );
       const matchedModel = group?.models.find(
-        (item) => item.id === model.modelId,
-      )
-      return matchedModel?.displayName ?? model.modelId
+        item => item.id === model.modelId,
+      );
+      return matchedModel?.displayName ?? model.modelId;
     }
 
     function syncRecentModels(groups: ProviderGroup[]) {
       const nextRecentModels = filterRecentModelsWithin(
         recentModels.value,
         groups,
-      )
-      const hasChanged =
-        nextRecentModels.length !== recentModels.value.length ||
-        nextRecentModels.some(
-          (item, index) =>
-            toModelValue(item) !== toModelValue(recentModels.value[index]!),
-        )
+      );
+      const hasChanged
+        = nextRecentModels.length !== recentModels.value.length
+          || nextRecentModels.some(
+            (item, index) =>
+              toModelValue(item) !== toModelValue(recentModels.value[index]!),
+          );
 
       if (hasChanged) {
-        recentModels.value = nextRecentModels
-        writeRecentModels(nextRecentModels)
+        recentModels.value = nextRecentModels;
+        writeRecentModels(nextRecentModels);
       }
     }
 
     const recentOptions = computed(() =>
       filterRecentModelsWithin(recentModels.value, props.providerGroups).map(
-        (model) => ({
+        model => ({
           label: getModelLabel(model),
           value: toModelValue(model),
         }),
       ),
-    )
+    );
 
     const filteredOptions = computed(() => {
-      const query = searchQuery.value.toLowerCase().trim()
-      const providerOptions = props.providerGroups.map((group) => ({
-        type: 'group' as const,
+      const query = searchQuery.value.toLowerCase().trim();
+      const providerOptions = props.providerGroups.map(group => ({
+        type: "group" as const,
         label: group.name,
         key: group.id,
-        children: group.models.map((m) => ({
+        children: group.models.map(m => ({
           label: m.displayName,
           value: `${group.id}::${m.id}`,
         })),
-      }))
+      }));
 
       if (!query) {
         return recentOptions.value.length
           ? [
               {
-                type: 'group' as const,
-                label: 'Recent',
-                key: 'recent',
+                type: "group" as const,
+                label: "Recent",
+                key: "recent",
                 children: recentOptions.value,
               },
               ...providerOptions,
             ]
-          : providerOptions
+          : providerOptions;
       }
 
       return props.providerGroups
         .map((group) => {
           const matched = group.models.filter(
-            (m) =>
-              m.displayName.toLowerCase().includes(query) ||
-              m.id.toLowerCase().includes(query),
-          )
-          if (matched.length === 0) return null
+            m =>
+              m.displayName.toLowerCase().includes(query)
+              || m.id.toLowerCase().includes(query),
+          );
+          if (matched.length === 0)
+            return null;
           return {
-            type: 'group' as const,
+            type: "group" as const,
             label: group.name,
             key: group.id,
-            children: matched.map((m) => ({
+            children: matched.map(m => ({
               label: m.displayName,
               value: `${group.id}::${m.id}`,
             })),
-          }
+          };
         })
-        .filter(Boolean) as any[]
-    })
+        .filter(Boolean) as any[];
+    });
 
     const selectedValue = computed(() =>
       props.selectedModel ? toModelValue(props.selectedModel) : null,
-    )
+    );
 
     const selectedLabel = computed(() => {
-      if (!props.selectedModel) return 'Select model'
-      return getModelLabel(props.selectedModel)
-    })
+      if (!props.selectedModel)
+        return "Select model";
+      return getModelLabel(props.selectedModel);
+    });
 
     function handleUpdate(value: string) {
-      const [providerId, modelId] = value.split('::')
-      const group = props.providerGroups.find((g) => g.id === providerId)
-      if (!group) return
+      const [providerId, modelId] = value.split("::");
+      const group = props.providerGroups.find(g => g.id === providerId);
+      if (!group)
+        return;
       const nextModel = {
         modelId,
         providerId,
         providerType: group.providerType,
-      }
-      emit('selectModel', nextModel)
+      };
+      emit("selectModel", nextModel);
       recentModels.value = rememberRecentModel(
         nextModel,
         filterRecentModelsWithin(recentModels.value, props.providerGroups),
-      )
-      writeRecentModels(recentModels.value)
-      showPopselect.value = false
-      searchQuery.value = ''
+      );
+      writeRecentModels(recentModels.value);
+      showPopselect.value = false;
+      searchQuery.value = "";
     }
 
     watch(
       () => props.providerGroups,
       (groups) => {
-        syncRecentModels(groups)
+        syncRecentModels(groups);
       },
       { immediate: true, deep: true },
-    )
+    );
 
     watch(showPopselect, (val) => {
       if (val) {
         nextTick(() => {
-          inputRef.value?.focus()
-        })
+          inputRef.value?.focus();
+        });
       } else {
-        searchQuery.value = ''
+        searchQuery.value = "";
       }
-    })
+    });
 
     return () => (
       <NPopselect
@@ -186,32 +189,32 @@ export const ModelSelector = defineComponent({
         trigger="click"
         show={showPopselect.value}
         onUpdateShow={(val: boolean) => {
-          showPopselect.value = val
+          showPopselect.value = val;
         }}
         onUpdateValue={handleUpdate}
       >
         {{
           header: () => (
-            <div class="flex items-center gap-1.5">
-              <Search size={14} class="shrink-0 text-neutral-400" />
+            <div class="flex gap-1.5 items-center">
+              <Search size={14} class="text-neutral-400 shrink-0" />
               <input
                 ref={(el: any) => {
                   if (el) {
-                    inputRef.value = el
+                    inputRef.value = el;
                   }
                 }}
                 value={searchQuery.value}
                 onInput={(e: Event) => {
-                  searchQuery.value = (e.target as HTMLInputElement).value
+                  searchQuery.value = (e.target as HTMLInputElement).value;
                 }}
                 placeholder="Search models..."
-                class="w-full border-none bg-transparent text-xs text-neutral-700 outline-none placeholder:text-neutral-400 dark:text-neutral-200 dark:placeholder:text-neutral-500"
+                class="text-xs text-neutral-700 outline-none border-none bg-transparent w-full dark:text-neutral-200 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
               />
             </div>
           ),
           default: () => (
             <button
-              class="inline-flex cursor-pointer items-center gap-1 rounded-md border-none bg-transparent px-2 py-1 text-xs text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              class="text-xs text-neutral-500 px-2 py-1 rounded-md border-none bg-transparent inline-flex gap-1 cursor-pointer transition-colors items-center dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
               type="button"
             >
               <span class="max-w-[160px] truncate">{selectedLabel.value}</span>
@@ -220,6 +223,6 @@ export const ModelSelector = defineComponent({
           ),
         }}
       </NPopselect>
-    )
+    );
   },
-})
+});

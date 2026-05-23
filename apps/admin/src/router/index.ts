@@ -1,8 +1,8 @@
-import './guard'
+import { routeForMenu } from "./route";
 
-import { routeForMenu } from './route'
+import "./guard";
 
-import './router'
+import "./router";
 
-export { router } from './router'
-export { routeForMenu }
+export { router } from "./router";
+export { routeForMenu };

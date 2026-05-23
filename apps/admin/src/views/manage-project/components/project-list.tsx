@@ -1,22 +1,22 @@
-import { ExternalLink, Folder, Inbox as InboxIcon } from 'lucide-vue-next'
-import { NAvatar, NScrollbar } from 'naive-ui'
-import { computed, defineComponent } from 'vue'
-import type { ProjectModel } from '~/models/project'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { ProjectModel } from "~/models/project";
+import { ExternalLink, Folder, Inbox as InboxIcon } from "lucide-vue-next";
+import { NAvatar, NScrollbar } from "naive-ui";
+import { computed, defineComponent } from "vue";
 
-import { RelativeTime } from '~/components/time/relative-time'
-import { textToBigCharOrWord } from '~/utils/word'
+import { RelativeTime } from "~/components/time/relative-time";
+import { textToBigCharOrWord } from "~/utils/word";
 
 interface Pager {
-  currentPage: number
-  totalPage: number
-  total: number
-  hasPrevPage: boolean
-  hasNextPage: boolean
+  currentPage: number;
+  totalPage: number;
+  total: number;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
 }
 
 export const ProjectList = defineComponent({
-  name: 'ProjectList',
+  name: "ProjectList",
   props: {
     data: {
       type: Array as PropType<ProjectModel[]>,
@@ -43,55 +43,63 @@ export const ProjectList = defineComponent({
     },
   },
   setup(props) {
-    const totalCount = computed(() => props.pager?.total ?? props.data.length)
+    const totalCount = computed(() => props.pager?.total ?? props.data.length);
 
     return () => (
-      <div class="flex h-full flex-col">
-        <div class="flex h-12 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-          <span class="flex items-center gap-1.5 text-base font-semibold text-neutral-900 dark:text-neutral-100">
+      <div class="flex flex-col h-full">
+        <div class="px-4 border-b border-neutral-200 flex h-12 items-center justify-between dark:border-neutral-800">
+          <span class="text-base text-neutral-900 font-semibold flex gap-1.5 items-center dark:text-neutral-100">
             <Folder class="h-4 w-4" />
             项目列表
           </span>
           {totalCount.value > 0 && (
-            <span class="text-xs text-neutral-400">{totalCount.value} 个</span>
+            <span class="text-xs text-neutral-400">
+              {totalCount.value}
+              {" "}
+              个
+            </span>
           )}
         </div>
 
-        <div class="min-h-0 flex-1">
-          {props.loading && props.data.length === 0 ? (
-            <div class="flex items-center justify-center py-24">
-              <div class="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900 dark:border-neutral-700 dark:border-t-white" />
-            </div>
-          ) : props.data.length === 0 ? (
-            <div class="flex flex-col items-center justify-center py-24 text-center">
-              <InboxIcon class="mb-4 h-10 w-10 text-neutral-300 dark:text-neutral-700" />
-              <p class="text-sm text-neutral-500">暂无项目</p>
-              <p class="mt-1 text-xs text-neutral-400">
-                点击右上角按钮创建项目
-              </p>
-            </div>
-          ) : (
-            <NScrollbar class="h-full">
-              <div>
-                {props.data.map((item) => (
-                  <ProjectListItem
-                    key={item.id}
-                    data={item}
-                    selected={props.selectedId === item.id}
-                    onSelect={() => props.onSelect(item)}
-                  />
-                ))}
-              </div>
-            </NScrollbar>
-          )}
+        <div class="flex-1 min-h-0">
+          {props.loading && props.data.length === 0
+            ? (
+                <div class="py-24 flex items-center justify-center">
+                  <div class="border-2 border-neutral-300 border-t-neutral-900 rounded-full h-6 w-6 animate-spin dark:border-neutral-700 dark:border-t-white" />
+                </div>
+              )
+            : props.data.length === 0
+              ? (
+                  <div class="py-24 text-center flex flex-col items-center justify-center">
+                    <InboxIcon class="text-neutral-300 mb-4 h-10 w-10 dark:text-neutral-700" />
+                    <p class="text-sm text-neutral-500">暂无项目</p>
+                    <p class="text-xs text-neutral-400 mt-1">
+                      点击右上角按钮创建项目
+                    </p>
+                  </div>
+                )
+              : (
+                  <NScrollbar class="h-full">
+                    <div>
+                      {props.data.map(item => (
+                        <ProjectListItem
+                          key={item.id}
+                          data={item}
+                          selected={props.selectedId === item.id}
+                          onSelect={() => props.onSelect(item)}
+                        />
+                      ))}
+                    </div>
+                  </NScrollbar>
+                )}
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 const ProjectListItem = defineComponent({
-  name: 'ProjectListItem',
+  name: "ProjectListItem",
   props: {
     data: {
       type: Object as PropType<ProjectModel>,
@@ -110,48 +118,50 @@ const ProjectListItem = defineComponent({
     return () => (
       <div
         class={[
-          'flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3 transition-colors last:border-b-0 dark:border-neutral-800/50',
+          "flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3 transition-colors last:border-b-0 dark:border-neutral-800/50",
           props.selected
-            ? 'bg-neutral-100 dark:bg-neutral-800'
-            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30',
+            ? "bg-neutral-100 dark:bg-neutral-800"
+            : "hover:bg-neutral-50 dark:hover:bg-neutral-800/30",
         ]}
         onClick={props.onSelect}
       >
         <div class="shrink-0">
-          {props.data.avatar ? (
-            <NAvatar
-              round
-              size={40}
-              src={props.data.avatar}
-              fallbackSrc=""
-              class="ring-1 ring-neutral-200 dark:ring-neutral-700"
-            />
-          ) : (
-            <div class="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 text-sm font-semibold uppercase text-neutral-600 ring-1 ring-neutral-200 dark:from-neutral-800 dark:to-neutral-700 dark:text-neutral-300 dark:ring-neutral-700">
-              {textToBigCharOrWord(props.data.name)}
-            </div>
-          )}
+          {props.data.avatar
+            ? (
+                <NAvatar
+                  round
+                  size={40}
+                  src={props.data.avatar}
+                  fallbackSrc=""
+                  class="ring-1 ring-neutral-200 dark:ring-neutral-700"
+                />
+              )
+            : (
+                <div class="text-sm text-neutral-600 font-semibold rounded-full flex size-10 uppercase ring-1 ring-neutral-200 items-center justify-center from-neutral-100 to-neutral-200 bg-gradient-to-br dark:text-neutral-300 dark:ring-neutral-700 dark:from-neutral-800 dark:to-neutral-700">
+                  {textToBigCharOrWord(props.data.name)}
+                </div>
+              )}
         </div>
 
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <h3 class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <div class="flex-1 min-w-0">
+          <div class="flex gap-2 items-center">
+            <h3 class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
               {props.data.name}
             </h3>
             {props.data.projectUrl && (
-              <ExternalLink class="h-3 w-3 shrink-0 text-neutral-400" />
+              <ExternalLink class="text-neutral-400 shrink-0 h-3 w-3" />
             )}
           </div>
           {props.data.description && (
-            <p class="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+            <p class="text-xs text-neutral-500 mt-0.5 truncate dark:text-neutral-400">
               {props.data.description}
             </p>
           )}
-          <div class="mt-1 text-xs text-neutral-400">
+          <div class="text-xs text-neutral-400 mt-1">
             <RelativeTime time={props.data.createdAt} />
           </div>
         </div>
       </div>
-    )
+    );
   },
-})
+});

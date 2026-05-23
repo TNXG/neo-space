@@ -1,25 +1,25 @@
-import { defineComponent, onMounted, ref } from 'vue'
-import { RouterView } from 'vue-router'
+import { defineComponent, onMounted, ref } from "vue";
+import { RouterView } from "vue-router";
 
-import { bgUrl } from '~/constants/env'
+import { bgUrl } from "~/constants/env";
 
-import styles from './auth-view.module.css'
+import styles from "./auth-view.module.css";
 
 export const AuthView = defineComponent({
-  name: 'AuthView',
+  name: "AuthView",
   setup() {
-    const loaded = ref(false)
+    const loaded = ref(false);
 
     onMounted(() => {
-      const img = new Image()
-      img.src = bgUrl
-      img.addEventListener('load', () => {
-        loaded.value = true
-      })
-    })
+      const img = new Image();
+      img.src = bgUrl;
+      img.addEventListener("load", () => {
+        loaded.value = true;
+      });
+    });
 
     return () => (
-      <div class="relative isolate min-h-screen">
+      <div class="min-h-screen relative isolate">
         <div
           class={styles.bg}
           style={{
@@ -28,12 +28,11 @@ export const AuthView = defineComponent({
           }}
         />
         {/* Dark overlay for contrast */}
-        <div class="fixed inset-0 -z-10 bg-black/40" />
+        <div class="bg-black/40 inset-0 fixed -z-10" />
         <RouterView />
       </div>
-    )
+    );
   },
-})
+});
 
-// eslint-disable-next-line import/no-default-export
-export default AuthView
+export default AuthView;

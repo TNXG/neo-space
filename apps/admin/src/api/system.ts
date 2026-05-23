@@ -1,46 +1,46 @@
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface AppInfo {
-  name: string
-  version: string
-  hash?: string
+  name: string;
+  version: string;
+  hash?: string;
 }
 
 interface ApiEnvelope<T> {
-  data: T
+  data: T;
 }
 
 export interface DebugEventData {
-  type: string
-  payload: any
+  type: string;
+  payload: any;
 }
 
 export interface PtyRecord {
-  id: string
-  data: any
+  id: string;
+  data: any;
 }
 
 export const systemApi = {
   // 获取应用信息
   getAppInfo: async () => {
-    const response = await request.get<ApiEnvelope<AppInfo>>('/')
-    return response.data
+    const response = await request.get<ApiEnvelope<AppInfo>>("/");
+    return response.data;
   },
 
   // === Debug ===
 
   // 发送调试事件
   sendDebugEvent: (data: DebugEventData) =>
-    request.post<void>('/debug/events', { data }),
+    request.post<void>("/debug/events", { data }),
 
   // 执行 Serverless 函数
   executeFunction: (data: { code: string; context?: any }) =>
-    request.post<any>('/debug/function', { data }),
+    request.post<any>("/debug/function", { data }),
 
   // === PTY ===
 
   // 获取 PTY 记录
-  getPtyRecords: () => request.get<PtyRecord[]>('/pty/record'),
+  getPtyRecords: () => request.get<PtyRecord[]>("/pty/record"),
 
   // === 内置函数 ===
 
@@ -49,5 +49,5 @@ export const systemApi = {
     request.get<any>(`/fn/built-in/${name}`, { params }),
 
   // 获取函数类型定义
-  getFnTypes: () => request.get<string>('/fn/types'),
-}
+  getFnTypes: () => request.get<string>("/fn/types"),
+};

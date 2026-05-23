@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export const ArticlePreview = defineComponent({
   props: {
@@ -8,6 +8,6 @@ export const ArticlePreview = defineComponent({
     },
   },
   setup(props) {
-    return () => <iframe src={props.url} class="h-[60vh] w-[60ch] max-w-full" />
+    return () => <iframe src={props.url} class="h-[60vh] max-w-full w-[60ch]" />;
   },
-})
+});

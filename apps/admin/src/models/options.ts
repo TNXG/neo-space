@@ -1,188 +1,188 @@
 export namespace MxServerOptions {
   export interface SeoOption {
-    title: string
-    description: string
-    keywords: string[]
+    title: string;
+    description: string;
+    keywords: string[];
   }
 
   export interface UrlOption {
-    webUrl: string
-    adminUrl: string
-    serverUrl: string
-    wsUrl: string
+    webUrl: string;
+    adminUrl: string;
+    serverUrl: string;
+    wsUrl: string;
   }
 
   export interface MailOption {
-    port: number
-    host: string
-    secure: boolean
+    port: number;
+    host: string;
+    secure: boolean;
   }
 
   export interface MailOptionsOption {
-    enable: boolean
-    user: string
-    pass: string
-    options: MailOption
+    enable: boolean;
+    user: string;
+    pass: string;
+    options: MailOption;
   }
 
   export interface CommentOptionsOption {
-    antiSpam: boolean
-    disableComment: boolean
-    spamKeywords: string[]
-    blockIps: string[]
-    disableNoChinese: boolean
-    commentShouldAudit: boolean
-    recordIpLocation: boolean
+    antiSpam: boolean;
+    disableComment: boolean;
+    spamKeywords: string[];
+    blockIps: string[];
+    disableNoChinese: boolean;
+    commentShouldAudit: boolean;
+    recordIpLocation: boolean;
   }
 
   export interface BackupOptionsOption {
-    enable: boolean
-    endpoint: string
-    secretId: string
-    secretKey: string
-    bucket: string
-    region: string
+    enable: boolean;
+    endpoint: string;
+    secretId: string;
+    secretKey: string;
+    bucket: string;
+    region: string;
   }
 
   export interface BaiduSearchOptionsOption {
-    enable: boolean
-    token: string
+    enable: boolean;
+    token: string;
   }
 
   export interface AlgoliaSearchOptionsOption {
-    enable: boolean
-    apiKey: string
-    appId: string
-    indexName: string
+    enable: boolean;
+    apiKey: string;
+    appId: string;
+    indexName: string;
   }
 
   export interface AdminExtraOption {
-    enableAdminProxy: boolean
-    background: string
-    gaodemapKey: string
+    enableAdminProxy: boolean;
+    background: string;
+    gaodemapKey: string;
   }
 
   export interface FriendLinkOptionsOption {
-    allowApply: boolean
+    allowApply: boolean;
   }
 
   export interface TextOptionsOption {
-    macros: boolean
+    macros: boolean;
   }
 
   export interface BarkOptionsOption {
-    enable: boolean
-    key: string
-    serverUrl: string
-    enableComment: boolean
+    enable: boolean;
+    key: string;
+    serverUrl: string;
+    enableComment: boolean;
   }
 
   export interface FeatureListOption {
-    emailSubscribe: boolean
+    emailSubscribe: boolean;
   }
 
   export interface GitHubIntegrationOption {
-    enabled?: boolean
-    token?: string
+    enabled?: boolean;
+    token?: string;
   }
 
   export interface TmdbIntegrationOption {
-    enabled?: boolean
-    apiKey?: string
+    enabled?: boolean;
+    apiKey?: string;
   }
 
   export interface BangumiIntegrationOption {
-    enabled?: boolean
-    accessToken?: string
+    enabled?: boolean;
+    accessToken?: string;
   }
 
   export interface NeoDBIntegrationOption {
-    enabled?: boolean
+    enabled?: boolean;
   }
 
   export interface ArxivIntegrationOption {
-    enabled?: boolean
+    enabled?: boolean;
   }
 
   export interface LeetcodeIntegrationOption {
-    enabled?: boolean
+    enabled?: boolean;
   }
 
   export interface NeteaseMusicIntegrationOption {
-    enabled?: boolean
+    enabled?: boolean;
   }
 
   export interface QQMusicIntegrationOption {
-    enabled?: boolean
+    enabled?: boolean;
   }
 
   export interface ThirdPartyServiceIntegrationOption {
-    github?: GitHubIntegrationOption
-    tmdb?: TmdbIntegrationOption
-    bangumi?: BangumiIntegrationOption
-    neodb?: NeoDBIntegrationOption
-    arxiv?: ArxivIntegrationOption
-    leetcode?: LeetcodeIntegrationOption
-    neteaseMusic?: NeteaseMusicIntegrationOption
-    qqMusic?: QQMusicIntegrationOption
+    github?: GitHubIntegrationOption;
+    tmdb?: TmdbIntegrationOption;
+    bangumi?: BangumiIntegrationOption;
+    neodb?: NeoDBIntegrationOption;
+    arxiv?: ArxivIntegrationOption;
+    leetcode?: LeetcodeIntegrationOption;
+    neteaseMusic?: NeteaseMusicIntegrationOption;
+    qqMusic?: QQMusicIntegrationOption;
   }
 
   export interface AuthSecurityOption {
-    disablePasswordLogin: boolean
+    disablePasswordLogin: boolean;
   }
 
   export enum AIProviderType {
-    OpenAI = 'openai',
-    OpenAICompatible = 'openai-compatible',
-    Anthropic = 'anthropic',
+    OpenAI = "openai",
+    OpenAICompatible = "openai-compatible",
+    Anthropic = "anthropic",
   }
 
   export interface AIProviderConfig {
-    id: string
-    name: string
-    type: AIProviderType
-    apiKey: string
-    endpoint?: string
-    defaultModel: string
-    enabled: boolean
+    id: string;
+    name: string;
+    type: AIProviderType;
+    apiKey: string;
+    endpoint?: string;
+    defaultModel: string;
+    enabled: boolean;
   }
 
   export interface AIModelAssignment {
-    providerId?: string
-    model?: string
+    providerId?: string;
+    model?: string;
   }
 
   export interface AIOption {
-    providers: AIProviderConfig[]
-    summaryModel?: AIModelAssignment
-    writerModel?: AIModelAssignment
-    commentReviewModel?: AIModelAssignment
-    enableSummary: boolean
-    enableAutoGenerateSummaryOnCreate: boolean
-    enableAutoGenerateSummaryOnUpdate: boolean
-    summaryTargetLanguages: string[]
-    summaryMinTextLength?: number
-    insightsModel?: AIModelAssignment
-    insightsTranslationModel?: AIModelAssignment
-    enableInsights?: boolean
-    enableAutoGenerateInsightsOnCreate?: boolean
-    enableAutoGenerateInsightsOnUpdate?: boolean
-    enableAutoTranslateInsights?: boolean
-    insightsTargetLanguages?: string[]
-    insightsMinTextLength?: number
+    providers: AIProviderConfig[];
+    summaryModel?: AIModelAssignment;
+    writerModel?: AIModelAssignment;
+    commentReviewModel?: AIModelAssignment;
+    enableSummary: boolean;
+    enableAutoGenerateSummaryOnCreate: boolean;
+    enableAutoGenerateSummaryOnUpdate: boolean;
+    summaryTargetLanguages: string[];
+    summaryMinTextLength?: number;
+    insightsModel?: AIModelAssignment;
+    insightsTranslationModel?: AIModelAssignment;
+    enableInsights?: boolean;
+    enableAutoGenerateInsightsOnCreate?: boolean;
+    enableAutoGenerateInsightsOnUpdate?: boolean;
+    enableAutoTranslateInsights?: boolean;
+    insightsTargetLanguages?: string[];
+    insightsMinTextLength?: number;
   }
 
   export interface ModelInfo {
-    id: string
-    name: string
-    created?: number
+    id: string;
+    name: string;
+    created?: number;
   }
 
   export interface ProviderModelsResponse {
-    providerId: string
-    providerName: string
-    providerType: AIProviderType
-    models: ModelInfo[]
-    error?: string
+    providerId: string;
+    providerName: string;
+    providerType: AIProviderType;
+    models: ModelInfo[];
+    error?: string;
   }
 }

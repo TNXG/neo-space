@@ -1,35 +1,35 @@
-import { computed, defineComponent, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import type {
   ArticleInfo,
   GroupedInsightsData,
   GroupedInsightsResponse,
-} from '~/api/ai'
+} from "~/api/ai";
+import { useQuery } from "@tanstack/vue-query";
+import { computed, defineComponent, ref, watch } from "vue";
 
-import { useQuery } from '@tanstack/vue-query'
+import { useRoute, useRouter } from "vue-router";
 
-import { aiApi } from '~/api/ai'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { queryKeys } from '~/hooks/queries/keys'
-import { RouteName } from '~/router/name'
+import { aiApi } from "~/api/ai";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { queryKeys } from "~/hooks/queries/keys";
+import { RouteName } from "~/router/name";
 
 import {
   InsightsDetailEmptyState,
   InsightsDetailPanel,
-} from './components/insights-detail-panel'
-import { InsightsList } from './components/insights-list'
+} from "./components/insights-detail-panel";
+import { InsightsList } from "./components/insights-list";
 
 export default defineComponent({
-  name: 'AIInsightsPage',
+  name: "AIInsightsPage",
   setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const { isMobile } = useMasterDetailLayout()
+    const router = useRouter();
+    const route = useRoute();
+    const { isMobile } = useMasterDetailLayout();
 
-    const pageRef = ref(1)
-    const searchRef = ref('')
-    const listData = ref<GroupedInsightsData[]>([])
-    const pagerRef = ref<GroupedInsightsResponse['pagination'] | null>(null)
+    const pageRef = ref(1);
+    const searchRef = ref("");
+    const listData = ref<GroupedInsightsData[]>([]);
+    const pagerRef = ref<GroupedInsightsResponse["pagination"] | null>(null);
     const { data, refetch, isPending } = useQuery({
       queryKey: computed(() =>
         queryKeys.ai.insightsGrouped({
@@ -42,56 +42,59 @@ export default defineComponent({
           page: pageRef.value,
           search: searchRef.value || undefined,
         }),
-    })
+    });
 
-    const selectedId = ref<string | null>((route.query.id as string) || null)
-    const showDetailOnMobile = ref(false)
+    const selectedId = ref<string | null>((route.query.id as string) || null);
+    const showDetailOnMobile = ref(false);
 
     const handleSelect = (article: ArticleInfo) => {
-      selectedId.value = article.id
+      selectedId.value = article.id;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
     const handlePageChange = (page: number) => {
-      if (pageRef.value === page) return
-      pageRef.value = page
-      refetch()
-    }
+      if (pageRef.value === page)
+        return;
+      pageRef.value = page;
+      refetch();
+    };
 
     const handleSearchChange = (search: string) => {
-      if (searchRef.value === search) return
-      searchRef.value = search
-      pageRef.value = 1
-      listData.value = []
-      refetch()
-    }
+      if (searchRef.value === search)
+        return;
+      searchRef.value = search;
+      pageRef.value = 1;
+      listData.value = [];
+      refetch();
+    };
 
     const refreshList = () => {
-      pageRef.value = 1
-      refetch()
-    }
+      pageRef.value = 1;
+      refetch();
+    };
 
     watch(
       () => data.value,
       (value) => {
-        if (!value) return
-        pagerRef.value = value.pagination ?? null
+        if (!value)
+          return;
+        pagerRef.value = value.pagination ?? null;
         if (value.data !== undefined) {
           if (pageRef.value === 1) {
-            listData.value = value.data
+            listData.value = value.data;
           } else {
-            listData.value = [...listData.value, ...value.data]
+            listData.value = [...listData.value, ...value.data];
           }
         }
       },
       { immediate: true },
-    )
+    );
 
     watch(
       selectedId,
@@ -99,10 +102,10 @@ export default defineComponent({
         router.replace({
           name: RouteName.AiInsights,
           query: (id ? { id } : {}),
-        })
+        });
       },
-      { flush: 'post' },
-    )
+      { flush: "post" },
+    );
 
     return () => (
       <MasterDetailLayout
@@ -126,17 +129,19 @@ export default defineComponent({
             />
           ),
           detail: () =>
-            selectedId.value ? (
-              <InsightsDetailPanel
-                articleId={selectedId.value}
-                isMobile={isMobile.value}
-                onBack={handleBack}
-                onRefresh={refreshList}
-              />
-            ) : null,
+            selectedId.value
+              ? (
+                  <InsightsDetailPanel
+                    articleId={selectedId.value}
+                    isMobile={isMobile.value}
+                    onBack={handleBack}
+                    onRefresh={refreshList}
+                  />
+                )
+              : null,
           empty: () => <InsightsDetailEmptyState />,
         }}
       </MasterDetailLayout>
-    )
+    );
   },
-})
+});

@@ -1,1 +1,1 @@
-export type WriteEditorVariant = 'post' | 'note'
+export type WriteEditorVariant = "post" | "note";

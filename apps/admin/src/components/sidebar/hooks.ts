@@ -1,56 +1,56 @@
-import { computed, provide, ref, watch } from 'vue'
-import type { ComputedGetter, InjectionKey } from 'vue'
+import type { ComputedGetter, InjectionKey } from "vue";
+import { computed, provide, ref, watch } from "vue";
 
-type TSidebarCollapseStatus =
-  | 'collapsed'
-  | 'expanded'
-  | 'collapsing'
-  | 'expanding'
+type TSidebarCollapseStatus
+  = | "collapsed"
+    | "expanded"
+    | "collapsing"
+    | "expanding";
 const useSidebarStatusImpl = (collapseValueRef: ComputedGetter<boolean>) => {
-  let prevValue =
-    typeof collapseValueRef === 'function'
+  let prevValue
+    = typeof collapseValueRef === "function"
       ? collapseValueRef()
-      : collapseValueRef
+      : collapseValueRef;
 
   const statusRef = ref<TSidebarCollapseStatus>(
-    prevValue ? 'collapsed' : 'expanded',
-  )
+    prevValue ? "collapsed" : "expanded",
+  );
 
-  const collapseComputedRef = computed(collapseValueRef)
+  const collapseComputedRef = computed(collapseValueRef);
   watch(
     () => collapseComputedRef.value,
     () => {
       if (prevValue !== collapseComputedRef.value) {
-        statusRef.value = collapseComputedRef.value ? 'collapsing' : 'expanding'
-        prevValue = collapseComputedRef.value
+        statusRef.value = collapseComputedRef.value ? "collapsing" : "expanding";
+        prevValue = collapseComputedRef.value;
       }
     },
-  )
+  );
 
   const onTransitionEnd = () => {
-    statusRef.value = collapseComputedRef.value ? 'collapsed' : 'expanded'
-  }
+    statusRef.value = collapseComputedRef.value ? "collapsed" : "expanded";
+  };
 
   return {
     onTransitionEnd,
     statusRef,
-  } as const
-}
+  } as const;
+};
 
 const injectionKey = Symbol() as InjectionKey<{
-  status: TSidebarCollapseStatus
-}>
+  status: TSidebarCollapseStatus;
+}>;
 
 export const useSidebarStatusInjection = (
   collapseValueRef: ComputedGetter<boolean>,
 ) => {
-  const { onTransitionEnd, statusRef } = useSidebarStatusImpl(collapseValueRef)
+  const { onTransitionEnd, statusRef } = useSidebarStatusImpl(collapseValueRef);
 
   provide(injectionKey, {
     status: statusRef.value,
-  })
+  });
   return {
     onTransitionEnd,
     statusRef,
-  }
-}
+  };
+};

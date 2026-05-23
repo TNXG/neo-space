@@ -1,3 +1,4 @@
+import type { RouteRecordRaw } from "vue-router";
 /**
  * 路由在此定义
  * @author Innei <https://innei.ren>
@@ -19,12 +20,12 @@ import {
   FileText as FileTextIcon,
   Beaker as FlaskIcon,
   FunctionSquare as FunctionIcon,
+  Hourglass as HourglassIcon,
   Languages as LanguagesIcon,
   Link as LinkIcon,
   ListTodo as ListTodoIcon,
   FileCode2 as MarkdownIcon,
   Hammer as MidHammer,
-  Hourglass as HourglassIcon,
   Pencil as PencilAltIcon,
   Pencil as PencilIcon,
   Users as PhUsersThreeBold,
@@ -39,48 +40,47 @@ import {
   Undo2 as UndoAltIcon,
   Users as UserFriendsIcon,
   Webhook as WebhookIcon,
-} from 'lucide-vue-next'
-import type { RouteRecordRaw } from 'vue-router'
+} from "lucide-vue-next";
 
-import { AppLayout } from '~/layouts/app-layout'
-import AuthLayout from '~/layouts/auth-view'
-import $RouterView from '~/layouts/router-view'
-import { DashBoardView } from '~/views/dashboard'
-import { ManagePostListView } from '~/views/manage-posts/list'
+import { AppLayout } from "~/layouts/app-layout";
+import AuthLayout from "~/layouts/auth-view";
+import $RouterView from "~/layouts/router-view";
+import { DashBoardView } from "~/views/dashboard";
+import { ManagePostListView } from "~/views/manage-posts/list";
 
-import CommentPage from '../views/comments/index'
-import AuthCallbackView from '../views/auth-callback'
-import LoginView from '../views/login'
-import { ManageNoteListView } from '../views/manage-notes/list'
-import ManageNoteWrite from '../views/manage-notes/write'
-import ManagePostsWrite from '../views/manage-posts/write'
-import { RouteName } from './name'
+import AuthCallbackView from "../views/auth-callback";
+import CommentPage from "../views/comments/index";
+import LoginView from "../views/login";
+import { ManageNoteListView } from "../views/manage-notes/list";
+import ManageNoteWrite from "../views/manage-notes/write";
+import ManagePostsWrite from "../views/manage-posts/write";
+import { RouteName } from "./name";
 
 export const routeForMenu: Array<RouteRecordRaw> = [
   {
-    path: '/dashboard',
+    path: "/dashboard",
     component: DashBoardView,
     name: RouteName.Dashboard,
     meta: {
-      title: '仪表盘',
+      title: "仪表盘",
       icon: <TachometerAltIcon />,
     },
   },
   {
-    path: '/posts',
+    path: "/posts",
     name: RouteName.Post,
     meta: {
-      title: '博文',
+      title: "博文",
       icon: <CodeIcon />,
     },
-    redirect: '/posts/view',
+    redirect: "/posts/view",
     component: $RouterView,
     children: [
       {
-        path: 'view',
+        path: "view",
         name: RouteName.ViewPost,
         meta: {
-          title: '管理',
+          title: "管理",
           icon: <EyeIcon />,
           query: { page: 1 },
         },
@@ -88,10 +88,10 @@ export const routeForMenu: Array<RouteRecordRaw> = [
       },
 
       {
-        path: 'edit',
+        path: "edit",
         name: RouteName.EditPost,
         meta: {
-          title: '撰写',
+          title: "撰写",
           icon: <PencilAltIcon />,
         },
         props: true,
@@ -99,385 +99,385 @@ export const routeForMenu: Array<RouteRecordRaw> = [
       },
 
       {
-        path: 'category',
+        path: "category",
         name: RouteName.EditCategory,
         meta: {
-          title: '分类 / 标签',
+          title: "分类 / 标签",
           icon: <PuzzlePieceIcon />,
         },
         component: () =>
-          import('../views/manage-posts/category').then((m) => m.CategoryView),
+          import("../views/manage-posts/category").then(m => m.CategoryView),
       },
     ],
   },
   {
-    path: '/notes',
+    path: "/notes",
     name: RouteName.Note,
     meta: {
-      title: '手记',
+      title: "手记",
       icon: <BookIcon />,
     },
-    redirect: '/notes/view',
+    redirect: "/notes/view",
     component: $RouterView,
     children: [
       {
-        path: 'view',
-        name: 'view-notes',
+        path: "view",
+        name: "view-notes",
         meta: {
-          title: '管理',
+          title: "管理",
           query: { page: 1 },
           icon: <EyeIcon />,
         },
         component: ManageNoteListView,
       },
       {
-        path: 'edit',
+        path: "edit",
         name: RouteName.EditNote,
         meta: {
-          title: '撰写',
+          title: "撰写",
           icon: <PencilAltIcon />,
         },
         component: ManageNoteWrite,
       },
 
       {
-        path: 'topic',
+        path: "topic",
         name: RouteName.Topic,
         meta: {
-          title: '专栏',
+          title: "专栏",
           icon: <TopicIcon />,
         },
-        component: () => import('../views/manage-notes/topic'),
+        component: () => import("../views/manage-notes/topic"),
       },
     ],
   },
   {
-    path: '/comments',
+    path: "/comments",
     name: RouteName.Comment,
     meta: {
-      title: '评论',
+      title: "评论",
       query: { page: 1, state: 0 },
       icon: <CommentIcon />,
     },
     component: CommentPage,
   },
   {
-    path: '/drafts',
+    path: "/drafts",
     name: RouteName.Draft,
     meta: {
-      title: '草稿箱',
+      title: "草稿箱",
       icon: <DraftIcon />,
     },
-    component: () => import('../views/drafts'),
+    component: () => import("../views/drafts"),
   },
   {
-    path: '/pages',
+    path: "/pages",
     name: RouteName.Page,
-    redirect: '/pages/list',
+    redirect: "/pages/list",
     meta: {
-      title: '页面',
+      title: "页面",
       icon: <FileIcon />,
     },
     component: $RouterView,
     children: [
       {
-        path: 'list',
+        path: "list",
         name: RouteName.ListPage,
         meta: {
-          title: '管理',
+          title: "管理",
           icon: <EyeIcon />,
           query: { page: 1 },
         },
         component: () =>
-          import('../views/manage-pages/list').then(
-            (m) => m.ManagePageListView,
+          import("../views/manage-pages/list").then(
+            m => m.ManagePageListView,
           ),
       },
       {
-        path: 'edit',
+        path: "edit",
         name: RouteName.EditPage,
         meta: {
-          title: '编辑',
+          title: "编辑",
           icon: <PencilAltIcon />,
         },
-        component: () => import('../views/manage-pages/write'),
+        component: () => import("../views/manage-pages/write"),
       },
     ],
   },
   {
-    path: '/readers',
+    path: "/readers",
     name: RouteName.Reader,
     meta: {
-      title: '读者',
+      title: "读者",
       icon: <PhUsersThreeBold />,
     },
-    component: () => import('../views/reader'),
+    component: () => import("../views/reader"),
   },
   {
-    path: '/says',
+    path: "/says",
     name: RouteName.ListSay,
     meta: {
-      title: '说说',
+      title: "说说",
       icon: <CommentsIcon />,
       query: { page: 1 },
     },
-    component: () => import('../views/manage-says/list'),
+    component: () => import("../views/manage-says/list"),
   },
   {
-    path: '/recently',
+    path: "/recently",
     name: RouteName.ListShortHand,
     meta: {
-      title: '速记',
+      title: "速记",
       icon: <PencilIcon />,
     },
-    component: () => import('../views/shorthand'),
+    component: () => import("../views/shorthand"),
   },
   {
-    path: '/projects',
+    path: "/projects",
     name: RouteName.ListProject,
     meta: {
-      title: '项目',
+      title: "项目",
       icon: <FlaskIcon />,
       query: { page: 1 },
     },
-    component: () => import('../views/manage-project/index'),
+    component: () => import("../views/manage-project/index"),
   },
   {
-    path: '/friends',
+    path: "/friends",
     name: RouteName.Friend,
     meta: {
-      title: '朋友们',
+      title: "朋友们",
       icon: <UserFriendsIcon />,
-      query: { state: '0' },
+      query: { state: "0" },
     },
-    component: () => import('../views/manage-friends'),
+    component: () => import("../views/manage-friends"),
   },
   {
-    path: '/ai',
+    path: "/ai",
 
     name: RouteName.Ai,
     meta: {
-      title: 'AI',
+      title: "AI",
       icon: <SparklesIcon />,
     },
 
-    redirect: '/ai/summary',
+    redirect: "/ai/summary",
     children: [
       {
-        path: 'summary',
+        path: "summary",
         name: RouteName.AiSummary,
         meta: {
-          title: '摘要',
+          title: "摘要",
           icon: <FileTextIcon />,
         },
-        component: () => import('../views/ai/summary'),
+        component: () => import("../views/ai/summary"),
       },
       {
-        path: 'insights',
+        path: "insights",
         name: RouteName.AiInsights,
         meta: {
-          title: '精读',
+          title: "精读",
           icon: <TelescopeIcon />,
         },
-        component: () => import('../views/ai/insights'),
+        component: () => import("../views/ai/insights"),
       },
       {
-        path: 'translation',
+        path: "translation",
         name: RouteName.AiTranslation,
         meta: {
-          title: '翻译',
+          title: "翻译",
           icon: <LanguagesIcon />,
         },
-        component: () => import('../views/ai/translation'),
+        component: () => import("../views/ai/translation"),
       },
       {
-        path: 'translation-entries',
+        path: "translation-entries",
         name: RouteName.AiTranslationEntries,
         meta: {
-          title: '翻译词表',
+          title: "翻译词表",
           icon: <BookIcon />,
         },
-        component: () => import('../views/ai/translation-entries'),
+        component: () => import("../views/ai/translation-entries"),
       },
       {
-        path: 'tasks',
+        path: "tasks",
         name: RouteName.AiTasks,
         meta: {
-          title: '任务队列',
+          title: "任务队列",
           icon: <ListTodoIcon />,
         },
-        component: () => import('../views/ai/tasks'),
+        component: () => import("../views/ai/tasks"),
       },
       {
-        path: 'slug-backfill',
+        path: "slug-backfill",
         name: RouteName.AiSlugBackfill,
         meta: {
-          title: 'Slug 回填',
+          title: "Slug 回填",
           icon: <LinkIcon />,
         },
-        component: () => import('../views/ai/slug-backfill'),
+        component: () => import("../views/ai/slug-backfill"),
       },
       {
-        path: 'time-capsule',
+        path: "time-capsule",
         name: RouteName.AiTimeCapsule,
         meta: {
-          title: '时光胶囊',
+          title: "时光胶囊",
           icon: <HourglassIcon />,
         },
-        component: () => import('../views/ai/time-capsule'),
+        component: () => import("../views/ai/time-capsule"),
       },
     ],
   },
   {
-    path: '/analyze',
+    path: "/analyze",
     name: RouteName.Analyze,
-    component: () => import('../views/analyze'),
+    component: () => import("../views/analyze"),
     meta: {
-      title: '数据',
+      title: "数据",
       icon: <ChartLineIcon />,
       query: { page: 1 },
     },
   },
   {
-    path: '/setting',
+    path: "/setting",
     name: RouteName.Setting,
     meta: {
-      title: '设定',
+      title: "设定",
       icon: <CogsIcon />,
-      query: { group: 'user' },
+      query: { group: "user" },
     },
-    component: () => import('../views/setting'),
+    component: () => import("../views/setting"),
   },
 
   {
-    path: '/extra-features',
+    path: "/extra-features",
     name: RouteName.Other,
-    meta: { title: '附加功能', icon: <EllipsisHIcon /> },
+    meta: { title: "附加功能", icon: <EllipsisHIcon /> },
     component: $RouterView,
     children: [
       {
-        path: 'snippets',
+        path: "snippets",
         name: RouteName.Snippet,
         meta: {
-          title: '配置与云函数',
+          title: "配置与云函数",
           icon: <FunctionIcon />,
         },
-        component: () => import('../views/extra-features/snippets'),
+        component: () => import("../views/extra-features/snippets"),
       },
 
       {
-        path: 'subscribe',
+        path: "subscribe",
         name: RouteName.Subscribe,
         meta: {
-          title: '订阅',
+          title: "订阅",
           icon: <SubscribeIcon />,
         },
-        component: () => import('../views/extra-features/subscribe'),
+        component: () => import("../views/extra-features/subscribe"),
       },
       {
-        path: 'webhooks',
+        path: "webhooks",
         name: RouteName.Webhook,
         meta: {
-          title: 'Webhooks',
+          title: "Webhooks",
           icon: <WebhookIcon />,
         },
-        component: () => import('../views/extra-features/webhook'),
+        component: () => import("../views/extra-features/webhook"),
       },
 
       {
-        path: 'assets/template',
+        path: "assets/template",
         name: RouteName.AssetTemplate,
         meta: {
-          title: '模板编辑',
+          title: "模板编辑",
           icon: <TemplateIcon />,
         },
-        component: () => import('../views/extra-features/assets/template'),
+        component: () => import("../views/extra-features/assets/template"),
       },
       {
-        path: 'markdown',
+        path: "markdown",
         name: RouteName.Markdown,
         meta: {
-          title: 'Markdown 导入导出',
+          title: "Markdown 导入导出",
 
           icon: <MarkdownIcon />,
         },
-        component: () => import('../views/extra-features/markdown-helper'),
+        component: () => import("../views/extra-features/markdown-helper"),
       },
     ],
   },
   {
     name: RouteName.Maintain,
-    path: '/maintenance',
+    path: "/maintenance",
     component: $RouterView,
-    redirect: '/maintenance/cron',
+    redirect: "/maintenance/cron",
     meta: {
-      title: '维护',
+      title: "维护",
       icon: <MidHammer />,
     },
     children: [
       {
-        path: 'cron',
+        path: "cron",
         name: RouteName.Cron,
         meta: {
-          title: '任务',
+          title: "任务",
           icon: <ClockIcon />,
         },
-        component: () => import('../views/maintenance/cron'),
+        component: () => import("../views/maintenance/cron"),
       },
       {
-        path: 'backup',
+        path: "backup",
         name: RouteName.Backup,
         meta: {
-          title: '备份',
+          title: "备份",
           icon: <UndoAltIcon />,
         },
-        component: () => import('../views/maintenance/backup'),
+        component: () => import("../views/maintenance/backup"),
       },
       {
-        path: 'enrichment',
+        path: "enrichment",
         name: RouteName.Enrichment,
         meta: {
-          title: 'Enrichment 缓存',
+          title: "Enrichment 缓存",
           icon: <EnrichmentIcon />,
         },
-        component: () => import('../views/enrichment'),
+        component: () => import("../views/enrichment"),
       },
       {
-        path: 'search-index',
+        path: "search-index",
         name: RouteName.SearchIndex,
         meta: {
-          title: '搜索索引',
+          title: "搜索索引",
           icon: <SearchIndexIcon />,
           query: { page: 1 },
         },
-        component: () => import('../views/maintenance/search-index'),
+        component: () => import("../views/maintenance/search-index"),
       },
     ],
   },
-]
+];
 
 export const routes: RouteRecordRaw[] = [
   {
-    path: '/',
+    path: "/",
     component: AppLayout,
     name: RouteName.Home,
-    redirect: '/dashboard',
+    redirect: "/dashboard",
     children: [...routeForMenu],
   },
   {
-    path: '/',
+    path: "/",
     component: AuthLayout,
 
     children: [
       {
-        path: '/login',
+        path: "/login",
         name: RouteName.Login,
-        meta: { isPublic: true, title: '登录' },
+        meta: { isPublic: true, title: "登录" },
         component: LoginView,
       },
       {
-        path: '/auth/callback',
-        meta: { isPublic: true, title: '登录回调' },
+        path: "/auth/callback",
+        meta: { isPublic: true, title: "登录回调" },
         component: AuthCallbackView,
       },
     ],
@@ -485,33 +485,33 @@ export const routes: RouteRecordRaw[] = [
 
   // for dev
   {
-    path: '/dev',
-    redirect: __DEV__ ? undefined : '/',
+    path: "/dev",
+    redirect: __DEV__ ? undefined : "/",
     component: $RouterView,
     children: __DEV__
-      ? Object.entries(import.meta.glob('../views/dev/**/*.tsx')).map(
+      ? Object.entries(import.meta.glob("../views/dev/**/*.tsx")).map(
           ([path, comp]) => ({
             path:
               path
-                .split('/')
+                .split("/")
                 .at(-1)
-                ?.replace(/\.[jt]sx$/, '') || '',
+                ?.replace(/\.[jt]sx$/, "") || "",
             component: comp,
           }),
         )
       : [],
   },
   {
-    path: '/debug',
+    path: "/debug",
     component: AppLayout,
     meta: {
-      title: '调试',
+      title: "调试",
       icon: <DebugIcon />,
     },
-    children: Object.entries(import.meta.glob('../views/debug/**/*.tsx')).map(
+    children: Object.entries(import.meta.glob("../views/debug/**/*.tsx")).map(
       ([path, comp]) => {
-        const _title = path.match(/debug\/(.*?)\/index\.tsx$/)![1]
-        const title = _title[0].toUpperCase() + _title.slice(1)
+        const _title = path.match(/debug\/(.*?)\/index\.tsx$/)![1];
+        const title = _title[0].toUpperCase() + _title.slice(1);
 
         return {
           path: _title,
@@ -523,29 +523,29 @@ export const routes: RouteRecordRaw[] = [
             hideKbar: true,
             icon: <DebugIcon />,
           },
-        }
+        };
       },
     ),
   },
   // v1 compatibility
   {
-    path: '/page/:path(.*)*',
-    name: 'page$',
+    path: "/page/:path(.*)*",
+    name: "page$",
     redirect: (to) => {
-      return to.fullPath.replace(/^\/page\//, '/pages/')
+      return to.fullPath.replace(/^\/page\//, "/pages/");
     },
   },
   {
-    path: '/extra/:path(.*)*',
-    name: 'extra',
+    path: "/extra/:path(.*)*",
+    name: "extra",
     redirect: (to) => {
-      return to.fullPath.replace(/^\/extra/, '')
+      return to.fullPath.replace(/^\/extra/, "");
     },
   },
   {
-    path: '/:pathMatch(.*)*',
-    name: '404',
+    path: "/:pathMatch(.*)*",
+    name: "404",
     meta: { isPublic: true },
-    redirect: '/',
+    redirect: "/",
   },
-]
+];

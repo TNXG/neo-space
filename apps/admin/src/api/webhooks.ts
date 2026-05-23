@@ -1,52 +1,52 @@
-import type { PaginateResult } from '~/models/base'
+import type { PaginateResult } from "~/models/base";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface WebhookModel {
-  id: string
-  url: string
-  payloadUrl: string
-  events: string[]
-  secret?: string
-  enabled: boolean
-  scope: number
-  created: string
-  updated: string
+  id: string;
+  url: string;
+  payloadUrl: string;
+  events: string[];
+  secret?: string;
+  enabled: boolean;
+  scope: number;
+  created: string;
+  updated: string;
 }
 
 export interface CreateWebhookData {
-  url?: string
-  payloadUrl?: string
-  events: string[]
-  secret?: string
-  enabled?: boolean
-  scope?: number
+  url?: string;
+  payloadUrl?: string;
+  events: string[];
+  secret?: string;
+  enabled?: boolean;
+  scope?: number;
 }
 
 export interface UpdateWebhookData extends Partial<CreateWebhookData> {}
 
 export interface WebhookEventRecord {
-  id: string
-  event: string
-  headers: Record<string, string>
-  payload: unknown
-  response: unknown
-  success: boolean
-  status: number
-  hookId: string
-  timestamp: string
+  id: string;
+  event: string;
+  headers: Record<string, string>;
+  payload: unknown;
+  response: unknown;
+  success: boolean;
+  status: number;
+  hookId: string;
+  timestamp: string;
 }
 
 export const webhooksApi = {
   // 获取 Webhook 列表
-  getList: () => request.get<WebhookModel[]>('/webhooks'),
+  getList: () => request.get<WebhookModel[]>("/webhooks"),
 
   // 获取可用事件列表
-  getEvents: () => request.get<string[]>('/webhooks/events'),
+  getEvents: () => request.get<string[]>("/webhooks/events"),
 
   // 创建 Webhook
   create: (data: CreateWebhookData) =>
-    request.post<WebhookModel>('/webhooks', { data }),
+    request.post<WebhookModel>("/webhooks", { data }),
 
   // 更新 Webhook
   update: (id: string, data: UpdateWebhookData) =>
@@ -68,4 +68,4 @@ export const webhooksApi = {
   // 重新推送
   redispatch: (hookId: string, eventId: string) =>
     request.post<void>(`/webhooks/${hookId}/redispatch/${eventId}`),
-}
+};

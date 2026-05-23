@@ -7,27 +7,27 @@ import type {
   EnrichmentScreenshot,
   EnrichmentScreenshotListResponse,
   EnrichmentScreenshotQuota,
-} from '~/models/enrichment'
+} from "~/models/enrichment";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
-const encodeId = (id: string) => encodeURIComponent(id)
+const encodeId = (id: string) => encodeURIComponent(id);
 
 export const enrichmentApi = {
   resolve: (url: string, lang?: string) =>
-    request.get<EnrichmentResult>('/enrichment/resolve', {
+    request.get<EnrichmentResult>("/enrichment/resolve", {
       params: { url, ...(lang ? { lang } : {}) },
     }),
 
   list: (
     params: {
-      page?: number
-      size?: number
-      onlyFailed?: boolean
-      locale?: string
+      page?: number;
+      size?: number;
+      onlyFailed?: boolean;
+      locale?: string;
     } = {},
   ) =>
-    request.get<EnrichmentListResponse>('/enrichment/admin/list', {
+    request.get<EnrichmentListResponse>("/enrichment/admin/list", {
       params: {
         ...params,
         ...(params.onlyFailed ? { onlyFailed: true } : {}),
@@ -36,7 +36,7 @@ export const enrichmentApi = {
     }),
 
   providers: () =>
-    request.get<EnrichmentProviderMeta[]>('/enrichment/admin/providers'),
+    request.get<EnrichmentProviderMeta[]>("/enrichment/admin/providers"),
 
   /**
    * Refresh a single cache row. Pass `locale` (the row's locale, or empty for
@@ -69,15 +69,15 @@ export const enrichmentApi = {
   screenshots: {
     list: (
       params: {
-        page?: number
-        size?: number
-        sort?: 'last_accessed' | 'created' | 'bytes'
-        order?: 'asc' | 'desc'
+        page?: number;
+        size?: number;
+        sort?: "last_accessed" | "created" | "bytes";
+        order?: "asc" | "desc";
       } = {},
     ) => {
-      const { sort = 'last_accessed', order = 'desc', ...rest } = params
+      const { sort = "last_accessed", order = "desc", ...rest } = params;
       return request.get<EnrichmentScreenshotListResponse>(
-        '/enrichment/admin/screenshots',
+        "/enrichment/admin/screenshots",
         {
           params: {
             ...rest,
@@ -85,12 +85,12 @@ export const enrichmentApi = {
             order,
           },
         },
-      )
+      );
     },
 
     quota: () =>
       request.get<EnrichmentScreenshotQuota>(
-        '/enrichment/admin/screenshots/quota',
+        "/enrichment/admin/screenshots/quota",
       ),
 
     delete: (enrichmentId: string) =>
@@ -105,7 +105,7 @@ export const enrichmentApi = {
   },
 
   probe: (url: string, useCache?: boolean) =>
-    request.post<EnrichmentProbeResult>('/enrichment/admin/probe', {
+    request.post<EnrichmentProbeResult>("/enrichment/admin/probe", {
       data: { url, ...(useCache !== undefined ? { useCache } : {}) },
     }),
-}
+};

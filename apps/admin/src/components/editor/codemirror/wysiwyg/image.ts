@@ -1,20 +1,20 @@
-import { css, html, LitElement } from 'lit'
-import type { EditorView } from '@codemirror/view'
+import type { EditorView } from "@codemirror/view";
+import { StateEffect } from "@codemirror/state";
 
-import { StateEffect } from '@codemirror/state'
-import { WidgetType } from '@codemirror/view'
+import { WidgetType } from "@codemirror/view";
+import { css, html, LitElement } from "lit";
 
-import { showImagePopover } from '../image-popover-state'
-import { getPendingUpload, isPendingUploadId } from '../upload-store'
+import { showImagePopover } from "../image-popover-state";
+import { getPendingUpload, isPendingUploadId } from "../upload-store";
 
-const DEFAULT_ESTIMATED_IMAGE_HEIGHT = 240
-const imageHeightCache = new Map<string, number>()
-const imageTagName = 'cm-wysiwyg-image'
+const DEFAULT_ESTIMATED_IMAGE_HEIGHT = 240;
+const imageHeightCache = new Map<string, number>();
+const imageTagName = "cm-wysiwyg-image";
 
 export const imageHeightChangedEffect = StateEffect.define<{
-  url: string
-  height: number
-}>()
+  url: string;
+  height: number;
+}>();
 
 class ImageElement extends LitElement {
   static properties = {
@@ -29,7 +29,7 @@ class ImageElement extends LitElement {
     isUploading: { type: Boolean, state: true },
     uploadError: { type: Boolean, state: true },
     uploadBase64: { type: String, state: true },
-  }
+  };
 
   static styles = css`
     :host {
@@ -209,121 +209,124 @@ class ImageElement extends LitElement {
     :host-context(html.dark) .error-hint {
       color: #525252;
     }
-  `
+  `;
 
-  declare src: string
-  declare alt: string
-  declare isBlock: boolean
-  declare matchStart: number
-  declare matchEnd: number
-  declare isLoading: boolean
-  declare hasError: boolean
-  declare isUploading: boolean
-  declare uploadError: boolean
-  declare uploadBase64: string
+  declare src: string;
+  declare alt: string;
+  declare isBlock: boolean;
+  declare matchStart: number;
+  declare matchEnd: number;
+  declare isLoading: boolean;
+  declare hasError: boolean;
+  declare isUploading: boolean;
+  declare uploadError: boolean;
+  declare uploadBase64: string;
 
-  outerView?: EditorView
-  private resizeObserver?: ResizeObserver
-  private lastMeasuredHeight = 0
+  outerView?: EditorView;
+  private resizeObserver?: ResizeObserver;
+  private lastMeasuredHeight = 0;
 
   constructor() {
-    super()
-    this.src = ''
-    this.alt = ''
-    this.isBlock = false
-    this.matchStart = 0
-    this.matchEnd = 0
-    this.isLoading = true
-    this.hasError = false
-    this.isUploading = false
-    this.uploadError = false
-    this.uploadBase64 = ''
+    super();
+    this.src = "";
+    this.alt = "";
+    this.isBlock = false;
+    this.matchStart = 0;
+    this.matchEnd = 0;
+    this.isLoading = true;
+    this.hasError = false;
+    this.isUploading = false;
+    this.uploadError = false;
+    this.uploadBase64 = "";
   }
 
   connectedCallback(): void {
-    super.connectedCallback()
-    this.checkUploadStatus()
+    super.connectedCallback();
+    this.checkUploadStatus();
   }
 
   disconnectedCallback(): void {
     if (this.resizeObserver) {
-      this.resizeObserver.disconnect()
-      this.resizeObserver = undefined
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined;
     }
-    super.disconnectedCallback()
+    super.disconnectedCallback();
   }
 
   private checkUploadStatus(): void {
     if (isPendingUploadId(this.src)) {
-      const pendingUpload = getPendingUpload(this.src)
+      const pendingUpload = getPendingUpload(this.src);
       if (pendingUpload) {
-        this.isUploading = true
-        this.uploadError = pendingUpload.status === 'error'
-        this.uploadBase64 = pendingUpload.base64
-        this.isLoading = false
-        return
+        this.isUploading = true;
+        this.uploadError = pendingUpload.status === "error";
+        this.uploadBase64 = pendingUpload.base64;
+        this.isLoading = false;
+        return;
       }
     }
-    this.isUploading = false
-    this.uploadBase64 = ''
+    this.isUploading = false;
+    this.uploadBase64 = "";
   }
 
   updated(changed: Map<string, unknown>): void {
-    if (changed.has('src')) {
-      this.isLoading = true
-      this.hasError = false
-      this.checkUploadStatus()
+    if (changed.has("src")) {
+      this.isLoading = true;
+      this.hasError = false;
+      this.checkUploadStatus();
     }
   }
 
   private handleImageLoad = (): void => {
-    this.isLoading = false
-    this.hasError = false
-    this.updateHeight()
-  }
+    this.isLoading = false;
+    this.hasError = false;
+    this.updateHeight();
+  };
 
   private handleImageError = (): void => {
-    this.isLoading = false
-    this.hasError = true
-  }
+    this.isLoading = false;
+    this.hasError = true;
+  };
 
   private updateHeight(): void {
-    const img = this.shadowRoot?.querySelector('.image') as HTMLImageElement
-    if (!img?.isConnected) return
+    const img = this.shadowRoot?.querySelector(".image") as HTMLImageElement;
+    if (!img?.isConnected)
+      return;
 
-    const nextHeight = Math.round(img.getBoundingClientRect().height)
-    if (!nextHeight || nextHeight === this.lastMeasuredHeight) return
-    this.lastMeasuredHeight = nextHeight
+    const nextHeight = Math.round(img.getBoundingClientRect().height);
+    if (!nextHeight || nextHeight === this.lastMeasuredHeight)
+      return;
+    this.lastMeasuredHeight = nextHeight;
 
     if (imageHeightCache.get(this.src) !== nextHeight) {
-      imageHeightCache.set(this.src, nextHeight)
+      imageHeightCache.set(this.src, nextHeight);
       if (this.outerView) {
         this.outerView.dispatch({
           effects: imageHeightChangedEffect.of({
             url: this.src,
             height: nextHeight,
           }),
-        })
-        this.outerView.requestMeasure()
+        });
+        this.outerView.requestMeasure();
       }
     }
   }
 
   private handleClick = (e: Event): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    this.openEditPopover()
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    this.openEditPopover();
+  };
 
   private openEditPopover(): void {
-    if (!this.outerView) return
+    if (!this.outerView)
+      return;
 
     // Find an element to get the bounding rect from
-    const targetElement =
-      this.shadowRoot?.querySelector('.image-inner') ||
-      this.shadowRoot?.querySelector('.uploading-container') ||
-      this.shadowRoot?.querySelector('.error-placeholder') ||
-      this
+    const targetElement
+      = this.shadowRoot?.querySelector(".image-inner")
+        || this.shadowRoot?.querySelector(".uploading-container")
+        || this.shadowRoot?.querySelector(".error-placeholder")
+        || this;
 
     // Create a proxy object that provides getBoundingClientRect from the visual element
     // and dataset from the component properties
@@ -336,22 +339,22 @@ class ImageElement extends LitElement {
         matchStart: String(this.matchStart),
         matchEnd: String(this.matchEnd),
       },
-    } as unknown as HTMLElement
-    showImagePopover(proxyElement, this.outerView)
+    } as unknown as HTMLElement;
+    showImagePopover(proxyElement, this.outerView);
   }
 
   firstUpdated(): void {
-    const img = this.shadowRoot?.querySelector('.image') as HTMLImageElement
-    if (img && typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => this.updateHeight())
-      this.resizeObserver.observe(img)
+    const img = this.shadowRoot?.querySelector(".image") as HTMLImageElement;
+    if (img && typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(() => this.updateHeight());
+      this.resizeObserver.observe(img);
     }
   }
 
   private get displayUrl(): string {
     return this.src.length > 50
       ? `${this.src.slice(0, 25)}...${this.src.slice(-22)}`
-      : this.src
+      : this.src;
   }
 
   render() {
@@ -366,7 +369,7 @@ class ImageElement extends LitElement {
           <img
             class="image uploading-img"
             src=${this.uploadBase64}
-            alt=${this.alt || '上传中'}
+            alt=${this.alt || "上传中"}
           />
           <div class="uploading-overlay">
             ${this.uploadError
@@ -410,7 +413,7 @@ class ImageElement extends LitElement {
                 `}
           </div>
         </div>
-      `
+      `;
     }
 
     // Error state
@@ -449,7 +452,7 @@ class ImageElement extends LitElement {
           <div class="error-url">${this.displayUrl}</div>
           <div class="error-hint">图片加载失败，点击编辑</div>
         </div>
-      `
+      `;
     }
 
     // Normal state
@@ -471,17 +474,17 @@ class ImageElement extends LitElement {
           @click=${this.handleClick}
         />
       </span>
-    `
+    `;
   }
 }
 
 if (!customElements.get(imageTagName)) {
-  customElements.define(imageTagName, ImageElement)
+  customElements.define(imageTagName, ImageElement);
 }
 
 // Widget wrapper for CodeMirror
 export class ImageWidget extends WidgetType {
-  private readonly estimatedHeightValue: number
+  private readonly estimatedHeightValue: number;
 
   constructor(
     readonly alt: string,
@@ -490,67 +493,68 @@ export class ImageWidget extends WidgetType {
     readonly matchEnd: number,
     readonly isBlock = false,
   ) {
-    super()
-    this.estimatedHeightValue =
-      imageHeightCache.get(this.url) ?? DEFAULT_ESTIMATED_IMAGE_HEIGHT
+    super();
+    this.estimatedHeightValue
+      = imageHeightCache.get(this.url) ?? DEFAULT_ESTIMATED_IMAGE_HEIGHT;
   }
 
   get estimatedHeight(): number {
-    return this.estimatedHeightValue
+    return this.estimatedHeightValue;
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const element = document.createElement(imageTagName) as ImageElement
-    element.src = this.url
-    element.alt = this.alt
-    element.isBlock = this.isBlock
-    element.matchStart = this.matchStart
-    element.matchEnd = this.matchEnd
-    element.outerView = view
+    const element = document.createElement(imageTagName) as ImageElement;
+    element.src = this.url;
+    element.alt = this.alt;
+    element.isBlock = this.isBlock;
+    element.matchStart = this.matchStart;
+    element.matchEnd = this.matchEnd;
+    element.outerView = view;
 
     if (this.isBlock) {
-      element.setAttribute('isblock', '')
+      element.setAttribute("isblock", "");
     }
 
-    return element
+    return element;
   }
 
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    if (!(dom instanceof ImageElement)) return false
-    dom.src = this.url
-    dom.alt = this.alt
-    dom.isBlock = this.isBlock
-    dom.matchStart = this.matchStart
-    dom.matchEnd = this.matchEnd
-    dom.outerView = view
+    if (!(dom instanceof ImageElement))
+      return false;
+    dom.src = this.url;
+    dom.alt = this.alt;
+    dom.isBlock = this.isBlock;
+    dom.matchStart = this.matchStart;
+    dom.matchEnd = this.matchEnd;
+    dom.outerView = view;
 
     if (this.isBlock) {
-      dom.setAttribute('isblock', '')
+      dom.setAttribute("isblock", "");
     } else {
-      dom.removeAttribute('isblock')
+      dom.removeAttribute("isblock");
     }
 
-    return true
+    return true;
   }
 
   eq(other: ImageWidget): boolean {
     return (
-      this.url === other.url &&
-      this.alt === other.alt &&
-      this.matchStart === other.matchStart &&
-      this.matchEnd === other.matchEnd &&
-      this.estimatedHeightValue === other.estimatedHeightValue &&
-      this.isBlock === other.isBlock
-    )
+      this.url === other.url
+      && this.alt === other.alt
+      && this.matchStart === other.matchStart
+      && this.matchEnd === other.matchEnd
+      && this.estimatedHeightValue === other.estimatedHeightValue
+      && this.isBlock === other.isBlock
+    );
   }
 
   ignoreEvent(): boolean {
-    return false
+    return false;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'cm-wysiwyg-image': ImageElement
+    "cm-wysiwyg-image": ImageElement;
   }
 }

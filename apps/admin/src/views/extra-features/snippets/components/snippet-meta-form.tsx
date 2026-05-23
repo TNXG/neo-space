@@ -1,15 +1,15 @@
+import type { PropType } from "vue";
+import type { SnippetModel } from "../../../../models/snippet";
 import {
   ChevronDown as ChevronDownIcon,
   Info as InfoIcon,
-} from 'lucide-vue-next'
-import { NInput, NSelect, NSwitch, NTooltip } from 'naive-ui'
-import { computed, defineComponent, ref } from 'vue'
-import type { PropType } from 'vue'
-import type { SnippetModel } from '../../../../models/snippet'
+} from "lucide-vue-next";
+import { NInput, NSelect, NSwitch, NTooltip } from "naive-ui";
+import { computed, defineComponent, ref } from "vue";
 
-import { KVEditor } from '~/components/kv-editor'
+import { KVEditor } from "~/components/kv-editor";
 
-import { SnippetType } from '../../../../models/snippet'
+import { SnippetType } from "../../../../models/snippet";
 
 const CollapsibleSection = defineComponent({
   props: {
@@ -17,13 +17,13 @@ const CollapsibleSection = defineComponent({
     defaultOpen: { type: Boolean, default: false },
   },
   setup(props, { slots }) {
-    const isOpen = ref(props.defaultOpen)
+    const isOpen = ref(props.defaultOpen);
 
     return () => (
-      <div class="rounded-md border border-neutral-200 dark:border-neutral-700">
+      <div class="border border-neutral-200 rounded-md dark:border-neutral-700">
         <button
           type="button"
-          class="flex w-full items-center justify-between px-3 py-2 text-left"
+          class="px-3 py-2 text-left flex w-full items-center justify-between"
           onClick={() => (isOpen.value = !isOpen.value)}
         >
           <span class="text-sm text-neutral-600 dark:text-neutral-400">
@@ -31,20 +31,20 @@ const CollapsibleSection = defineComponent({
           </span>
           <ChevronDownIcon
             class={[
-              'size-4 text-neutral-400 transition-transform',
-              isOpen.value && 'rotate-180',
+              "size-4 text-neutral-400 transition-transform",
+              isOpen.value && "rotate-180",
             ]}
           />
         </button>
         {isOpen.value && (
-          <div class="border-t border-neutral-200 p-3 dark:border-neutral-700">
+          <div class="p-3 border-t border-neutral-200 dark:border-neutral-700">
             {slots.default?.()}
           </div>
         )}
       </div>
-    )
+    );
   },
-})
+});
 
 const FormField = defineComponent({
   props: {
@@ -55,7 +55,7 @@ const FormField = defineComponent({
   setup(props, { slots }) {
     return () => (
       <div class="space-y-1.5">
-        <div class="flex items-center gap-1">
+        <div class="flex gap-1 items-center">
           <label class="text-sm text-neutral-600 dark:text-neutral-400">
             {props.label}
           </label>
@@ -64,7 +64,7 @@ const FormField = defineComponent({
             <NTooltip>
               {{
                 trigger: () => (
-                  <InfoIcon class="size-3 cursor-help text-neutral-400" />
+                  <InfoIcon class="text-neutral-400 size-3 cursor-help" />
                 ),
                 default: () => props.tooltip,
               }}
@@ -73,9 +73,9 @@ const FormField = defineComponent({
         </div>
         {slots.default?.()}
       </div>
-    )
+    );
   },
-})
+});
 
 const SwitchRow = defineComponent({
   props: {
@@ -83,13 +83,13 @@ const SwitchRow = defineComponent({
     label: { type: String, required: true },
     disabled: { type: Boolean, default: false },
   },
-  emits: ['update:value'],
+  emits: ["update:value"],
   setup(props, { emit }) {
     return () => (
       <div
         class={[
-          'flex items-center justify-between',
-          props.disabled && 'opacity-50',
+          "flex items-center justify-between",
+          props.disabled && "opacity-50",
         ]}
       >
         <span class="text-sm text-neutral-600 dark:text-neutral-400">
@@ -97,16 +97,16 @@ const SwitchRow = defineComponent({
         </span>
         <NSwitch
           value={props.value}
-          onUpdateValue={(v) => emit('update:value', v)}
+          onUpdateValue={v => emit("update:value", v)}
           disabled={props.disabled}
         />
       </div>
-    )
+    );
   },
-})
+});
 
 export const SnippetMetaForm = defineComponent({
-  name: 'SnippetMetaForm',
+  name: "SnippetMetaForm",
   props: {
     data: {
       type: Object as PropType<SnippetModel>,
@@ -125,42 +125,42 @@ export const SnippetMetaForm = defineComponent({
       default: false,
     },
   },
-  emits: ['update:data'],
+  emits: ["update:data"],
   setup(props, { emit }) {
     const updateField = <K extends keyof SnippetModel>(
       key: K,
       value: SnippetModel[K],
     ) => {
-      emit('update:data', { ...props.data, [key]: value })
-    }
+      emit("update:data", { ...props.data, [key]: value });
+    };
 
     const typeOptions = computed(() =>
       Object.entries(SnippetType).map(([k, v]) => ({
         label: k,
         value: v,
       })),
-    )
+    );
 
-    const methodOptions = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'ALL'].map(
-      (v) => ({ label: v, value: v }),
-    )
+    const methodOptions = ["GET", "POST", "PUT", "DELETE", "PATCH", "ALL"].map(
+      v => ({ label: v, value: v }),
+    );
 
     return () => (
-      <div class="space-y-4 p-1">
+      <div class="p-1 space-y-4">
         {props.isBuiltFunction && (
-          <div class="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 dark:bg-amber-950/50">
-            <InfoIcon class="mt-0.5 size-4 flex-shrink-0 text-amber-600 dark:text-amber-500" />
+          <div class="px-3 py-2 rounded-md bg-amber-50 flex gap-2 items-start dark:bg-amber-950/50">
+            <InfoIcon class="text-amber-600 mt-0.5 flex-shrink-0 size-4 dark:text-amber-500" />
             <span class="text-xs text-amber-700 dark:text-amber-400">
               这是一个内置函数，无法修改元信息，但你可以自定义函数实现。
             </span>
           </div>
         )}
 
-        <div class="grid grid-cols-2 gap-x-4 gap-y-4">
+        <div class="gap-x-4 gap-y-4 grid grid-cols-2">
           <FormField label="名称" required>
             <NInput
               value={props.data.name}
-              onUpdateValue={(v) => updateField('name', v)}
+              onUpdateValue={v => updateField("name", v)}
               disabled={props.isBuiltFunction}
               placeholder="片段名称"
               size="small"
@@ -170,7 +170,7 @@ export const SnippetMetaForm = defineComponent({
           <FormField label="引用" required tooltip="用于分组和 API 调用">
             <NInput
               value={props.data.reference}
-              onUpdateValue={(v) => updateField('reference', v)}
+              onUpdateValue={v => updateField("reference", v)}
               disabled={props.isBuiltFunction}
               placeholder="分组标识"
               size="small"
@@ -183,7 +183,7 @@ export const SnippetMetaForm = defineComponent({
           >
             <NInput
               value={props.data.customPath}
-              onUpdateValue={(v) => updateField('customPath', v || undefined)}
+              onUpdateValue={v => updateField("customPath", v || undefined)}
               placeholder="如 my-api/config"
               size="small"
             />
@@ -192,40 +192,42 @@ export const SnippetMetaForm = defineComponent({
           <FormField label="类型">
             <NSelect
               value={props.data.type}
-              onUpdateValue={(v) => updateField('type', v)}
+              onUpdateValue={v => updateField("type", v)}
               options={typeOptions.value}
               disabled={props.isEditing && props.isFunctionType}
               size="small"
             />
           </FormField>
 
-          {props.isFunctionType ? (
-            <FormField label="方法">
-              <NSelect
-                value={props.data.method}
-                onUpdateValue={(v) => updateField('method', v)}
-                options={methodOptions}
-                disabled={props.isBuiltFunction}
-                size="small"
-              />
-            </FormField>
-          ) : (
-            <FormField label="元类型" tooltip="可选的内容类型标识">
-              <NInput
-                value={props.data.metatype}
-                onUpdateValue={(v) => updateField('metatype', v)}
-                placeholder="可选"
-                size="small"
-              />
-            </FormField>
-          )}
+          {props.isFunctionType
+            ? (
+                <FormField label="方法">
+                  <NSelect
+                    value={props.data.method}
+                    onUpdateValue={v => updateField("method", v)}
+                    options={methodOptions}
+                    disabled={props.isBuiltFunction}
+                    size="small"
+                  />
+                </FormField>
+              )
+            : (
+                <FormField label="元类型" tooltip="可选的内容类型标识">
+                  <NInput
+                    value={props.data.metatype}
+                    onUpdateValue={v => updateField("metatype", v)}
+                    placeholder="可选"
+                    size="small"
+                  />
+                </FormField>
+              )}
         </div>
 
         {!props.isFunctionType && (
           <FormField label="Schema" tooltip="JSON Schema 验证地址">
             <NInput
               value={props.data.schema}
-              onUpdateValue={(v) => updateField('schema', v)}
+              onUpdateValue={v => updateField("schema", v)}
               placeholder="JSON Schema URL"
               size="small"
             />
@@ -237,7 +239,7 @@ export const SnippetMetaForm = defineComponent({
             value={!props.data.private}
             label="公开访问"
             disabled={props.isBuiltFunction}
-            onUpdate:value={(v) => updateField('private', !v)}
+            onUpdate:value={v => updateField("private", !v)}
           />
 
           {props.isFunctionType && (
@@ -245,7 +247,7 @@ export const SnippetMetaForm = defineComponent({
               value={props.data.enable ?? true}
               label="启用函数"
               disabled={props.isBuiltFunction}
-              onUpdate:value={(v) => updateField('enable', v)}
+              onUpdate:value={v => updateField("enable", v)}
             />
           )}
         </div>
@@ -253,7 +255,7 @@ export const SnippetMetaForm = defineComponent({
         <FormField label="备注">
           <NInput
             value={props.data.comment}
-            onUpdateValue={(v) => updateField('comment', v)}
+            onUpdateValue={v => updateField("comment", v)}
             type="textarea"
             rows={2}
             placeholder="添加备注说明…"
@@ -266,9 +268,9 @@ export const SnippetMetaForm = defineComponent({
             <KVEditor
               key={props.data.id}
               plainKeyInput
-              onChange={(kv) => updateField('secret', kv)}
+              onChange={kv => updateField("secret", kv)}
               value={
-                (typeof props.data.secret === 'object' && props.data.secret
+                (typeof props.data.secret === "object" && props.data.secret
                   ? props.data.secret
                   : {}) as Record<string, string | number | boolean>
               }
@@ -276,6 +278,6 @@ export const SnippetMetaForm = defineComponent({
           </CollapsibleSection>
         )}
       </div>
-    )
+    );
   },
-})
+});

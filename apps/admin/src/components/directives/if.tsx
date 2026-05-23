@@ -1,5 +1,5 @@
-import { defineComponent } from 'vue'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import { defineComponent } from "vue";
 
 export const If = defineComponent({
   props: {
@@ -12,14 +12,14 @@ export const If = defineComponent({
   },
   setup(props, { slots }) {
     const render = () => {
-      const condition =
-        typeof props.condition === 'function'
+      const condition
+        = typeof props.condition === "function"
           ? props.condition()
-          : props.condition
+          : props.condition;
       if (condition) {
-        return slots.default?.()
+        return slots.default?.();
       }
-    }
-    return () => render()
+    };
+    return () => render();
   },
-})
+});

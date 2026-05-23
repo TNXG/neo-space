@@ -1,9 +1,9 @@
-import { defineComponent, onMounted, ref, watch } from 'vue'
+import { defineComponent, onMounted, ref, watch } from "vue";
 
-import styles from './avatar.module.css'
+import styles from "./avatar.module.css";
 
 export const Avatar = defineComponent({
-  name: 'Avatar',
+  name: "Avatar",
   props: {
     size: {
       type: Number,
@@ -14,30 +14,30 @@ export const Avatar = defineComponent({
     },
   },
   setup(props) {
-    const loaded = ref(false)
+    const loaded = ref(false);
 
     const preloadImage = () => {
       if (!props.src) {
-        return
+        return;
       }
-      const img = new Image()
-      img.src = props.src
+      const img = new Image();
+      img.src = props.src;
 
-      img.addEventListener('load', () => {
-        loaded.value = true
-      })
-    }
+      img.addEventListener("load", () => {
+        loaded.value = true;
+      });
+    };
 
     onMounted(() => {
-      preloadImage()
-    })
+      preloadImage();
+    });
 
     watch(
       () => props.src,
       () => {
-        preloadImage()
+        preloadImage();
       },
-    )
+    );
 
     return () => (
       <div
@@ -47,10 +47,10 @@ export const Avatar = defineComponent({
         <img
           src={props.src}
           alt=""
-          style={{ display: loaded.value ? '' : 'none' }}
+          style={{ display: loaded.value ? "" : "none" }}
         />
         <div class="sr-only">一个头像</div>
       </div>
-    )
+    );
   },
-})
+});

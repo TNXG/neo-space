@@ -1,20 +1,20 @@
-import type { RecentlyModel } from '~/models/recently'
+import type { RecentlyModel } from "~/models/recently";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface RecentlyCreatePayload {
-  content: string
+  content: string;
 }
 
-export type RecentlyUpdatePayload = RecentlyCreatePayload
+export type RecentlyUpdatePayload = RecentlyCreatePayload;
 
 export const recentlyApi = {
   // 获取最近访问列表
-  getAll: () => request.get<RecentlyModel[]>('/recently/all'),
+  getAll: () => request.get<RecentlyModel[]>("/recently/all"),
 
   // 创建速记
   create: (data: RecentlyCreatePayload) =>
-    request.post<RecentlyModel>('/recently', { data }),
+    request.post<RecentlyModel>("/recently", { data }),
 
   // 更新速记
   update: (id: string, data: RecentlyUpdatePayload) =>
@@ -24,5 +24,5 @@ export const recentlyApi = {
   delete: (id: string) => request.delete<void>(`/recently/${id}`),
 
   // 清空最近访问
-  clear: () => request.delete<void>('/recently/all'),
-}
+  clear: () => request.delete<void>("/recently/all"),
+};

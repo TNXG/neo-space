@@ -1,73 +1,73 @@
-import { ArrowUpCircle as UpgradeIcon } from 'lucide-vue-next'
-import { NButton, NCard, NDataTable, NModal } from 'naive-ui'
-import { defineComponent, onBeforeUnmount, ref, watch } from 'vue'
-import type { NpmPKGInfo } from '~/external/types/npm-pkg'
+import type { NpmPKGInfo } from "~/external/types/npm-pkg";
+import { useElementVisibility } from "@vueuse/core";
+import { ArrowUpCircle as UpgradeIcon } from "lucide-vue-next";
+import { NButton, NCard, NDataTable, NModal } from "naive-ui";
 
-import { useElementVisibility } from '@vueuse/core'
+import { defineComponent, onBeforeUnmount, ref, watch } from "vue";
 
-import { dependenciesApi } from '~/api'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { getNpmPKGLatest } from '~/external/api/npm'
+import { dependenciesApi } from "~/api";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { getNpmPKGLatest } from "~/external/api/npm";
 
-import { InstallDepsXterm } from './install-dep-xterm'
+import { InstallDepsXterm } from "./install-dep-xterm";
 
 const useFetchDependencyGraph = () => {
   const dependencyGraph = ref<{ dependencies: Record<string, string> }>({
     dependencies: {},
-  })
+  });
   const fetchDependencyGraph = async () => {
-    const data = await dependenciesApi.getGraph()
+    const data = await dependenciesApi.getGraph();
 
-    dependencyGraph.value = { ...data }
-  }
+    dependencyGraph.value = { ...data };
+  };
 
   return {
     dependencyGraph,
     fetchDependencyGraph,
-  }
-}
+  };
+};
 
-const cacheRef = ref<Record<string, NpmPKGInfo>>({})
+const cacheRef = ref<Record<string, NpmPKGInfo>>({});
 
 const fetchLastestNPMPackageInfo = async (packageName: string) => {
   if (cacheRef.value[packageName]) {
-    return Promise.resolve(cacheRef.value[packageName])
+    return Promise.resolve(cacheRef.value[packageName]);
   }
 
-  const data = await getNpmPKGLatest(packageName)
-  cacheRef.value[packageName] = data
-  return data
-}
+  const data = await getNpmPKGLatest(packageName);
+  cacheRef.value[packageName] = data;
+  return data;
+};
 
 export const UpdateDependencyButton = defineComponent({
-  name: 'UpdateDependencyButton',
+  name: "UpdateDependencyButton",
   setup() {
-    const modalShow = ref(false)
+    const modalShow = ref(false);
 
-    const { dependencyGraph, fetchDependencyGraph } = useFetchDependencyGraph()
+    const { dependencyGraph, fetchDependencyGraph } = useFetchDependencyGraph();
     const cleaner = watch(
       () => modalShow.value,
       () => {
         if (modalShow.value) {
           fetchDependencyGraph().then(() => {
-            cleaner()
-          })
+            cleaner();
+          });
         }
       },
-    )
+    );
 
-    const $installDepsComponent = ref<InstanceType<typeof InstallDepsXterm>>()
+    const $installDepsComponent = ref<InstanceType<typeof InstallDepsXterm>>();
 
     onBeforeUnmount(() => {
-      cacheRef.value = {}
-    })
+      cacheRef.value = {};
+    });
     return () => {
       const nameToVersionMap = Object.entries(dependencyGraph.value.dependencies).map(
-          ([pkg, version]) => ({
-            package: pkg,
-            version,
-          }),
-        )
+        ([pkg, version]) => ({
+          package: pkg,
+          version,
+        }),
+      );
 
       return (
         <>
@@ -75,17 +75,17 @@ export const UpdateDependencyButton = defineComponent({
             icon={<UpgradeIcon />}
             name="更新依赖"
             onClick={() => {
-              modalShow.value = true
+              modalShow.value = true;
             }}
           />
 
           <NModal
             show={modalShow.value}
             onUpdateShow={(show) => {
-              modalShow.value = show
+              modalShow.value = show;
             }}
           >
-            <NCard class={'modal-card sm'} title="依赖更新">
+            <NCard class="modal-card sm" title="依赖更新">
               <NDataTable
                 bordered
                 virtualScroll
@@ -93,8 +93,8 @@ export const UpdateDependencyButton = defineComponent({
                 data={nameToVersionMap}
                 columns={[
                   {
-                    key: 'package',
-                    title: '包名',
+                    key: "package",
+                    title: "包名",
                     width: 180,
                     ellipsis: {
                       lineClamp: 2,
@@ -109,56 +109,56 @@ export const UpdateDependencyButton = defineComponent({
                         >
                           {row.package}
                         </a>
-                      )
+                      );
                     },
                   },
                   {
-                    key: 'version',
-                    title: '版本',
+                    key: "version",
+                    title: "版本",
                     width: 100,
                   },
                   {
-                    key: 'latest',
-                    title: '最新',
+                    key: "latest",
+                    title: "最新",
                     width: 100,
                     render(row) {
                       const ClosureComponent = defineComponent({
                         setup() {
-                          const $ref = ref<HTMLDivElement>()
-                          const isInView = useElementVisibility($ref)
+                          const $ref = ref<HTMLDivElement>();
+                          const isInView = useElementVisibility($ref);
 
-                          const latestInfo = ref<NpmPKGInfo | null>(null)
+                          const latestInfo = ref<NpmPKGInfo | null>(null);
 
                           const cleaner = watch(
                             () => isInView.value,
                             (inView) => {
                               if (inView) {
-                                cleaner()
+                                cleaner();
                                 fetchLastestNPMPackageInfo(row.package).then(
                                   (data) => {
-                                    latestInfo.value = data
+                                    latestInfo.value = data;
                                   },
-                                )
+                                );
                               }
                             },
-                          )
+                          );
 
                           return () => (
                             <div ref={$ref}>
                               {latestInfo.value
                                 ? latestInfo.value.version
-                                : '...'}
+                                : "..."}
                             </div>
-                          )
+                          );
                         },
-                      })
+                      });
 
-                      return <ClosureComponent />
+                      return <ClosureComponent />;
                     },
                   },
                   {
-                    title: '操作',
-                    key: '',
+                    title: "操作",
+                    key: "",
                     width: 80,
                     render(row) {
                       return (
@@ -168,23 +168,23 @@ export const UpdateDependencyButton = defineComponent({
                           onClick={() => {
                             fetchLastestNPMPackageInfo(row.package).then(
                               (data) => {
-                                const latestVersion = data.version
-                                const joint = `${row.package}@${latestVersion}`
+                                const latestVersion = data.version;
+                                const joint = `${row.package}@${latestVersion}`;
 
                                 // @ts-ignore
                                 $installDepsComponent.value?.install(
                                   joint,
                                   () => {
-                                    fetchDependencyGraph()
+                                    fetchDependencyGraph();
                                   },
-                                )
+                                );
                               },
-                            )
+                            );
                           }}
                         >
                           更新
                         </NButton>
-                      )
+                      );
                     },
                   },
                 ]}
@@ -193,7 +193,7 @@ export const UpdateDependencyButton = defineComponent({
           </NModal>
           <InstallDepsXterm ref={$installDepsComponent} />
         </>
-      )
-    }
+      );
+    };
   },
-})
+});

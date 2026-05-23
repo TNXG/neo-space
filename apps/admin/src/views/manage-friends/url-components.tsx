@@ -1,5 +1,5 @@
-import { NPopover } from 'naive-ui'
-import { defineComponent } from 'vue'
+import { NPopover } from "naive-ui";
+import { defineComponent } from "vue";
 
 export const UrlComponent = defineComponent({
   props: {
@@ -14,22 +14,24 @@ export const UrlComponent = defineComponent({
           {props.url}
         </a>
 
-        {typeof props.status !== 'undefined' &&
-          (props.errorMessage ? (
-            <NPopover>
-              {{
-                trigger() {
-                  return <div class="size-2 rounded-full bg-red-400" />
-                },
-                default() {
-                  return props.errorMessage
-                },
-              }}
-            </NPopover>
-          ) : (
-            <div class="size-2 rounded-full bg-green-300" />
-          ))}
+        {typeof props.status !== "undefined"
+          && (props.errorMessage
+            ? (
+                <NPopover>
+                  {{
+                    trigger() {
+                      return <div class="rounded-full bg-red-400 size-2" />;
+                    },
+                    default() {
+                      return props.errorMessage;
+                    },
+                  }}
+                </NPopover>
+              )
+            : (
+                <div class="rounded-full bg-green-300 size-2" />
+              ))}
       </div>
-    )
+    );
   },
-})
+});

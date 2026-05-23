@@ -1,12 +1,14 @@
-import { acceptHMRUpdate, createPinia } from 'pinia'
+import { acceptHMRUpdate, createPinia } from "pinia";
 
-import { useAppStore } from './app'
-import { useCategoryStore } from './category'
-import { useLayoutStore } from './layout'
-import { useUIStore } from './ui'
-import { useUserStore } from './user'
+import { useAppStore } from "./app";
+import { useCategoryStore } from "./category";
+import { useLayoutStore } from "./layout";
+import { useUIStore } from "./ui";
+import { useUserStore } from "./user"
 
-;(
+;
+
+(
   [
     useUserStore,
     useAppStore,
@@ -16,7 +18,7 @@ import { useUserStore } from './user'
   ] as const
 ).forEach((store: any) => {
   if (import.meta.hot)
-    import.meta.hot.accept(acceptHMRUpdate(store, import.meta.hot))
-})
+    import.meta.hot.accept(acceptHMRUpdate(store, import.meta.hot));
+});
 
-export const piniaStore = createPinia()
+export const piniaStore = createPinia();

@@ -1,4 +1,4 @@
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
 
 export const inputBaseProps = {
   type: {
@@ -15,4 +15,4 @@ export const inputBaseProps = {
     type: Function as PropType<(value: string) => void>,
     required: true,
   },
-} as const
+} as const;

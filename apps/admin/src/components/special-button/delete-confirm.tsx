@@ -1,12 +1,12 @@
-import { Trash2 as DeleteIcon } from 'lucide-vue-next'
-import { useDialog } from 'naive-ui'
-import { defineComponent, isRef } from 'vue'
-import { toast } from 'vue-sonner'
-import type { PropType, Ref, VNode } from 'vue'
+import type { PropType, Ref, VNode } from "vue";
+import { Trash2 as DeleteIcon } from "lucide-vue-next";
+import { useDialog } from "naive-ui";
+import { defineComponent, isRef } from "vue";
+import { toast } from "vue-sonner";
 
-import { HeaderActionButton } from '~/components/button/header-action-button'
+import { HeaderActionButton } from "~/components/button/header-action-button";
 
-type AccpetType = string[] | Set<string>
+type AccpetType = string[] | Set<string>;
 
 /**
  * 删除之后 onDelete 提示 `删除成功`
@@ -40,7 +40,7 @@ export const DeleteConfirmButton = defineComponent({
     },
   },
   setup(props) {
-    const dialog = useDialog()
+    const dialog = useDialog();
     return () => {
       const {
         customIcon,
@@ -50,40 +50,40 @@ export const DeleteConfirmButton = defineComponent({
         customSuccessMessage,
         showSuccessMessage,
         customButtonTip,
-      } = props
+      } = props;
 
       const checkedRowKeys = isRef(_checkedRowKeys)
         ? _checkedRowKeys.value
-        : _checkedRowKeys
+        : _checkedRowKeys;
 
       const size = !checkedRowKeys
         ? 0
         : Array.isArray(checkedRowKeys)
           ? checkedRowKeys.length
-          : checkedRowKeys.size
-      const disabled = !checkedRowKeys ? false : size === 0
+          : checkedRowKeys.size;
+      const disabled = !checkedRowKeys ? false : size === 0;
       return (
         <HeaderActionButton
           variant="error"
           disabled={disabled}
-          name={customButtonTip ?? '删除多条'}
+          name={customButtonTip ?? "删除多条"}
           onClick={() => {
             dialog.warning({
-              title: '警告',
+              title: "警告",
               content:
-                content ?? `你确定要删除${size > 1 ? '多条' : '这条'}数据？`,
-              positiveText: '确认',
-              negativeText: '取消',
+                content ?? `你确定要删除${size > 1 ? "多条" : "这条"}数据？`,
+              positiveText: "确认",
+              negativeText: "取消",
               onPositiveClick: async () => {
-                await onDelete(checkedRowKeys)
-                showSuccessMessage &&
-                  toast.success(customSuccessMessage ?? '删除成功')
+                await onDelete(checkedRowKeys);
+                showSuccessMessage
+                && toast.success(customSuccessMessage ?? "删除成功");
               },
-            })
+            });
           }}
           icon={customIcon ?? <DeleteIcon />}
         />
-      )
-    }
+      );
+    };
   },
-})
+});

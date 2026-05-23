@@ -1,36 +1,36 @@
 export interface IPAggregate {
-  today: Today[]
-  weeks: Week[]
-  months: Month[]
-  paths: Path[]
-  total: Total
-  todayIps: string[]
+  today: Today[];
+  weeks: Week[];
+  months: Month[];
+  paths: Path[];
+  total: Total;
+  todayIps: string[];
 }
 export interface Month {
-  date: string
-  key: Key
-  value: number
+  date: string;
+  key: Key;
+  value: number;
 }
 export interface Path {
-  count: number
-  path: string
+  count: number;
+  path: string;
 }
 export interface Today {
-  hour: string
-  key: Key
-  value: number
+  hour: string;
+  key: Key;
+  value: number;
 }
 export interface Total {
-  callTime: number
-  uv: number
+  callTime: number;
+  uv: number;
 }
 export interface Week {
-  day: string
-  key: Key
-  value: number
+  day: string;
+  key: Key;
+  value: number;
 }
 
 export enum Key {
-  IP = 'ip',
-  PV = 'pv',
+  IP = "ip",
+  PV = "pv",
 }

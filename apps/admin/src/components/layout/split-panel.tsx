@@ -1,3 +1,4 @@
+import type { PropType, VNode } from "vue";
 /**
  * SplitPanel - NSplit 封装，内置 resize-trigger，支持直接传 children 或数组
  *
@@ -7,23 +8,22 @@
  *   <PanelB />
  * </SplitPanel>
  */
-import { NSplit } from 'naive-ui'
-import { defineComponent } from 'vue'
-import type { PropType, VNode } from 'vue'
+import { NSplit } from "naive-ui";
+import { defineComponent } from "vue";
 
-import { SplitResizeTrigger } from './split-resize-trigger'
+import { SplitResizeTrigger } from "./split-resize-trigger";
 
-type PanelContent = (() => VNode) | VNode
+type PanelContent = (() => VNode) | VNode;
 
 const renderPanel = (p: PanelContent) =>
-  typeof p === 'function' ? p() : (p ?? null)
+  typeof p === "function" ? p() : (p ?? null);
 
 export const SplitPanel = defineComponent({
-  name: 'SplitPanel',
+  name: "SplitPanel",
   props: {
     direction: {
-      type: String as PropType<'horizontal' | 'vertical'>,
-      default: 'horizontal',
+      type: String as PropType<"horizontal" | "vertical">,
+      default: "horizontal",
     },
     defaultSize: {
       type: [String, Number],
@@ -42,7 +42,7 @@ export const SplitPanel = defineComponent({
 
     resizeTriggerClass: {
       type: String,
-      default: '',
+      default: "",
     },
     class: [String, Object],
     onUpdateSize: Function as PropType<(size: number | string) => void>,
@@ -52,12 +52,12 @@ export const SplitPanel = defineComponent({
   },
   setup(props, { slots }) {
     return () => {
-      const defaultSlot = slots.default?.()
+      const defaultSlot = slots.default?.();
       const panels: PanelContent[] = Array.isArray(defaultSlot)
         ? defaultSlot
         : defaultSlot
           ? [defaultSlot]
-          : []
+          : [];
 
       return (
         <NSplit
@@ -74,25 +74,25 @@ export const SplitPanel = defineComponent({
           onDragEnd={props.onDragEnd}
         >
           {{
-            1: () => (
+            "1": () => (
               <div
                 class={[
-                  'h-full overflow-hidden',
-                  props.direction === 'vertical'
-                    ? 'border-b border-neutral-200 dark:border-neutral-800'
-                    : 'border-r border-neutral-200 dark:border-neutral-800',
+                  "h-full overflow-hidden",
+                  props.direction === "vertical"
+                    ? "border-b border-neutral-200 dark:border-neutral-800"
+                    : "border-r border-neutral-200 dark:border-neutral-800",
                 ]}
               >
                 {renderPanel(panels[0])}
               </div>
             ),
-            2: () => renderPanel(panels[1]),
-            'resize-trigger': () => (
+            "2": () => renderPanel(panels[1]),
+            "resize-trigger": () => (
               <SplitResizeTrigger triggerClass={props.resizeTriggerClass} />
             ),
           }}
         </NSplit>
-      )
-    }
+      );
+    };
   },
-})
+});

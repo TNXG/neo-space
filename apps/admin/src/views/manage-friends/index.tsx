@@ -1,9 +1,11 @@
-import { omit } from 'es-toolkit/compat'
+import type { LinkModel, LinkStateCount } from "~/models/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { omit } from "es-toolkit/compat";
 import {
   Check as CheckIcon,
   Plus,
   RefreshCcw as RefreshCircle,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -17,37 +19,35 @@ import {
   NTabPane,
   NTabs,
   useDialog,
-} from 'naive-ui'
-import { computed, defineComponent, Fragment, ref, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { LinkModel, LinkStateCount } from '~/models/link'
+} from "naive-ui";
+import { computed, defineComponent, Fragment, ref, watchEffect } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { toast } from "vue-sonner";
 
-import { linksApi } from '~/api/links'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { Table } from '~/components/table'
-import { RelativeTime } from '~/components/time/relative-time'
-import { queryKeys } from '~/hooks/queries/keys'
-import { useDataTable } from '~/hooks/use-data-table'
-import { useLayout } from '~/layouts/content'
-import { LinkState, LinkStateNameMap, LinkType } from '~/models/link'
-import { RouteName } from '~/router/name'
+import { linksApi } from "~/api/links";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { Table } from "~/components/table";
+import { RelativeTime } from "~/components/time/relative-time";
+import { queryKeys } from "~/hooks/queries/keys";
+import { useDataTable } from "~/hooks/use-data-table";
+import { useLayout } from "~/layouts/content";
+import { LinkState, LinkStateNameMap, LinkType } from "~/models/link";
+import { RouteName } from "~/router/name";
 
-import { Avatar } from './components/avatar'
-import { LinkAuditModal } from './components/reason-modal'
-import { UrlComponent } from './url-components'
+import { Avatar } from "./components/avatar";
+import { LinkAuditModal } from "./components/reason-modal";
+import { UrlComponent } from "./url-components";
 
 export default defineComponent({
   setup() {
-    const route = useRoute()
-    const router = useRouter()
-    const queryClient = useQueryClient()
+    const route = useRoute();
+    const router = useRouter();
+    const queryClient = useQueryClient();
 
     const tabValue = ref<LinkState>(
       (route.query.state as any) ?? LinkState.Pass,
-    )
+    );
 
     const {
       data,
@@ -55,9 +55,9 @@ export default defineComponent({
       isLoading: loading,
       refresh,
     } = useDataTable<LinkModel>({
-      queryKey: (params) =>
+      queryKey: params =>
         queryKeys.links.list({ ...params, state: params.filters?.state }),
-      queryFn: (params) =>
+      queryFn: params =>
         linksApi.getList({
           page: params.page,
           size: params.size,
@@ -65,72 +65,72 @@ export default defineComponent({
         }),
       pageSize: 50,
       filters: () => ({ state: tabValue.value }),
-    })
+    });
 
     const resetEditData: () => Omit<
       LinkModel,
-      'id' | 'createdAt' | 'hide' | 'email'
+      "id" | "createdAt" | "hide" | "email"
     > & {
-      id: null | string
+      id: null | string;
     } = () => ({
-      avatar: '',
-      name: '',
+      avatar: "",
+      name: "",
       type: LinkType.Friend,
-      url: '',
+      url: "",
       id: null,
-      description: '',
+      description: "",
       state: LinkState.Pass,
-    })
-    const editDialogShow = ref(false)
-    const editDialogData = ref(resetEditData())
+    });
+    const editDialogShow = ref(false);
+    const editDialogData = ref(resetEditData());
 
     const { data: stateCountData, refetch: refetchStateCount } = useQuery({
       queryKey: queryKeys.links.stateCount(),
       queryFn: linksApi.getStateCount,
-    })
+    });
     const stateCount = computed(
       () => stateCountData.value || ({} as LinkStateCount),
-    )
+    );
 
     const saveMutation = useMutation({
       mutationFn: async (editData: typeof editDialogData.value) => {
-        const id = editData.id
+        const id = editData.id;
         if (id) {
           return await linksApi.update(
             id,
-            omit<any, keyof LinkModel>(editData, ['id', 'createdAt', 'hide']),
-          )
+            omit<any, keyof LinkModel>(editData, ["id", "createdAt", "hide"]),
+          );
         } else {
-          return await linksApi.create(editData as any)
+          return await linksApi.create(editData as any);
         }
       },
       onSuccess: () => {
-        toast.success('操作成功')
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all })
-        refetchStateCount()
-        editDialogShow.value = false
-        editDialogData.value = resetEditData()
+        toast.success("操作成功");
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
+        refetchStateCount();
+        editDialogShow.value = false;
+        editDialogData.value = resetEditData();
       },
-    })
+    });
 
     const deleteMutation = useMutation({
       mutationFn: linksApi.delete,
       onSuccess: () => {
-        toast.success('删除成功')
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all })
-        refetchStateCount()
+        toast.success("删除成功");
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
+        refetchStateCount();
       },
-    })
+    });
 
     const auditPassMutation = useMutation({
       mutationFn: linksApi.auditPass,
       onSuccess: (_, id) => {
-        const item = data.value.find((i) => i.id === id)
-        toast.success(`通过了来自${item?.name || ''}的友链邀请`)
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all })
-        refetchStateCount()
+        const item = data.value.find(i => i.id === id);
+        toast.success(`通过了来自${item?.name || ""}的友链邀请`);
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
+        refetchStateCount();
       },
-    })
+    });
 
     const auditWithReasonMutation = useMutation({
       mutationFn: ({
@@ -138,74 +138,74 @@ export default defineComponent({
         state,
         reason,
       }: {
-        id: string
-        state: number
-        reason: string
+        id: string;
+        state: number;
+        reason: string;
       }) => linksApi.auditWithReason(id, state, reason),
       onSuccess: (_, { id }) => {
-        const item = data.value.find((i) => i.id === id)
-        toast.success(`已发送友链结果给「${item?.name || ''}」`)
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all })
-        refetchStateCount()
+        const item = data.value.find(i => i.id === id);
+        toast.success(`已发送友链结果给「${item?.name || ""}」`);
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
+        refetchStateCount();
       },
-    })
+    });
 
     const onSubmit = () => {
-      saveMutation.mutate(editDialogData.value)
-    }
+      saveMutation.mutate(editDialogData.value);
+    };
 
     const health = ref<
       Record<
         string,
         {
-          id: string
-          status: number | string
-          message?: string
+          id: string;
+          status: number | string;
+          message?: string;
         }
       >
-    >()
+    >();
 
     const handleCheck = async () => {
-      const l = toast.loading('检查中', { duration: 20e4 })
+      const l = toast.loading("检查中", { duration: 20e4 });
 
       try {
-        const result = await linksApi.checkHealth({ timeout: 20e4 })
+        const result = await linksApi.checkHealth({ timeout: 20e4 });
 
         // HACK manual lowercase key
         // @see: https://github.com/sindresorhus/camelcase-keys/issues/85
         health.value = Object.entries(result).reduce((acc, [k, v]) => {
-          return { ...acc, [k.toLowerCase()]: v }
-        }, {})
-        toast.success('检查完成')
+          return { ...acc, [k.toLowerCase()]: v };
+        }, {});
+        toast.success("检查完成");
       } catch (error) {
-        console.error(error)
+        console.error(error);
       } finally {
         requestAnimationFrame(() => {
-          toast.dismiss(l)
-        })
+          toast.dismiss(l);
+        });
       }
-    }
+    };
 
     const handleMigrateAvatars = async () => {
-      const l = toast.loading('迁移中', { duration: 20e4 })
+      const l = toast.loading("迁移中", { duration: 20e4 });
 
       try {
-        await linksApi.migrateAvatars({ timeout: 20e4 })
-        toast.success('迁移完成')
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all })
+        await linksApi.migrateAvatars({ timeout: 20e4 });
+        toast.success("迁移完成");
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
       } catch (error) {
-        console.error(error)
-        toast.error('迁移失败')
+        console.error(error);
+        toast.error("迁移失败");
       } finally {
         requestAnimationFrame(() => {
-          toast.dismiss(l)
-        })
+          toast.dismiss(l);
+        });
       }
-    }
+    };
 
-    const modal = useDialog()
+    const modal = useDialog();
 
-    const { setActions } = useLayout()
+    const { setActions } = useLayout();
     watchEffect(() => {
       setActions(
         <Fragment>
@@ -213,8 +213,8 @@ export default defineComponent({
             icon={<Plus />}
             variant="primary"
             onClick={() => {
-              editDialogData.value = resetEditData()
-              editDialogShow.value = true
+              editDialogData.value = resetEditData();
+              editDialogShow.value = true;
             }}
           />
 
@@ -232,8 +232,8 @@ export default defineComponent({
             name="迁移头像"
           />
         </Fragment>,
-      )
-    })
+      );
+    });
 
     return () => (
       <>
@@ -243,40 +243,40 @@ export default defineComponent({
             size="medium"
             value={tabValue.value}
             onUpdateValue={(e) => {
-              tabValue.value = e
+              tabValue.value = e;
 
-              router.replace({ name: RouteName.Friend, query: { state: e } })
+              router.replace({ name: RouteName.Friend, query: { state: e } });
             }}
           >
             {[
               {
                 state: LinkState.Pass,
-                label: '朋友们',
-                countKey: 'friends' as const,
+                label: "朋友们",
+                countKey: "friends" as const,
                 highlight: false,
               },
               {
                 state: LinkState.Audit,
-                label: '待审核',
-                countKey: 'audit' as const,
+                label: "待审核",
+                countKey: "audit" as const,
                 highlight: true,
               },
               {
                 state: LinkState.Outdate,
-                label: '过时的',
-                countKey: 'outdate' as const,
+                label: "过时的",
+                countKey: "outdate" as const,
                 highlight: false,
               },
               {
                 state: LinkState.Reject,
-                label: '已拒绝',
-                countKey: 'reject' as const,
+                label: "已拒绝",
+                countKey: "reject" as const,
                 highlight: false,
               },
               {
                 state: LinkState.Banned,
-                label: '封禁的',
-                countKey: 'banned' as const,
+                label: "封禁的",
+                countKey: "banned" as const,
                 highlight: false,
               },
             ].map(({ state, label, countKey, highlight }) => (
@@ -284,14 +284,14 @@ export default defineComponent({
                 key={state}
                 name={state}
                 tab={() => (
-                  <div class="flex items-center gap-2">
+                  <div class="flex gap-2 items-center">
                     <span>{label}</span>
                     <span
                       class={[
-                        'rounded-full px-2 py-0.5 text-xs',
+                        "rounded-full px-2 py-0.5 text-xs",
                         highlight
-                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400',
+                          ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                          : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
                       ]}
                     >
                       {stateCount.value[countKey] || 0}
@@ -308,20 +308,20 @@ export default defineComponent({
             loading={loading.value}
             data={data}
             nTableProps={{
-              maxHeight: 'calc(100vh - 12rem)',
+              maxHeight: "calc(100vh - 12rem)",
             }}
             columns={[
               {
-                title: '头像',
-                key: 'avatar',
+                title: "头像",
+                key: "avatar",
                 width: 80,
                 render(row) {
-                  return <Avatar name={row.name} avatar={row.avatar} />
+                  return <Avatar name={row.name} avatar={row.avatar} />;
                 },
               },
               {
-                title: '名称',
-                key: 'name',
+                title: "名称",
+                key: "name",
                 render(row) {
                   return (
                     <a
@@ -332,40 +332,40 @@ export default defineComponent({
                     >
                       {row.name}
                     </a>
-                  )
+                  );
                 },
               },
               {
-                title: '描述',
-                key: 'description',
+                title: "描述",
+                key: "description",
                 width: 250,
                 ellipsis: { lineClamp: 2, tooltip: true },
               },
               {
-                title: '网址',
-                key: 'url',
+                title: "网址",
+                key: "url",
                 render(row) {
-                  const urlHealth = health.value?.[row.id]
+                  const urlHealth = health.value?.[row.id];
                   return (
                     <UrlComponent
                       url={row.url}
                       errorMessage={urlHealth?.message}
                       status={urlHealth?.status}
                     />
-                  )
+                  );
                 },
               },
               {
-                title: '类型',
-                key: 'type',
+                title: "类型",
+                key: "type",
                 width: 80,
                 render(row) {
-                  return ['朋友', '收藏'][row.type | 0]
+                  return ["朋友", "收藏"][row.type | 0];
                 },
               },
               {
-                title: '对方邮箱',
-                key: 'email',
+                title: "对方邮箱",
+                key: "email",
                 render(row) {
                   return (
                     <a
@@ -374,22 +374,22 @@ export default defineComponent({
                     >
                       {row.email}
                     </a>
-                  )
+                  );
                 },
               },
               {
-                title: '结识时间',
-                key: 'createdAt',
+                title: "结识时间",
+                key: "createdAt",
                 width: 80,
                 render(row) {
-                  return <RelativeTime time={row.createdAt} />
+                  return <RelativeTime time={row.createdAt} />;
                 },
               },
               {
                 width: 150,
-                title: '操作',
-                fixed: 'right',
-                key: 'action',
+                title: "操作",
+                fixed: "right",
+                key: "action",
                 render(row) {
                   return (
                     <NSpace wrap={false}>
@@ -410,7 +410,7 @@ export default defineComponent({
                             type="info"
                             onClick={() => {
                               modal.create({
-                                title: '发送友链结果',
+                                title: "发送友链结果",
                                 closeOnEsc: true,
                                 closable: true,
                                 content: () => {
@@ -421,15 +421,15 @@ export default defineComponent({
                                           { id: row.id, state, reason },
                                           {
                                             onSuccess: () => {
-                                              modal.destroyAll()
+                                              modal.destroyAll();
                                             },
                                           },
-                                        )
+                                        );
                                       }}
                                     />
-                                  )
+                                  );
                                 },
-                              })
+                              });
                             }}
                           >
                             理由
@@ -441,14 +441,14 @@ export default defineComponent({
                         size="tiny"
                         type="info"
                         onClick={() => {
-                          editDialogShow.value = true
-                          editDialogData.value = { ...row }
+                          editDialogShow.value = true;
+                          editDialogData.value = { ...row };
                         }}
                       >
                         编辑
                       </NButton>
                       <NPopconfirm
-                        positiveText={'取消'}
+                        positiveText="取消"
                         negativeText="删除"
                         onNegativeClick={() => deleteMutation.mutate(row.id)}
                       >
@@ -461,13 +461,17 @@ export default defineComponent({
 
                           default: () => (
                             <span class="max-w-48">
-                              确定要删除友链 {row.name} ?
+                              确定要删除友链
+                              {" "}
+                              {row.name}
+                              {" "}
+                              ?
                             </span>
                           ),
                         }}
                       </NPopconfirm>
                     </NSpace>
-                  )
+                  );
                 },
               },
             ]}
@@ -479,15 +483,15 @@ export default defineComponent({
         <NModal
           transformOrigin="center"
           show={editDialogShow.value}
-          onUpdateShow={(e) => void (editDialogShow.value = e)}
+          onUpdateShow={e => void (editDialogShow.value = e)}
         >
           <NCard
             style="width: 500px;max-width: 90vw"
-            headerStyle={{ textAlign: 'center' }}
+            headerStyle={{ textAlign: "center" }}
             title={
               editDialogData.value.id
                 ? `编辑: ${editDialogData.value.name}`
-                : '新增'
+                : "新增"
             }
           >
             <NForm>
@@ -495,7 +499,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.name}
-                  onInput={(e) => void (editDialogData.value.name = e)}
+                  onInput={e => void (editDialogData.value.name = e)}
                 />
               </NFormItem>
 
@@ -503,7 +507,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.avatar}
-                  onInput={(e) => void (editDialogData.value.avatar = e)}
+                  onInput={e => void (editDialogData.value.avatar = e)}
                 />
               </NFormItem>
 
@@ -511,7 +515,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.url}
-                  onInput={(e) => void (editDialogData.value.url = e)}
+                  onInput={e => void (editDialogData.value.url = e)}
                 />
               </NFormItem>
 
@@ -519,7 +523,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.description}
-                  onInput={(e) => void (editDialogData.value.description = e)}
+                  onInput={e => void (editDialogData.value.description = e)}
                 />
               </NFormItem>
 
@@ -527,13 +531,12 @@ export default defineComponent({
                 <NSelect
                   placeholder="选择类型"
                   options={[
-                    { label: '朋友', value: LinkType.Friend },
-                    { label: '收藏', value: LinkType.Collection },
+                    { label: "朋友", value: LinkType.Friend },
+                    { label: "收藏", value: LinkType.Collection },
                   ]}
                   value={editDialogData.value.type}
-                  onUpdateValue={(e) =>
-                    void (editDialogData.value.type = e | 0)
-                  }
+                  onUpdateValue={e =>
+                    void (editDialogData.value.type = e | 0)}
                 />
               </NFormItem>
               {editDialogData.value.id && (
@@ -545,9 +548,8 @@ export default defineComponent({
                       value: LinkState[k],
                     }))}
                     value={editDialogData.value.state}
-                    onUpdateValue={(e) =>
-                      void (editDialogData.value.state = e | 0)
-                    }
+                    onUpdateValue={e =>
+                      void (editDialogData.value.state = e | 0)}
                   />
                 </NFormItem>
               )}
@@ -560,8 +562,8 @@ export default defineComponent({
                 </NButton>
                 <NButton
                   onClick={() => {
-                    editDialogShow.value = false
-                    editDialogData.value = resetEditData()
+                    editDialogShow.value = false;
+                    editDialogData.value = resetEditData();
                   }}
                   round
                 >
@@ -572,6 +574,6 @@ export default defineComponent({
           </NCard>
         </NModal>
       </>
-    )
+    );
   },
-})
+});

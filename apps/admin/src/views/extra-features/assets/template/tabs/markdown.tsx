@@ -1,7 +1,7 @@
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export const MarkdownTab = defineComponent({
   setup() {
-    return () => <div>即将推出</div>
+    return () => <div>即将推出</div>;
   },
-})
+});

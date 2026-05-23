@@ -3,13 +3,13 @@ import type {
   MetaPresetField,
   MetaPresetScope,
   UpdateMetaPresetDto,
-} from '~/models/meta-preset'
+} from "~/models/meta-preset";
 
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface MetaPresetQueryParams {
-  scope?: MetaPresetScope
-  enabledOnly?: boolean
+  scope?: MetaPresetScope;
+  enabledOnly?: boolean;
 }
 
 export const metaPresetsApi = {
@@ -17,7 +17,7 @@ export const metaPresetsApi = {
    * 获取所有预设字段
    */
   getAll: (params?: MetaPresetQueryParams) =>
-    request.get<MetaPresetField[]>('/meta-presets', { params }),
+    request.get<MetaPresetField[]>("/meta-presets", { params }),
 
   /**
    * 获取单个预设字段
@@ -28,7 +28,7 @@ export const metaPresetsApi = {
    * 创建自定义预设字段
    */
   create: (data: CreateMetaPresetDto) =>
-    request.post<MetaPresetField>('/meta-presets', { data }),
+    request.post<MetaPresetField>("/meta-presets", { data }),
 
   /**
    * 更新预设字段
@@ -45,5 +45,5 @@ export const metaPresetsApi = {
    * 批量更新排序
    */
   updateOrder: (ids: string[]) =>
-    request.put<MetaPresetField[]>('/meta-presets/order', { data: { ids } }),
-}
+    request.put<MetaPresetField[]>("/meta-presets/order", { data: { ids } }),
+};

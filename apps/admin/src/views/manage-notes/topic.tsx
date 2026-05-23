@@ -1,34 +1,34 @@
-import { Plus as PlusIcon } from 'lucide-vue-next'
-import { defineComponent, ref, watch, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import type { TopicModel } from '~/models/topic'
+import type { TopicModel } from "~/models/topic";
+import { useQueryClient } from "@tanstack/vue-query";
+import { Plus as PlusIcon } from "lucide-vue-next";
+import { defineComponent, ref, watch, watchEffect } from "vue";
 
-import { useQueryClient } from '@tanstack/vue-query'
+import { useRoute, useRouter } from "vue-router";
 
-import { topicsApi } from '~/api/topics'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { MasterDetailLayout, useMasterDetailLayout } from '~/components/layout'
-import { queryKeys } from '~/hooks/queries/keys'
-import { useDeleteTopicMutation } from '~/hooks/queries/use-topics'
-import { useDataTable } from '~/hooks/use-data-table'
-import { useLayout } from '~/layouts/content'
-import { RouteName } from '~/router/name'
+import { topicsApi } from "~/api/topics";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { queryKeys } from "~/hooks/queries/keys";
+import { useDeleteTopicMutation } from "~/hooks/queries/use-topics";
+import { useDataTable } from "~/hooks/use-data-table";
+import { useLayout } from "~/layouts/content";
+import { RouteName } from "~/router/name";
 
 import {
   TopicDetailEmptyState,
   TopicDetailPanel,
-} from './components/topic-detail-panel'
-import { TopicList } from './components/topic-list'
-import { TopicEditModal } from './components/topic-modal'
+} from "./components/topic-detail-panel";
+import { TopicList } from "./components/topic-list";
+import { TopicEditModal } from "./components/topic-modal";
 
 export default defineComponent({
-  name: 'TopicListPage',
+  name: "TopicListPage",
   setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const queryClient = useQueryClient()
-    const { setActions } = useLayout()
-    const { isMobile } = useMasterDetailLayout()
+    const router = useRouter();
+    const route = useRoute();
+    const queryClient = useQueryClient();
+    const { setActions } = useLayout();
+    const { isMobile } = useMasterDetailLayout();
 
     const {
       data: topics,
@@ -37,61 +37,61 @@ export default defineComponent({
       refresh,
       setPage,
     } = useDataTable<TopicModel>({
-      queryKey: (_params) => queryKeys.topics.list(),
-      queryFn: (params) =>
+      queryKey: _params => queryKeys.topics.list(),
+      queryFn: params =>
         topicsApi.getList({ page: params.page, size: params.size }),
       pageSize: 20,
-    })
+    });
 
-    const selectedId = ref<string | null>((route.query.id as string) || null)
-    const showDetailOnMobile = ref(false)
+    const selectedId = ref<string | null>((route.query.id as string) || null);
+    const showDetailOnMobile = ref(false);
 
-    const editTopicId = ref('')
-    const showTopicModal = ref(false)
+    const editTopicId = ref("");
+    const showTopicModal = ref(false);
 
     const handleAddTopic = () => {
-      showTopicModal.value = true
-      editTopicId.value = ''
-    }
+      showTopicModal.value = true;
+      editTopicId.value = "";
+    };
 
     const handleCloseModal = () => {
-      showTopicModal.value = false
-      editTopicId.value = ''
-    }
+      showTopicModal.value = false;
+      editTopicId.value = "";
+    };
 
-    const deleteMutation = useDeleteTopicMutation()
+    const deleteMutation = useDeleteTopicMutation();
     const handleDelete = (id: string) => {
       deleteMutation.mutate(id, {
         onSuccess: () => {
           if (selectedId.value === id) {
-            selectedId.value = null
-            showDetailOnMobile.value = false
+            selectedId.value = null;
+            showDetailOnMobile.value = false;
           }
-          refresh()
+          refresh();
         },
-      })
-    }
+      });
+    };
 
     const handleEdit = (id: string) => {
-      editTopicId.value = id
-      showTopicModal.value = true
-    }
+      editTopicId.value = id;
+      showTopicModal.value = true;
+    };
 
     const handleSelect = (topic: TopicModel) => {
-      selectedId.value = topic.id!
+      selectedId.value = topic.id!;
       if (isMobile.value) {
-        showDetailOnMobile.value = true
+        showDetailOnMobile.value = true;
       }
-    }
+    };
 
     const handleBack = () => {
-      showDetailOnMobile.value = false
-    }
+      showDetailOnMobile.value = false;
+    };
 
     const handleSubmit = (_topic: TopicModel) => {
-      handleCloseModal()
-      queryClient.invalidateQueries({ queryKey: queryKeys.topics.all })
-    }
+      handleCloseModal();
+      queryClient.invalidateQueries({ queryKey: queryKeys.topics.all });
+    };
 
     watch(
       selectedId,
@@ -99,10 +99,10 @@ export default defineComponent({
         router.replace({
           name: RouteName.Topic,
           query: (id ? { id } : {}),
-        })
+        });
       },
-      { flush: 'post' },
-    )
+      { flush: "post" },
+    );
 
     watchEffect(() => {
       setActions(
@@ -112,8 +112,8 @@ export default defineComponent({
           variant="success"
           name="新建专栏"
         />,
-      )
-    })
+      );
+    });
 
     return () => (
       <>
@@ -135,15 +135,17 @@ export default defineComponent({
               />
             ),
             detail: () =>
-              selectedId.value ? (
-                <TopicDetailPanel
-                  topicId={selectedId.value}
-                  isMobile={isMobile.value}
-                  onBack={handleBack}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ) : null,
+              selectedId.value
+                ? (
+                    <TopicDetailPanel
+                      topicId={selectedId.value}
+                      isMobile={isMobile.value}
+                      onBack={handleBack}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  )
+                : null,
             empty: () => <TopicDetailEmptyState />,
           }}
         </MasterDetailLayout>
@@ -155,6 +157,6 @@ export default defineComponent({
           onSubmit={handleSubmit}
         />
       </>
-    )
+    );
   },
-})
+});

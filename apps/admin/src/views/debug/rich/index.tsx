@@ -1,7 +1,7 @@
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
-import { RichEditor } from '~/components/editor/rich/RichEditor'
-import { ContentLayout } from '~/layouts/content'
+import { RichEditor } from "~/components/editor/rich/RichEditor";
+import { ContentLayout } from "~/layouts/content";
 
 export default defineComponent({
   setup() {
@@ -9,6 +9,6 @@ export default defineComponent({
       <ContentLayout>
         <RichEditor class="h-full w-full" />
       </ContentLayout>
-    )
+    );
   },
-})
+});

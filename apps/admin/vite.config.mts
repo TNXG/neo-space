@@ -1,17 +1,15 @@
-import UnoCSS from 'unocss/vite'
+import vue from "@vitejs/plugin-vue";
 
-import { defineConfig, loadEnv } from 'vite'
-import { checker } from 'vite-plugin-checker'
+import vueJsx from "@vitejs/plugin-vue-jsx";
+import UnoCSS from "unocss/vite";
 
-import vue from '@vitejs/plugin-vue'
-import vueJsx from '@vitejs/plugin-vue-jsx'
-import VueInspector from 'vite-plugin-vue-inspector'
+import { defineConfig } from "vite";
+import { checker } from "vite-plugin-checker";
+import VueInspector from "vite-plugin-vue-inspector";
 
 // dns.setDefaultResultOrder('verbatim')
 export default ({ mode }) => {
-  const env = loadEnv(mode, process.cwd())
-  const { VITE_APP_PUBLIC_URL } = env
-  const isDev = mode === 'development'
+  const isDev = mode === "development";
 
   return defineConfig({
     plugins: [
@@ -23,8 +21,8 @@ export default ({ mode }) => {
       ...(isDev
         ? [
             VueInspector({
-              toggleButtonVisibility: 'always',
-              launchEditor: 'cursor',
+              toggleButtonVisibility: "always",
+              launchEditor: "cursor",
             }),
           ]
         : []),
@@ -45,16 +43,16 @@ export default ({ mode }) => {
     resolve: {
       tsconfigPaths: true,
       alias: {
-        path: 'path-browserify',
-        os: 'os-browserify',
-        'node-fetch': 'isomorphic-fetch',
-        buffer: 'buffer',
+        "path": "path-browserify",
+        "os": "os-browserify",
+        "node-fetch": "isomorphic-fetch",
+        "buffer": "buffer",
       },
     },
 
     build: {
       chunkSizeWarningLimit: 2500,
-      target: 'esnext',
+      target: "esnext",
 
       // sourcemap: true,
       rollupOptions: {
@@ -65,13 +63,13 @@ export default ({ mode }) => {
       },
     },
     optimizeDeps: {
-      exclude: ['@huacnlee/autocorrect', '@dqbd/tiktoken'],
+      exclude: ["@huacnlee/autocorrect", "@dqbd/tiktoken"],
     },
 
     define: {
       __DEV__: isDev,
     },
-    base: !isDev ? VITE_APP_PUBLIC_URL || '' : '',
+    base: "/proxy/",
 
     server: {
       // https: true,
@@ -80,12 +78,12 @@ export default ({ mode }) => {
     },
     oxc: {
       jsx: {
-        runtime: 'automatic',
-        importSource: 'vue',
+        runtime: "automatic",
+        importSource: "vue",
       },
     },
     test: {
-      environment: 'happy-dom',
+      environment: "happy-dom",
     },
-  })
-}
+  });
+};

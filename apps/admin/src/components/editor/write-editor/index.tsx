@@ -1,31 +1,31 @@
+import type { ProviderGroup, SelectedModel } from "@haklex/rich-agent-chat";
+import type { ChatBubble } from "@haklex/rich-agent-core";
+import type { LexicalEditor, SerializedEditorState } from "lexical";
+import type { PropType, VNode } from "vue";
+import type { MetaFieldsSchema } from "../rich/agent-chat/composables/use-meta-tools";
+import type { WriteEditorVariant } from "./types";
+import type { ContentFormat } from "~/shared/types/base";
 /**
  * WriteEditor facade
  * 根据 contentFormat 分发至 MarkdownWriteEditor 或 RichWriteEditor
  */
-import { defineComponent } from 'vue'
-import type { ProviderGroup, SelectedModel } from '@haklex/rich-agent-chat'
-import type { ChatBubble } from '@haklex/rich-agent-core'
-import type { ContentFormat } from '~/shared/types/base'
-import type { LexicalEditor, SerializedEditorState } from 'lexical'
-import type { PropType, VNode } from 'vue'
-import type { MetaFieldsSchema } from '../rich/agent-chat/composables/use-meta-tools'
-import type { WriteEditorVariant } from './types'
+import { defineComponent } from "vue";
 
-import { editorBaseProps } from '../universal/props'
-import { MarkdownWriteEditor } from './MarkdownWriteEditor'
-import { RichWriteEditor } from './RichWriteEditor'
+import { editorBaseProps } from "../universal/props";
+import { MarkdownWriteEditor } from "./MarkdownWriteEditor";
+import { RichWriteEditor } from "./RichWriteEditor";
 
-export { MarkdownWriteEditor } from './MarkdownWriteEditor'
-export { RichWriteEditor } from './RichWriteEditor'
-export { WriteEditorBase } from './WriteEditorBase'
-export type { WriteEditorVariant } from './types'
 export type {
   MetaFieldDescriptor,
   MetaFieldsSchema,
-} from '../rich/agent-chat/composables/use-meta-tools'
+} from "../rich/agent-chat/composables/use-meta-tools";
+export { MarkdownWriteEditor } from "./MarkdownWriteEditor";
+export { RichWriteEditor } from "./RichWriteEditor";
+export type { WriteEditorVariant } from "./types";
+export { WriteEditorBase } from "./WriteEditorBase";
 
 export const WriteEditor = defineComponent({
-  name: 'WriteEditor',
+  name: "WriteEditor",
   props: {
     ...editorBaseProps,
     loading: {
@@ -42,18 +42,18 @@ export const WriteEditor = defineComponent({
     },
     titlePlaceholder: {
       type: String,
-      default: '输入标题...',
+      default: "输入标题...",
     },
     subtitleSlot: {
       type: [Object, Function] as PropType<VNode | (() => VNode)>,
     },
     autoFocus: {
-      type: [String, Boolean] as PropType<'title' | 'content' | false>,
+      type: [String, Boolean] as PropType<"title" | "content" | false>,
       default: false,
     },
     contentFormat: {
       type: String as PropType<ContentFormat>,
-      default: 'markdown',
+      default: "markdown",
     },
     onContentFormatChange: {
       type: Function as PropType<(value: ContentFormat) => void>,
@@ -69,7 +69,7 @@ export const WriteEditor = defineComponent({
     },
     variant: {
       type: String as PropType<WriteEditorVariant>,
-      default: 'post',
+      default: "post",
     },
     agentEnabled: { type: Boolean, default: false },
     agentVisible: { type: Boolean, default: false },
@@ -78,7 +78,7 @@ export const WriteEditor = defineComponent({
     onSelectModel: Function as PropType<(model: SelectedModel) => void>,
     initialBubbles: Array as PropType<ChatBubble[]>,
     refId: String,
-    refType: String as PropType<'post' | 'note' | 'page'>,
+    refType: String as PropType<"post" | "note" | "page">,
     metaFieldsSchema: Object as PropType<MetaFieldsSchema>,
     getMetaFields: Function as PropType<() => Record<string, unknown>>,
     onMetaFieldsUpdate: Function as PropType<
@@ -87,7 +87,7 @@ export const WriteEditor = defineComponent({
   },
   setup(props) {
     return () => {
-      if (props.contentFormat === 'lexical') {
+      if (props.contentFormat === "lexical") {
         return (
           <RichWriteEditor
             loading={props.loading}
@@ -116,7 +116,7 @@ export const WriteEditor = defineComponent({
             getMetaFields={props.getMetaFields}
             onMetaFieldsUpdate={props.onMetaFieldsUpdate}
           />
-        )
+        );
       }
 
       return (
@@ -135,7 +135,7 @@ export const WriteEditor = defineComponent({
           contentFormat={props.contentFormat}
           onContentFormatChange={props.onContentFormatChange}
         />
-      )
-    }
+      );
+    };
   },
-})
+});

@@ -1,50 +1,50 @@
-import { computed, defineComponent, onUnmounted, watchEffect } from 'vue'
-import type { CSSProperties } from 'vue'
+import type { CSSProperties } from "vue";
+import { computed, defineComponent, onUnmounted, watchEffect } from "vue";
 
-import { KBarWrapper } from '~/components/k-bar'
-import { ContentLayout } from '~/layouts/content'
-import $RouterView from '~/layouts/router-view'
+import { KBarWrapper } from "~/components/k-bar";
+import { ContentLayout } from "~/layouts/content";
+import $RouterView from "~/layouts/router-view";
 
-import { Sidebar } from '../../components/sidebar'
-import { useStoreRef } from '../../hooks/use-store-ref'
-import { UIStore } from '../../stores/ui'
-import styles from './index.module.css'
+import { Sidebar } from "../../components/sidebar";
+import { useStoreRef } from "../../hooks/use-store-ref";
+import { UIStore } from "../../stores/ui";
+import styles from "./index.module.css";
 
 export const SidebarLayout = defineComponent({
-  name: 'SidebarLayout',
+  name: "SidebarLayout",
 
   setup() {
-    const ui = useStoreRef(UIStore)
+    const ui = useStoreRef(UIStore);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key.toLowerCase() === 'b') {
-        const activeElement = document.activeElement
-        const isInEditor =
-          activeElement?.tagName === 'TEXTAREA' ||
-          activeElement?.tagName === 'INPUT' ||
-          activeElement?.getAttribute('contenteditable') === 'true' ||
-          activeElement?.closest('.monaco-editor') ||
-          activeElement?.closest('[role="textbox"]')
+      if (e.metaKey && e.key.toLowerCase() === "b") {
+        const activeElement = document.activeElement;
+        const isInEditor
+          = activeElement?.tagName === "TEXTAREA"
+            || activeElement?.tagName === "INPUT"
+            || activeElement?.getAttribute("contenteditable") === "true"
+            || activeElement?.closest(".monaco-editor")
+            || activeElement?.closest("[role=\"textbox\"]");
 
         if (!isInEditor) {
-          e.preventDefault()
-          collapse.value = !collapse.value
+          e.preventDefault();
+          collapse.value = !collapse.value;
         }
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener("keydown", handleKeyDown);
     onUnmounted(() => {
-      window.removeEventListener('keydown', handleKeyDown)
-    })
+      window.removeEventListener("keydown", handleKeyDown);
+    });
 
-    const collapse = ui.sidebarCollapse
+    const collapse = ui.sidebarCollapse;
     const isLaptop = computed(
       () => ui.viewport.value.mobile || ui.viewport.value.pad,
-    )
+    );
     watchEffect(() => {
-      collapse.value = isLaptop.value ? true : false
-    })
+      collapse.value = !!isLaptop.value;
+    });
 
     return () => (
       <KBarWrapper>
@@ -52,12 +52,12 @@ export const SidebarLayout = defineComponent({
           default() {
             return (
               <div
-                class={[styles.root, collapse.value ? 'collapsed' : 'expanded']}
+                class={[styles.root, collapse.value ? "collapsed" : "expanded"]}
               >
                 <Sidebar
                   collapse={collapse.value}
                   onCollapseChange={(s) => {
-                    collapse.value = s
+                    collapse.value = s;
                   }}
                 />
 
@@ -73,9 +73,9 @@ export const SidebarLayout = defineComponent({
                   class={styles.content}
                   style={
                     {
-                      left: !collapse.value ? 'var(--sidebar-width)' : '0',
+                      left: !collapse.value ? "var(--sidebar-width)" : "0",
                       pointerEvents:
-                        isLaptop.value && !collapse.value ? 'none' : 'auto',
+                        isLaptop.value && !collapse.value ? "none" : "auto",
                     } as CSSProperties
                   }
                 >
@@ -86,10 +86,10 @@ export const SidebarLayout = defineComponent({
                   </div>
                 </div>
               </div>
-            )
+            );
           },
         }}
       </KBarWrapper>
-    )
+    );
   },
-})
+});

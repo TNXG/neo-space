@@ -1,11 +1,11 @@
-import { NUpload } from 'naive-ui'
-import { defineComponent } from 'vue'
-import { toast } from 'vue-sonner'
-import type { UploadOnFinish } from 'naive-ui'
-import type { OnError } from 'naive-ui/es/upload/src/interface'
-import type { PropType } from 'vue'
+import type { UploadOnFinish } from "naive-ui";
+import type { OnError } from "naive-ui/es/upload/src/interface";
+import type { PropType } from "vue";
+import { NUpload } from "naive-ui";
+import { defineComponent } from "vue";
+import { toast } from "vue-sonner";
 
-import { API_URL } from '~/constants/env'
+import { API_URL } from "~/constants/env";
 
 export const UploadWrapper = defineComponent({
   props: {
@@ -22,7 +22,7 @@ export const UploadWrapper = defineComponent({
   },
   setup(props, { slots }) {
     return () => {
-      const { onFinish, onError, type, ...rest } = props
+      const { onFinish, onError, type, ...rest } = props;
 
       return (
         <NUpload
@@ -31,22 +31,22 @@ export const UploadWrapper = defineComponent({
           accept="image/*"
           action={`${API_URL}/files/upload?type=${type}`}
           onError={
-            onError ||
-            ((e) => {
-              toast.error('上传失败')
-              return e.file
+            onError
+            || ((e) => {
+              toast.error("上传失败");
+              return e.file;
             })
           }
           onFinish={onFinish}
           {...Object.fromEntries(
-            Object.entries(rest).filter(([_k, v]) => typeof v !== 'undefined'),
+            Object.entries(rest).filter(([_k, v]) => typeof v !== "undefined"),
           )}
         >
           {slots.default?.()}
         </NUpload>
-      )
-    }
+      );
+    };
   },
-})
+});
 
-UploadWrapper.props = [...Array.from(Object.keys(NUpload.props)), 'type']
+UploadWrapper.props = [...Array.from(Object.keys(NUpload.props)), "type"];

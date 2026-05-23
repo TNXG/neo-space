@@ -1,73 +1,74 @@
-import { Tags as TagsIcon } from 'lucide-vue-next'
-import { defineComponent, onMounted, ref, watch } from 'vue'
+import { Chart } from "@antv/g2";
+import { Tags as TagsIcon } from "lucide-vue-next";
 
-import { Chart } from '@antv/g2'
+import { defineComponent, onMounted, ref, watch } from "vue";
 
-import { aggregateApi } from '~/api/aggregate'
+import { aggregateApi } from "~/api/aggregate";
 
-import { ChartCard } from './ChartCard'
-import { useChartTheme } from './use-chart-theme'
+import { ChartCard } from "./ChartCard";
+import { useChartTheme } from "./use-chart-theme";
 
 interface TagData {
-  tag: string
-  count: number
+  tag: string;
+  count: number;
 }
 
 export const TagCloud = defineComponent({
   setup() {
-    const chartRef = ref<HTMLDivElement>()
-    const loading = ref(true)
-    const data = ref<TagData[]>([])
-    let chart: Chart | null = null
+    const chartRef = ref<HTMLDivElement>();
+    const loading = ref(true);
+    const data = ref<TagData[]>([]);
+    let chart: Chart | null = null;
 
-    const { isDark, chartTheme } = useChartTheme()
+    const { isDark, chartTheme } = useChartTheme();
 
     const fetchData = async () => {
       try {
-        const result = await aggregateApi.getTagCloud()
-        data.value = Array.isArray(result) ? result : []
+        const result = await aggregateApi.getTagCloud();
+        data.value = Array.isArray(result) ? result : [];
       } catch {
-        data.value = []
+        data.value = [];
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const renderChart = () => {
-      if (!chartRef.value || data.value.length === 0) return
+      if (!chartRef.value || data.value.length === 0)
+        return;
 
       if (chart) {
-        chart.destroy()
+        chart.destroy();
       }
 
-      const theme = chartTheme.value
+      const theme = chartTheme.value;
 
       chart = new Chart({
         container: chartRef.value,
         autoFit: true,
         height: 250,
-      })
+      });
 
       chart.options({
-        type: 'wordCloud',
+        type: "wordCloud",
         data: data.value,
         encode: {
-          color: 'tag',
+          color: "tag",
         },
         layout: {
           fontSize: [14, 32],
-          spiral: 'rectangular',
+          spiral: "rectangular",
           padding: 2,
         },
         style: {
-          fontFamily: 'system-ui, sans-serif',
+          fontFamily: "system-ui, sans-serif",
           text: (d: TagData) => d.tag,
           fontSize: (d: TagData) => {
-            const max = Math.max(...data.value.map((t) => t.count))
-            const min = Math.min(...data.value.map((t) => t.count))
-            const range = max - min || 1
-            const ratio = (d.count - min) / range
-            return 14 + ratio * 18
+            const max = Math.max(...data.value.map(t => t.count));
+            const min = Math.min(...data.value.map(t => t.count));
+            const range = max - min || 1;
+            const ratio = (d.count - min) / range;
+            return 14 + ratio * 18;
           },
           fill: theme.label.fill,
         },
@@ -80,24 +81,24 @@ export const TagCloud = defineComponent({
           ],
         },
         legend: false,
-      })
+      });
 
-      chart.render()
-    }
+      chart.render();
+    };
 
     onMounted(() => {
-      fetchData()
-    })
+      fetchData();
+    });
 
     watch(
       [() => data.value, isDark],
       () => {
         if (data.value.length > 0) {
-          setTimeout(renderChart, 0)
+          setTimeout(renderChart, 0);
         }
       },
       { deep: true },
-    )
+    );
 
     return () => (
       <ChartCard
@@ -108,6 +109,6 @@ export const TagCloud = defineComponent({
       >
         <div ref={chartRef} class="h-full w-full" />
       </ChartCard>
-    )
+    );
   },
-})
+});

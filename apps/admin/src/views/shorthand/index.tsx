@@ -1,3 +1,5 @@
+import type { PropType } from "vue";
+import type { RecentlyModel } from "~/models/recently";
 import {
   Plus as AddIcon,
   FileText as ArticleIcon,
@@ -9,37 +11,35 @@ import {
   ThumbsDown,
   ThumbsUp,
   Trash2 as TrashIcon,
-} from 'lucide-vue-next'
-import { NButton, NPopconfirm, NSkeleton, NTooltip } from 'naive-ui'
-import { computed, defineComponent, onMounted, ref, Transition } from 'vue'
-import { toast } from 'vue-sonner'
-import type { RecentlyModel } from '~/models/recently'
-import type { PropType } from 'vue'
+} from "lucide-vue-next";
+import { NButton, NPopconfirm, NSkeleton, NTooltip } from "naive-ui";
+import { computed, defineComponent, onMounted, ref, Transition } from "vue";
+import { toast } from "vue-sonner";
 
-import { recentlyApi } from '~/api'
-import { enrichmentApi } from '~/api/enrichment'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { EnrichmentCard } from '~/components/enrichment-card'
-import { useShorthand } from '~/components/shorthand'
-import { RelativeTime } from '~/components/time/relative-time'
-import { useLayout } from '~/layouts/content'
-import { RecentlyRefTypes } from '~/models/recently'
+import { recentlyApi } from "~/api";
+import { enrichmentApi } from "~/api/enrichment";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { EnrichmentCard } from "~/components/enrichment-card";
+import { useShorthand } from "~/components/shorthand";
+import { RelativeTime } from "~/components/time/relative-time";
+import { useLayout } from "~/layouts/content";
+import { RecentlyRefTypes } from "~/models/recently";
 
-import styles from './index.module.css'
+import styles from "./index.module.css";
 
 const RefTypeIcons: Record<RecentlyRefTypes, typeof ArticleIcon> = {
   [RecentlyRefTypes.Post]: ArticleIcon,
   [RecentlyRefTypes.Note]: NoteIcon,
   [RecentlyRefTypes.Page]: PageIcon,
   [RecentlyRefTypes.Recently]: NoteIcon,
-}
+};
 
 const RefTypeLabels: Record<RecentlyRefTypes, string> = {
-  [RecentlyRefTypes.Post]: '文章',
-  [RecentlyRefTypes.Note]: '笔记',
-  [RecentlyRefTypes.Page]: '页面',
-  [RecentlyRefTypes.Recently]: '速记',
-}
+  [RecentlyRefTypes.Post]: "文章",
+  [RecentlyRefTypes.Note]: "笔记",
+  [RecentlyRefTypes.Page]: "页面",
+  [RecentlyRefTypes.Recently]: "速记",
+};
 
 const RecentlyItem = defineComponent({
   props: {
@@ -57,40 +57,40 @@ const RecentlyItem = defineComponent({
     },
     onEnrichmentUpdate: {
       type: Function as PropType<
-        (url: string, next: NonNullable<RecentlyModel['enrichments']>[string]) => void
+        (url: string, next: NonNullable<RecentlyModel["enrichments"]>[string]) => void
       >,
       required: true,
     },
   },
   setup(props) {
-    const totalVotes = computed(() => props.item.up + props.item.down)
-    const retryingUrls = ref<Set<string>>(new Set())
+    const totalVotes = computed(() => props.item.up + props.item.down);
+    const retryingUrls = ref<Set<string>>(new Set());
 
     const handleRetryUrl = async (url: string) => {
-      retryingUrls.value = new Set(retryingUrls.value).add(url)
+      retryingUrls.value = new Set(retryingUrls.value).add(url);
       try {
-        const result = await enrichmentApi.resolve(url)
-        props.onEnrichmentUpdate(url, result)
-        toast.success('已刷新')
+        const result = await enrichmentApi.resolve(url);
+        props.onEnrichmentUpdate(url, result);
+        toast.success("已刷新");
       } catch (e: any) {
-        toast.error(e?.message || '刷新失败')
+        toast.error(e?.message || "刷新失败");
       } finally {
-        const next = new Set(retryingUrls.value)
-        next.delete(url)
-        retryingUrls.value = next
+        const next = new Set(retryingUrls.value);
+        next.delete(url);
+        retryingUrls.value = next;
       }
-    }
+    };
 
     const upPercentage = computed(() =>
       totalVotes.value > 0
         ? Math.round((props.item.up / totalVotes.value) * 100)
         : 50,
-    )
+    );
 
-    const RefIcon = props.item.refType ? RefTypeIcons[props.item.refType] : null
+    const RefIcon = props.item.refType ? RefTypeIcons[props.item.refType] : null;
     const refLabel = props.item.refType
       ? RefTypeLabels[props.item.refType]
-      : null
+      : null;
 
     return () => (
       <article class={styles.card} aria-label="速记条目">
@@ -98,19 +98,19 @@ const RecentlyItem = defineComponent({
           <p class={styles.text}>{props.item.content}</p>
         </div>
 
-        {props.item.enrichments &&
-          Object.keys(props.item.enrichments).length > 0 && (
-            <div class="mt-2 space-y-2">
-              {Object.entries(props.item.enrichments).map(([url, enrichment]) => (
-                <EnrichmentCard
-                  key={url}
-                  enrichment={enrichment}
-                  retrying={retryingUrls.value.has(url)}
-                  onRetry={() => handleRetryUrl(url)}
-                />
-              ))}
-            </div>
-          )}
+        {props.item.enrichments
+          && Object.keys(props.item.enrichments).length > 0 && (
+          <div class="mt-2 space-y-2">
+            {Object.entries(props.item.enrichments).map(([url, enrichment]) => (
+              <EnrichmentCard
+                key={url}
+                enrichment={enrichment}
+                retrying={retryingUrls.value.has(url)}
+                onRetry={() => handleRetryUrl(url)}
+              />
+            ))}
+          </div>
+        )}
 
         {props.item.ref && props.item.refType && (
           <div class={styles.reference}>
@@ -175,16 +175,16 @@ const RecentlyItem = defineComponent({
               )}
             </div>
 
-            {props.item.commentsIndex !== undefined &&
-              props.item.commentsIndex > 0 && (
-                <div
-                  class={styles.comments}
-                  aria-label={`${props.item.commentsIndex} 条评论`}
-                >
-                  <CommentIcon class={styles.commentIcon} />
-                  <span>{props.item.commentsIndex}</span>
-                </div>
-              )}
+            {props.item.commentsIndex !== undefined
+              && props.item.commentsIndex > 0 && (
+              <div
+                class={styles.comments}
+                aria-label={`${props.item.commentsIndex} 条评论`}
+              >
+                <CommentIcon class={styles.commentIcon} />
+                <span>{props.item.commentsIndex}</span>
+              </div>
+            )}
           </div>
 
           <div class={styles.actions} role="group" aria-label="操作">
@@ -200,7 +200,7 @@ const RecentlyItem = defineComponent({
                     <PencilIcon />
                   </button>
                 ),
-                default: () => '编辑',
+                default: () => "编辑",
               }}
             </NTooltip>
 
@@ -223,7 +223,7 @@ const RecentlyItem = defineComponent({
                           <TrashIcon />
                         </button>
                       ),
-                      default: () => '删除',
+                      default: () => "删除",
                     }}
                   </NTooltip>
                 ),
@@ -235,9 +235,9 @@ const RecentlyItem = defineComponent({
           </div>
         </footer>
       </article>
-    )
+    );
   },
-})
+});
 
 const EmptyState = defineComponent({
   props: {
@@ -259,50 +259,50 @@ const EmptyState = defineComponent({
           写一条速记
         </NButton>
       </div>
-    )
+    );
   },
-})
+});
 
 const LoadingSkeleton = defineComponent({
   setup() {
     return () => (
       <div class={styles.list} aria-busy="true" aria-label="加载中">
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <div key={i} class={styles.skeleton}>
             <NSkeleton text repeat={2} />
             <div class={styles.skeletonFooter}>
-              <NSkeleton text style={{ width: '120px' }} />
-              <NSkeleton text style={{ width: '80px' }} />
+              <NSkeleton text style={{ width: "120px" }} />
+              <NSkeleton text style={{ width: "80px" }} />
             </div>
           </div>
         ))}
       </div>
-    )
+    );
   },
-})
+});
 
 export default defineComponent({
   setup() {
-    const { setActions } = useLayout()
-    const data = ref([] as RecentlyModel[])
-    const loading = ref(true)
+    const { setActions } = useLayout();
+    const data = ref([] as RecentlyModel[]);
+    const loading = ref(true);
 
     onMounted(async () => {
       recentlyApi.getAll().then((res) => {
-        data.value = res
-        loading.value = false
-      })
-    })
+        data.value = res;
+        loading.value = false;
+      });
+    });
 
-    const { create, edit } = useShorthand()
+    const { create, edit } = useShorthand();
 
     const handleCreate = () => {
       create().then((res) => {
         if (res) {
-          data.value.unshift(res)
+          data.value.unshift(res);
         }
-      })
-    }
+      });
+    };
 
     setActions(
       <HeaderActionButton
@@ -310,50 +310,54 @@ export default defineComponent({
         icon={<AddIcon />}
         aria-label="新建速记"
       />,
-    )
+    );
 
     return () => (
       <div class={styles.container}>
         <Transition name="fade" mode="out-in">
-          {loading.value ? (
-            <LoadingSkeleton key="loading" />
-          ) : data.value.length === 0 ? (
-            <EmptyState key="empty" onCreate={handleCreate} />
-          ) : (
-            <div
-              key="list"
-              class={styles.list}
-              role="feed"
-              aria-label="速记列表"
-            >
-              {data.value.map((item, index) => (
-                <RecentlyItem
-                  key={item.id}
-                  item={item}
-                  onEdit={() => {
-                    edit(item).then((res) => {
-                      if (res) {
-                        data.value[index] = res
-                      }
-                    })
-                  }}
-                  onDelete={async () => {
-                    await recentlyApi.delete(item.id)
-                    toast.success('删除成功')
-                    data.value.splice(data.value.indexOf(item), 1)
-                  }}
-                  onEnrichmentUpdate={(url, next) => {
-                    data.value[index] = {
-                      ...item,
-                      enrichments: { ...item.enrichments, [url]: next },
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          {loading.value
+            ? (
+                <LoadingSkeleton key="loading" />
+              )
+            : data.value.length === 0
+              ? (
+                  <EmptyState key="empty" onCreate={handleCreate} />
+                )
+              : (
+                  <div
+                    key="list"
+                    class={styles.list}
+                    role="feed"
+                    aria-label="速记列表"
+                  >
+                    {data.value.map((item, index) => (
+                      <RecentlyItem
+                        key={item.id}
+                        item={item}
+                        onEdit={() => {
+                          edit(item).then((res) => {
+                            if (res) {
+                              data.value[index] = res;
+                            }
+                          });
+                        }}
+                        onDelete={async () => {
+                          await recentlyApi.delete(item.id);
+                          toast.success("删除成功");
+                          data.value.splice(data.value.indexOf(item), 1);
+                        }}
+                        onEnrichmentUpdate={(url, next) => {
+                          data.value[index] = {
+                            ...item,
+                            enrichments: { ...item.enrichments, [url]: next },
+                          };
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
         </Transition>
       </div>
-    )
+    );
   },
-})
+});

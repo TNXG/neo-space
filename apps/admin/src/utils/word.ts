@@ -4,9 +4,9 @@
  */
 export const textToBigCharOrWord = (name: string | undefined) => {
   if (!name) {
-    return ''
+    return "";
   }
-  const splitOnce = name.split(' ')[0]
-  const bigChar = splitOnce.length > 4 ? name[0] : splitOnce
-  return bigChar
-}
+  const splitOnce = name.split(" ")[0];
+  const bigChar = splitOnce.length > 4 ? name[0] : splitOnce;
+  return bigChar;
+};

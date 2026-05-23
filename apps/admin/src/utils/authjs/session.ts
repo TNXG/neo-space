@@ -1,11 +1,11 @@
-import type { authClient } from './auth'
+import type { authClient } from "./auth";
 
-import { authApi } from '~/api'
+import { authApi } from "~/api";
 
 type Session = typeof authClient.$Infer.Session & {
-  role?: 'reader' | 'owner'
-}
+  role?: "reader" | "owner";
+};
 
 export const getSession = async () => {
-  return authApi.getSession() as Promise<Session>
-}
+  return authApi.getSession() as Promise<Session>;
+};

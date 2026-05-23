@@ -1,4 +1,6 @@
-import { format } from 'date-fns'
+import type { TableColumns } from "naive-ui/lib/data-table/src/interface";
+import type { UA } from "~/models/analyze";
+import { format } from "date-fns";
 import {
   Chrome as BrowserIcon,
   Clock as ClockIcon,
@@ -7,32 +9,30 @@ import {
   RefreshCw as RefreshOutlineIcon,
   Route as RouteIcon,
   Trash as TrashIcon,
-} from 'lucide-vue-next'
-import { NButton, NEllipsis, NTooltip } from 'naive-ui'
+} from "lucide-vue-next";
+import { NButton, NEllipsis, NTooltip } from "naive-ui";
 import {
   defineComponent,
   onBeforeMount,
   onBeforeUnmount,
   onMounted,
   watch,
-} from 'vue'
-import { useRoute } from 'vue-router'
-import type { UA } from '~/models/analyze'
-import type { TableColumns } from 'naive-ui/lib/data-table/src/interface'
+} from "vue";
+import { useRoute } from "vue-router";
 
-import { analyzeApi } from '~/api/analyze'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { IpInfoPopover } from '~/components/ip-info'
-import { DeleteConfirmButton } from '~/components/special-button/delete-confirm'
-import { Table } from '~/components/table'
-import { useDataTableFetch } from '~/hooks/use-table'
-import { useLayout } from '~/layouts/content'
-import { router } from '~/router'
+import { analyzeApi } from "~/api/analyze";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { IpInfoPopover } from "~/components/ip-info";
+import { DeleteConfirmButton } from "~/components/special-button/delete-confirm";
+import { Table } from "~/components/table";
+import { useDataTableFetch } from "~/hooks/use-table";
+import { useLayout } from "~/layouts/content";
+import { router } from "~/router";
 
 export const AnalyzeDataTable = defineComponent({
   setup() {
-    const route = useRoute()
-    const { setActions } = useLayout()
+    const route = useRoute();
+    const { setActions } = useLayout();
 
     onMounted(() => {
       setActions(
@@ -43,28 +43,28 @@ export const AnalyzeDataTable = defineComponent({
             name="刷新数据"
             onClick={() => {
               if (+route.query.page! === 1) {
-                fetchData()
+                fetchData();
               } else {
                 router.replace({
                   path: route.path,
                   query: { ...route.query, page: 1 },
-                })
+                });
               }
             }}
           />
           <DeleteConfirmButton
             onDelete={async () => {
-              await analyzeApi.deleteAll()
+              await analyzeApi.deleteAll();
 
               if (Number.parseInt(route.query.page as string) === 1) {
-                fetchData()
+                fetchData();
               } else {
                 router.replace({
                   path: route.path,
                   query: {
                     page: 1,
                   },
-                })
+                });
               }
             }}
             customSuccessMessage="已清空"
@@ -73,19 +73,19 @@ export const AnalyzeDataTable = defineComponent({
             customIcon={<TrashIcon />}
           />
         </>,
-      )
+      );
 
       onBeforeUnmount(() => {
-        setActions(null)
-      })
-    })
+        setActions(null);
+      });
+    });
 
     watch(
       () => route.query.page,
       async (n) => {
-        await fetchData(n ? +n : 1)
+        await fetchData(n ? +n : 1);
       },
-    )
+    );
 
     const {
       data,
@@ -97,63 +97,63 @@ export const AnalyzeDataTable = defineComponent({
           const response = await analyzeApi.getList({
             page: +page,
             size,
-          })
+          });
 
-          data.value = response.data
-          pager.value = response.pagination
+          data.value = response.data;
+          pager.value = response.pagination;
         },
-    )
+    );
 
     onBeforeMount(() => {
-      fetchData()
-    })
+      fetchData();
+    });
 
     const columns: TableColumns<UA.Root> = [
       {
-        title: '时间',
-        key: 'timestamp',
+        title: "时间",
+        key: "timestamp",
         minWidth: 100,
         maxWidth: 300,
         resizable: true,
         render({ timestamp }) {
           return (
-            <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
-              <ClockIcon class="size-4 shrink-0 text-neutral-400" />
+            <div class="text-neutral-600 flex gap-2 items-center dark:text-neutral-300">
+              <ClockIcon class="text-neutral-400 shrink-0 size-4" />
               <span class="tabular-nums">
-                {format(new Date(timestamp), 'MM-dd HH:mm:ss')}
+                {format(new Date(timestamp), "MM-dd HH:mm:ss")}
               </span>
             </div>
-          )
+          );
         },
       },
       {
-        title: 'IP 地址',
-        key: 'ip',
+        title: "IP 地址",
+        key: "ip",
         minWidth: 100,
         maxWidth: 250,
         resizable: true,
         render({ ip }) {
           if (!ip) {
-            return <span class="text-neutral-400">未知</span>
+            return <span class="text-neutral-400">未知</span>;
           }
           return (
             <IpInfoPopover
               ip={ip}
-              triggerEl={
+              triggerEl={(
                 <NButton quaternary size="tiny" type="primary">
-                  <div class="flex items-center gap-1.5">
+                  <div class="flex gap-1.5 items-center">
                     <GlobeIcon class="size-3.5" />
                     <span class="font-mono">{ip}</span>
                   </div>
                 </NButton>
-              }
+              )}
             />
-          )
+          );
         },
       },
       {
-        title: '请求路径',
-        key: 'path',
+        title: "请求路径",
+        key: "path",
         minWidth: 150,
         maxWidth: 600,
         resizable: true,
@@ -162,72 +162,72 @@ export const AnalyzeDataTable = defineComponent({
             <NTooltip trigger="hover" placement="top">
               {{
                 trigger: () => (
-                  <div class="flex items-center gap-2">
-                    <RouteIcon class="size-4 shrink-0 text-neutral-400" />
+                  <div class="flex gap-2 items-center">
+                    <RouteIcon class="text-neutral-400 shrink-0 size-4" />
                     <NEllipsis class="max-w-[200px]">
-                      <span class="font-mono text-neutral-700 dark:text-neutral-200">
-                        {path ?? ''}
+                      <span class="text-neutral-700 font-mono dark:text-neutral-200">
+                        {path ?? ""}
                       </span>
                     </NEllipsis>
                   </div>
                 ),
                 default: () => (
-                  <div class="max-w-[400px] break-all font-mono text-xs">
-                    {path ?? ''}
+                  <div class="text-xs font-mono max-w-[400px] break-all">
+                    {path ?? ""}
                   </div>
                 ),
               }}
             </NTooltip>
-          )
+          );
         },
       },
       {
-        key: 'ua',
-        title: '浏览器',
+        key: "ua",
+        title: "浏览器",
         minWidth: 120,
         maxWidth: 300,
         resizable: true,
         render({ ua }) {
           const browserInfo = ua.browser
-            ? Object.values(ua.browser).filter(Boolean).join(' ')
-            : null
+            ? Object.values(ua.browser).filter(Boolean).join(" ")
+            : null;
           return (
-            <div class="flex items-center gap-2">
-              <BrowserIcon class="size-4 shrink-0 text-neutral-400" />
+            <div class="flex gap-2 items-center">
+              <BrowserIcon class="text-neutral-400 shrink-0 size-4" />
               <NEllipsis class="max-w-[140px]">
                 <span class="text-neutral-700 dark:text-neutral-200">
-                  {browserInfo || 'N/A'}
+                  {browserInfo || "N/A"}
                 </span>
               </NEllipsis>
             </div>
-          )
+          );
         },
       },
       {
-        key: 'ua',
-        title: '操作系统',
+        key: "ua",
+        title: "操作系统",
         minWidth: 100,
         maxWidth: 250,
         resizable: true,
         render({ ua }) {
           const osInfo = ua.os
-            ? Object.values(ua.os).filter(Boolean).join(' ')
-            : null
+            ? Object.values(ua.os).filter(Boolean).join(" ")
+            : null;
           return (
-            <div class="flex items-center gap-2">
-              <MonitorIcon class="size-4 shrink-0 text-neutral-400" />
+            <div class="flex gap-2 items-center">
+              <MonitorIcon class="text-neutral-400 shrink-0 size-4" />
               <NEllipsis class="max-w-[110px]">
                 <span class="text-neutral-700 dark:text-neutral-200">
-                  {osInfo || 'N/A'}
+                  {osInfo || "N/A"}
                 </span>
               </NEllipsis>
             </div>
-          )
+          );
         },
       },
       {
-        key: 'ua',
-        title: 'User Agent',
+        key: "ua",
+        title: "User Agent",
         minWidth: 200,
         maxWidth: 800,
         resizable: true,
@@ -238,23 +238,23 @@ export const AnalyzeDataTable = defineComponent({
                 default() {
                   return (
                     <span class="text-xs text-neutral-500 dark:text-neutral-400">
-                      {ua.ua ?? ''}
+                      {ua.ua ?? ""}
                     </span>
-                  )
+                  );
                 },
                 tooltip() {
                   return (
-                    <div class="max-w-[500px] break-all text-xs">
-                      {ua.ua ?? ''}
+                    <div class="text-xs max-w-[500px] break-all">
+                      {ua.ua ?? ""}
                     </div>
-                  )
+                  );
                 },
               }}
             </NEllipsis>
-          )
+          );
         },
       },
-    ]
+    ];
 
     return () => (
       <Table
@@ -263,6 +263,6 @@ export const AnalyzeDataTable = defineComponent({
         pager={pager}
         columns={columns}
       />
-    )
+    );
   },
-})
+});

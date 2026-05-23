@@ -1,15 +1,15 @@
-import type { ChangeSpec } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import type { ChangeSpec } from "@codemirror/state";
+import type { EditorView } from "@codemirror/view";
 
-export type InlineFormat = 'bold' | 'italic' | 'strikethrough' | 'inlineCode'
+export type InlineFormat = "bold" | "italic" | "strikethrough" | "inlineCode";
 
 interface InlineMatch {
-  start: number
-  end: number
-  contentStart: number
-  contentEnd: number
-  markerStart: string
-  markerEnd: string
+  start: number;
+  end: number;
+  contentStart: number;
+  contentEnd: number;
+  markerStart: string;
+  markerEnd: string;
 }
 
 const findInlineMatches = (
@@ -17,32 +17,32 @@ const findInlineMatches = (
   lineFrom: number,
   format: InlineFormat,
 ): InlineMatch[] => {
-  const matches: InlineMatch[] = []
-  let match: RegExpExecArray | null
+  const matches: InlineMatch[] = [];
+  let match: RegExpExecArray | null;
 
-  if (format === 'inlineCode') {
-    const regex = /`([^`]+)`/g
+  if (format === "inlineCode") {
+    const regex = /`([^`]+)`/g;
     while ((match = regex.exec(lineText)) !== null) {
-      const start = lineFrom + match.index
-      const end = start + match[0].length
+      const start = lineFrom + match.index;
+      const end = start + match[0].length;
       matches.push({
         start,
         end,
         contentStart: start + 1,
         contentEnd: end - 1,
-        markerStart: '`',
-        markerEnd: '`',
-      })
+        markerStart: "`",
+        markerEnd: "`",
+      });
     }
-    return matches
+    return matches;
   }
 
-  if (format === 'bold') {
-    const regex = /(\*\*|__)(?!\s)(.+?)(?<!\s)\1/g
+  if (format === "bold") {
+    const regex = /(\*\*|__)(?!\s)(.+?)(?<!\s)\1/g;
     while ((match = regex.exec(lineText)) !== null) {
-      const marker = match[1]
-      const start = lineFrom + match.index
-      const end = start + match[0].length
+      const marker = match[1];
+      const start = lineFrom + match.index;
+      const end = start + match[0].length;
       matches.push({
         start,
         end,
@@ -50,35 +50,35 @@ const findInlineMatches = (
         contentEnd: end - marker.length,
         markerStart: marker,
         markerEnd: marker,
-      })
+      });
     }
-    return matches
+    return matches;
   }
 
-  if (format === 'strikethrough') {
-    const regex = /~~(?!\s)(.+?)(?<!\s)~~/g
+  if (format === "strikethrough") {
+    const regex = /~~(?!\s)(.+?)(?<!\s)~~/g;
     while ((match = regex.exec(lineText)) !== null) {
-      const start = lineFrom + match.index
-      const end = start + match[0].length
+      const start = lineFrom + match.index;
+      const end = start + match[0].length;
       matches.push({
         start,
         end,
         contentStart: start + 2,
         contentEnd: end - 2,
-        markerStart: '~~',
-        markerEnd: '~~',
-      })
+        markerStart: "~~",
+        markerEnd: "~~",
+      });
     }
-    return matches
+    return matches;
   }
 
-  if (format === 'italic') {
-    const regex =
-      /(?<!\*)\*(?!\*)(?!\s)([^*]+?)(?<!\s)\*(?!\*)|(?<!_)_(?!_)(?!\s)([^_]+?)(?<!\s)_(?!_)/g
+  if (format === "italic") {
+    const regex
+      = /(?<!\*)\*(?!\*)(?!\s)([^*]+)(?<!\s)\*(?!\*)|(?<!_)_(?!_)(?!\s)([^_]+)(?<!\s)_(?!_)/g;
     while ((match = regex.exec(lineText)) !== null) {
-      const marker = match[0].startsWith('*') ? '*' : '_'
-      const start = lineFrom + match.index
-      const end = start + match[0].length
+      const marker = match[0].startsWith("*") ? "*" : "_";
+      const start = lineFrom + match.index;
+      const end = start + match[0].length;
       matches.push({
         start,
         end,
@@ -86,73 +86,74 @@ const findInlineMatches = (
         contentEnd: end - 1,
         markerStart: marker,
         markerEnd: marker,
-      })
+      });
     }
   }
 
-  return matches
-}
+  return matches;
+};
 
 const getInlineMatchForSelection = (
   view: EditorView,
   format: InlineFormat,
 ): InlineMatch | null => {
-  const { state } = view
-  const { from, to } = state.selection.main
-  const startLine = state.doc.lineAt(from)
-  const endLine = state.doc.lineAt(to)
+  const { state } = view;
+  const { from, to } = state.selection.main;
+  const startLine = state.doc.lineAt(from);
+  const endLine = state.doc.lineAt(to);
 
-  if (startLine.number !== endLine.number) return null
+  if (startLine.number !== endLine.number)
+    return null;
 
-  const matches = findInlineMatches(startLine.text, startLine.from, format)
+  const matches = findInlineMatches(startLine.text, startLine.from, format);
   return (
     matches.find(
-      (matchItem) => from >= matchItem.start && to <= matchItem.end,
+      matchItem => from >= matchItem.start && to <= matchItem.end,
     ) ?? null
-  )
-}
+  );
+};
 
 export const isInlineFormatActive = (
   view: EditorView,
   format: InlineFormat,
 ): boolean => {
-  return Boolean(getInlineMatchForSelection(view, format))
-}
+  return Boolean(getInlineMatchForSelection(view, format));
+};
 
 function wrapSelection(
   view: EditorView,
   before: string,
   after: string = before,
-  placeholder: string = '',
+  placeholder: string = "",
   format?: InlineFormat,
 ): boolean {
-  const { state } = view
-  const { from, to } = state.selection.main
-  const selectedText = state.sliceDoc(from, to)
+  const { state } = view;
+  const { from, to } = state.selection.main;
+  const selectedText = state.sliceDoc(from, to);
 
   if (format) {
-    const match = getInlineMatchForSelection(view, format)
+    const match = getInlineMatchForSelection(view, format);
     if (match) {
-      const contentLength = match.contentEnd - match.contentStart
+      const contentLength = match.contentEnd - match.contentStart;
 
       view.dispatch({
         changes: [
-          { from: match.start, to: match.contentStart, insert: '' },
-          { from: match.contentEnd, to: match.end, insert: '' },
+          { from: match.start, to: match.contentStart, insert: "" },
+          { from: match.contentEnd, to: match.end, insert: "" },
         ],
         selection: {
           anchor: match.start,
           head: match.start + contentLength,
         },
-      })
+      });
 
-      view.focus()
-      return true
+      view.focus();
+      return true;
     }
   }
 
-  const text = selectedText || placeholder
-  const insert = `${before}${text}${after}`
+  const text = selectedText || placeholder;
+  const insert = `${before}${text}${after}`;
 
   view.dispatch({
     changes: { from, to, insert },
@@ -160,10 +161,10 @@ function wrapSelection(
       anchor: from + before.length,
       head: from + before.length + text.length,
     },
-  })
+  });
 
-  view.focus()
-  return true
+  view.focus();
+  return true;
 }
 
 function insertAtLineStart(
@@ -171,22 +172,22 @@ function insertAtLineStart(
   prefix: string,
   toggle: boolean = true,
 ): boolean {
-  const { state } = view
-  const { from, to } = state.selection.main
-  const firstLine = state.doc.lineAt(from)
-  const lastLine = state.doc.lineAt(to)
+  const { state } = view;
+  const { from, to } = state.selection.main;
+  const firstLine = state.doc.lineAt(from);
+  const lastLine = state.doc.lineAt(to);
 
   if (firstLine.number === lastLine.number || from === to) {
-    const lineText = firstLine.text
+    const lineText = firstLine.text;
 
     if (toggle && lineText.startsWith(prefix)) {
       view.dispatch({
         changes: {
           from: firstLine.from,
           to: firstLine.from + prefix.length,
-          insert: '',
+          insert: "",
         },
-      })
+      });
     } else {
       view.dispatch({
         changes: {
@@ -194,27 +195,27 @@ function insertAtLineStart(
           to: firstLine.from,
           insert: prefix,
         },
-      })
+      });
     }
   } else {
-    const indent = ' '.repeat(prefix.length)
-    const changes: ChangeSpec[] = []
+    const indent = " ".repeat(prefix.length);
+    const changes: ChangeSpec[] = [];
 
     for (let i = firstLine.number; i <= lastLine.number; i++) {
-      const line = state.doc.line(i)
-      const linePrefix = i === firstLine.number ? prefix : indent
+      const line = state.doc.line(i);
+      const linePrefix = i === firstLine.number ? prefix : indent;
       changes.push({
         from: line.from,
         to: line.from,
         insert: linePrefix,
-      })
+      });
     }
 
-    view.dispatch({ changes })
+    view.dispatch({ changes });
   }
 
-  view.focus()
-  return true
+  view.focus();
+  return true;
 }
 
 function insertBlock(
@@ -222,32 +223,32 @@ function insertBlock(
   template: string,
   cursorOffset: number = 0,
 ): boolean {
-  const { state } = view
-  const { from } = state.selection.main
-  const line = state.doc.lineAt(from)
+  const { state } = view;
+  const { from } = state.selection.main;
+  const line = state.doc.lineAt(from);
 
-  const insertPos = line.to
-  const needsNewline = line.text.length > 0
-  const insert = (needsNewline ? '\n' : '') + template
+  const insertPos = line.to;
+  const needsNewline = line.text.length > 0;
+  const insert = (needsNewline ? "\n" : "") + template;
 
   view.dispatch({
     changes: { from: insertPos, to: insertPos, insert },
     selection: {
       anchor: insertPos + insert.length + cursorOffset,
     },
-  })
+  });
 
-  view.focus()
-  return true
+  view.focus();
+  return true;
 }
 
 export const setHeadingLevel = (view: EditorView, level: number): boolean => {
-  const normalizedLevel = Math.min(6, Math.max(1, level))
-  const { state } = view
-  const line = state.doc.lineAt(state.selection.main.from)
-  const lineText = line.text
-  const prefix = `${'#'.repeat(normalizedLevel)} `
-  const match = lineText.match(/^(#{1,6})\s/)
+  const normalizedLevel = Math.min(6, Math.max(1, level));
+  const { state } = view;
+  const line = state.doc.lineAt(state.selection.main.from);
+  const lineText = line.text;
+  const prefix = `${"#".repeat(normalizedLevel)} `;
+  const match = lineText.match(/^(#{1,6})\s/);
 
   if (match) {
     view.dispatch({
@@ -256,7 +257,7 @@ export const setHeadingLevel = (view: EditorView, level: number): boolean => {
         to: line.from + match[0].length,
         insert: prefix,
       },
-    })
+    });
   } else {
     view.dispatch({
       changes: {
@@ -264,29 +265,29 @@ export const setHeadingLevel = (view: EditorView, level: number): boolean => {
         to: line.from,
         insert: prefix,
       },
-    })
+    });
   }
 
-  view.focus()
-  return true
-}
+  view.focus();
+  return true;
+};
 
 export const commands = {
   bold: (view: EditorView) =>
-    wrapSelection(view, '**', '**', '粗体文本', 'bold'),
+    wrapSelection(view, "**", "**", "粗体文本", "bold"),
   italic: (view: EditorView) =>
-    wrapSelection(view, '*', '*', '斜体文本', 'italic'),
+    wrapSelection(view, "*", "*", "斜体文本", "italic"),
   strikethrough: (view: EditorView) =>
-    wrapSelection(view, '~~', '~~', '删除文本', 'strikethrough'),
+    wrapSelection(view, "~~", "~~", "删除文本", "strikethrough"),
   inlineCode: (view: EditorView) =>
-    wrapSelection(view, '`', '`', 'code', 'inlineCode'),
+    wrapSelection(view, "`", "`", "code", "inlineCode"),
   codeBlock: (view: EditorView) => {
-    const { state } = view
-    const { from, to } = state.selection.main
-    const selectedText = state.sliceDoc(from, to)
+    const { state } = view;
+    const { from, to } = state.selection.main;
+    const selectedText = state.sliceDoc(from, to);
 
     if (selectedText) {
-      const insert = `\`\`\`\n${selectedText}\n\`\`\``
+      const insert = `\`\`\`\n${selectedText}\n\`\`\``;
 
       view.dispatch({
         changes: { from, to, insert },
@@ -294,46 +295,46 @@ export const commands = {
           anchor: from + 4,
           head: from + 4,
         },
-      })
+      });
     } else {
-      const template = `\n\`\`\`javascript\n// 代码\n\`\`\`\n`
-      return insertBlock(view, template, -18)
+      const template = `\n\`\`\`javascript\n// 代码\n\`\`\`\n`;
+      return insertBlock(view, template, -18);
     }
 
-    view.focus()
-    return true
+    view.focus();
+    return true;
   },
 
   link: (view: EditorView) => {
-    const { state } = view
-    const { from, to } = state.selection.main
-    const selectedText = state.sliceDoc(from, to)
+    const { state } = view;
+    const { from, to } = state.selection.main;
+    const selectedText = state.sliceDoc(from, to);
 
-    const text = selectedText || '链接文本'
-    const insert = `[${text}](https://)`
+    const text = selectedText || "链接文本";
+    const insert = `[${text}](https://)`;
 
     view.dispatch({
       changes: { from, to, insert },
       selection: {
         anchor: from + insert.length - 1,
       },
-    })
+    });
 
-    view.focus()
-    return true
+    view.focus();
+    return true;
   },
 
   heading: (view: EditorView) => {
-    const { state } = view
-    const line = state.doc.lineAt(state.selection.main.from)
-    const lineText = line.text
+    const { state } = view;
+    const line = state.doc.lineAt(state.selection.main.from);
+    const lineText = line.text;
 
-    const match = lineText.match(/^(#{1,6})\s/)
+    const match = lineText.match(/^(#{1,6})\s/);
 
     if (match) {
-      const currentLevel = match[1].length
-      const nextLevel = currentLevel >= 6 ? 1 : currentLevel + 1
-      const newPrefix = `${'#'.repeat(nextLevel)} `
+      const currentLevel = match[1].length;
+      const nextLevel = currentLevel >= 6 ? 1 : currentLevel + 1;
+      const newPrefix = `${"#".repeat(nextLevel)} `;
 
       view.dispatch({
         changes: {
@@ -341,79 +342,79 @@ export const commands = {
           to: line.from + match[0].length,
           insert: newPrefix,
         },
-      })
+      });
     } else {
-      insertAtLineStart(view, '# ', false)
+      insertAtLineStart(view, "# ", false);
     }
 
-    view.focus()
-    return true
+    view.focus();
+    return true;
   },
 
-  bulletList: (view: EditorView) => insertAtLineStart(view, '- '),
+  bulletList: (view: EditorView) => insertAtLineStart(view, "- "),
   orderedList: (view: EditorView) => {
-    const { state } = view
-    const line = state.doc.lineAt(state.selection.main.from)
+    const { state } = view;
+    const line = state.doc.lineAt(state.selection.main.from);
 
-    let prevNumber = 1
+    let prevNumber = 1;
     if (line.number > 1) {
-      const prevLine = state.doc.line(line.number - 1)
-      const match = prevLine.text.match(/^(\d+)\.\s/)
+      const prevLine = state.doc.line(line.number - 1);
+      const match = prevLine.text.match(/^(\d+)\.\s/);
       if (match) {
-        prevNumber = parseInt(match[1]) + 1
+        prevNumber = Number.parseInt(match[1]) + 1;
       }
     }
 
-    return insertAtLineStart(view, `${prevNumber}. `, false)
+    return insertAtLineStart(view, `${prevNumber}. `, false);
   },
 
-  taskList: (view: EditorView) => insertAtLineStart(view, '- [ ] '),
+  taskList: (view: EditorView) => insertAtLineStart(view, "- [ ] "),
   quote: (view: EditorView) => {
-    const { state } = view
-    const { from, to } = state.selection.main
-    const firstLine = state.doc.lineAt(from)
-    const lastLine = state.doc.lineAt(to)
+    const { state } = view;
+    const { from, to } = state.selection.main;
+    const firstLine = state.doc.lineAt(from);
+    const lastLine = state.doc.lineAt(to);
 
     if (firstLine.number !== lastLine.number && from !== to) {
-      const changes: ChangeSpec[] = []
+      const changes: ChangeSpec[] = [];
 
       for (let i = firstLine.number; i <= lastLine.number; i++) {
-        const line = state.doc.line(i)
+        const line = state.doc.line(i);
         changes.push({
           from: line.from,
           to: line.from,
-          insert: '> ',
-        })
+          insert: "> ",
+        });
       }
 
-      view.dispatch({ changes })
-      view.focus()
-      return true
+      view.dispatch({ changes });
+      view.focus();
+      return true;
     }
 
-    return insertAtLineStart(view, '> ')
+    return insertAtLineStart(view, "> ");
   },
-  horizontalRule: (view: EditorView) => insertBlock(view, '\n---\n', 0),
+  horizontalRule: (view: EditorView) => insertBlock(view, "\n---\n", 0),
   emoji: (view: EditorView, emoji: string) => {
-    const { state } = view
-    const { from } = state.selection.main
+    const { state } = view;
+    const { from } = state.selection.main;
 
     view.dispatch({
       changes: { from, to: from, insert: emoji },
       selection: { anchor: from + emoji.length },
-    })
+    });
 
-    view.focus()
-    return true
+    view.focus();
+    return true;
   },
 
   // managed by historyKeymap
   undo: (_view: EditorView) => {
-    return true
+    return true;
   },
   redo: (_view: EditorView) => {
-    return true
+    return true;
   },
-}
+};
 
-export type CommandName = keyof typeof commands
+export type CommandName = keyof typeof commands;

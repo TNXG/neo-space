@@ -1,6 +1,7 @@
-import { debounce } from 'es-toolkit/compat'
-import { Search as MagnifyingGlass } from 'lucide-vue-next'
-import { NSplit } from 'naive-ui'
+import type { PropType } from "vue";
+import { debounce } from "es-toolkit/compat";
+import { Search as MagnifyingGlass } from "lucide-vue-next";
+import { NSplit } from "naive-ui";
 import {
   defineComponent,
   onBeforeUnmount,
@@ -9,21 +10,20 @@ import {
   ref,
   watch,
   watchEffect,
-} from 'vue'
-import { toast } from 'vue-sonner'
-import type { PropType } from 'vue'
+} from "vue";
+import { toast } from "vue-sonner";
 
-import { optionsApi } from '~/api'
-import { useUIStore } from '~/stores/ui'
+import { optionsApi } from "~/api";
+import { useUIStore } from "~/stores/ui";
 
-import { HeaderActionButton } from '../button/header-action-button'
+import { HeaderActionButton } from "../button/header-action-button";
 
-export type PreviewButtonExposed = {
-  getWindow: () => Window | null
+export interface PreviewButtonExposed {
+  getWindow: () => Window | null;
 }
 
-const iframeRef = ref<HTMLIFrameElement | null>(null)
-const wrapperRef = ref<HTMLDivElement | null>(null)
+const iframeRef = ref<HTMLIFrameElement | null>(null);
+const wrapperRef = ref<HTMLDivElement | null>(null);
 
 export const HeaderPreviewButton = defineComponent({
   props: {
@@ -37,219 +37,227 @@ export const HeaderPreviewButton = defineComponent({
       default: false,
     },
   },
-  expose: ['getWindow'],
+  expose: ["getWindow"],
   setup(props, { expose }) {
-    let previewKey = ''
-    const PREVIEW_HASH = Math.random().toString(36).substring(2)
+    let previewKey = "";
+    const PREVIEW_HASH = Math.random().toString(36).substring(2);
 
     onBeforeUnmount(() => {
       if (previewKey) {
-        localStorage.removeItem(previewKey)
+        localStorage.removeItem(previewKey);
       }
-    })
-    let webUrl = ''
+    });
+    let webUrl = "";
 
-    let isInPreview = false
-    let previewWindowOrigin = ''
-    let previewWindow = null as null | Window
+    let isInPreview = false;
+    let previewWindowOrigin = "";
+    let previewWindow = null as null | Window;
 
     expose({
       getWindow: () => previewWindow,
-    })
+    });
 
-    const uiStore = useUIStore()
+    const uiStore = useUIStore();
 
     const handlePreview = async () => {
-      const { data } = props
+      const { data } = props;
 
-      const { id } = data
+      const { id } = data;
       if (!webUrl) {
-        const res = await optionsApi.getUrl()
-        webUrl = res.webUrl
+        const res = await optionsApi.getUrl();
+        webUrl = res.webUrl;
       }
 
-      let url: URL
+      let url: URL;
       if (import.meta.env.DEV) {
-        url = new URL('/preview', 'http://localhost:2323')
+        url = new URL("/preview", "http://localhost:2323");
       } else {
-        url = new URL('/preview', webUrl)
+        url = new URL("/preview", webUrl);
       }
 
-      const storageKey = `mx-preview-${id ?? 'new'}`
+      const storageKey = `mx-preview-${id ?? "new"}`;
 
       localStorage.setItem(
         storageKey,
         JSON.stringify({
           ...data,
-          id: `preview-${id ?? 'new'}`,
+          id: `preview-${id ?? "new"}`,
         }),
-      )
+      );
 
-      url.searchParams.set('storageKey', storageKey)
-      url.searchParams.set('origin', location.origin)
-      url.searchParams.set('key', PREVIEW_HASH)
+      url.searchParams.set("storageKey", storageKey);
+      url.searchParams.set("origin", location.origin);
+      url.searchParams.set("key", PREVIEW_HASH);
 
-      const finalUrl = url.toString()
+      const finalUrl = url.toString();
 
-      let forkWindow: Window | null = null
+      let forkWindow: Window | null = null;
       if (props.iframe && !uiStore.viewport.mobile && !iframeRef.value) {
-        const iframe = document.createElement('iframe')
-        iframe.src = finalUrl
+        const iframe = document.createElement("iframe");
+        iframe.src = finalUrl;
 
-        iframeRef.value = iframe
-        const $wrapper = wrapperRef.value
-        iframe.style.width = '100%'
-        iframe.style.height = '100%'
-        if ($wrapper) $wrapper.appendChild(iframe)
+        iframeRef.value = iframe;
+        const $wrapper = wrapperRef.value;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        if ($wrapper)
+          $wrapper.appendChild(iframe);
 
-        forkWindow = iframe.contentWindow
+        forkWindow = iframe.contentWindow;
       } else {
-        forkWindow = window.open(finalUrl)
+        forkWindow = window.open(finalUrl);
 
-        iframeRef.value = null
+        iframeRef.value = null;
       }
       if (!forkWindow) {
-        toast.error('打开预览失败')
-        return
+        toast.error("打开预览失败");
+        return;
       }
 
-      previewKey = storageKey
-      isInPreview = true
-      previewWindowOrigin = url.origin
-      previewWindow = forkWindow
-    }
+      previewKey = storageKey;
+      isInPreview = true;
+      previewWindowOrigin = url.origin;
+      previewWindow = forkWindow;
+    };
 
     onUnmounted(() => {
       if (iframeRef.value) {
-        iframeRef.value.remove()
-        iframeRef.value = null
+        iframeRef.value.remove();
+        iframeRef.value = null;
       }
-    })
+    });
 
     onMounted(() => {
       const handler = (e: MessageEvent<any>): void => {
-        if (!isInPreview) return
-        if (e.origin !== previewWindowOrigin) return
+        if (!isInPreview)
+          return;
+        if (e.origin !== previewWindowOrigin)
+          return;
 
-        if (e.data !== 'ok') return
+        if (e.data !== "ok")
+          return;
 
-        console.debug('ready', e.origin)
+        console.debug("ready", e.origin);
 
         const sendEvent = () => {
-          if (!previewWindow) return
-          const { data } = props
+          if (!previewWindow)
+            return;
+          const { data } = props;
 
-          console.debug('send to origin', previewWindowOrigin)
+          console.debug("send to origin", previewWindowOrigin);
           previewWindow.postMessage(
             JSON.stringify({
-              type: 'preview',
+              type: "preview",
               key: PREVIEW_HASH,
               data: {
                 ...data,
 
-                id: `preview-${data.id ?? 'new'}`,
+                id: `preview-${data.id ?? "new"}`,
               },
             }),
             previewWindowOrigin,
-          )
+          );
 
           previewWindow.postMessage(
             JSON.stringify({
-              type: 'preview',
+              type: "preview",
               key: PREVIEW_HASH,
               data: {
                 ...data,
-                id: `preview-${data.id ?? 'new'}`,
+                id: `preview-${data.id ?? "new"}`,
               },
             }),
             previewWindowOrigin,
-          )
-        }
-        sendEvent()
+          );
+        };
+        sendEvent();
 
         // window.pr = previewWindow
-      }
+      };
 
-      window.addEventListener('message', handler)
+      window.addEventListener("message", handler);
 
       onBeforeUnmount(() => {
-        window.removeEventListener('message', handler)
-      })
-    })
+        window.removeEventListener("message", handler);
+      });
+    });
     const handler = debounce(() => {
-      if (!isInPreview) return
-      if (!previewWindowOrigin) return
-      if (!previewWindow) return
+      if (!isInPreview)
+        return;
+      if (!previewWindowOrigin)
+        return;
+      if (!previewWindow)
+        return;
 
-      const { data } = props
+      const { data } = props;
 
       previewWindow.postMessage(
         JSON.stringify({
-          type: 'preview',
+          type: "preview",
           key: PREVIEW_HASH,
           data: {
             ...data,
-            id: `preview-${data.id ?? 'new'}`,
+            id: `preview-${data.id ?? "new"}`,
           },
         }),
         previewWindowOrigin,
-      )
-    }, 100)
+      );
+    }, 100);
 
-    watch(() => props.data, handler, { deep: true })
+    watch(() => props.data, handler, { deep: true });
 
     return () => (
       <HeaderActionButton icon={<MagnifyingGlass />} onClick={handlePreview} />
-    )
+    );
   },
-})
+});
 
 const PreviewIframe = defineComponent({
   setup() {
     onUnmounted(() => {
-      wrapperRef.value = null
-    })
+      wrapperRef.value = null;
+    });
 
     return () => {
-      return <div class={'h-full w-full'} ref={wrapperRef} />
-    }
+      return <div class="h-full w-full" ref={wrapperRef} />;
+    };
   },
-})
+});
 
 export const PreviewSplitter = defineComponent({
   setup(_, { slots }) {
-    const size = ref(1)
-    const uiStore = useUIStore()
+    const size = ref(1);
+    const uiStore = useUIStore();
     watchEffect(() => {
       if (iframeRef.value) {
-        size.value = 0.5
-        uiStore.sidebarCollapse = true
+        size.value = 0.5;
+        uiStore.sidebarCollapse = true;
       } else {
-        size.value = 1
+        size.value = 1;
       }
-    })
+    });
     return () => {
       return (
         <NSplit
           min="500px"
           size={size.value}
           onUpdateSize={(s) => {
-            size.value = s
+            size.value = s;
           }}
           disabled={!iframeRef.value}
           direction="horizontal"
-          class={'relative h-full w-full'}
+          class="h-full w-full relative"
         >
           {{
             1() {
-              return slots.default?.()
+              return slots.default?.();
             },
             2() {
-              return <PreviewIframe />
+              return <PreviewIframe />;
             },
           }}
         </NSplit>
-      )
-    }
+      );
+    };
   },
-})
+});

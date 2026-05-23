@@ -1,31 +1,31 @@
 /* eslint-disable vue/no-setup-props-destructure */
-import { defineComponent, watch } from 'vue'
-import type { EditorState } from '@codemirror/state'
-import type { PropType } from 'vue'
+import type { EditorState } from "@codemirror/state";
+import type { PropType } from "vue";
+import { EditorView } from "@codemirror/view";
 
-import { EditorView } from '@codemirror/view'
+import { defineComponent, watch } from "vue";
 
-import { useSaveConfirm } from '~/hooks/use-save-confirm'
+import { useSaveConfirm } from "~/hooks/use-save-confirm";
 
-import { SlashMenu, slashMenuExtension } from '../slash-menu'
-import { FloatingToolbar } from '../toolbar/floating-toolbar'
-import { useSelectionPosition } from '../toolbar/use-selection-position'
-import styles from '../universal/editor.module.css'
-import { editorBaseProps } from '../universal/props'
-
-import 'katex/dist/katex.min.css'
-import './codemirror.css'
+import { SlashMenu, slashMenuExtension } from "../slash-menu";
+import { FloatingToolbar } from "../toolbar/floating-toolbar";
+import { useSelectionPosition } from "../toolbar/use-selection-position";
+import styles from "../universal/editor.module.css";
+import { editorBaseProps } from "../universal/props";
 
 import {
   codemirrorReconfigureExtensionMap,
   wysiwygModeExtension,
-} from './extension'
-import { ImageEditPopover } from './ImageEditPopover'
-import { useCodeMirror } from './use-codemirror'
-import { wysiwygExtensions } from './wysiwyg'
+} from "./extension";
+import { ImageEditPopover } from "./ImageEditPopover";
+
+import { useCodeMirror } from "./use-codemirror";
+import { wysiwygExtensions } from "./wysiwyg";
+import "katex/dist/katex.min.css";
+import "./codemirror.css";
 
 export const CodemirrorEditor = defineComponent({
-  name: 'CodemirrorEditor',
+  name: "CodemirrorEditor",
   props: {
     ...editorBaseProps,
     onStateChange: {
@@ -48,37 +48,38 @@ export const CodemirrorEditor = defineComponent({
     const [refContainer, editorView] = useCodeMirror({
       initialDoc: props.text,
       onChange: (state) => {
-        props.onChange(state.doc.toString())
-        props.onStateChange?.(state)
+        props.onChange(state.doc.toString());
+        props.onStateChange?.(state);
       },
       onArrowUpAtFirstLine: props.onArrowUpAtFirstLine,
       enableEditorStore: !props.embedded,
-    })
+    });
 
     watch(
       () => props.text,
       (n) => {
-        const editor = editorView.value
+        const editor = editorView.value;
 
         if (editor && n != editor.state.doc.toString()) {
           editor.dispatch({
             changes: { from: 0, to: editor.state.doc.length, insert: n },
-          })
+          });
         }
       },
-    )
+    );
 
     watch(
       () => [props.renderMode, editorView.value],
       ([renderMode]) => {
-        const view = editorView.value
-        if (!view) return
+        const view = editorView.value;
+        if (!view)
+          return;
 
-        const hadFocus = view.hasFocus
-        const isWysiwyg = (renderMode ?? 'plain') === 'wysiwyg'
-        const extensions = isWysiwyg ? wysiwygExtensions : []
+        const hadFocus = view.hasFocus;
+        const isWysiwyg = (renderMode ?? "plain") === "wysiwyg";
+        const extensions = isWysiwyg ? wysiwygExtensions : [];
 
-        const selectionHead = view.state.selection.main.head
+        const selectionHead = view.state.selection.main.head;
 
         view.dispatch({
           effects: [
@@ -90,92 +91,99 @@ export const CodemirrorEditor = defineComponent({
               isWysiwyg ? slashMenuExtension : [],
             ),
           ],
-        })
-        view.requestMeasure()
+        });
+        view.requestMeasure();
 
         if (!props.embedded) {
           requestAnimationFrame(() => {
             view.dispatch({
               effects: EditorView.scrollIntoView(selectionHead, {
-                y: 'center',
+                y: "center",
               }),
-            })
-          })
+            });
+          });
         }
 
         if (hadFocus) {
-          requestAnimationFrame(() => view.focus())
+          requestAnimationFrame(() => view.focus());
         }
       },
       {
         immediate: true,
-        flush: 'post',
+        flush: "post",
       },
-    )
+    );
 
     expose({
       setValue: (value: string) => {
-        const editor = editorView.value
+        const editor = editorView.value;
         if (editor) {
           editor.dispatch({
             changes: { from: 0, to: editor.state.doc.length, insert: value },
-          })
+          });
         }
       },
       focus: () => {
-        editorView.value?.focus()
+        editorView.value?.focus();
       },
-    })
+    });
 
-    const memoedText = props.text
+    const memoedText = props.text;
 
     useSaveConfirm(
       props.unSaveConfirm && !props.embedded,
       () =>
-        props.saveConfirmFn?.() ??
-        memoedText === editorView.value?.state.doc.toString(),
-    )
+        props.saveConfirmFn?.()
+        ?? memoedText === editorView.value?.state.doc.toString(),
+    );
 
     // 浮动工具栏选区位置追踪
-    const { position, hasSelection } = useSelectionPosition(editorView)
+    const { position, hasSelection } = useSelectionPosition(editorView);
 
     // 点击空白区域聚焦编辑器并将光标移到对应位置 (WYSIWYG 模式)
     const handleContainerPointerDown = (e: PointerEvent) => {
-      const view = editorView.value
-      if (!view) return
-      if (props.embedded) return
+      const view = editorView.value;
+      if (!view)
+        return;
+      if (props.embedded)
+        return;
 
-      const isWysiwyg = (props.renderMode ?? 'plain') === 'wysiwyg'
-      if (!isWysiwyg) return
+      const isWysiwyg = (props.renderMode ?? "plain") === "wysiwyg";
+      if (!isWysiwyg)
+        return;
 
-      if (e.button !== 0) return
+      if (e.button !== 0)
+        return;
 
-      const path = e.composedPath()
-      if (path.includes(view.contentDOM)) return
+      const path = e.composedPath();
+      if (path.includes(view.contentDOM))
+        return;
 
-      const target = e.target
-      if (target instanceof Node && view.contentDOM.contains(target)) return
+      const target = e.target;
+      if (target instanceof Node && view.contentDOM.contains(target))
+        return;
 
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      if (pos == null) return
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+      if (pos == null)
+        return;
 
-      e.preventDefault()
-      view.focus()
+      e.preventDefault();
+      view.focus();
       view.dispatch({
         selection: { anchor: pos },
-      })
-    }
+      });
+    };
 
     return () => (
       <div
-        class={props.embedded ? 'relative' : 'relative flex h-full flex-col'}
+        class={props.embedded ? "relative" : "relative flex h-full flex-col"}
         onPointerdown={handleContainerPointerDown}
       >
         <div
           class={[
             styles.editor,
             props.className,
-            props.embedded ? '' : 'flex-1 overflow-auto',
+            props.embedded ? "" : "flex-1 overflow-auto",
           ]}
           ref={refContainer}
         />
@@ -186,11 +194,11 @@ export const CodemirrorEditor = defineComponent({
             position={position.value}
           />
         )}
-        {!props.embedded && (props.renderMode ?? 'plain') === 'wysiwyg' && (
+        {!props.embedded && (props.renderMode ?? "plain") === "wysiwyg" && (
           <SlashMenu editorView={editorView.value} />
         )}
         {!props.embedded && <ImageEditPopover />}
       </div>
-    )
+    );
   },
-})
+});

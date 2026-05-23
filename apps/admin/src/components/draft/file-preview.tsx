@@ -1,3 +1,6 @@
+import type { PropType } from "vue";
+import { File as FileRenderer, preloadHighlighter } from "@pierre/diffs";
+
 import {
   defineComponent,
   nextTick,
@@ -6,29 +9,27 @@ import {
   ref,
   shallowRef,
   watch,
-} from 'vue'
-import type { PropType } from 'vue'
-
-import { File as FileRenderer, preloadHighlighter } from '@pierre/diffs'
+} from "vue";
 
 export interface PreviewFile {
-  name: string
-  contents: string
+  name: string;
+  contents: string;
 }
 
 // Preload highlighter once
-let highlighterReady = false
+let highlighterReady = false;
 const ensureHighlighter = async () => {
-  if (highlighterReady) return
+  if (highlighterReady)
+    return;
   await preloadHighlighter({
-    themes: ['github-dark', 'github-light'],
-    langs: ['markdown', 'typescript', 'javascript', 'json', 'html', 'css'],
-  })
-  highlighterReady = true
-}
+    themes: ["github-dark", "github-light"],
+    langs: ["markdown", "typescript", "javascript", "json", "html", "css"],
+  });
+  highlighterReady = true;
+};
 
 export const FilePreview = defineComponent({
-  name: 'FilePreview',
+  name: "FilePreview",
   props: {
     file: {
       type: Object as PropType<PreviewFile>,
@@ -36,35 +37,37 @@ export const FilePreview = defineComponent({
     },
   },
   setup(props) {
-    const containerRef = ref<HTMLElement>()
-    const fileInstance = shallowRef<FileRenderer | null>(null)
-    const isLoading = ref(true)
+    const containerRef = ref<HTMLElement>();
+    const fileInstance = shallowRef<FileRenderer | null>(null);
+    const isLoading = ref(true);
 
     const createPreview = async () => {
-      if (!containerRef.value) return
+      if (!containerRef.value)
+        return;
 
       // Clean up existing instance
       if (fileInstance.value) {
-        fileInstance.value.cleanUp()
-        fileInstance.value = null
+        fileInstance.value.cleanUp();
+        fileInstance.value = null;
       }
 
       // Clear container
-      containerRef.value.innerHTML = ''
+      containerRef.value.innerHTML = "";
 
       try {
         // Ensure highlighter is ready
-        await ensureHighlighter()
-        isLoading.value = false
+        await ensureHighlighter();
+        isLoading.value = false;
 
-        await nextTick()
+        await nextTick();
 
-        if (!containerRef.value) return
+        if (!containerRef.value)
+          return;
 
         fileInstance.value = new FileRenderer({
-          themeType: 'system',
+          themeType: "system",
           disableFileHeader: true,
-        })
+        });
 
         // Use containerWrapper to attach the diffs-container element
         fileInstance.value.render({
@@ -73,39 +76,39 @@ export const FilePreview = defineComponent({
             contents: props.file.contents,
           },
           containerWrapper: containerRef.value,
-        })
+        });
       } catch (error) {
-        console.error('[FilePreview] Failed to create preview:', error)
-        isLoading.value = false
+        console.error("[FilePreview] Failed to create preview:", error);
+        isLoading.value = false;
       }
-    }
+    };
 
     onMounted(() => {
-      createPreview()
-    })
+      createPreview();
+    });
 
     watch(
       () => props.file.contents,
       () => {
-        createPreview()
+        createPreview();
       },
-    )
+    );
 
     onUnmounted(() => {
       if (fileInstance.value) {
-        fileInstance.value.cleanUp()
-        fileInstance.value = null
+        fileInstance.value.cleanUp();
+        fileInstance.value = null;
       }
-    })
+    });
 
     return () => (
       <div ref={containerRef} class="h-full overflow-auto">
         {isLoading.value && (
-          <div class="flex h-full items-center justify-center text-neutral-400">
+          <div class="text-neutral-400 flex h-full items-center justify-center">
             加载中...
           </div>
         )}
       </div>
-    )
+    );
   },
-})
+});

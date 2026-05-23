@@ -1,10 +1,10 @@
-import { Crown, Mail, Users } from 'lucide-vue-next'
-import { NAvatar, NInfiniteScroll, NTooltip } from 'naive-ui'
-import { defineComponent, ref } from 'vue'
-import type { ReaderModel } from '~/api/readers'
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
+import type { ReaderModel } from "~/api/readers";
+import { Crown, Mail, Users } from "lucide-vue-next";
+import { NAvatar, NInfiniteScroll, NTooltip } from "naive-ui";
+import { defineComponent, ref } from "vue";
 
-import { readersApi } from '~/api'
+import { readersApi } from "~/api";
 
 const GithubIcon = () => (
   <svg width="1em" height="1em" viewBox="0 0 24 24">
@@ -13,14 +13,14 @@ const GithubIcon = () => (
       fill="currentColor"
     />
   </svg>
-)
+);
 
-type ReaderWithKey = ReaderModel & { _key: string }
+type ReaderWithKey = ReaderModel & { _key: string };
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 const ReaderItem = defineComponent({
-  name: 'ReaderItem',
+  name: "ReaderItem",
   props: {
     data: {
       type: Object as PropType<ReaderWithKey>,
@@ -29,11 +29,11 @@ const ReaderItem = defineComponent({
   },
   setup(props) {
     return () => {
-      const reader = props.data
+      const reader = props.data;
 
       return (
-        <div class="group flex items-center gap-4 border-b border-neutral-200 px-4 py-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900/50">
-          <div class="relative shrink-0">
+        <div class="group px-4 py-3 border-b border-neutral-200 flex gap-4 transition-colors items-center last:border-b-0 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50">
+          <div class="shrink-0 relative">
             <NAvatar
               round
               size={40}
@@ -41,33 +41,33 @@ const ReaderItem = defineComponent({
               fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(reader.name)}&background=random`}
             />
             {reader.provider && (
-              <div class="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+              <div class="rounded-full bg-white flex size-4 ring-1 ring-neutral-200 shadow-sm items-center justify-center absolute dark:bg-neutral-900 dark:ring-neutral-700 -bottom-1 -right-1">
                 <ProviderIcon provider={reader.provider} size={10} />
               </div>
             )}
           </div>
 
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <span class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          <div class="flex-1 min-w-0">
+            <div class="flex gap-2 items-center">
+              <span class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100">
                 {reader.name}
               </span>
-              {reader.role === 'owner' && (
+              {reader.role === "owner" && (
                 <NTooltip>
                   {{
                     trigger: () => (
-                      <span class="flex size-4 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+                      <span class="text-amber-500 rounded-full bg-amber-500/10 flex size-4 items-center justify-center">
                         <Crown class="size-2.5" />
                       </span>
                     ),
-                    default: () => '站长',
+                    default: () => "站长",
                   }}
                 </NTooltip>
               )}
             </div>
-            <div class="mt-0.5 flex items-center gap-3">
+            <div class="mt-0.5 flex gap-3 items-center">
               {reader.handle && (
-                <span class="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                <span class="text-xs text-neutral-500 flex gap-1 items-center dark:text-neutral-400">
                   <span class="text-neutral-400">@</span>
                   <span class="truncate">{reader.handle}</span>
                 </span>
@@ -76,7 +76,7 @@ const ReaderItem = defineComponent({
                 <NTooltip>
                   {{
                     trigger: () => (
-                      <span class="flex shrink-0 items-center gap-1 text-xs text-neutral-400 opacity-60 transition-opacity group-hover:opacity-100 dark:text-neutral-500">
+                      <span class="text-xs text-neutral-400 opacity-60 flex shrink-0 gap-1 transition-opacity items-center dark:text-neutral-500 group-hover:opacity-100">
                         <Mail class="h-3 w-3" />
                         <span class="hidden sm:inline">{reader.email}</span>
                       </span>
@@ -89,86 +89,92 @@ const ReaderItem = defineComponent({
           </div>
 
           {reader.provider && (
-            <div class="hidden shrink-0 sm:block">
-              <span class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs capitalize text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+            <div class="shrink-0 hidden sm:block">
+              <span class="text-xs text-neutral-600 px-2 py-0.5 rounded-full bg-neutral-100 capitalize dark:text-neutral-400 dark:bg-neutral-800">
                 {reader.provider}
               </span>
             </div>
           )}
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 const EmptyState = defineComponent({
-  name: 'EmptyState',
+  name: "EmptyState",
   setup() {
     return () => (
-      <div class="flex flex-col items-center justify-center py-16">
-        <Users class="mb-4 h-12 w-12 text-neutral-300 dark:text-neutral-600" />
+      <div class="py-16 flex flex-col items-center justify-center">
+        <Users class="text-neutral-300 mb-4 h-12 w-12 dark:text-neutral-600" />
         <p class="text-sm text-neutral-500 dark:text-neutral-400">暂无读者</p>
       </div>
-    )
+    );
   },
-})
+});
 
 const ReaderView = defineComponent({
   setup() {
-    const readers = ref<ReaderWithKey[]>([])
-    const loading = ref(true)
-    const hasNextPage = ref(true)
-    const currentPage = ref(0)
-    const keySet = new Set<string>()
+    const readers = ref<ReaderWithKey[]>([]);
+    const loading = ref(true);
+    const hasNextPage = ref(true);
+    const currentPage = ref(0);
+    const keySet = new Set<string>();
 
     const fetchReaders = async (page: number) => {
-      const result = await readersApi.getList({ page, size: PAGE_SIZE })
+      const result = await readersApi.getList({ page, size: PAGE_SIZE });
 
       const newReaders = result.data
         .map((r, idx) => {
-          const key = `${r.id}-${r.provider || idx}`
-          return { ...r, _key: key }
+          const key = `${r.id}-${r.provider || idx}`;
+          return { ...r, _key: key };
         })
         .filter((r) => {
-          if (keySet.has(r._key)) return false
-          keySet.add(r._key)
-          return true
-        })
+          if (keySet.has(r._key))
+            return false;
+          keySet.add(r._key);
+          return true;
+        });
 
-      readers.value.push(...newReaders)
-      currentPage.value = result.pagination.currentPage
-      hasNextPage.value = result.pagination.hasNextPage
-      loading.value = false
-    }
+      readers.value.push(...newReaders);
+      currentPage.value = result.pagination.currentPage;
+      hasNextPage.value = result.pagination.hasNextPage;
+      loading.value = false;
+    };
 
     const handleLoad = async () => {
-      if (!hasNextPage.value) return
-      await fetchReaders(currentPage.value + 1)
-    }
+      if (!hasNextPage.value)
+        return;
+      await fetchReaders(currentPage.value + 1);
+    };
 
-    fetchReaders(1)
+    fetchReaders(1);
 
     return () => (
-      <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-        {loading.value ? (
-          <div class="flex items-center justify-center py-16">
-            <span class="text-sm text-neutral-400">加载中...</span>
-          </div>
-        ) : readers.value.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <NInfiniteScroll distance={200} onLoad={handleLoad}>
-            {readers.value.map((reader) => (
-              <ReaderItem data={reader} key={reader._key} />
-            ))}
-          </NInfiniteScroll>
-        )}
+      <div class="border border-neutral-200 rounded-lg bg-white overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
+        {loading.value
+          ? (
+              <div class="py-16 flex items-center justify-center">
+                <span class="text-sm text-neutral-400">加载中...</span>
+              </div>
+            )
+          : readers.value.length === 0
+            ? (
+                <EmptyState />
+              )
+            : (
+                <NInfiniteScroll distance={200} onLoad={handleLoad}>
+                  {readers.value.map(reader => (
+                    <ReaderItem data={reader} key={reader._key} />
+                  ))}
+                </NInfiniteScroll>
+              )}
       </div>
-    )
+    );
   },
-})
+});
 
-export default ReaderView
+export default ReaderView;
 
 const ProviderIcon = defineComponent({
   props: {
@@ -183,19 +189,19 @@ const ProviderIcon = defineComponent({
   },
   setup(props) {
     return () => {
-      const style = { width: `${props.size}px`, height: `${props.size}px` }
+      const style = { width: `${props.size}px`, height: `${props.size}px` };
 
       switch (props.provider) {
-        case 'github':
+        case "github":
           return (
             <span
-              class="flex items-center justify-center text-neutral-900 dark:text-neutral-100"
+              class="text-neutral-900 flex items-center justify-center dark:text-neutral-100"
               style={style}
             >
               <GithubIcon />
             </span>
-          )
-        case 'google':
+          );
+        case "google":
           return (
             <img
               style={style}
@@ -204,7 +210,7 @@ const ProviderIcon = defineComponent({
               width={props.size}
               height={props.size}
             />
-          )
+          );
         default:
           return (
             <img
@@ -214,8 +220,8 @@ const ProviderIcon = defineComponent({
               width={props.size}
               height={props.size}
             />
-          )
+          );
       }
-    }
+    };
   },
-})
+});

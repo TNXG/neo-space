@@ -163,7 +163,7 @@
 }
 
 /* Rich editor toolbar: strip border/bg/shadow until sticky-stuck */
-.write-editor-wrapper.rich-editor-mode [role='toolbar'] {
+.write-editor-wrapper.rich-editor-mode [role="toolbar"] {
   border-color: transparent;
   background-color: transparent;
   backdrop-filter: none;
@@ -171,7 +171,7 @@
   box-shadow: none;
 }
 
-.write-editor-wrapper.rich-editor-mode.toolbar-stuck [role='toolbar'] {
+.write-editor-wrapper.rich-editor-mode.toolbar-stuck [role="toolbar"] {
   border-color: var(--rc-border);
   background-color: color-mix(in srgb, var(--rc-bg) 90%, transparent);
   backdrop-filter: blur(8px);

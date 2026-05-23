@@ -1,37 +1,37 @@
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface ServerlessLogEntry {
-  id: string
-  functionId: string
-  reference: string
-  name: string
-  method: string
-  ip: string
-  status: 'success' | 'error'
-  executionTime: number
-  createdAt: string
-  logs?: { level: string; timestamp: number; args: unknown[] }[]
-  error?: { name: string; message: string; stack?: string }
+  id: string;
+  functionId: string;
+  reference: string;
+  name: string;
+  method: string;
+  ip: string;
+  status: "success" | "error";
+  executionTime: number;
+  createdAt: string;
+  logs?: { level: string; timestamp: number; args: unknown[] }[];
+  error?: { name: string; message: string; stack?: string };
 }
 
 export interface ServerlessLogPagination {
-  total: number
-  size: number
-  currentPage: number
-  totalPage: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
+  total: number;
+  size: number;
+  currentPage: number;
+  totalPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 export interface ServerlessLogListResponse {
-  data: ServerlessLogEntry[]
-  pagination: ServerlessLogPagination
+  data: ServerlessLogEntry[];
+  pagination: ServerlessLogPagination;
 }
 
 export interface GetServerlessLogsParams {
-  page?: number
-  size?: number
-  status?: 'success' | 'error'
+  page?: number;
+  size?: number;
+  status?: "success" | "error";
 }
 
 export const serverlessApi = {
@@ -44,4 +44,4 @@ export const serverlessApi = {
     request.get<ServerlessLogEntry>(`/fn/log/${id}`),
 
   getCompiledCode: (id: string) => request.get<string>(`/fn/compiled/${id}`),
-}
+};

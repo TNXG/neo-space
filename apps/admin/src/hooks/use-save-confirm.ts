@@ -1,6 +1,6 @@
-import { useDialog } from 'naive-ui'
-import { onBeforeUnmount, onMounted } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { useDialog } from "naive-ui";
+import { onBeforeUnmount, onMounted } from "vue";
+import { onBeforeRouteLeave } from "vue-router";
 
 /**
  *
@@ -10,70 +10,70 @@ import { onBeforeRouteLeave } from 'vue-router'
 export const useSaveConfirm = (
   enable: boolean,
   comparedFn: () => boolean,
-  message = '文章未保存是否确定离开？',
+  message = "文章未保存是否确定离开？",
 ): void => {
   if (!enable) {
-    return
+    return;
   }
 
   const beforeUnloadHandler = (event) => {
     if (comparedFn()) {
-      return
+      return;
     }
-    event.preventDefault()
+    event.preventDefault();
 
     // Chrome requires returnValue to be set.
-    event.returnValue = message
-    return false
-  }
+    event.returnValue = message;
+    return false;
+  };
 
   onMounted(() => {
     if (enable) {
-      window.addEventListener('beforeunload', beforeUnloadHandler)
+      window.addEventListener("beforeunload", beforeUnloadHandler);
     }
-  })
+  });
   onBeforeUnmount(() => {
     if (enable) {
-      window.removeEventListener('beforeunload', beforeUnloadHandler)
+      window.removeEventListener("beforeunload", beforeUnloadHandler);
     }
-  })
+  });
 
-  const dialog = useDialog()
+  const dialog = useDialog();
 
   onBeforeRouteLeave(async (to, _, next) => {
     if (!enable) {
-      next()
-      return
+      next();
+      return;
     }
     if (comparedFn()) {
-      next()
-      return
+      next();
+      return;
     }
 
     // HACK
-    if (to.hash == '|publish') {
-      next()
-      return
+    if (to.hash == "|publish") {
+      next();
+      return;
     }
 
     const shouldLeave = await new Promise<boolean>((resolve) => {
       dialog.warning({
         title: message,
-        negativeText: '取消',
-        positiveText: '确认',
+        negativeText: "取消",
+        positiveText: "确认",
         onNegativeClick() {
-          resolve(false) // 取消离开
+          resolve(false); // 取消离开
         },
         onPositiveClick() {
-          resolve(true) // 确认离开
+          resolve(true); // 确认离开
         },
-      })
-    })
+      });
+    });
 
     if (shouldLeave) {
-      next()
+      next();
     } else {
-      next(false)
+      next(false);
     }
-  })
-}
+  });
+};

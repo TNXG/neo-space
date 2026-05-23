@@ -1,9 +1,9 @@
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
-import { DiffPreview } from '~/components/draft/diff-preview'
+import { DiffPreview } from "~/components/draft/diff-preview";
 
 export const MarkdownDiffPanel = defineComponent({
-  name: 'MarkdownDiffPanel',
+  name: "MarkdownDiffPanel",
   props: {
     oldText: { type: String, required: true },
     newText: { type: String, required: true },
@@ -22,6 +22,6 @@ export const MarkdownDiffPanel = defineComponent({
           contents: props.newText,
         }}
       />
-    )
+    );
   },
-})
+});

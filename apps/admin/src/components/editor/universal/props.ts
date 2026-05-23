@@ -1,4 +1,4 @@
-import type { PropType } from 'vue'
+import type { PropType } from "vue";
 
 export const editorBaseProps = {
   text: {
@@ -11,7 +11,7 @@ export const editorBaseProps = {
   },
 
   renderMode: {
-    type: String as PropType<'plain' | 'wysiwyg'>,
+    type: String as PropType<"plain" | "wysiwyg">,
     required: false,
   },
 
@@ -25,4 +25,4 @@ export const editorBaseProps = {
     type: Function as PropType<() => boolean>,
     required: false,
   },
-} as const
+} as const;

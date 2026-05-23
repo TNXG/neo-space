@@ -1,14 +1,14 @@
-import { request } from '~/utils/request'
+import { request } from "~/utils/request";
 
 export interface EmailTemplate {
-  subject: string
-  content: string
-  type: string
+  subject: string;
+  content: string;
+  type: string;
 }
 
 export interface UpdateTemplateData {
-  subject?: string
-  content?: string
+  subject?: string;
+  content?: string;
 }
 
 export const templatesApi = {
@@ -25,4 +25,4 @@ export const templatesApi = {
   // 删除邮件模板（恢复默认）
   deleteEmailTemplate: (params: { type: string }) =>
     request.delete<void>(`/options/email/template`, { params }),
-}
+};

@@ -1,16 +1,16 @@
-import { computed, defineComponent, ref } from 'vue'
-import type { ContentFormat } from '~/shared/types/base'
-import type { PropType, VNode } from 'vue'
+import type { PropType, VNode } from "vue";
+import type { ContentFormat } from "~/shared/types/base";
+import { computed, defineComponent, ref } from "vue";
 
-import { CodemirrorEditor } from '../codemirror/codemirror'
-import { useEditorStore } from '../codemirror/editor-store'
-import { ImageDropZone } from '../codemirror/ImageDropZone'
-import { editorBaseProps } from '../universal/props'
-import { useEditorConfig } from '../universal/use-editor-setting'
-import { WriteEditorBase } from './WriteEditorBase'
+import { CodemirrorEditor } from "../codemirror/codemirror";
+import { useEditorStore } from "../codemirror/editor-store";
+import { ImageDropZone } from "../codemirror/ImageDropZone";
+import { editorBaseProps } from "../universal/props";
+import { useEditorConfig } from "../universal/use-editor-setting";
+import { WriteEditorBase } from "./WriteEditorBase";
 
 export const MarkdownWriteEditor = defineComponent({
-  name: 'MarkdownWriteEditor',
+  name: "MarkdownWriteEditor",
   props: {
     ...editorBaseProps,
     loading: {
@@ -27,47 +27,47 @@ export const MarkdownWriteEditor = defineComponent({
     },
     titlePlaceholder: {
       type: String,
-      default: '输入标题...',
+      default: "输入标题...",
     },
     subtitleSlot: {
       type: [Object, Function] as PropType<VNode | (() => VNode)>,
     },
     autoFocus: {
-      type: [String, Boolean] as PropType<'title' | 'content' | false>,
+      type: [String, Boolean] as PropType<"title" | "content" | false>,
       default: false,
     },
     contentFormat: {
       type: String as PropType<ContentFormat>,
-      default: 'markdown',
+      default: "markdown",
     },
     onContentFormatChange: {
       type: Function as PropType<(value: ContentFormat) => void>,
     },
   },
-  expose: ['setValue'],
+  expose: ["setValue"],
   setup(props, { expose }) {
-    const editorStore = useEditorStore()
-    const { general } = useEditorConfig()
-    const titleInputRef = ref<{ focus: () => void }>()
+    const editorStore = useEditorStore();
+    const { general } = useEditorConfig();
+    const titleInputRef = ref<{ focus: () => void }>();
 
-    const hasContent = computed(() => !!props.text)
+    const hasContent = computed(() => !!props.text);
 
     expose({
       setValue: (value: string) => {
-        editorStore.setValue(value)
+        editorStore.setValue(value);
       },
       focusTitle: () => {
-        titleInputRef.value?.focus()
+        titleInputRef.value?.focus();
       },
       focusContent: () => {
-        editorStore.focus()
+        editorStore.focus();
       },
-    })
+    });
 
     return () => {
-      const { setting: generalSetting } = general
-      const resolvedRenderMode =
-        props.renderMode ?? generalSetting.renderMode ?? 'plain'
+      const { setting: generalSetting } = general;
+      const resolvedRenderMode
+        = props.renderMode ?? generalSetting.renderMode ?? "plain";
 
       return (
         <WriteEditorBase
@@ -93,7 +93,7 @@ export const MarkdownWriteEditor = defineComponent({
           />
           <ImageDropZone />
         </WriteEditorBase>
-      )
-    }
+      );
+    };
   },
-})
+});

@@ -1,55 +1,55 @@
-import { mountRichEditor } from '@neo-space/rich-react'
-import { defineComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { ProviderGroup, SelectedModel } from '@haklex/rich-agent-chat'
-import type { ChatBubble } from '@haklex/rich-agent-core'
-import type { RichEditorVariant } from '@haklex/rich-editor'
-import type { ImageUpload, RichEditorHandle } from '@neo-space/rich-react'
+import type { ProviderGroup, SelectedModel } from "@haklex/rich-agent-chat";
+import type { ChatBubble } from "@haklex/rich-agent-core";
+import type { RichEditorVariant } from "@haklex/rich-editor";
+import type { ImageUpload, RichEditorHandle } from "@neo-space/rich-react";
 import type {
   Klass,
   LexicalEditor,
   LexicalNode,
   SerializedEditorState,
-} from 'lexical'
-import type { PropType } from 'vue'
-import type { MetaFieldsSchema } from './agent-chat/composables/use-meta-tools'
+} from "lexical";
+import type { PropType } from "vue";
+import type { MetaFieldsSchema } from "./agent-chat/composables/use-meta-tools";
+import { mountRichEditor } from "@neo-space/rich-react";
+import { defineComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import { enrichmentApi } from '~/api/enrichment'
-import { filesApi } from '~/api/upload'
-import { API_URL } from '~/constants/env'
-import { useUIStore } from '~/stores/ui'
+import { enrichmentApi } from "~/api/enrichment";
+import { filesApi } from "~/api/upload";
+import { API_URL } from "~/constants/env";
+import { useUIStore } from "~/stores/ui";
 
-import { RichEditorWithAgent } from './RichEditorWithAgent'
+import { RichEditorWithAgent } from "./RichEditorWithAgent";
 
 const fetchEnrichment = (url: string) =>
-  enrichmentApi.resolve(url).catch(() => null)
+  enrichmentApi.resolve(url).catch(() => null);
 
 async function saveExcalidrawSnapshot(
   snapshot: object,
   existingRef?: string,
 ): Promise<string> {
   const blob = new Blob([JSON.stringify(snapshot)], {
-    type: 'application/json',
-  })
-  const file = new File([blob], 'snapshot.excalidraw', {
-    type: 'application/json',
-  })
+    type: "application/json",
+  });
+  const file = new File([blob], "snapshot.excalidraw", {
+    type: "application/json",
+  });
 
-  if (existingRef?.startsWith('ref:file/')) {
-    const name = existingRef.slice(9)
-    const result = await filesApi.update('file', name, file)
-    return `ref:file/${result.name}`
+  if (existingRef?.startsWith("ref:file/")) {
+    const name = existingRef.slice(9);
+    const result = await filesApi.update("file", name, file);
+    return `ref:file/${result.name}`;
   }
 
-  const result = await filesApi.upload(file, 'file')
-  return `ref:file/${result.name}`
+  const result = await filesApi.upload(file, "file");
+  return `ref:file/${result.name}`;
 }
 
-type FocusableEditorHandle = { focus: () => void }
+interface FocusableEditorHandle { focus: () => void }
 
 export const RichEditor = defineComponent({
   props: {
     initialValue: Object as PropType<SerializedEditorState>,
-    theme: String as PropType<'dark' | 'light'>,
+    theme: String as PropType<"dark" | "light">,
     placeholder: String,
     variant: String as PropType<RichEditorVariant>,
     autoFocus: { type: Boolean, default: undefined },
@@ -67,7 +67,7 @@ export const RichEditor = defineComponent({
     onSelectModel: Function as PropType<(model: SelectedModel) => void>,
     initialBubbles: Array as PropType<ChatBubble[]>,
     refId: String,
-    refType: String as PropType<'post' | 'note' | 'page'>,
+    refType: String as PropType<"post" | "note" | "page">,
     metaFieldsSchema: Object as PropType<MetaFieldsSchema>,
     getMetaFields: Function as PropType<() => Record<string, unknown>>,
     onMetaFieldsUpdate: Function as PropType<
@@ -81,12 +81,12 @@ export const RichEditor = defineComponent({
     editorReady: (_editor: LexicalEditor | null) => true,
   },
   setup(props, { emit, expose }) {
-    const containerRef = ref<HTMLDivElement | null>(null)
-    const agentRef = ref<FocusableEditorHandle | null>(null)
-    let handle: RichEditorHandle | null = null
-    let editorInstance: LexicalEditor | null = null
+    const containerRef = ref<HTMLDivElement | null>(null);
+    const agentRef = ref<FocusableEditorHandle | null>(null);
+    let handle: RichEditorHandle | null = null;
+    let editorInstance: LexicalEditor | null = null;
 
-    const buildOptions = (resolvedTheme: 'dark' | 'light') => ({
+    const buildOptions = (resolvedTheme: "dark" | "light") => ({
       theme: resolvedTheme,
       initialValue: props.initialValue,
       placeholder: props.placeholder,
@@ -102,23 +102,24 @@ export const RichEditor = defineComponent({
       saveExcalidrawSnapshot,
       apiUrl: API_URL,
       fetchEnrichment,
-      onChange: (v: SerializedEditorState) => emit('change', v),
-      onSubmit: () => emit('submit'),
+      onChange: (v: SerializedEditorState) => emit("change", v),
+      onSubmit: () => emit("submit"),
       onEditorReady: (editor: LexicalEditor | null) => {
-        editorInstance = editor
-        emit('editorReady', editor)
+        editorInstance = editor;
+        emit("editorReady", editor);
       },
-      onTextChange: (text: string) => emit('textChange', text),
-    })
+      onTextChange: (text: string) => emit("textChange", text),
+    });
 
     onMounted(() => {
-      if (props.agentEnabled || !containerRef.value) return
+      if (props.agentEnabled || !containerRef.value)
+        return;
 
-      const uiStore = useUIStore()
+      const uiStore = useUIStore();
       const resolveTheme = () =>
-        props.theme ?? (uiStore.isDark ? 'dark' : 'light')
+        props.theme ?? (uiStore.isDark ? "dark" : "light");
 
-      handle = mountRichEditor(containerRef.value, buildOptions(resolveTheme()))
+      handle = mountRichEditor(containerRef.value, buildOptions(resolveTheme()));
 
       watch(
         () => [
@@ -136,24 +137,24 @@ export const RichEditor = defineComponent({
           props.imageUpload,
         ],
         () => handle?.update(buildOptions(resolveTheme())),
-      )
-    })
+      );
+    });
 
     onBeforeUnmount(() => {
-      handle?.unmount()
-      handle = null
-      editorInstance = null
-    })
+      handle?.unmount();
+      handle = null;
+      editorInstance = null;
+    });
 
     expose({
       focus: () => {
         if (props.agentEnabled) {
-          agentRef.value?.focus()
+          agentRef.value?.focus();
         } else {
-          editorInstance?.focus()
+          editorInstance?.focus();
         }
       },
-    })
+    });
 
     if (props.agentEnabled) {
       return () => (
@@ -181,17 +182,17 @@ export const RichEditor = defineComponent({
           metaFieldsSchema={props.metaFieldsSchema}
           getMetaFields={props.getMetaFields}
           onMetaFieldsUpdate={props.onMetaFieldsUpdate}
-          onChange={(v: SerializedEditorState) => emit('change', v)}
-          onSubmit={() => emit('submit')}
+          onChange={(v: SerializedEditorState) => emit("change", v)}
+          onSubmit={() => emit("submit")}
           onEditorReady={(e: LexicalEditor | null) => {
-            editorInstance = e
-            emit('editorReady', e)
+            editorInstance = e;
+            emit("editorReady", e);
           }}
-          onTextChange={(text: string) => emit('textChange', text)}
+          onTextChange={(text: string) => emit("textChange", text)}
         />
-      )
+      );
     }
 
-    return () => <div class="h-full w-full" ref={containerRef} />
+    return () => <div class="h-full w-full" ref={containerRef} />;
   },
-})
+});

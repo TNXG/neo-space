@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref } from 'vue'
+import { defineComponent, onMounted, ref } from "vue";
 
 export const CodeHighlight = defineComponent({
   props: {
@@ -12,19 +12,19 @@ export const CodeHighlight = defineComponent({
     },
   },
   setup(props) {
-    const $ref = ref<HTMLPreElement>()
+    const $ref = ref<HTMLPreElement>();
 
     onMounted(() => {
-      import('monaco-editor').then((mo) => {
+      import("monaco-editor").then((mo) => {
         mo.editor
           .colorize(props.code, props.language, {
             tabSize: 2,
           })
           .then((res) => {
-            $ref.value!.innerHTML = res
-          })
-      })
-    })
-    return () => <pre ref={$ref}>{props.code}</pre>
+            $ref.value!.innerHTML = res;
+          });
+      });
+    });
+    return () => <pre ref={$ref}>{props.code}</pre>;
   },
-})
+});

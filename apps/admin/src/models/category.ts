@@ -1,4 +1,4 @@
-import type { PostModel } from './post'
+import type { PostModel } from "./post";
 
 export enum CategoryType {
   Category,
@@ -6,28 +6,28 @@ export enum CategoryType {
 }
 
 export interface CategoryModel {
-  id: string
-  createdAt: string
-  type: CategoryType
-  count: number
-  slug: string
-  name: string
+  id: string;
+  createdAt: string;
+  type: CategoryType;
+  count: number;
+  slug: string;
+  name: string;
 }
 
 export interface CategoryResponse {
-  data: CategoryModel[]
+  data: CategoryModel[];
 }
 
 export type CategoryWithChildrenModel = CategoryModel & {
-  children: PickedPostModelInCategoryChildren[]
-}
+  children: PickedPostModelInCategoryChildren[];
+};
 
 export type PickedPostModelInCategoryChildren = Pick<
   PostModel,
-  'id' | 'title' | 'slug' | 'modifiedAt' | 'createdAt'
->
+  "id" | "title" | "slug" | "modifiedAt" | "createdAt"
+>;
 
 export interface TagModel {
-  count: number
-  name: string
+  count: number;
+  name: string;
 }
