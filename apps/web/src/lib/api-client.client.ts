@@ -128,6 +128,7 @@ export async function fetchLinks(page: number, size = 20): Promise<PaginatedResp
  * 使用 SWR 进行搜索
  *
  * @param query - 搜索关键词（为空时不发起请求）
+ * @param lang - 语言标识，用于附加 lang 查询参数
  * @param type_ - 搜索类型：'post' | 'note'，不传则搜索全部
  * @param limit - 每种类型的最大结果数
  * @param semantic - 是否启用语义搜索（混合搜索）

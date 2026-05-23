@@ -71,6 +71,8 @@ export function LinkApplyForm() {
     },
   });
 
+  // react-hook-form 的 watch() 是订阅式代理，React Compiler 无法静态分析，按预期跳过此组件的自动 memo 化。
+  // eslint-disable-next-line react-hooks/incompatible-library
   const formData = watch();
 
   useEffect(() => {

@@ -84,7 +84,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
 
     // 页面加载时检查是否有待处理的 OAuth 返回
     handleMobileOAuthReturn();
-  }, [setAuth]);
+  }, [setAuth, t]);
 
   /**
    * 处理 OAuth 登录（弹窗方式）
