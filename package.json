@@ -14,6 +14,8 @@
     "build:backend": "turbo run build --filter=@neo-space/backend",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
+    "fmt": "pnpm -r --parallel --filter=@neo-space/web --filter=@neo-space/admin run fmt",
+    "fmt:fix": "pnpm -r --parallel --filter=@neo-space/web --filter=@neo-space/admin run fmt:fix",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules"
   },

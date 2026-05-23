@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "fmt": "eslint .",
+    "fmt:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next out tsconfig.tsbuildinfo",
     "icons:extract": "tsx scripts/extract-icons.ts"

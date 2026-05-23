@@ -1,13 +1,15 @@
 {
   "name": "@neo-space/admin",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "NODE_ENV=development vite --mode development --open --host",
     "build": "NODE_ENV=production vite build --mode production",
     "preview": "vite preview --port 2323",
     "lint": "oxlint src",
     "lint:fix": "oxlint src --fix",
+    "fmt": "eslint .",
+    "fmt:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -94,6 +96,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^9.0.0",
     "@types/ejs": "3.1.5",
     "@types/event-source-polyfill": "1.0.5",
     "@types/js-yaml": "4.0.9",
@@ -101,6 +104,7 @@
     "@types/qs": "6.15.0",
     "@types/sortablejs": "1.15.9",
     "@types/validator": "13.15.10",
+    "@unocss/eslint-plugin": "^66.6.8",
     "@unocss/postcss": "^66.6.8",
     "@unocss/preset-typography": "66.6.7",
     "@vitejs/plugin-vue": "6.0.5",
@@ -108,6 +112,8 @@
     "@vue/compiler-sfc": "3.5.30",
     "@vue/test-utils": "^2.4.0",
     "cors": "2.8.6",
+    "eslint": "^10.3.0",
+    "eslint-plugin-format": "^2.0.1",
     "happy-dom": "^15.11.0",
     "postcss": "8.5.8",
     "postcss-nested": "7.0.2",
