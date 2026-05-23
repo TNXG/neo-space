@@ -1,11 +1,20 @@
-import { isString } from 'es-toolkit/compat'
+import type { ProviderGroup } from "@haklex/rich-agent-chat";
+import type { LexicalEditor } from "lexical";
+import type { SelectMixedOption } from "naive-ui/lib/select/src/interface";
+import type { ProviderModelsResponse } from "~/api/ai";
+import type { MetaFieldsSchema } from "~/components/editor/write-editor";
+import type { CategoryModel } from "~/models/category";
+import type { DraftModel } from "~/models/draft";
+import type { PostModel } from "~/models/post";
+import type { ContentFormat, WriteBaseType } from "~/shared/types/base";
+import { isString } from "es-toolkit/compat";
 import {
   Bot,
   FolderIcon,
   SlidersHorizontal as SlidersHIcon,
   Send as TelegramPlaneIcon,
-} from 'lucide-vue-next'
-import { NDynamicTags, NInput, NInputNumber, NSelect } from 'naive-ui'
+} from "lucide-vue-next";
+import { NDynamicTags, NInput, NInputNumber, NSelect } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -15,96 +24,87 @@ import {
   ref,
   shallowRef,
   watchEffect,
-} from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { ProviderGroup } from '@haklex/rich-agent-chat'
-import type { ProviderModelsResponse } from '~/api/ai'
-import type { MetaFieldsSchema } from '~/components/editor/write-editor'
-import type { CategoryModel } from '~/models/category'
-import type { DraftModel } from '~/models/draft'
-import type { PostModel } from '~/models/post'
-import type { ContentFormat, WriteBaseType } from '~/shared/types/base'
-import type { LexicalEditor } from 'lexical'
-import type { SelectMixedOption } from 'naive-ui/lib/select/src/interface'
+} from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
-import { aiApi } from '~/api/ai'
-import { categoriesApi } from '~/api/categories'
-import { postsApi } from '~/api/posts'
-import { AiHelperButton } from '~/components/ai/ai-helper'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { DraftListModal } from '~/components/draft/draft-list-modal'
-import { DraftRecoveryModal } from '~/components/draft/draft-recovery-modal'
-import { DraftSaveIndicator } from '~/components/draft/draft-save-indicator'
-import { LexicalDebugButton } from '~/components/drawer/lexical-debug-drawer'
+import { aiApi } from "~/api/ai";
+import { categoriesApi } from "~/api/categories";
+import { postsApi } from "~/api/posts";
+import { AiHelperButton } from "~/components/ai/ai-helper";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { DraftListModal } from "~/components/draft/draft-list-modal";
+import { DraftRecoveryModal } from "~/components/draft/draft-recovery-modal";
+import { DraftSaveIndicator } from "~/components/draft/draft-save-indicator";
+import { LexicalDebugButton } from "~/components/drawer/lexical-debug-drawer";
 import {
   FormField,
   SectionTitle,
   SwitchRow,
   TextBaseDrawer,
-} from '~/components/drawer/text-base-drawer'
-import { useAgentSelectedModel } from '~/components/editor/rich/agent-chat/composables/use-agent-selected-model'
-import { WriteEditor } from '~/components/editor/write-editor'
-import { SlugInput } from '~/components/editor/write-editor/slug-input'
-import { ParseContentButton } from '~/components/special-button/parse-content'
-import { HeaderPreviewButton } from '~/components/special-button/preview'
-import { WEB_URL } from '~/constants/env'
-import { useParsePayloadIntoData } from '~/hooks/use-parse-payload'
-import { usePreferredContentFormat } from '~/hooks/use-preferred-content-format'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { useWriteDraft } from '~/hooks/use-write-draft'
-import { useLayout } from '~/layouts/content'
-import { DraftRefType } from '~/models/draft'
-import { CategoryStore } from '~/stores/category'
-import { UIStore } from '~/stores/ui'
+} from "~/components/drawer/text-base-drawer";
+import { useAgentSelectedModel } from "~/components/editor/rich/agent-chat/composables/use-agent-selected-model";
+import { WriteEditor } from "~/components/editor/write-editor";
+import { SlugInput } from "~/components/editor/write-editor/slug-input";
+import { ParseContentButton } from "~/components/special-button/parse-content";
+import { HeaderPreviewButton } from "~/components/special-button/preview";
+import { WEB_URL } from "~/constants/env";
+import { useParsePayloadIntoData } from "~/hooks/use-parse-payload";
+import { usePreferredContentFormat } from "~/hooks/use-preferred-content-format";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { useWriteDraft } from "~/hooks/use-write-draft";
+import { useLayout } from "~/layouts/content";
+import { DraftRefType } from "~/models/draft";
+import { CategoryStore } from "~/stores/category";
+import { UIStore } from "~/stores/ui";
 
-import { useMemoPostList } from './hooks/use-memo-post-list'
+import { useMemoPostList } from "./hooks/use-memo-post-list";
 
 const POST_META_SCHEMA: MetaFieldsSchema = {
-  title: { description: '文章标题', type: 'string' },
+  title: { description: "文章标题", type: "string" },
   slug: {
-    description: 'URL 路径片段，建议英文小写并使用连字符',
-    type: 'string',
-    example: 'my-first-post',
+    description: "URL 路径片段，建议英文小写并使用连字符",
+    type: "string",
+    example: "my-first-post",
   },
-  tags: { description: '文章标签列表', type: 'string[]' },
-  summary: { description: '文章摘要，留空将自动生成', type: 'string' },
-  copyright: { description: '是否在文末显示版权信息', type: 'boolean' },
-  pin: { description: '是否置顶', type: 'boolean' },
+  tags: { description: "文章标签列表", type: "string[]" },
+  summary: { description: "文章摘要，留空将自动生成", type: "string" },
+  copyright: { description: "是否在文末显示版权信息", type: "boolean" },
+  pin: { description: "是否置顶", type: "boolean" },
   pinOrder: {
-    description: '置顶顺序，数字越大越靠前；置顶关闭时为 0',
-    type: 'number',
+    description: "置顶顺序，数字越大越靠前；置顶关闭时为 0",
+    type: "number",
   },
   isPublished: {
-    description: '是否发布（false 为草稿）',
-    type: 'boolean',
+    description: "是否发布（false 为草稿）",
+    type: "boolean",
   },
-}
+};
 
 function toProviderGroups(response: ProviderModelsResponse[]): ProviderGroup[] {
-  return response.map((p) => ({
+  return response.map(p => ({
     id: p.providerId,
     name: p.providerName,
     providerType:
-      p.providerType === 'anthropic' ? 'claude' : 'openai-compatible',
-    models: p.models.map((m) => ({ id: m.id, displayName: m.name || m.id })),
-  }))
+      p.providerType === "anthropic" ? "claude" : "openai-compatible",
+    models: p.models.map(m => ({ id: m.id, displayName: m.name || m.id })),
+  }));
 }
 
 type PostReactiveType = WriteBaseType & {
-  _id?: string
-  slug: string
-  categoryId: string
-  copyright: boolean
-  tags: string[]
-  summary: string
-  pinOrder: number
-  pin: boolean
-  relatedId: string[]
-  isPublished: boolean
-  contentFormat: ContentFormat
-  content: string
-}
+  _id?: string;
+  slug: string;
+  categoryId: string;
+  copyright: boolean;
+  tags: string[];
+  summary: string;
+  pinOrder: number;
+  pin: boolean;
+  relatedId: string[];
+  isPublished: boolean;
+  contentFormat: ContentFormat;
+  content: string;
+};
 
 const PostWriteView = defineComponent(() => {
   const {
@@ -113,40 +113,40 @@ const PostWriteView = defineComponent(() => {
     setActions,
     setContentPadding,
     setHeaderSubtitle,
-  } = useLayout()
+  } = useLayout();
 
-  setContentPadding(false)
+  setContentPadding(false);
 
-  const categoryStore = useStoreRef(CategoryStore)
-  const uiStore = useStoreRef(UIStore)
+  const categoryStore = useStoreRef(CategoryStore);
+  const uiStore = useStoreRef(UIStore);
   const isMobile = computed(
     () => uiStore.viewport.value.mobile || uiStore.viewport.value.pad,
-  )
-  const { preferredContentFormat, setPreferredContentFormat } =
-    usePreferredContentFormat()
+  );
+  const { preferredContentFormat, setPreferredContentFormat }
+    = usePreferredContentFormat();
 
-  const agentVisible = ref(false)
-  const providerGroups = ref<ProviderGroup[]>([])
-  const { selectedModel } = useAgentSelectedModel(providerGroups)
+  const agentVisible = ref(false);
+  const providerGroups = ref<ProviderGroup[]>([]);
+  const { selectedModel } = useAgentSelectedModel(providerGroups);
 
   onMounted(async () => {
-    await categoryStore.fetch()
+    await categoryStore.fetch();
     aiApi
       .getModels()
       .then((res) => {
-        providerGroups.value = toProviderGroups(res)
+        providerGroups.value = toProviderGroups(res);
       })
-      .catch(() => {})
-  })
+      .catch(() => {});
+  });
 
   const resetReactive: () => PostReactiveType = () => ({
-    categoryId: categoryStore.data?.value?.[0].id ?? '',
-    slug: '',
-    text: '',
-    title: '',
+    categoryId: categoryStore.data?.value?.[0].id ?? "",
+    slug: "",
+    text: "",
+    title: "",
     copyright: true,
     tags: [],
-    summary: '',
+    summary: "",
     _id: undefined,
     id: undefined,
     images: [],
@@ -157,56 +157,56 @@ const PostWriteView = defineComponent(() => {
     createdAt: undefined,
     isPublished: true,
     contentFormat: preferredContentFormat.value,
-    content: '',
-  })
+    content: "",
+  });
 
-  const postListState = useMemoPostList()
-  const data = reactive<PostReactiveType>(resetReactive())
-  const lexicalEditor = shallowRef<LexicalEditor | null>(null)
-  const parsePayloadIntoReactiveData = useParsePayloadIntoData(data)
+  const postListState = useMemoPostList();
+  const data = reactive<PostReactiveType>(resetReactive());
+  const lexicalEditor = shallowRef<LexicalEditor | null>(null);
+  const parsePayloadIntoReactiveData = useParsePayloadIntoData(data);
 
-  const router = useRouter()
+  const router = useRouter();
 
   const applyDraft = (
     draft: DraftModel,
     target: PostReactiveType,
     isPartial?: boolean,
   ) => {
-    target.title = draft.title
-    target.text = draft.text
-    target.contentFormat = draft.contentFormat || 'markdown'
-    target.content = draft.content || ''
-    target.images = draft.images || []
-    target.meta = draft.meta
+    target.title = draft.title;
+    target.text = draft.text;
+    target.contentFormat = draft.contentFormat || "markdown";
+    target.content = draft.content || "";
+    target.images = draft.images || [];
+    target.meta = draft.meta;
     if (draft.typeSpecificData) {
-      const specific = draft.typeSpecificData
-      target.slug = specific.slug || (isPartial ? target.slug : '')
-      target.categoryId = specific.categoryId || target.categoryId
-      target.copyright =
-        specific.copyright ?? (isPartial ? target.copyright : true)
-      target.tags = specific.tags || (isPartial ? target.tags : [])
-      target.summary = specific.summary || (isPartial ? target.summary : '')
-      target.pin = !!specific.pin
-      target.pinOrder = specific.pinOrder || (isPartial ? target.pinOrder : 1)
-      target.relatedId =
-        specific.relatedId || (isPartial ? target.relatedId : [])
-      target.isPublished =
-        specific.isPublished ?? (isPartial ? target.isPublished : true)
+      const specific = draft.typeSpecificData;
+      target.slug = specific.slug || (isPartial ? target.slug : "");
+      target.categoryId = specific.categoryId || target.categoryId;
+      target.copyright
+        = specific.copyright ?? (isPartial ? target.copyright : true);
+      target.tags = specific.tags || (isPartial ? target.tags : []);
+      target.summary = specific.summary || (isPartial ? target.summary : "");
+      target.pin = !!specific.pin;
+      target.pinOrder = specific.pinOrder || (isPartial ? target.pinOrder : 1);
+      target.relatedId
+        = specific.relatedId || (isPartial ? target.relatedId : []);
+      target.isPublished
+        = specific.isPublished ?? (isPartial ? target.isPublished : true);
     }
-  }
+  };
 
   const loadPublished = async (id: string) => {
-    const payload = await postsApi.getById(id)
-    const postData = payload as any
-    postData.relatedId = postData.related?.map((r: any) => r._id) || []
-    postListState.append(postData.related ?? [])
+    const payload = await postsApi.getById(id);
+    const postData = payload as any;
+    postData.relatedId = postData.related?.map((r: any) => r._id) || [];
+    postListState.append(postData.related ?? []);
     // The reactive form keeps `pin` as a boolean toggle, but the API now
     // returns the timestamp under `pinAt` after the Postgres migration.
-    postData.pin = !!postData.pinAt
-    parsePayloadIntoReactiveData(postData as PostModel)
-    data.contentFormat = postData.contentFormat || 'markdown'
-    data.content = postData.content || ''
-  }
+    postData.pin = !!postData.pinAt;
+    parsePayloadIntoReactiveData(postData as PostModel);
+    data.contentFormat = postData.contentFormat || "markdown";
+    data.content = postData.content || "";
+  };
 
   const {
     id,
@@ -219,7 +219,7 @@ const PostWriteView = defineComponent(() => {
   } = useWriteDraft(data, {
     refType: DraftRefType.Post,
     interval: 10000,
-    draftLabel: '文章',
+    draftLabel: "文章",
     getData: () => ({
       title: data.title,
       text: data.text,
@@ -242,47 +242,47 @@ const PostWriteView = defineComponent(() => {
     applyDraft,
     loadPublished,
     onTitleFallback: (defaultTitle) => {
-      data.title = defaultTitle
+      data.title = defaultTitle;
     },
-  })
+  });
 
   const loading = computed(
-    () => !!(id.value && typeof data._id === 'undefined'),
-  )
+    () => !!(id.value && typeof data._id === "undefined"),
+  );
 
   const category = computed(
     () =>
-      categoryStore.get(data.categoryId) ||
-      categoryStore.data?.value?.[0] ||
-      ({} as CategoryModel),
-  )
+      categoryStore.get(data.categoryId)
+      || categoryStore.data?.value?.[0]
+      || ({} as CategoryModel),
+  );
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault()
-      serverDraft.saveImmediately()
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault();
+      serverDraft.saveImmediately();
     }
-  }
+  };
 
   onMounted(() => {
-    initialize()
-    window.addEventListener('keydown', handleKeyDown)
-  })
+    initialize();
+    window.addEventListener("keydown", handleKeyDown);
+  });
 
-  const drawerShow = ref(false)
+  const drawerShow = ref(false);
 
   const handleSubmit = async () => {
     if (!data.title || data.title.trim().length === 0) {
-      toast.error('标题为空')
-      return
+      toast.error("标题为空");
+      return;
     }
     if (!data.slug || data.slug.trim().length === 0) {
-      toast.error('路径为空')
-      return
+      toast.error("路径为空");
+      return;
     }
     if (!category.value.id) {
-      toast.error('请选择分类')
-      return
+      toast.error("请选择分类");
+      return;
     }
 
     const payload = {
@@ -293,83 +293,86 @@ const PostWriteView = defineComponent(() => {
       pin: data.pin ? new Date().toISOString() : null,
       draftId: serverDraft.draftId.value,
       contentFormat: data.contentFormat,
-      content: data.contentFormat === 'lexical' ? data.content : undefined,
-    }
+      content: data.contentFormat === "lexical" ? data.content : undefined,
+    };
 
     if (actualRefId.value) {
-      if (!isString(actualRefId.value)) return
-      const result = await postsApi.update(actualRefId.value, payload)
-      data.text = result.text
-      data.images = result.images || []
-      serverDraft.syncMemory()
-      toast.success('修改成功')
+      if (!isString(actualRefId.value))
+        return;
+      const result = await postsApi.update(actualRefId.value, payload);
+      data.text = result.text;
+      data.images = result.images || [];
+      serverDraft.syncMemory();
+      toast.success("修改成功");
     } else {
-      const result = await postsApi.create(payload)
-      data._id = result._id
-      data.text = result.text
-      data.images = result.images || []
-      serverDraft.syncMemory()
-      await router.replace({ query: { id: result._id } })
-      toast.success('发布成功')
+      const result = await postsApi.create(payload);
+      data._id = result._id;
+      data.text = result.text;
+      data.images = result.images || [];
+      serverDraft.syncMemory();
+      await router.replace({ query: { id: result._id } });
+      toast.success("发布成功");
     }
-  }
+  };
 
   const handleOpenDrawer = () => {
-    drawerShow.value = true
+    drawerShow.value = true;
     if (postListState.loading.value) {
-      postListState.fetchNext()
+      postListState.fetchNext();
     }
-  }
+  };
 
   const handleFetchNext = (e: Event) => {
-    const currentTarget = e.currentTarget as HTMLElement
+    const currentTarget = e.currentTarget as HTMLElement;
     if (
-      currentTarget.scrollTop + currentTarget.offsetHeight + 10 >=
-      currentTarget.scrollHeight
+      currentTarget.scrollTop + currentTarget.offsetHeight + 10
+      >= currentTarget.scrollHeight
     ) {
-      postListState.fetchNext()
+      postListState.fetchNext();
     }
-  }
+  };
 
   onBeforeUnmount(() => {
-    window.removeEventListener('keydown', handleKeyDown)
-    postListState.refresh()
-  })
+    window.removeEventListener("keydown", handleKeyDown);
+    postListState.refresh();
+  });
 
-  setHeaderClass('pt-1')
+  setHeaderClass("pt-1");
   watchEffect(() => {
-    setTitle(isEditing.value ? '修改文章' : '撰写新文章')
+    setTitle(isEditing.value ? "修改文章" : "撰写新文章");
 
     setHeaderSubtitle(
       <DraftSaveIndicator
         isSaving={serverDraft.isSaving}
         lastSavedTime={serverDraft.lastSavedTime}
       />,
-    )
+    );
 
     setActions(
       <>
-        {!isMobile.value &&
-          (data.contentFormat === 'lexical' ? (
-            <LexicalDebugButton content={data.content} />
-          ) : (
-            <ParseContentButton
-              data={data}
-              onHandleYamlParsedMeta={(meta) => {
-                const { title, slug, ...rest } = meta
-                data.title = title ?? data.title
-                data.slug = slug ?? data.slug
-                data.meta = { ...rest }
-              }}
-            />
-          ))}
+        {!isMobile.value
+          && (data.contentFormat === "lexical"
+            ? (
+                <LexicalDebugButton content={data.content} />
+              )
+            : (
+                <ParseContentButton
+                  data={data}
+                  onHandleYamlParsedMeta={(meta) => {
+                    const { title, slug, ...rest } = meta;
+                    data.title = title ?? data.title;
+                    data.slug = slug ?? data.slug;
+                    data.meta = { ...rest };
+                  }}
+                />
+              ))}
         {!isMobile.value && <HeaderPreviewButton iframe data={data} />}
-        {data.contentFormat === 'lexical' && (
+        {data.contentFormat === "lexical" && (
           <HeaderActionButton
             icon={<Bot />}
             name="AI 助手"
             onClick={() => {
-              agentVisible.value = !agentVisible.value
+              agentVisible.value = !agentVisible.value;
             }}
           />
         )}
@@ -385,44 +388,44 @@ const PostWriteView = defineComponent(() => {
           onClick={handleSubmit}
         />
       </>,
-    )
-  })
+    );
+  });
 
   return () => (
     <>
       <WriteEditor
         key={data._id}
         loading={loading.value}
-        autoFocus={isEditing.value ? 'content' : 'title'}
+        autoFocus={isEditing.value ? "content" : "title"}
         title={data.title}
         onTitleChange={(v) => {
-          data.title = v
+          data.title = v;
         }}
         titlePlaceholder="输入标题..."
         text={data.text}
         onChange={(v) => {
-          data.text = v
+          data.text = v;
         }}
         contentFormat={data.contentFormat}
         onContentFormatChange={(v) => {
-          data.contentFormat = v
-          setPreferredContentFormat(v)
+          data.contentFormat = v;
+          setPreferredContentFormat(v);
         }}
         richContent={data.content ? JSON.parse(data.content) : undefined}
         onRichContentChange={(v) => {
-          data.content = JSON.stringify(v)
+          data.content = JSON.stringify(v);
         }}
         onRichEditorReady={(editor) => {
-          lexicalEditor.value = editor
+          lexicalEditor.value = editor;
         }}
         saveConfirmFn={serverDraft.checkIsSynced}
         variant="post"
-        agentEnabled={data.contentFormat === 'lexical'}
+        agentEnabled={data.contentFormat === "lexical"}
         agentVisible={agentVisible.value}
         providerGroups={providerGroups.value}
         selectedModel={selectedModel.value}
         onSelectModel={(model) => {
-          selectedModel.value = model
+          selectedModel.value = model;
         }}
         refId={actualRefId.value || data._id}
         refType="post"
@@ -438,29 +441,36 @@ const PostWriteView = defineComponent(() => {
           isPublished: data.isPublished,
         })}
         onMetaFieldsUpdate={(updates) => {
-          if ('title' in updates) data.title = String(updates.title ?? '')
-          if ('slug' in updates) data.slug = String(updates.slug ?? '')
-          if ('tags' in updates && Array.isArray(updates.tags)) {
-            data.tags.length = 0
-            data.tags.push(...(updates.tags as unknown[]).map((t) => String(t)))
+          if ("title" in updates)
+            data.title = String(updates.title ?? "");
+          if ("slug" in updates)
+            data.slug = String(updates.slug ?? "");
+          if ("tags" in updates && Array.isArray(updates.tags)) {
+            data.tags.length = 0;
+            data.tags.push(...(updates.tags as unknown[]).map(t => String(t)));
           }
-          if ('summary' in updates) data.summary = String(updates.summary ?? '')
-          if ('copyright' in updates) data.copyright = !!updates.copyright
-          if ('pin' in updates) {
-            data.pin = !!updates.pin
-            if (!data.pin) data.pinOrder = 0
-            else if (!data.pinOrder) data.pinOrder = 1
+          if ("summary" in updates)
+            data.summary = String(updates.summary ?? "");
+          if ("copyright" in updates)
+            data.copyright = !!updates.copyright;
+          if ("pin" in updates) {
+            data.pin = !!updates.pin;
+            if (!data.pin)
+              data.pinOrder = 0;
+            else if (!data.pinOrder)
+              data.pinOrder = 1;
           }
-          if ('pinOrder' in updates)
-            data.pinOrder = Number(updates.pinOrder ?? 0) || 0
-          if ('isPublished' in updates) data.isPublished = !!updates.isPublished
+          if ("pinOrder" in updates)
+            data.pinOrder = Number(updates.pinOrder ?? 0) || 0;
+          if ("isPublished" in updates)
+            data.isPublished = !!updates.isPublished;
         }}
         subtitleSlot={() => (
           <SlugInput
             prefix={`${WEB_URL}/posts/${category.value.slug}/`}
             value={data.slug}
             onChange={(v) => {
-              data.slug = v
+              data.slug = v;
             }}
             placeholder="slug"
           >
@@ -476,7 +486,7 @@ const PostWriteView = defineComponent(() => {
         show={drawerShow.value}
         scope="post"
         onUpdateShow={(s) => {
-          drawerShow.value = s
+          drawerShow.value = s;
         }}
         data={data}
         lexicalEditor={lexicalEditor.value}
@@ -487,14 +497,14 @@ const PostWriteView = defineComponent(() => {
           <NSelect
             placeholder="请选择分类"
             options={
-              categoryStore.data.value?.map((i) => ({
+              categoryStore.data.value?.map(i => ({
                 label: i.name,
                 value: i.id,
               })) || []
             }
             value={data.categoryId}
             onUpdateValue={(v) => {
-              data.categoryId = v
+              data.categoryId = v;
             }}
           />
         </FormField>
@@ -503,37 +513,37 @@ const PostWriteView = defineComponent(() => {
           <NDynamicTags
             value={data.tags}
             onUpdateValue={(e) => {
-              data.tags.length = 0
-              data.tags.push(...e)
+              data.tags.length = 0;
+              data.tags.push(...e);
             }}
           >
             {{
               input({ submit }) {
                 const Component = defineComponent({
                   setup() {
-                    const tagsRef = ref([] as SelectMixedOption[])
-                    const loading = ref(false)
-                    const value = ref('')
-                    const selectRef = ref()
+                    const tagsRef = ref([] as SelectMixedOption[]);
+                    const loading = ref(false);
+                    const value = ref("");
+                    const selectRef = ref();
                     onMounted(async () => {
-                      loading.value = true
+                      loading.value = true;
                       if (selectRef.value) {
-                        selectRef.value.$el.querySelector('input').focus()
+                        selectRef.value.$el.querySelector("input").focus();
                       }
                       const tagData = await categoriesApi.getList({
-                        type: 'Tag',
-                      })
-                      tagsRef.value = tagData.map((i) => ({
+                        type: "Tag",
+                      });
+                      tagsRef.value = tagData.map(i => ({
                         label: `${i.name} (${i.count})`,
                         value: i.name,
                         key: i.name,
-                      }))
-                      loading.value = false
-                    })
+                      }));
+                      loading.value = false;
+                    });
                     return () => (
                       <NSelect
                         ref={selectRef}
-                        size={'small'}
+                        size="small"
                         value={value.value}
                         clearable
                         loading={loading.value}
@@ -541,14 +551,14 @@ const PostWriteView = defineComponent(() => {
                         tag
                         options={tagsRef.value}
                         onUpdateValue={(e) => {
-                          void (value.value = e)
-                          submit(e)
+                          void (value.value = e);
+                          submit(e);
                         }}
                       />
-                    )
+                    );
                   },
-                })
-                return <Component />
+                });
+                return <Component />;
               },
             }}
           </NDynamicTags>
@@ -558,7 +568,7 @@ const PostWriteView = defineComponent(() => {
           <NSelect
             maxTagCount={3}
             multiple
-            options={postListState.datalist.value.map((i) => ({
+            options={postListState.datalist.value.map(i => ({
               label: i.title,
               value: i._id,
             }))}
@@ -567,7 +577,7 @@ const PostWriteView = defineComponent(() => {
             placeholder="搜索标题"
             value={data.relatedId}
             onUpdateValue={(val) => {
-              data.relatedId = val
+              data.relatedId = val;
             }}
             onScroll={handleFetchNext}
           />
@@ -580,7 +590,7 @@ const PostWriteView = defineComponent(() => {
             value={data.summary}
             rows={3}
             autosize={{ minRows: 3 }}
-            onUpdateValue={(v) => void (data.summary = v)}
+            onUpdateValue={v => void (data.summary = v)}
           />
         </FormField>
 
@@ -590,7 +600,7 @@ const PostWriteView = defineComponent(() => {
           label="版权注明"
           description="在文章底部显示版权信息"
           modelValue={data.copyright}
-          onUpdate={(e) => void (data.copyright = e)}
+          onUpdate={e => void (data.copyright = e)}
         />
 
         <SwitchRow
@@ -598,22 +608,22 @@ const PostWriteView = defineComponent(() => {
           description="在文章列表中优先显示"
           modelValue={!!data.pin}
           onUpdate={(e) => {
-            data.pin = e
+            data.pin = e;
             if (!e) {
-              data.pinOrder = 0
+              data.pinOrder = 0;
             } else {
-              data.pinOrder = data.pinOrder || 1
+              data.pinOrder = data.pinOrder || 1;
             }
           }}
         />
 
         {data.pin && (
-          <div class="mb-4 ml-4 border-l-2 border-neutral-200 pl-4 dark:border-neutral-700">
+          <div class="mb-4 ml-4 pl-4 border-l-2 border-neutral-200 dark:border-neutral-700">
             <FormField label="置顶顺序">
               <NInputNumber
                 class="w-full"
                 value={data.pinOrder}
-                onUpdateValue={(e) => void (data.pinOrder = e || 1)}
+                onUpdateValue={e => void (data.pinOrder = e || 1)}
                 min={1}
                 placeholder="数字越大越靠前"
               />
@@ -624,7 +634,7 @@ const PostWriteView = defineComponent(() => {
         <SwitchRow
           label="发布状态"
           modelValue={data.isPublished}
-          onUpdate={(e) => void (data.isPublished = e)}
+          onUpdate={e => void (data.isPublished = e)}
           checkedText="已发布"
           uncheckedText="草稿"
         />
@@ -649,7 +659,7 @@ const PostWriteView = defineComponent(() => {
         onCreate={listModal.onCreate}
       />
     </>
-  )
-})
+  );
+});
 
-export default PostWriteView
+export default PostWriteView;

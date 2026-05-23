@@ -1,10 +1,16 @@
-import { isString } from 'es-toolkit/compat'
+import type { LexicalEditor } from "lexical";
+import type { CreatePageData } from "~/api/pages";
+import type { MetaFieldsSchema } from "~/components/editor/write-editor";
+import type { DraftModel } from "~/models/draft";
+import type { PageModel } from "~/models/page";
+import type { ContentFormat, WriteBaseType } from "~/shared/types/base";
+import { isString } from "es-toolkit/compat";
 import {
   FileTextIcon,
   SlidersHorizontal as SlidersHIcon,
   Send as TelegramPlaneIcon,
-} from 'lucide-vue-next'
-import { NInputNumber } from 'naive-ui'
+} from "lucide-vue-next";
+import { NInputNumber } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -14,68 +20,62 @@ import {
   shallowRef,
   toRaw,
   watchEffect,
-} from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { CreatePageData } from '~/api/pages'
-import type { MetaFieldsSchema } from '~/components/editor/write-editor'
-import type { DraftModel } from '~/models/draft'
-import type { PageModel } from '~/models/page'
-import type { ContentFormat, WriteBaseType } from '~/shared/types/base'
-import type { LexicalEditor } from 'lexical'
+} from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
-import { pagesApi } from '~/api/pages'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { DraftListModal } from '~/components/draft/draft-list-modal'
-import { DraftRecoveryModal } from '~/components/draft/draft-recovery-modal'
-import { DraftSaveIndicator } from '~/components/draft/draft-save-indicator'
-import { LexicalDebugButton } from '~/components/drawer/lexical-debug-drawer'
+import { pagesApi } from "~/api/pages";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { DraftListModal } from "~/components/draft/draft-list-modal";
+import { DraftRecoveryModal } from "~/components/draft/draft-recovery-modal";
+import { DraftSaveIndicator } from "~/components/draft/draft-save-indicator";
+import { LexicalDebugButton } from "~/components/drawer/lexical-debug-drawer";
 import {
   FormField,
   SectionTitle,
   TextBaseDrawer,
-} from '~/components/drawer/text-base-drawer'
-import { WriteEditor } from '~/components/editor/write-editor'
-import { SlugInput } from '~/components/editor/write-editor/slug-input'
-import { ParseContentButton } from '~/components/special-button/parse-content'
-import { HeaderPreviewButton } from '~/components/special-button/preview'
-import { WEB_URL } from '~/constants/env'
-import { useParsePayloadIntoData } from '~/hooks/use-parse-payload'
-import { usePreferredContentFormat } from '~/hooks/use-preferred-content-format'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { useWriteDraft } from '~/hooks/use-write-draft'
-import { useLayout } from '~/layouts/content'
-import { DraftRefType } from '~/models/draft'
-import { RouteName } from '~/router/name'
-import { UIStore } from '~/stores/ui'
+} from "~/components/drawer/text-base-drawer";
+import { WriteEditor } from "~/components/editor/write-editor";
+import { SlugInput } from "~/components/editor/write-editor/slug-input";
+import { ParseContentButton } from "~/components/special-button/parse-content";
+import { HeaderPreviewButton } from "~/components/special-button/preview";
+import { WEB_URL } from "~/constants/env";
+import { useParsePayloadIntoData } from "~/hooks/use-parse-payload";
+import { usePreferredContentFormat } from "~/hooks/use-preferred-content-format";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { useWriteDraft } from "~/hooks/use-write-draft";
+import { useLayout } from "~/layouts/content";
+import { DraftRefType } from "~/models/draft";
+import { RouteName } from "~/router/name";
+import { UIStore } from "~/stores/ui";
 
 const PAGE_META_SCHEMA: MetaFieldsSchema = {
-  title: { description: '页面标题', type: 'string' },
+  title: { description: "页面标题", type: "string" },
   slug: {
-    description: 'URL 路径片段，建议英文小写并使用连字符',
-    type: 'string',
-    example: 'about',
+    description: "URL 路径片段，建议英文小写并使用连字符",
+    type: "string",
+    example: "about",
   },
-  subtitle: { description: '副标题', type: 'string' },
+  subtitle: { description: "副标题", type: "string" },
   order: {
-    description: '导航顺序，数字越小越靠前',
-    type: 'number',
+    description: "导航顺序，数字越小越靠前",
+    type: "number",
   },
-}
+};
 
 type PageReactiveType = WriteBaseType & {
-  subtitle: string
-  slug: string
-  order: number
-  contentFormat: ContentFormat
-  content: string
-}
+  subtitle: string;
+  slug: string;
+  order: number;
+  contentFormat: ContentFormat;
+  content: string;
+};
 
 const PageWriteView = defineComponent(() => {
-  const uiStore = useStoreRef(UIStore)
+  const uiStore = useStoreRef(UIStore);
   const isMobile = computed(
     () => uiStore.viewport.value.mobile || uiStore.viewport.value.pad,
-  )
+  );
 
   const {
     setTitle,
@@ -83,57 +83,57 @@ const PageWriteView = defineComponent(() => {
     setActions,
     setContentPadding,
     setHeaderSubtitle,
-  } = useLayout()
-  const { preferredContentFormat, setPreferredContentFormat } =
-    usePreferredContentFormat()
+  } = useLayout();
+  const { preferredContentFormat, setPreferredContentFormat }
+    = usePreferredContentFormat();
 
-  setContentPadding(false)
+  setContentPadding(false);
 
   const resetReactive: () => PageReactiveType = () => ({
-    text: '',
-    title: '',
+    text: "",
+    title: "",
     order: 0,
-    slug: '',
-    subtitle: '',
+    slug: "",
+    subtitle: "",
     id: undefined,
     images: [],
     meta: undefined,
     contentFormat: preferredContentFormat.value,
-    content: '',
-  })
+    content: "",
+  });
 
   const parsePayloadIntoReactiveData = (payload: PageModel) =>
-    useParsePayloadIntoData(data)(payload)
-  const data = reactive<PageReactiveType>(resetReactive())
-  const lexicalEditor = shallowRef<LexicalEditor | null>(null)
+    useParsePayloadIntoData(data)(payload);
+  const data = reactive<PageReactiveType>(resetReactive());
+  const lexicalEditor = shallowRef<LexicalEditor | null>(null);
 
-  const router = useRouter()
+  const router = useRouter();
 
   const applyDraft = (
     draft: DraftModel,
     target: PageReactiveType,
     isPartial?: boolean,
   ) => {
-    target.title = draft.title
-    target.text = draft.text
-    target.contentFormat = draft.contentFormat || 'markdown'
-    target.content = draft.content || ''
-    target.images = draft.images || []
-    target.meta = draft.meta
+    target.title = draft.title;
+    target.text = draft.text;
+    target.contentFormat = draft.contentFormat || "markdown";
+    target.content = draft.content || "";
+    target.images = draft.images || [];
+    target.meta = draft.meta;
     if (draft.typeSpecificData) {
-      const specific = draft.typeSpecificData
-      target.slug = specific.slug || (isPartial ? target.slug : '')
-      target.subtitle = specific.subtitle || (isPartial ? target.subtitle : '')
-      target.order = specific.order ?? (isPartial ? target.order : 0)
+      const specific = draft.typeSpecificData;
+      target.slug = specific.slug || (isPartial ? target.slug : "");
+      target.subtitle = specific.subtitle || (isPartial ? target.subtitle : "");
+      target.order = specific.order ?? (isPartial ? target.order : 0);
     }
-  }
+  };
 
   const loadPublished = async (id: string) => {
-    const payload = await pagesApi.getById(id)
-    parsePayloadIntoReactiveData(payload as PageModel)
-    data.contentFormat = (payload as any).contentFormat || 'markdown'
-    data.content = (payload as any).content || ''
-  }
+    const payload = await pagesApi.getById(id);
+    parsePayloadIntoReactiveData(payload as PageModel);
+    data.contentFormat = (payload as any).contentFormat || "markdown";
+    data.content = (payload as any).content || "";
+  };
 
   const {
     id,
@@ -146,7 +146,7 @@ const PageWriteView = defineComponent(() => {
   } = useWriteDraft(data, {
     refType: DraftRefType.Page,
     interval: 10000,
-    draftLabel: '页面',
+    draftLabel: "页面",
     getData: () => ({
       title: data.title,
       text: data.text,
@@ -163,101 +163,105 @@ const PageWriteView = defineComponent(() => {
     applyDraft,
     loadPublished,
     onTitleFallback: (title) => {
-      data.title = title
+      data.title = title;
     },
-  })
+  });
 
-  const loading = computed(() => !!(id.value && typeof data.id === 'undefined'))
+  const loading = computed(() => !!(id.value && typeof data.id === "undefined"));
 
   onMounted(() => {
-    initialize()
-  })
+    initialize();
+  });
 
-  const drawerShow = ref(false)
+  const drawerShow = ref(false);
 
   const handleSubmit = async () => {
     const parseDataToPayload = () => {
       if (!data.title || data.title.trim().length === 0) {
-        toast.error('标题为空')
-        return null
+        toast.error("标题为空");
+        return null;
       }
       if (!data.slug) {
-        toast.error('路径为空')
-        return null
+        toast.error("路径为空");
+        return null;
       }
       return {
         ...toRaw(data),
         title: data.title.trim(),
         slug: data.slug.trim(),
         contentFormat: data.contentFormat,
-        content: data.contentFormat === 'lexical' ? data.content : undefined,
-      }
-    }
+        content: data.contentFormat === "lexical" ? data.content : undefined,
+      };
+    };
 
-    const payload = parseDataToPayload()
-    if (!payload) return
+    const payload = parseDataToPayload();
+    if (!payload)
+      return;
 
-    const draftId = serverDraft.draftId.value
+    const draftId = serverDraft.draftId.value;
 
     if (actualRefId.value) {
-      if (!isString(actualRefId.value)) return
+      if (!isString(actualRefId.value))
+        return;
       const result = await pagesApi.update(actualRefId.value, {
         ...payload,
         draftId,
-      })
-      data.text = result.text
-      data.images = (result as any).images || []
-      serverDraft.syncMemory()
-      toast.success('修改成功')
+      });
+      data.text = result.text;
+      data.images = (result as any).images || [];
+      serverDraft.syncMemory();
+      toast.success("修改成功");
     } else {
       const result = await pagesApi.create({
         ...payload,
         draftId,
-      } as CreatePageData)
-      data.text = result.text
-      data.images = (result as any).images || []
-      serverDraft.syncMemory()
-      toast.success('发布成功')
+      } as CreatePageData);
+      data.text = result.text;
+      data.images = (result as any).images || [];
+      serverDraft.syncMemory();
+      toast.success("发布成功");
     }
 
-    router.push({ name: RouteName.ListPage, hash: '|publish' })
-  }
+    router.push({ name: RouteName.ListPage, hash: "|publish" });
+  };
 
-  setHeaderClass('pt-1')
+  setHeaderClass("pt-1");
 
   watchEffect(() => {
-    setTitle(isEditing.value ? '修改页面' : '新建页面')
+    setTitle(isEditing.value ? "修改页面" : "新建页面");
 
     setHeaderSubtitle(
       <DraftSaveIndicator
         isSaving={serverDraft.isSaving}
         lastSavedTime={serverDraft.lastSavedTime}
       />,
-    )
+    );
 
     setActions(
       <>
-        {!isMobile.value &&
-          (data.contentFormat === 'lexical' ? (
-            <LexicalDebugButton content={data.content} />
-          ) : (
-            <ParseContentButton
-              data={data}
-              onHandleYamlParsedMeta={(meta) => {
-                const { title, slug, subtitle, ...rest } = meta
-                data.title = title ?? data.title
-                data.slug = slug ?? data.slug
-                data.subtitle = subtitle ?? data.subtitle
-                data.meta = { ...rest }
-              }}
-            />
-          ))}
+        {!isMobile.value
+          && (data.contentFormat === "lexical"
+            ? (
+                <LexicalDebugButton content={data.content} />
+              )
+            : (
+                <ParseContentButton
+                  data={data}
+                  onHandleYamlParsedMeta={(meta) => {
+                    const { title, slug, subtitle, ...rest } = meta;
+                    data.title = title ?? data.title;
+                    data.slug = slug ?? data.slug;
+                    data.subtitle = subtitle ?? data.subtitle;
+                    data.meta = { ...rest };
+                  }}
+                />
+              ))}
         {!isMobile.value && <HeaderPreviewButton iframe data={data} />}
         <HeaderActionButton
           icon={<SlidersHIcon />}
           name="页面设置"
           onClick={() => {
-            drawerShow.value = true
+            drawerShow.value = true;
           }}
         />
         <HeaderActionButton
@@ -267,35 +271,35 @@ const PageWriteView = defineComponent(() => {
           onClick={handleSubmit}
         />
       </>,
-    )
-  })
+    );
+  });
 
   return () => (
     <>
       <WriteEditor
         key={data.id}
         loading={loading.value}
-        autoFocus={isEditing.value ? 'content' : 'title'}
+        autoFocus={isEditing.value ? "content" : "title"}
         title={data.title}
         onTitleChange={(v) => {
-          data.title = v
+          data.title = v;
         }}
         titlePlaceholder="输入标题..."
         text={data.text}
         onChange={(v) => {
-          data.text = v
+          data.text = v;
         }}
         contentFormat={data.contentFormat}
         onContentFormatChange={(v) => {
-          data.contentFormat = v
-          setPreferredContentFormat(v)
+          data.contentFormat = v;
+          setPreferredContentFormat(v);
         }}
         richContent={data.content ? JSON.parse(data.content) : undefined}
         onRichContentChange={(v) => {
-          data.content = JSON.stringify(v)
+          data.content = JSON.stringify(v);
         }}
         onRichEditorReady={(editor) => {
-          lexicalEditor.value = editor
+          lexicalEditor.value = editor;
         }}
         saveConfirmFn={serverDraft.checkIsSynced}
         variant="post"
@@ -307,11 +311,14 @@ const PageWriteView = defineComponent(() => {
           order: data.order,
         })}
         onMetaFieldsUpdate={(updates) => {
-          if ('title' in updates) data.title = String(updates.title ?? '')
-          if ('slug' in updates) data.slug = String(updates.slug ?? '')
-          if ('subtitle' in updates)
-            data.subtitle = String(updates.subtitle ?? '')
-          if ('order' in updates) data.order = Number(updates.order ?? 0) || 0
+          if ("title" in updates)
+            data.title = String(updates.title ?? "");
+          if ("slug" in updates)
+            data.slug = String(updates.slug ?? "");
+          if ("subtitle" in updates)
+            data.subtitle = String(updates.subtitle ?? "");
+          if ("order" in updates)
+            data.order = Number(updates.order ?? 0) || 0;
         }}
         subtitleSlot={() => (
           <div class="space-y-2">
@@ -319,21 +326,21 @@ const PageWriteView = defineComponent(() => {
               prefix={`${WEB_URL}/`}
               value={data.slug}
               onChange={(v) => {
-                data.slug = v
+                data.slug = v;
               }}
               placeholder="slug"
             />
             <input
               class={[
-                'w-full bg-transparent outline-none',
-                'text-sm text-neutral-600 dark:text-neutral-400',
-                'border-none px-1 py-0.5',
-                'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
+                "w-full bg-transparent outline-none",
+                "text-sm text-neutral-600 dark:text-neutral-400",
+                "border-none px-1 py-0.5",
+                "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
               ]}
               placeholder="输入副标题..."
               value={data.subtitle}
               onInput={(e) => {
-                data.subtitle = (e.target as HTMLInputElement).value
+                data.subtitle = (e.target as HTMLInputElement).value;
               }}
             />
           </div>
@@ -342,9 +349,9 @@ const PageWriteView = defineComponent(() => {
 
       <TextBaseDrawer
         title="页面设定"
-        disabledItem={['date-picker']}
+        disabledItem={["date-picker"]}
         onUpdateShow={(s) => {
-          drawerShow.value = s
+          drawerShow.value = s;
         }}
         data={data}
         show={drawerShow.value}
@@ -360,7 +367,7 @@ const PageWriteView = defineComponent(() => {
             class="w-full"
             placeholder="输入排序数字"
             value={data.order}
-            onUpdateValue={(e) => void (data.order = e ?? 0)}
+            onUpdateValue={e => void (data.order = e ?? 0)}
             min={0}
           />
         </FormField>
@@ -385,7 +392,7 @@ const PageWriteView = defineComponent(() => {
         onCreate={listModal.onCreate}
       />
     </>
-  )
-})
+  );
+});
 
-export default PageWriteView
+export default PageWriteView;

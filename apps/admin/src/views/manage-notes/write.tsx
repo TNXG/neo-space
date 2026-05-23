@@ -1,13 +1,22 @@
-import { add } from 'date-fns'
-import { isString } from 'es-toolkit/compat'
+import type { ProviderGroup } from "@haklex/rich-agent-chat";
+import type { LexicalEditor } from "lexical";
+import type { ProviderModelsResponse } from "~/api/ai";
+import type { CreateNoteData } from "~/api/notes";
+import type { MetaFieldsSchema } from "~/components/editor/write-editor";
+import type { DraftModel } from "~/models/draft";
+import type { Coordinate, NoteModel } from "~/models/note";
+import type { TopicModel } from "~/models/topic";
+import type { ContentFormat, WriteBaseType } from "~/shared/types/base";
+import { add } from "date-fns";
+import { isString } from "es-toolkit/compat";
 import {
   BookmarkIcon,
   Bot,
   MapPinIcon,
   SlidersHorizontal as SlidersHIcon,
   Send as TelegramPlaneIcon,
-} from 'lucide-vue-next'
-import { NButton, NDatePicker, NInput, NSelect, NSpace } from 'naive-ui'
+} from "lucide-vue-next";
+import { NButton, NDatePicker, NInput, NSelect, NSpace } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -19,219 +28,211 @@ import {
   shallowRef,
   toRaw,
   watchEffect,
-} from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { ProviderGroup } from '@haklex/rich-agent-chat'
-import type { TopicModel } from '~/models/topic'
-import type { ProviderModelsResponse } from '~/api/ai'
-import type { CreateNoteData } from '~/api/notes'
-import type { MetaFieldsSchema } from '~/components/editor/write-editor'
-import type { DraftModel } from '~/models/draft'
-import type { Coordinate, NoteModel } from '~/models/note'
-import type { ContentFormat, WriteBaseType } from '~/shared/types/base'
-import type { LexicalEditor } from 'lexical'
+} from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
-import { aiApi } from '~/api/ai'
-import { notesApi } from '~/api/notes'
-import { topicsApi } from '~/api/topics'
-import { AiHelperButton } from '~/components/ai/ai-helper'
-import { HeaderActionButton } from '~/components/button/header-action-button'
-import { DraftListModal } from '~/components/draft/draft-list-modal'
-import { DraftRecoveryModal } from '~/components/draft/draft-recovery-modal'
-import { DraftSaveIndicator } from '~/components/draft/draft-save-indicator'
-import { LexicalDebugButton } from '~/components/drawer/lexical-debug-drawer'
+import { aiApi } from "~/api/ai";
+import { notesApi } from "~/api/notes";
+import { topicsApi } from "~/api/topics";
+import { AiHelperButton } from "~/components/ai/ai-helper";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { DraftListModal } from "~/components/draft/draft-list-modal";
+import { DraftRecoveryModal } from "~/components/draft/draft-recovery-modal";
+import { DraftSaveIndicator } from "~/components/draft/draft-save-indicator";
+import { LexicalDebugButton } from "~/components/drawer/lexical-debug-drawer";
 import {
   FieldGroup,
   FormField,
   SectionTitle,
   SwitchRow,
   TextBaseDrawer,
-} from '~/components/drawer/text-base-drawer'
-import { useAgentSelectedModel } from '~/components/editor/rich/agent-chat/composables/use-agent-selected-model'
-import { WriteEditor } from '~/components/editor/write-editor'
-import { SlugInput } from '~/components/editor/write-editor/slug-input'
-import { GetLocationButton } from '~/components/location/get-location-button'
-import { SearchLocationButton } from '~/components/location/search-button'
-import { ParseContentButton } from '~/components/special-button/parse-content'
-import { HeaderPreviewButton } from '~/components/special-button/preview'
-import { WEB_URL } from '~/constants/env'
-import { MOOD_SET, WEATHER_SET } from '~/constants/note'
-import { useParsePayloadIntoData } from '~/hooks/use-parse-payload'
-import { usePreferredContentFormat } from '~/hooks/use-preferred-content-format'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { useWriteDraft } from '~/hooks/use-write-draft'
-import { useLayout } from '~/layouts/content'
-import { DraftRefType } from '~/models/draft'
-import { UIStore } from '~/stores/ui'
-import { getDayOfYear } from '~/utils/time'
+} from "~/components/drawer/text-base-drawer";
+import { useAgentSelectedModel } from "~/components/editor/rich/agent-chat/composables/use-agent-selected-model";
+import { WriteEditor } from "~/components/editor/write-editor";
+import { SlugInput } from "~/components/editor/write-editor/slug-input";
+import { GetLocationButton } from "~/components/location/get-location-button";
+import { SearchLocationButton } from "~/components/location/search-button";
+import { ParseContentButton } from "~/components/special-button/parse-content";
+import { HeaderPreviewButton } from "~/components/special-button/preview";
+import { WEB_URL } from "~/constants/env";
+import { MOOD_SET, WEATHER_SET } from "~/constants/note";
+import { useParsePayloadIntoData } from "~/hooks/use-parse-payload";
+import { usePreferredContentFormat } from "~/hooks/use-preferred-content-format";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { useWriteDraft } from "~/hooks/use-write-draft";
+import { useLayout } from "~/layouts/content";
+import { DraftRefType } from "~/models/draft";
+import { UIStore } from "~/stores/ui";
+import { getDayOfYear } from "~/utils/time";
 
 const NOTE_META_SCHEMA: MetaFieldsSchema = {
-  title: { description: '日记标题', type: 'string' },
+  title: { description: "日记标题", type: "string" },
   slug: {
-    description: 'URL 路径片段，可空（空则使用 nid 路径）',
-    type: 'string',
+    description: "URL 路径片段，可空（空则使用 nid 路径）",
+    type: "string",
   },
-  mood: { description: '心情', type: 'string' },
-  weather: { description: '天气', type: 'string' },
-  bookmark: { description: '是否标记为回忆项', type: 'boolean' },
-  location: { description: '位置文本（可空）', type: 'string' },
+  mood: { description: "心情", type: "string" },
+  weather: { description: "天气", type: "string" },
+  bookmark: { description: "是否标记为回忆项", type: "boolean" },
+  location: { description: "位置文本（可空）", type: "string" },
   isPublished: {
-    description: '是否发布（false 为草稿）',
-    type: 'boolean',
+    description: "是否发布（false 为草稿）",
+    type: "boolean",
   },
-}
+};
 
 function toProviderGroups(response: ProviderModelsResponse[]): ProviderGroup[] {
-  return response.map((p) => ({
+  return response.map(p => ({
     id: p.providerId,
     name: p.providerName,
     providerType:
-      p.providerType === 'anthropic' ? 'claude' : 'openai-compatible',
-    models: p.models.map((m) => ({ id: m.id, displayName: m.name || m.id })),
-  }))
+      p.providerType === "anthropic" ? "claude" : "openai-compatible",
+    models: p.models.map(m => ({ id: m.id, displayName: m.name || m.id })),
+  }));
 }
 
 type NoteReactiveType = {
-  slug: string
-  mood: string
-  weather: string
-  password: string | null
-  publicAt: Date | null
-  bookmark: boolean
-  isPublished: boolean
-  location: null | string
-  coordinates: null | Coordinate
-  topicId: string | null | undefined
-  contentFormat: ContentFormat
-  content: string
-} & WriteBaseType
+  _id?: string;
+  slug: string;
+  mood: string;
+  weather: string;
+  password: string | null;
+  publicAt: Date | null;
+  bookmark: boolean;
+  isPublished: boolean;
+  location: null | string;
+  coordinates: null | Coordinate;
+  topicId: string | null | undefined;
+  contentFormat: ContentFormat;
+  content: string;
+} & Omit<WriteBaseType, "id">;
 
 const useNoteTopic = () => {
-  const topics = ref([] as TopicModel[])
+  const topics = ref([] as TopicModel[]);
 
   const fetchTopic = async () => {
-    const { data } = await topicsApi.getList({ size: 50 })
-    topics.value = data as unknown as TopicModel[]
-  }
+    const { data } = await topicsApi.getList({ size: 50 });
+    topics.value = data as unknown as TopicModel[];
+  };
 
-  return { topics, fetchTopic }
-}
+  return { topics, fetchTopic };
+};
 
 const buildNotePublicPath = (
-  note: Pick<NoteReactiveType, 'slug' | 'createdAt'> & { nid?: number },
+  note: Pick<NoteReactiveType, "slug" | "createdAt"> & { nid?: number },
 ) => {
   if (note.slug) {
-    const date = note.createdAt ? new Date(note.createdAt) : new Date()
-    return `/notes/${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/${note.slug}`
+    const date = note.createdAt ? new Date(note.createdAt) : new Date();
+    return `/notes/${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/${note.slug}`;
   }
 
-  return note.nid ? `/notes/${note.nid}` : ''
-}
+  return note.nid ? `/notes/${note.nid}` : "";
+};
 
 const NoteWriteView = defineComponent(() => {
-  const defaultTitle = ref('新建日记')
-  const router = useRouter()
-  const uiStore = useStoreRef(UIStore)
-  const { preferredContentFormat, setPreferredContentFormat } =
-    usePreferredContentFormat()
+  const defaultTitle = ref("新建日记");
+  const router = useRouter();
+  const uiStore = useStoreRef(UIStore);
+  const { preferredContentFormat, setPreferredContentFormat }
+    = usePreferredContentFormat();
   const isMobile = computed(
     () => uiStore.viewport.value.mobile || uiStore.viewport.value.pad,
-  )
+  );
 
-  const agentVisible = ref(false)
-  const providerGroups = ref<ProviderGroup[]>([])
-  const { selectedModel } = useAgentSelectedModel(providerGroups)
+  const agentVisible = ref(false);
+  const providerGroups = ref<ProviderGroup[]>([]);
+  const { selectedModel } = useAgentSelectedModel(providerGroups);
 
   const resetReactive: () => NoteReactiveType = () => ({
-    text: '',
-    title: '',
-    slug: '',
+    text: "",
+    title: "",
+    slug: "",
     bookmark: false,
-    mood: '',
+    mood: "",
     password: null,
     publicAt: null,
-    weather: '',
-    location: '',
+    weather: "",
+    location: "",
     coordinates: null,
     isPublished: true,
-    id: undefined,
+    _id: undefined,
     nid: undefined,
     topicId: undefined,
     images: [],
     meta: undefined,
     createdAt: undefined,
     contentFormat: preferredContentFormat.value,
-    content: '',
-  })
+    content: "",
+  });
 
   const parsePayloadIntoReactiveData = (payload: NoteModel) =>
-    useParsePayloadIntoData(data)(payload)
-  const data = reactive<NoteReactiveType>(resetReactive())
-  const lexicalEditor = shallowRef<LexicalEditor | null>(null)
-  const nid = ref<number>()
+    useParsePayloadIntoData(data)(payload);
+  const data = reactive<NoteReactiveType>(resetReactive());
+  const lexicalEditor = shallowRef<LexicalEditor | null>(null);
+  const nid = ref<number>();
   // Server stopped returning the raw `password` value after the PG migration —
   // it now only emits `hasPassword: boolean`. Without this flag, editing an
   // existing protected note would silently re-PATCH `password: null` and
   // strip protection, since `data.password` defaults to null on load.
-  const hasExistingPassword = ref(false)
-  const passwordTouched = ref(false)
+  const hasExistingPassword = ref(false);
+  const passwordTouched = ref(false);
 
   const applyDraft = (
     draft: DraftModel,
     target: NoteReactiveType,
     isPartial?: boolean,
   ) => {
-    target.title = draft.title
-    target.text = draft.text
-    target.contentFormat = draft.contentFormat || 'markdown'
-    target.content = draft.content || ''
-    target.images = draft.images || []
-    target.meta = draft.meta
+    target.title = draft.title;
+    target.text = draft.text;
+    target.contentFormat = draft.contentFormat || "markdown";
+    target.content = draft.content || "";
+    target.images = draft.images || [];
+    target.meta = draft.meta;
     if (draft.typeSpecificData) {
-      const specific = draft.typeSpecificData
-      target.slug = specific.slug || (isPartial ? target.slug : '')
-      target.mood = specific.mood || (isPartial ? target.mood : '')
-      target.weather = specific.weather || (isPartial ? target.weather : '')
-      target.password =
-        specific.password ?? (isPartial ? target.password : null)
+      const specific = draft.typeSpecificData;
+      target.slug = specific.slug || (isPartial ? target.slug : "");
+      target.mood = specific.mood || (isPartial ? target.mood : "");
+      target.weather = specific.weather || (isPartial ? target.weather : "");
+      target.password
+        = specific.password ?? (isPartial ? target.password : null);
       target.publicAt = specific.publicAt
         ? new Date(specific.publicAt)
         : isPartial
           ? target.publicAt
-          : null
-      target.bookmark =
-        specific.bookmark ?? (isPartial ? target.bookmark : false)
-      target.location = specific.location || (isPartial ? target.location : '')
-      target.coordinates =
-        specific.coordinates || (isPartial ? target.coordinates : null)
-      target.topicId = specific.topicId ?? (isPartial ? target.topicId : null)
-      target.isPublished =
-        specific.isPublished ?? (isPartial ? target.isPublished : true)
+          : null;
+      target.bookmark
+        = specific.bookmark ?? (isPartial ? target.bookmark : false);
+      target.location = specific.location || (isPartial ? target.location : "");
+      target.coordinates
+        = specific.coordinates || (isPartial ? target.coordinates : null);
+      target.topicId = specific.topicId ?? (isPartial ? target.topicId : null);
+      target.isPublished
+        = specific.isPublished ?? (isPartial ? target.isPublished : true);
     }
-  }
+  };
 
   const loadPublished = async (id: string) => {
-    const noteData = await notesApi.getById(id, { single: true })
+    const noteData = await notesApi.getById(id, { single: true });
     if (noteData.topic) {
-      topics.value.push(noteData.topic)
+      topics.value.push(noteData.topic);
     }
-    nid.value = noteData.nid
+    nid.value = noteData.nid;
 
-    const createdAt = new Date((noteData as any).createdAt)
-    defaultTitle.value = `记录 ${createdAt.getFullYear()} 年第 ${getDayOfYear(createdAt)} 天`
+    const createdAt = new Date((noteData as any).createdAt);
+    defaultTitle.value = `记录 ${createdAt.getFullYear()} 年第 ${getDayOfYear(createdAt)} 天`;
 
-    parsePayloadIntoReactiveData(noteData as NoteModel)
-    data.createdAt = (noteData as any).createdAt
-    data.contentFormat = (noteData as any).contentFormat || 'markdown'
-    data.content = (noteData as any).content || ''
-    hasExistingPassword.value = !!(noteData as any).hasPassword
-    passwordTouched.value = false
+    parsePayloadIntoReactiveData(noteData as NoteModel);
+    data.createdAt = (noteData as any).createdAt;
+    data.contentFormat = (noteData as any).contentFormat || "markdown";
+    data.content = (noteData as any).content || "";
+    hasExistingPassword.value = !!(noteData as any).hasPassword;
+    passwordTouched.value = false;
     // Surface a placeholder so `enablePassword` reflects the server state and
     // the toggle starts in the correct position. Empty string means "password
     // is set, but I haven't typed a new one" — submit treats this as no-op.
-    data.password = hasExistingPassword.value ? '' : null
-  }
+    data.password = hasExistingPassword.value ? "" : null;
+  };
 
   const {
     id,
@@ -244,7 +245,7 @@ const NoteWriteView = defineComponent(() => {
   } = useWriteDraft(data, {
     refType: DraftRefType.Note,
     interval: 10000,
-    draftLabel: '手记',
+    draftLabel: "手记",
     getData: () => ({
       title: data.title,
       text: data.text,
@@ -268,109 +269,113 @@ const NoteWriteView = defineComponent(() => {
     applyDraft,
     loadPublished,
     onTitleFallback: (title) => {
-      data.title = title
+      data.title = title;
     },
-  })
+  });
 
-  const loading = computed(() => !!(id.value && typeof data.id === 'undefined'))
+  const loading = computed(
+    () => !!(id.value && typeof data._id === "undefined"),
+  );
 
   onBeforeMount(() => {
-    if (id.value) return
-    const currentTime = new Date()
-    defaultTitle.value = `记录 ${currentTime.getFullYear()} 年第 ${getDayOfYear(currentTime)} 天`
-  })
+    if (id.value)
+      return;
+    const currentTime = new Date();
+    defaultTitle.value = `记录 ${currentTime.getFullYear()} 年第 ${getDayOfYear(currentTime)} 天`;
+  });
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault()
-      serverDraft.saveImmediately()
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault();
+      serverDraft.saveImmediately();
     }
-  }
+  };
 
   onMounted(() => {
-    initialize()
-    window.addEventListener('keydown', handleKeyDown)
+    initialize();
+    window.addEventListener("keydown", handleKeyDown);
     aiApi
       .getModels()
       .then((res) => {
-        providerGroups.value = toProviderGroups(res)
+        providerGroups.value = toProviderGroups(res);
       })
-      .catch(() => {})
-  })
+      .catch(() => {});
+  });
 
   onBeforeUnmount(() => {
-    window.removeEventListener('keydown', handleKeyDown)
-  })
+    window.removeEventListener("keydown", handleKeyDown);
+  });
 
-  const drawerShow = ref(false)
-  const enablePassword = computed(() => typeof data.password === 'string')
+  const drawerShow = ref(false);
+  const enablePassword = computed(() => typeof data.password === "string");
 
   const handleSubmit = async () => {
     if (!data.title || data.title.trim().length === 0) {
-      toast.error('标题为空')
-      return
+      toast.error("标题为空");
+      return;
     }
 
     const parseDataToPayload = () => {
-      const raw = toRaw(data)
+      const raw = toRaw(data);
       const payload: Record<string, unknown> = {
         ...raw,
         title: data.title?.trim() || defaultTitle.value,
         slug: data.slug.trim() || undefined,
         publicAt: data.publicAt
           ? (() => {
-              const date = new Date(data.publicAt)
-              return +date - Date.now() <= 0 ? null : date
+              const date = new Date(data.publicAt);
+              return +date - Date.now() <= 0 ? null : date;
             })()
           : null,
         contentFormat: data.contentFormat,
-        content: data.contentFormat === 'lexical' ? data.content : undefined,
-      }
+        content: data.contentFormat === "lexical" ? data.content : undefined,
+      };
       // Password handling — preserve the server-side value when the user
       // didn't touch the field. The server doesn't echo the raw password
       // back, so we don't have it to round-trip; sending `null` would
       // clear protection.
-      const passwordIsSet =
-        typeof data.password === 'string' && data.password.length > 0
+      const passwordIsSet
+        = typeof data.password === "string" && data.password.length > 0;
       if (hasExistingPassword.value && !passwordTouched.value) {
-        delete payload.password
+        delete payload.password;
       } else if (passwordIsSet) {
-        payload.password = data.password
+        payload.password = data.password;
       } else {
-        payload.password = null
+        payload.password = null;
       }
-      return payload
-    }
+      return payload;
+    };
 
-    const draftId = serverDraft.draftId.value
+    const draftId = serverDraft.draftId.value;
 
     if (actualRefId.value) {
-      if (!isString(actualRefId.value)) return
+      if (!isString(actualRefId.value))
+        return;
       const result = await notesApi.update(actualRefId.value, {
         ...parseDataToPayload(),
         draftId,
-      })
-      data.text = result.text
-      data.images = (result as any).images || []
-      serverDraft.syncMemory()
-      toast.success('修改成功')
+      });
+      data.text = result.text;
+      data.images = (result as any).images || [];
+      serverDraft.syncMemory();
+      toast.success("修改成功");
     } else {
-      const payload = parseDataToPayload()
+      const payload = parseDataToPayload();
       const result = await notesApi.create({
         ...payload,
         draftId,
-      } as CreateNoteData)
-      data.id = result.id
-      data.text = result.text
-      data.images = (result as any).images || []
-      nid.value = result.nid
-      serverDraft.syncMemory()
-      await router.replace({ query: { id: result.id } })
-      toast.success('发布成功')
+      } as CreateNoteData);
+      data._id = result._id;
+      data.text = result.text;
+      data.images = (result as any).images || [];
+      nid.value = result.nid;
+      serverDraft.syncMemory();
+      await router.replace({ query: { id: result._id } });
+      toast.success("发布成功");
     }
-  }
+  };
 
-  const { fetchTopic, topics } = useNoteTopic()
+  const { fetchTopic, topics } = useNoteTopic();
 
   const {
     setTitle,
@@ -378,45 +383,47 @@ const NoteWriteView = defineComponent(() => {
     setActions,
     setContentPadding,
     setHeaderSubtitle,
-  } = useLayout()
+  } = useLayout();
 
-  setContentPadding(false)
-  setHeaderClass('pt-1')
+  setContentPadding(false);
+  setHeaderClass("pt-1");
 
   watchEffect(() => {
-    setTitle(isEditing.value ? '修改日记' : '撰写日记')
+    setTitle(isEditing.value ? "修改日记" : "撰写日记");
 
     setHeaderSubtitle(
       <DraftSaveIndicator
         isSaving={serverDraft.isSaving}
         lastSavedTime={serverDraft.lastSavedTime}
       />,
-    )
+    );
 
     setActions(
       <>
-        {!isMobile.value &&
-          (data.contentFormat === 'lexical' ? (
-            <LexicalDebugButton content={data.content} />
-          ) : (
-            <ParseContentButton
-              data={data}
-              onHandleYamlParsedMeta={(meta) => {
-                const { title, mood, weather, ...rest } = meta
-                data.title = title ?? data.title
-                data.mood = mood ?? data.mood
-                data.weather = weather ?? data.weather
-                data.meta = { ...rest }
-              }}
-            />
-          ))}
+        {!isMobile.value
+          && (data.contentFormat === "lexical"
+            ? (
+                <LexicalDebugButton content={data.content} />
+              )
+            : (
+                <ParseContentButton
+                  data={data}
+                  onHandleYamlParsedMeta={(meta) => {
+                    const { title, mood, weather, ...rest } = meta;
+                    data.title = title ?? data.title;
+                    data.mood = mood ?? data.mood;
+                    data.weather = weather ?? data.weather;
+                    data.meta = { ...rest };
+                  }}
+                />
+              ))}
         {!isMobile.value && <HeaderPreviewButton data={data} iframe />}
-        {data.contentFormat === 'lexical' && (
+        {data.contentFormat === "lexical" && (
           <HeaderActionButton
             icon={<Bot />}
             name="AI 助手"
             onClick={() => {
-              agentVisible.value = !agentVisible.value
+              agentVisible.value = !agentVisible.value;
             }}
           />
         )}
@@ -424,7 +431,7 @@ const NoteWriteView = defineComponent(() => {
           icon={<SlidersHIcon />}
           name="日记设置"
           onClick={() => {
-            drawerShow.value = true
+            drawerShow.value = true;
           }}
         />
         <HeaderActionButton
@@ -434,46 +441,46 @@ const NoteWriteView = defineComponent(() => {
           onClick={handleSubmit}
         />
       </>,
-    )
-  })
+    );
+  });
 
   return () => (
     <>
       <WriteEditor
-        key={data.id}
+        key={data._id}
         loading={loading.value}
-        autoFocus={isEditing.value ? 'content' : 'title'}
+        autoFocus={isEditing.value ? "content" : "title"}
         title={data.title}
         onTitleChange={(v) => {
-          data.title = v
+          data.title = v;
         }}
         titlePlaceholder={defaultTitle.value}
         text={data.text}
         onChange={(v) => {
-          data.text = v
+          data.text = v;
         }}
         contentFormat={data.contentFormat}
         onContentFormatChange={(v) => {
-          data.contentFormat = v
-          setPreferredContentFormat(v)
+          data.contentFormat = v;
+          setPreferredContentFormat(v);
         }}
         richContent={data.content ? JSON.parse(data.content) : undefined}
         onRichContentChange={(v) => {
-          data.content = JSON.stringify(v)
+          data.content = JSON.stringify(v);
         }}
         onRichEditorReady={(editor) => {
-          lexicalEditor.value = editor
+          lexicalEditor.value = editor;
         }}
         saveConfirmFn={serverDraft.checkIsSynced}
         variant="note"
-        agentEnabled={data.contentFormat === 'lexical'}
+        agentEnabled={data.contentFormat === "lexical"}
         agentVisible={agentVisible.value}
         providerGroups={providerGroups.value}
         selectedModel={selectedModel.value}
         onSelectModel={(model) => {
-          selectedModel.value = model
+          selectedModel.value = model;
         }}
-        refId={actualRefId.value || data.id}
+        refId={actualRefId.value || data._id}
         refType="note"
         metaFieldsSchema={NOTE_META_SCHEMA}
         getMetaFields={() => ({
@@ -482,22 +489,29 @@ const NoteWriteView = defineComponent(() => {
           mood: data.mood,
           weather: data.weather,
           bookmark: data.bookmark,
-          location: data.location ?? '',
+          location: data.location ?? "",
           isPublished: data.isPublished,
         })}
         onMetaFieldsUpdate={(updates) => {
-          if ('title' in updates) data.title = String(updates.title ?? '')
-          if ('slug' in updates) data.slug = String(updates.slug ?? '')
-          if ('mood' in updates) data.mood = String(updates.mood ?? '')
-          if ('weather' in updates) data.weather = String(updates.weather ?? '')
-          if ('bookmark' in updates) data.bookmark = !!updates.bookmark
-          if ('location' in updates)
-            data.location =
-              updates.location == null ? '' : String(updates.location)
-          if ('isPublished' in updates) data.isPublished = !!updates.isPublished
+          if ("title" in updates)
+            data.title = String(updates.title ?? "");
+          if ("slug" in updates)
+            data.slug = String(updates.slug ?? "");
+          if ("mood" in updates)
+            data.mood = String(updates.mood ?? "");
+          if ("weather" in updates)
+            data.weather = String(updates.weather ?? "");
+          if ("bookmark" in updates)
+            data.bookmark = !!updates.bookmark;
+          if ("location" in updates) {
+            data.location
+              = updates.location == null ? "" : String(updates.location);
+          }
+          if ("isPublished" in updates)
+            data.isPublished = !!updates.isPublished;
         }}
         subtitleSlot={() => (
-          <div class="flex items-center gap-2 text-sm text-neutral-500">
+          <div class="text-sm text-neutral-500 flex gap-2 items-center">
             <span>{`${WEB_URL}${buildNotePublicPath({ ...data, nid: nid.value })}`}</span>
             {data.text.length > 0 && <AiHelperButton reactiveData={data} />}
           </div>
@@ -510,7 +524,7 @@ const NoteWriteView = defineComponent(() => {
         show={drawerShow.value}
         scope="note"
         onUpdateShow={(s) => {
-          drawerShow.value = s
+          drawerShow.value = s;
         }}
         lexicalEditor={lexicalEditor.value}
       >
@@ -524,26 +538,26 @@ const NoteWriteView = defineComponent(() => {
             prefix={`${WEB_URL}/notes/${(() => {
               const date = data.createdAt
                 ? new Date(data.createdAt)
-                : new Date()
-              return `${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/`
+                : new Date();
+              return `${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/`;
             })()}`}
             value={data.slug}
             onChange={(value) => {
-              data.slug = value
+              data.slug = value;
             }}
             placeholder="note-slug"
           />
         </FormField>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="gap-3 grid grid-cols-2">
           <FormField label="心情" required>
             <NSelect
               clearable
               value={data.mood}
               filterable
               tag
-              options={MOOD_SET.map((i) => ({ label: i, value: i }))}
-              onUpdateValue={(e) => void (data.mood = e)}
+              options={MOOD_SET.map(i => ({ label: i, value: i }))}
+              onUpdateValue={e => void (data.mood = e)}
               placeholder="选择心情"
             />
           </FormField>
@@ -553,8 +567,8 @@ const NoteWriteView = defineComponent(() => {
               value={data.weather}
               filterable
               tag
-              options={WEATHER_SET.map((i) => ({ label: i, value: i }))}
-              onUpdateValue={(e) => void (data.weather = e)}
+              options={WEATHER_SET.map(i => ({ label: i, value: i }))}
+              onUpdateValue={e => void (data.weather = e)}
               placeholder="选择天气"
             />
           </FormField>
@@ -563,17 +577,17 @@ const NoteWriteView = defineComponent(() => {
         <FormField label="专栏">
           <NSelect
             clearable
-            options={topics.value.map((topic) => ({
+            options={topics.value.map(topic => ({
               label: topic.name,
               value: topic.id!,
               key: topic.id,
             }))}
             value={data.topicId}
             onUpdateValue={(value) => {
-              data.topicId = value
+              data.topicId = value;
             }}
             onFocus={() => {
-              fetchTopic()
+              fetchTopic();
             }}
             placeholder="选择专栏"
           />
@@ -581,29 +595,29 @@ const NoteWriteView = defineComponent(() => {
 
         <SectionTitle icon={MapPinIcon}>位置信息</SectionTitle>
 
-        <div class="mb-4 flex items-center gap-2">
+        <div class="mb-4 flex gap-2 items-center">
           <GetLocationButton
             onChange={(amap, coordinates) => {
-              data.location = amap.formattedAddress
+              data.location = amap.formattedAddress;
               data.coordinates = {
                 longitude: coordinates[0],
                 latitude: coordinates[1],
-              }
+              };
             }}
           />
           <SearchLocationButton
             placeholder={data.location}
             onChange={(locationName, coo) => {
-              data.location = locationName
-              data.coordinates = coo
+              data.location = locationName;
+              data.coordinates = coo;
             }}
           />
           <NButton
             size="tiny"
             disabled={!data.location}
             onClick={() => {
-              data.location = ''
-              data.coordinates = null
+              data.location = "";
+              data.coordinates = null;
             }}
           >
             清除
@@ -618,8 +632,10 @@ const NoteWriteView = defineComponent(() => {
               </div>
             )}
             {data.coordinates && (
-              <div class="mt-1 text-xs text-neutral-400">
-                {data.coordinates.longitude.toFixed(6)},{' '}
+              <div class="text-xs text-neutral-400 mt-1">
+                {data.coordinates.longitude.toFixed(6)}
+                ,
+                {" "}
                 {data.coordinates.latitude.toFixed(6)}
               </div>
             )}
@@ -633,41 +649,41 @@ const NoteWriteView = defineComponent(() => {
           description="启用后需要输入密码才能查看"
           modelValue={enablePassword.value}
           onUpdate={(e) => {
-            passwordTouched.value = true
+            passwordTouched.value = true;
             if (e) {
-              data.password = ''
+              data.password = "";
             } else {
-              data.password = null
+              data.password = null;
             }
           }}
         />
 
         {enablePassword.value && (
-          <div class="mb-4 ml-4 border-l-2 border-neutral-200 pl-4 dark:border-neutral-700">
+          <div class="mb-4 ml-4 pl-4 border-l-2 border-neutral-200 dark:border-neutral-700">
             <FormField
               label="输入密码"
               description={
                 hasExistingPassword.value && !passwordTouched.value
-                  ? '此手记已设密码；留空保留原值，输入新值则覆盖'
+                  ? "此手记已设密码；留空保留原值，输入新值则覆盖"
                   : undefined
               }
             >
               <NInput
                 placeholder={
                   hasExistingPassword.value && !passwordTouched.value
-                    ? '保留原密码'
-                    : '设置访问密码'
+                    ? "保留原密码"
+                    : "设置访问密码"
                 }
                 type="password"
                 value={data.password}
                 inputProps={{
-                  name: 'note-password',
-                  autocapitalize: 'off',
-                  autocomplete: 'new-password',
+                  name: "note-password",
+                  autocapitalize: "off",
+                  autocomplete: "new-password",
                 }}
                 onInput={(e) => {
-                  passwordTouched.value = true
-                  data.password = e
+                  passwordTouched.value = true;
+                  data.password = e;
                 }}
               />
             </FormField>
@@ -683,18 +699,18 @@ const NoteWriteView = defineComponent(() => {
             clearable
             value={data.publicAt ? +new Date(data.publicAt) : undefined}
             onUpdateValue={(e) => {
-              data.publicAt = e ? new Date(e) : null
+              data.publicAt = e ? new Date(e) : null;
             }}
           >
             {{
               footer: () => {
-                const date = new Date()
+                const date = new Date();
                 return (
                   <NSpace size="small">
                     <NButton
                       size="tiny"
                       onClick={() => {
-                        data.publicAt = add(date, { days: 1 })
+                        data.publicAt = add(date, { days: 1 });
                       }}
                     >
                       一天后
@@ -702,7 +718,7 @@ const NoteWriteView = defineComponent(() => {
                     <NButton
                       size="tiny"
                       onClick={() => {
-                        data.publicAt = add(date, { weeks: 1 })
+                        data.publicAt = add(date, { weeks: 1 });
                       }}
                     >
                       一周后
@@ -710,7 +726,7 @@ const NoteWriteView = defineComponent(() => {
                     <NButton
                       size="tiny"
                       onClick={() => {
-                        data.publicAt = add(date, { days: 14 })
+                        data.publicAt = add(date, { days: 14 });
                       }}
                     >
                       半个月后
@@ -718,13 +734,13 @@ const NoteWriteView = defineComponent(() => {
                     <NButton
                       size="tiny"
                       onClick={() => {
-                        data.publicAt = add(date, { months: 1 })
+                        data.publicAt = add(date, { months: 1 });
                       }}
                     >
                       一个月后
                     </NButton>
                   </NSpace>
-                )
+                );
               },
             }}
           </NDatePicker>
@@ -734,13 +750,13 @@ const NoteWriteView = defineComponent(() => {
           label="标记为回忆项"
           description="在回忆列表中高亮显示"
           modelValue={data.bookmark}
-          onUpdate={(e) => void (data.bookmark = e)}
+          onUpdate={e => void (data.bookmark = e)}
         />
 
         <SwitchRow
           label="发布状态"
           modelValue={data.isPublished}
-          onUpdate={(e) => void (data.isPublished = e)}
+          onUpdate={e => void (data.isPublished = e)}
           checkedText="已发布"
           uncheckedText="草稿"
         />
@@ -765,7 +781,7 @@ const NoteWriteView = defineComponent(() => {
         onCreate={listModal.onCreate}
       />
     </>
-  )
-})
+  );
+});
 
-export default NoteWriteView
+export default NoteWriteView;

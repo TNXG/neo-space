@@ -17,6 +17,7 @@
 
 - **主键统一为 `_id`**：本站后端实体主键以 MongoDB 默认的 `_id` 为准（`String`，序列化后即为 ObjectId 文本）。
 - **前端禁用 `id` 兜底**：`apps/web` 与 `apps/admin` 在请求 / 提交后端 API 时**必须使用 `_id`**，不允许出现 `entity.id || entity._id` 之类的双轨兼容写法。
+- **路由参数名不等于数据字段**：管理后台 URL query 可以继续使用 `?id=<mongo _id>` 作为路由参数名；这里的 `id` 只是 URL 参数名称，不代表 API / 数据模型可以新增或依赖 `id` 字段。
 - **响应包装恒定**：所有后端接口统一返回 `ApiResponse<T> = { code: number, status: 'success' | 'failed', message: string, data: T | null }`。
   - SWR / fetch / axios 的泛型必须使用 `ApiResponse<T>`，访问业务数据走 `res.data?.data?.xxx`。
   - 分页结构固定为 `{ items: T[], pagination: { total, current_page, total_page, size, has_next_page, has_prev_page } }`。

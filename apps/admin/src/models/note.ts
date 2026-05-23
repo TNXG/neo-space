@@ -1,39 +1,39 @@
-import type { TopicModel } from './topic'
+import type { TopicModel } from "./topic";
 
 export interface NoteModel {
-  id: string
-  nid: number
-  title: string
-  slug?: string | null
-  text: string
-  content?: string | null
-  contentFormat?: 'markdown' | 'lexical'
-  images?: any[] | null
-  meta?: Record<string, any> | null
+  _id: string;
+  nid: number;
+  title: string;
+  slug?: string | null;
+  text: string;
+  content?: string | null;
+  contentFormat?: "markdown" | "lexical";
+  images?: any[] | null;
+  meta?: Record<string, any> | null;
 
-  isPublished: boolean
-  hasPassword?: boolean
-  password?: string | null
-  publicAt?: string | Date | null
+  isPublished: boolean;
+  hasPassword?: boolean;
+  password?: string | null;
+  publicAt?: string | Date | null;
 
-  mood?: string | null
-  weather?: string | null
-  bookmark: boolean
+  mood?: string | null;
+  weather?: string | null;
+  bookmark: boolean;
 
-  coordinates?: Coordinate | null
-  location?: string | null
+  coordinates?: Coordinate | null;
+  location?: string | null;
 
-  readCount: number
-  likeCount: number
+  readCount: number;
+  likeCount: number;
 
-  topicId?: string | null
-  topic?: TopicModel | null
+  topicId?: string | null;
+  topic?: TopicModel | null;
 
-  createdAt: string
-  modifiedAt: string | null
+  createdAt: string;
+  modifiedAt: string | null;
 }
 
 export interface Coordinate {
-  latitude: number
-  longitude: number
+  latitude: number;
+  longitude: number;
 }

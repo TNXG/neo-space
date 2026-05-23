@@ -1,3 +1,11 @@
+import type { PropType, Ref } from "vue";
+import type { fetchDataFn } from "~/hooks/use-table";
+import type { ActivityReadDurationType } from "~/models/activity";
+import type { Pager } from "~/models/base";
+import type { NoteModel } from "~/models/note";
+import type { PageModel } from "~/models/page";
+import type { PostModel } from "~/models/post";
+import type { RecentlyModel } from "~/models/recently";
 import {
   BookOpen as BookOpenIcon,
   Clock as ClockIcon,
@@ -7,8 +15,8 @@ import {
   MapPin as MapPinIcon,
   Timer as TimerIcon,
   User as UserIcon,
-} from 'lucide-vue-next'
-import { NTabPane, NTabs } from 'naive-ui'
+} from "lucide-vue-next";
+import { NTabPane, NTabs } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -16,39 +24,33 @@ import {
   ref,
   shallowRef,
   watch,
-} from 'vue'
-import { useRoute } from 'vue-router'
-import type { fetchDataFn } from '~/hooks/use-table'
-import type { ActivityReadDurationType } from '~/models/activity'
-import type { Pager } from '~/models/base'
-import type { NoteModel } from '~/models/note'
-import type { PageModel } from '~/models/page'
-import type { PostModel } from '~/models/post'
-import type { RecentlyModel } from '~/models/recently'
-import type { PropType, Ref } from 'vue'
+} from "vue";
+import { useRoute } from "vue-router";
 
-import { activityApi } from '~/api/activity'
-import { IpInfoPopover } from '~/components/ip-info'
-import { Table } from '~/components/table'
-import { RelativeTime } from '~/components/time/relative-time'
-import { useDataTableFetch } from '~/hooks/use-table'
-import { apiClient } from '~/utils/request'
+import { activityApi } from "~/api/activity";
+import { IpInfoPopover } from "~/components/ip-info";
+import { Table } from "~/components/table";
+import { RelativeTime } from "~/components/time/relative-time";
+import { useDataTableFetch } from "~/hooks/use-table";
+import { apiClient } from "~/utils/request";
 
-import styles from '../index.module.css'
+import styles from "../index.module.css";
 
 enum ActivityType {
   Like,
   ReadDuration,
 }
 
-type RefModel = PostModel | NoteModel | PageModel | RecentlyModel
+type RefModel = PostModel | NoteModel | PageModel | RecentlyModel;
 
-type ObjectsCollection = {
-  posts: Record<string, PostModel>
-  notes: Record<string, NoteModel>
-  pages: Record<string, PageModel>
-  recentlies: Record<string, RecentlyModel>
-  all: Record<string, RefModel>
+const getRefModelKey = (item: RefModel) => ("_id" in item ? item._id : item.id);
+
+interface ObjectsCollection {
+  posts: Record<string, PostModel>;
+  notes: Record<string, NoteModel>;
+  pages: Record<string, PageModel>;
+  recentlies: Record<string, RecentlyModel>;
+  all: Record<string, RefModel>;
 }
 
 const refObjectCollectionRef = shallowRef<ObjectsCollection>({
@@ -57,70 +59,74 @@ const refObjectCollectionRef = shallowRef<ObjectsCollection>({
   pages: {},
   recentlies: {},
   all: {},
-})
+});
 
-const mapDataToCollection = <T extends keyof Omit<ObjectsCollection, 'all'>>(
+const mapDataToCollection = <T extends keyof Omit<ObjectsCollection, "all">>(
   type: T,
   items: ObjectsCollection[T][string][] | undefined,
 ) => {
-  if (!items) return
+  if (!items)
+    return;
 
-  const collection = refObjectCollectionRef.value[type]
+  const collection = refObjectCollectionRef.value[type];
   for (const item of items) {
-    collection[item.id] = item
-    refObjectCollectionRef.value.all[item.id] = item
+    const key = getRefModelKey(item);
+    collection[key] = item;
+    refObjectCollectionRef.value.all[key] = item;
   }
-}
+};
 
 export const GuestActivity = defineComponent({
   setup() {
-    const tabValue = ref(ActivityType.Like)
-    const listRef = ref<HTMLElement>()
+    const tabValue = ref(ActivityType.Like);
+    const listRef = ref<HTMLElement>();
 
     const { data, pager, fetchDataFn } = useDataTableFetch(
       (list, pager) => async (page, size) => {
         const res = await activityApi.getList({
-          page: typeof page === 'number' ? page : undefined,
+          page: typeof page === "number" ? page : undefined,
           size,
           type: tabValue.value,
-        })
+        });
 
-        list.value = res.data
-        pager.value = res.pagination
+        list.value = res.data;
+        pager.value = res.pagination;
 
         if (res.objects) {
-          mapDataToCollection('posts', res.objects.posts)
-          mapDataToCollection('notes', res.objects.notes)
-          mapDataToCollection('pages', res.objects.pages)
-          mapDataToCollection('recentlies', res.objects.recentlies)
+          mapDataToCollection("posts", res.objects.posts);
+          mapDataToCollection("notes", res.objects.notes);
+          mapDataToCollection("pages", res.objects.pages);
+          mapDataToCollection("recentlies", res.objects.recentlies);
         }
       },
-    )
+    );
 
     onBeforeMount(() => {
-      fetchDataFn()
-    })
+      fetchDataFn();
+    });
 
-    const route = useRoute()
+    const route = useRoute();
     watch(
       () => route.query.page,
       async (n) => {
-        await fetchDataFn(n ? +n : 1)
+        await fetchDataFn(n ? +n : 1);
       },
-    )
+    );
 
     return () => {
       return (
         <>
           <NTabs
             onUpdateValue={(value) => {
-              tabValue.value = value
-              const el = listRef.value
-              if (el) el.style.minHeight = `${el.offsetHeight}px`
-              data.value = []
+              tabValue.value = value;
+              const el = listRef.value;
+              if (el)
+                el.style.minHeight = `${el.offsetHeight}px`;
+              data.value = [];
               fetchDataFn().finally(() => {
-                if (el) el.style.minHeight = ''
-              })
+                if (el)
+                  el.style.minHeight = "";
+              });
             }}
             value={tabValue.value}
             type="line"
@@ -134,35 +140,37 @@ export const GuestActivity = defineComponent({
           </NTabs>
 
           <div ref={listRef}>
-            {tabValue.value === ActivityType.Like ? (
-              <LikeActivityList
-                data={data}
-                pager={pager}
-                onFetch={fetchDataFn}
-              />
-            ) : (
-              <ReadDurationList
-                data={data}
-                pager={pager}
-                onFetch={fetchDataFn}
-              />
-            )}
+            {tabValue.value === ActivityType.Like
+              ? (
+                  <LikeActivityList
+                    data={data}
+                    pager={pager}
+                    onFetch={fetchDataFn}
+                  />
+                )
+              : (
+                  <ReadDurationList
+                    data={data}
+                    pager={pager}
+                    onFetch={fetchDataFn}
+                  />
+                )}
           </div>
         </>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 interface ActivityItemData {
-  id: string
-  createdAt: string
+  id: string;
+  createdAt: string;
   payload: {
-    id?: string
-    ip: string
-  }
-  type: number
-  ref?: { id: string; title: string }
+    id?: string;
+    ip: string;
+  };
+  type: number;
+  ref?: { id: string; title: string };
 }
 
 const LikeActivityList = defineComponent({
@@ -191,12 +199,12 @@ const LikeActivityList = defineComponent({
             <h3 class={styles.emptyTitle}>暂无点赞记录</h3>
             <p class={styles.emptyDescription}>访客的点赞活动将显示在这里</p>
           </div>
-        )
+        );
       }
 
       return (
         <div class={styles.activityList}>
-          {props.data.value.map((item) => (
+          {props.data.value.map(item => (
             <LikeActivityItem key={item.id} item={item} />
           ))}
           {props.pager.value && (
@@ -209,10 +217,10 @@ const LikeActivityList = defineComponent({
             />
           )}
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 const LikeActivityItem = defineComponent({
   props: {
@@ -223,13 +231,14 @@ const LikeActivityItem = defineComponent({
   },
   setup(props) {
     const handleOpenRef = () => {
-      if (!props.item.payload?.id) return
+      if (!props.item.payload?.id)
+        return;
       apiClient
         .get<{ data: string }>(`/helper/url-builder/${props.item.payload.id}`)
         .then(({ data: url }) => {
-          window.open(url)
-        })
-    }
+          window.open(url);
+        });
+    };
 
     return () => (
       <article class={styles.activityItem} aria-label="点赞活动">
@@ -246,40 +255,42 @@ const LikeActivityItem = defineComponent({
         </div>
 
         <div class={styles.activityContent}>
-          {props.item.ref ? (
-            <button
-              type="button"
-              class={styles.activityRef}
-              onClick={handleOpenRef}
-              aria-label={`查看文章: ${props.item.ref.title}`}
-            >
-              <BookOpenIcon class={styles.activityRefIcon} />
-              <span class={styles.activityRefTitle}>
-                {props.item.ref.title}
-              </span>
-              <ExternalLinkIcon class="size-3.5 text-neutral-400" />
-            </button>
-          ) : (
-            <span class="text-sm text-neutral-400">已删除的内容</span>
-          )}
+          {props.item.ref
+            ? (
+                <button
+                  type="button"
+                  class={styles.activityRef}
+                  onClick={handleOpenRef}
+                  aria-label={`查看文章: ${props.item.ref.title}`}
+                >
+                  <BookOpenIcon class={styles.activityRefIcon} />
+                  <span class={styles.activityRefTitle}>
+                    {props.item.ref.title}
+                  </span>
+                  <ExternalLinkIcon class="text-neutral-400 size-3.5" />
+                </button>
+              )
+            : (
+                <span class="text-sm text-neutral-400">已删除的内容</span>
+              )}
         </div>
 
         <div class={styles.activityMeta}>
           <IpInfoPopover
             ip={props.item.payload.ip}
             trigger="hover"
-            triggerEl={
+            triggerEl={(
               <div class={styles.activityMetaItem}>
                 <GlobeIcon class={styles.activityMetaIcon} />
                 <span class="font-mono">{props.item.payload.ip}</span>
               </div>
-            }
+            )}
           />
         </div>
       </article>
-    )
+    );
   },
-})
+});
 
 const ReadDurationList = defineComponent({
   props: {
@@ -307,7 +318,7 @@ const ReadDurationList = defineComponent({
             <h3 class={styles.emptyTitle}>暂无阅读记录</h3>
             <p class={styles.emptyDescription}>访客的阅读时长将显示在这里</p>
           </div>
-        )
+        );
       }
 
       return (
@@ -325,10 +336,10 @@ const ReadDurationList = defineComponent({
             />
           )}
         </div>
-      )
-    }
+      );
+    };
   },
-})
+});
 
 const ReadDurationItem = defineComponent({
   props: {
@@ -340,48 +351,51 @@ const ReadDurationItem = defineComponent({
   setup(props) {
     const refModel = computed(
       () => refObjectCollectionRef.value.all[props.item.refId],
-    )
+    );
 
     const duration = computed(() => {
-      const totalSeconds =
-        (props.item.payload.operationTime - props.item.payload.connectedAt) /
-        1000
-      const hours = Math.floor(totalSeconds / 3600)
-      const minutes = Math.floor((totalSeconds % 3600) / 60)
-      const seconds = Math.floor(totalSeconds % 60)
+      const totalSeconds
+        = (props.item.payload.operationTime - props.item.payload.connectedAt)
+          / 1000;
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = Math.floor(totalSeconds % 60);
 
-      let timeString = ''
+      let timeString = "";
       if (hours > 0) {
-        timeString += `${hours}小时 `
+        timeString += `${hours}小时 `;
       }
       if (hours > 0 || minutes > 0) {
-        timeString += `${minutes}分钟 `
+        timeString += `${minutes}分钟 `;
       }
-      timeString += `${seconds}秒`
-      return timeString
-    })
+      timeString += `${seconds}秒`;
+      return timeString;
+    });
 
-    const maxDuration = 3600000 // 1 hour as max for bar
+    const maxDuration = 3600000; // 1 hour as max for bar
     const durationPercentage = computed(() => {
-      const ms =
-        props.item.payload.operationTime - props.item.payload.connectedAt
-      return Math.min((ms / maxDuration) * 100, 100)
-    })
+      const ms
+        = props.item.payload.operationTime - props.item.payload.connectedAt;
+      return Math.min((ms / maxDuration) * 100, 100);
+    });
 
     const handleOpenRef = () => {
-      if (!refModel.value?.id) return
+      const refId = refModel.value ? getRefModelKey(refModel.value) : null;
+      if (!refId)
+        return;
       apiClient
-        .get<{ data: string }>(`/helper/url-builder/${refModel.value.id}`)
+        .get<{ data: string }>(`/helper/url-builder/${refId}`)
         .then(({ data: url }) => {
-          window.open(url)
-        })
-    }
+          window.open(url);
+        });
+    };
 
     const refTitle = computed(() => {
-      const model = refModel.value
-      if (!model) return ''
-      return 'title' in model ? model.title : ''
-    })
+      const model = refModel.value;
+      if (!model)
+        return "";
+      return "title" in model ? model.title : "";
+    });
 
     return () => (
       <article class={styles.activityItem} aria-label="阅读活动">
@@ -391,9 +405,9 @@ const ReadDurationItem = defineComponent({
               <BookOpenIcon class="size-3" />
               <span>阅读</span>
             </span>
-            {(props.item.payload.displayName ||
-              props.item.payload.identity) && (
-              <span class="ml-2 flex items-center gap-1 text-sm text-neutral-500">
+            {(props.item.payload.displayName
+              || props.item.payload.identity) && (
+              <span class="text-sm text-neutral-500 ml-2 flex gap-1 items-center">
                 <UserIcon class="size-3.5" />
                 {props.item.payload.displayName || props.item.payload.identity}
               </span>
@@ -405,29 +419,31 @@ const ReadDurationItem = defineComponent({
         </div>
 
         <div class={styles.activityContent}>
-          {refModel.value ? (
-            <button
-              type="button"
-              class={styles.activityRef}
-              onClick={handleOpenRef}
-              aria-label={`查看文章: ${refTitle.value}`}
-            >
-              <BookOpenIcon class={styles.activityRefIcon} />
-              <span class={styles.activityRefTitle}>{refTitle.value}</span>
-              <ExternalLinkIcon class="size-3.5 text-neutral-400" />
-            </button>
-          ) : (
-            <span class="text-sm text-neutral-400">未知内容</span>
-          )}
+          {refModel.value
+            ? (
+                <button
+                  type="button"
+                  class={styles.activityRef}
+                  onClick={handleOpenRef}
+                  aria-label={`查看文章: ${refTitle.value}`}
+                >
+                  <BookOpenIcon class={styles.activityRefIcon} />
+                  <span class={styles.activityRefTitle}>{refTitle.value}</span>
+                  <ExternalLinkIcon class="text-neutral-400 size-3.5" />
+                </button>
+              )
+            : (
+                <span class="text-sm text-neutral-400">未知内容</span>
+              )}
         </div>
 
         <div class="mb-3">
-          <div class="mb-1 flex items-center justify-between text-sm">
-            <span class="flex items-center gap-1.5 text-neutral-500">
+          <div class="text-sm mb-1 flex items-center justify-between">
+            <span class="text-neutral-500 flex gap-1.5 items-center">
               <TimerIcon class="size-4" />
               阅读时长
             </span>
-            <span class="font-medium text-neutral-700 dark:text-neutral-200">
+            <span class="text-neutral-700 font-medium dark:text-neutral-200">
               {duration.value}
             </span>
           </div>
@@ -443,18 +459,19 @@ const ReadDurationItem = defineComponent({
           <IpInfoPopover
             ip={props.item.payload.ip}
             trigger="hover"
-            triggerEl={
+            triggerEl={(
               <div class={styles.activityMetaItem}>
                 <GlobeIcon class={styles.activityMetaIcon} />
                 <span class="font-mono">{props.item.payload.ip}</span>
               </div>
-            }
+            )}
           />
 
           <div class={styles.activityMetaItem}>
             <ClockIcon class={styles.activityMetaIcon} />
             <span>
-              连接于{' '}
+              连接于
+              {" "}
               <RelativeTime time={new Date(props.item.payload.connectedAt)} />
             </span>
           </div>
@@ -462,11 +479,15 @@ const ReadDurationItem = defineComponent({
           {props.item.payload.position > 0 && (
             <div class={styles.activityMetaItem}>
               <MapPinIcon class={styles.activityMetaIcon} />
-              <span>位置 {props.item.payload.position}%</span>
+              <span>
+                位置
+                {props.item.payload.position}
+                %
+              </span>
             </div>
           )}
         </div>
       </article>
-    )
+    );
   },
-})
+});

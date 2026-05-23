@@ -1,3 +1,8 @@
+import type { TableColumns } from "naive-ui/lib/data-table/src/interface";
+import type { PropType } from "vue";
+import type { NoteModel } from "~/models/note";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { debouncedRef } from "@vueuse/core";
 import {
   Book as BookIcon,
   Bookmark as BookmarkIcon,
@@ -9,89 +14,85 @@ import {
   Plus as PlusIcon,
   Search as SearchIcon,
   Trash2,
-} from 'lucide-vue-next'
-import { NButton, NEllipsis, NInput, NPopconfirm, NSpace } from 'naive-ui'
-import { computed, defineComponent, reactive, ref, watchEffect } from 'vue'
-import { RouterLink } from 'vue-router'
-import { toast } from 'vue-sonner'
-import type { NoteModel } from '~/models/note'
-import type { TableColumns } from 'naive-ui/lib/data-table/src/interface'
-import type { PropType } from 'vue'
+} from "lucide-vue-next";
+import { NButton, NEllipsis, NInput, NPopconfirm, NSpace } from "naive-ui";
+import { computed, defineComponent, reactive, ref, watchEffect } from "vue";
 
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { debouncedRef } from '@vueuse/core'
+import { RouterLink } from "vue-router";
+import { toast } from "vue-sonner";
 
-import { notesApi } from '~/api/notes'
-import { searchApi } from '~/api/search'
-import { TableTitleLink } from '~/components/link/title-link'
-import { DeleteConfirmButton } from '~/components/special-button/delete-confirm'
-import { StatusToggle } from '~/components/status-toggle'
-import { Table } from '~/components/table'
-import { EditColumn } from '~/components/table/edit-column'
-import { RelativeTime } from '~/components/time/relative-time'
-import { WEB_URL } from '~/constants/env'
-import { queryKeys } from '~/hooks/queries/keys'
-import { useDataTable } from '~/hooks/use-data-table'
-import { useStoreRef } from '~/hooks/use-store-ref'
-import { UIStore } from '~/stores/ui'
-import { formatNumber } from '~/utils/number'
+import { notesApi } from "~/api/notes";
+import { searchApi } from "~/api/search";
+import { TableTitleLink } from "~/components/link/title-link";
+import { DeleteConfirmButton } from "~/components/special-button/delete-confirm";
+import { StatusToggle } from "~/components/status-toggle";
+import { Table } from "~/components/table";
+import { EditColumn } from "~/components/table/edit-column";
+import { RelativeTime } from "~/components/time/relative-time";
+import { WEB_URL } from "~/constants/env";
+import { queryKeys } from "~/hooks/queries/keys";
+import { useDataTable } from "~/hooks/use-data-table";
+import { useStoreRef } from "~/hooks/use-store-ref";
+import { UIStore } from "~/stores/ui";
+import { formatNumber } from "~/utils/number";
 
-import { HeaderActionButton } from '../../components/button/header-action-button'
-import { useLayout } from '../../layouts/content'
+import { HeaderActionButton } from "../../components/button/header-action-button";
+import { useLayout } from "../../layouts/content";
 
 const buildNotePublicPath = (
-  note: Pick<NoteModel, 'nid' | 'slug' | 'createdAt'>,
+  note: Pick<NoteModel, "nid" | "slug" | "createdAt">,
 ) => {
   if (note.slug) {
-    const date = new Date(note.createdAt)
-    return `/notes/${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/${note.slug}`
+    const date = new Date(note.createdAt);
+    return `/notes/${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/${note.slug}`;
   }
 
-  return `/notes/${note.nid}`
-}
+  return `/notes/${note.nid}`;
+};
 
 const NoteItem = defineComponent({
-  name: 'NoteItem',
+  name: "NoteItem",
   props: {
     data: {
       type: Object as PropType<NoteModel>,
       required: true,
     },
     onDelete: {
-      type: Function as PropType<(id: string) => void>,
+      type: Function as PropType<(_id: string) => void>,
       required: true,
     },
   },
   setup(props) {
-    const row = computed(() => props.data)
+    const row = computed(() => props.data);
     const isSecret = computed(
       () =>
         row.value.publicAt && +new Date(row.value.publicAt) - Date.now() > 0,
-    )
-    const isUnpublished = computed(() => !row.value.isPublished)
+    );
+    const isUnpublished = computed(() => !row.value.isPublished);
 
     return () => (
-      <div class="flex items-center gap-2 border-b border-neutral-200 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900/50">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5">
-            <span class="shrink-0 font-mono text-xs text-neutral-400 dark:text-neutral-500">
-              #{row.value.nid}
+      <div class="px-3 py-2.5 border-b border-neutral-200 flex gap-2 transition-colors items-center last:border-b-0 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50">
+        <div class="flex-1 min-w-0">
+          <div class="flex gap-1.5 items-center">
+            <span class="text-xs text-neutral-400 font-mono shrink-0 dark:text-neutral-500">
+              #
+              {row.value.nid}
             </span>
             {(isUnpublished.value || isSecret.value) && (
-              <EyeHideIcon class="h-3 w-3 shrink-0 text-neutral-500" />
+              <EyeHideIcon class="text-neutral-500 shrink-0 h-3 w-3" />
             )}
             {row.value.bookmark && (
-              <BookmarkIcon class="h-3 w-3 shrink-0 text-red-500" />
+              <BookmarkIcon class="text-red-500 shrink-0 h-3 w-3" />
             )}
             <RouterLink
-              to={`/notes/edit?id=${row.value.id}`}
-              class="truncate text-sm font-medium text-neutral-900 hover:text-blue-600 dark:text-neutral-100 dark:hover:text-blue-400"
+              to={`/notes/edit?id=${row.value._id}`}
+              class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400"
             >
               {row.value.title}
             </RouterLink>
           </div>
 
-          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <div class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 items-center">
             {row.value.mood && (
               <span class="text-xs text-neutral-500 dark:text-neutral-400">
                 {row.value.mood}
@@ -103,19 +104,19 @@ const NoteItem = defineComponent({
               </span>
             )}
             {row.value.location && (
-              <span class="flex max-w-20 items-center gap-0.5 truncate text-xs text-neutral-400 dark:text-neutral-500">
-                <MapPin class="h-2.5 w-2.5 shrink-0" />
+              <span class="text-xs text-neutral-400 flex gap-0.5 max-w-20 truncate items-center dark:text-neutral-500">
+                <MapPin class="shrink-0 h-2.5 w-2.5" />
                 {row.value.location}
               </span>
             )}
-            <span class="font-mono text-xs text-neutral-400 dark:text-neutral-500">
-              {row.value.slug || '—'}
+            <span class="text-xs text-neutral-400 font-mono dark:text-neutral-500">
+              {row.value.slug || "—"}
             </span>
-            <span class="flex items-center gap-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+            <span class="text-xs text-neutral-400 flex gap-0.5 items-center dark:text-neutral-500">
               <BookIcon class="h-2.5 w-2.5" />
               {formatNumber(row.value.readCount || 0)}
             </span>
-            <span class="flex items-center gap-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+            <span class="text-xs text-neutral-400 flex gap-0.5 items-center dark:text-neutral-500">
               <HeartIcon class="h-2.5 w-2.5" />
               {formatNumber(row.value.likeCount || 0)}
             </span>
@@ -143,19 +144,19 @@ const NoteItem = defineComponent({
             <NButton quaternary size="tiny" class="!px-1.5">
               {{
                 icon: () => (
-                  <ExternalLink class="h-3.5 w-3.5 text-neutral-500" />
+                  <ExternalLink class="text-neutral-500 h-3.5 w-3.5" />
                 ),
               }}
             </NButton>
           </a>
 
           <RouterLink
-            to={`/notes/edit?id=${row.value.id}`}
+            to={`/notes/edit?id=${row.value._id}`}
             aria-label="编辑日记"
           >
             <NButton quaternary size="tiny" class="!px-1.5">
               {{
-                icon: () => <Pencil class="h-3.5 w-3.5 text-neutral-500" />,
+                icon: () => <Pencil class="text-neutral-500 h-3.5 w-3.5" />,
               }}
             </NButton>
           </RouterLink>
@@ -163,7 +164,7 @@ const NoteItem = defineComponent({
           <NPopconfirm
             positiveText="取消"
             negativeText="删除"
-            onNegativeClick={() => props.onDelete(row.value.id)}
+            onNegativeClick={() => props.onDelete(row.value._id)}
           >
             {{
               trigger: () => (
@@ -174,33 +175,37 @@ const NoteItem = defineComponent({
                   aria-label="删除日记"
                 >
                   {{
-                    icon: () => <Trash2 class="h-3.5 w-3.5 text-red-500" />,
+                    icon: () => <Trash2 class="text-red-500 h-3.5 w-3.5" />,
                   }}
                 </NButton>
               ),
               default: () => (
-                <span class="max-w-48">确定要删除「{row.value.title}」？</span>
+                <span class="max-w-48">
+                  确定要删除「
+                  {row.value.title}
+                  」？
+                </span>
               ),
             }}
           </NPopconfirm>
         </div>
       </div>
-    )
+    );
   },
-})
+});
 
 export const ManageNoteListView = defineComponent({
-  name: 'NoteList',
+  name: "NoteList",
   setup() {
-    const queryClient = useQueryClient()
-    const ui = useStoreRef(UIStore)
+    const queryClient = useQueryClient();
+    const ui = useStoreRef(UIStore);
     const isMobile = computed(
       () => ui.viewport.value.mobile || ui.viewport.value.pad,
-    )
+    );
 
-    const searchKeyword = ref('')
-    const debouncedSearch = debouncedRef(searchKeyword, 300)
-    const dbQuery = ref<Record<string, boolean> | undefined>(undefined)
+    const searchKeyword = ref("");
+    const debouncedSearch = debouncedRef(searchKeyword, 300);
+    const dbQuery = ref<Record<string, boolean> | undefined>(undefined);
 
     const {
       isLoading: loading,
@@ -211,101 +216,108 @@ export const ManageNoteListView = defineComponent({
       setSort,
       setPage,
     } = useDataTable<NoteModel>({
-      queryKey: (params) =>
+      queryKey: params =>
         queryKeys.notes.list({ ...params, dbQuery: params.filters?.dbQuery }),
       queryFn: (params) => {
-        const keyword = params.filters?.search
+        const keyword = params.filters?.search;
         if (keyword) {
           return searchApi.searchNotes({
             keyword,
             page: params.page,
             size: params.size,
-          }) as Promise<any>
+          }) as Promise<any>;
         }
         return notesApi.getList({
           page: params.page,
           size: params.size,
           select:
-            'title nid id slug createdAt modifiedAt mood weather publicAt bookmark coordinates location readCount likeCount meta isPublished',
+            "title nid _id slug created modified mood weather publicAt bookmark coordinates location count meta isPublished",
           sortBy: params.sortBy || undefined,
           sortOrder: params.sortOrder || undefined,
           db_query: params.filters?.dbQuery,
-        }) as Promise<any>
+        }) as Promise<any>;
       },
       pageSize: 20,
       filters: () => ({
         dbQuery: dbQuery.value,
         search: debouncedSearch.value || undefined,
       }),
-    })
+    });
 
     const deleteMutation = useMutation({
       mutationFn: notesApi.delete,
       onSuccess: () => {
-        toast.success('删除成功')
-        queryClient.invalidateQueries({ queryKey: queryKeys.notes.all })
+        toast.success("删除成功");
+        queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
       },
-    })
+    });
 
     const patchMutation = useMutation({
-      mutationFn: ({ id, data }: { id: string; data: Partial<NoteModel> }) =>
-        notesApi.patch(id, data),
-    })
+      mutationFn: ({ _id, data }: { _id: string; data: Partial<NoteModel> }) =>
+        notesApi.patch(_id, data),
+    });
 
-    const handleDelete = (id: string) => {
-      deleteMutation.mutate(id)
-    }
+    const handleDelete = (_id: string) => {
+      deleteMutation.mutate(_id);
+    };
 
     const CardList = defineComponent({
       setup() {
         return () => (
-          <div class="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-            {loading.value ? (
-              <div class="flex items-center justify-center py-16">
-                <span class="text-sm text-neutral-400">加载中…</span>
-              </div>
-            ) : data.value.length === 0 ? (
-              <div class="flex flex-col items-center justify-center py-16">
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  暂无日记
-                </p>
-                <RouterLink
-                  to="/notes/edit"
-                  class="mt-4 text-sm text-blue-500 hover:text-blue-600 hover:underline"
-                >
-                  记录第一篇日记
-                </RouterLink>
-              </div>
-            ) : (
-              <div>
-                {data.value.map((item) => (
-                  <NoteItem key={item.id} data={item} onDelete={handleDelete} />
-                ))}
-              </div>
-            )}
+          <div class="border border-neutral-200 rounded-lg bg-white overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
+            {loading.value
+              ? (
+                  <div class="py-16 flex items-center justify-center">
+                    <span class="text-sm text-neutral-400">加载中…</span>
+                  </div>
+                )
+              : data.value.length === 0
+                ? (
+                    <div class="py-16 flex flex-col items-center justify-center">
+                      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                        暂无日记
+                      </p>
+                      <RouterLink
+                        to="/notes/edit"
+                        class="text-sm text-blue-500 mt-4 hover:text-blue-600 hover:underline"
+                      >
+                        记录第一篇日记
+                      </RouterLink>
+                    </div>
+                  )
+                : (
+                    <div>
+                      {data.value.map(item => (
+                        <NoteItem key={item._id} data={item} onDelete={handleDelete} />
+                      ))}
+                    </div>
+                  )}
 
             {pager.value && pager.value.totalPage > 1 && (
-              <div class="flex items-center justify-center gap-4 border-t border-neutral-200 py-4 dark:border-neutral-800">
+              <div class="py-4 border-t border-neutral-200 flex gap-4 items-center justify-center dark:border-neutral-800">
                 <button
-                  class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  class="text-sm px-3 py-1.5 border border-neutral-200 rounded-md dark:border-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-neutral-800"
                   disabled={!pager.value.hasPrevPage}
                   onClick={() => {
                     if (pager.value?.hasPrevPage) {
-                      setPage(pager.value.currentPage - 1)
+                      setPage(pager.value.currentPage - 1);
                     }
                   }}
                 >
                   上一页
                 </button>
                 <span class="text-sm text-neutral-500 dark:text-neutral-400">
-                  {pager.value.currentPage} / {pager.value.totalPage}
+                  {pager.value.currentPage}
+                  {" "}
+                  /
+                  {pager.value.totalPage}
                 </span>
                 <button
-                  class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  class="text-sm px-3 py-1.5 border border-neutral-200 rounded-md dark:border-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-neutral-800"
                   disabled={!pager.value.hasNextPage}
                   onClick={() => {
                     if (pager.value?.hasNextPage) {
-                      setPage(pager.value.currentPage + 1)
+                      setPage(pager.value.currentPage + 1);
                     }
                   }}
                 >
@@ -314,124 +326,129 @@ export const ManageNoteListView = defineComponent({
               </div>
             )}
           </div>
-        )
+        );
       },
-    })
+    });
 
     const DataTable = defineComponent({
       setup() {
         const columns = reactive<TableColumns<NoteModel>>([
           {
-            type: 'selection',
-            fixed: 'left',
-            options: ['none', 'all'],
+            type: "selection",
+            fixed: "left",
+            options: ["none", "all"],
           },
           {
-            title: '序号',
+            title: "序号",
             width: 16 * 4,
-            key: 'nid',
-            fixed: 'left',
+            key: "nid",
+            fixed: "left",
           },
           {
-            title: '标题',
+            title: "标题",
             sortOrder: false,
-            sorter: 'default',
-            key: 'title',
+            sorter: "default",
+            key: "title",
             width: 280,
-            fixed: 'left',
+            fixed: "left",
 
             filter: true,
             filterOptions: [
-              { label: '回忆项', value: 'bookmark' },
-              { label: '草稿项', value: 'unpublished' },
+              { label: "回忆项", value: "bookmark" },
+              { label: "草稿项", value: "unpublished" },
             ],
 
             render(row) {
               const isSecret = Boolean(
                 row.publicAt && +new Date(row.publicAt) - Date.now() > 0,
-              )
-              const isUnpublished = !row.isPublished
+              );
+              const isUnpublished = !row.isPublished;
               return (
                 <TableTitleLink
-                  inPageTo={`/notes/edit?id=${row.id}`}
+                  inPageTo={`/notes/edit?id=${row._id}`}
                   title={row.title}
                   externalLinkTo={buildNotePublicPath(row)}
-                  id={row.id}
+                  id={row._id}
                   withToken={isUnpublished || isSecret}
                 >
                   {{
                     default() {
                       return (
                         <>
-                          {isUnpublished || isSecret ? (
-                            <EyeHideIcon class="h-3.5 w-3.5 text-neutral-500" />
-                          ) : null}
-                          {row.bookmark ? (
-                            <BookmarkIcon class="h-3.5 w-3.5 text-red-500" />
-                          ) : null}
+                          {isUnpublished || isSecret
+                            ? (
+                                <EyeHideIcon class="text-neutral-500 h-3.5 w-3.5" />
+                              )
+                            : null}
+                          {row.bookmark
+                            ? (
+                                <BookmarkIcon class="text-red-500 h-3.5 w-3.5" />
+                              )
+                            : null}
                         </>
-                      )
+                      );
                     },
                   }}
                 </TableTitleLink>
-              )
+              );
             },
           },
           {
-            title: '心情',
-            key: 'mood',
+            title: "心情",
+            key: "mood",
             width: 100,
             render(row, index) {
               return (
                 <EditColumn
-                  initialValue={data.value[index]?.mood ?? ''}
+                  initialValue={data.value[index]?.mood ?? ""}
                   onSubmit={async (v) => {
                     await patchMutation.mutateAsync({
-                      id: row.id,
+                      _id: row._id,
                       data: { mood: v },
-                    })
-                    toast.success('修改成功')
+                    });
+                    toast.success("修改成功");
                   }}
                   placeholder="心情"
                 />
-              )
+              );
             },
           },
           {
-            title: 'Slug',
-            key: 'slug',
+            title: "Slug",
+            key: "slug",
             width: 220,
             render(row) {
-              return <span class="font-mono text-xs">{row.slug || '—'}</span>
+              return <span class="text-xs font-mono">{row.slug || "—"}</span>;
             },
           },
           {
-            title: '天气',
-            key: 'weather',
+            title: "天气",
+            key: "weather",
             width: 100,
             render(row, index) {
               return (
                 <EditColumn
-                  initialValue={data.value[index]?.weather ?? ''}
+                  initialValue={data.value[index]?.weather ?? ""}
                   onSubmit={async (v) => {
                     await patchMutation.mutateAsync({
-                      id: row.id,
+                      _id: row._id,
                       data: { weather: v },
-                    })
-                    toast.success('修改成功')
+                    });
+                    toast.success("修改成功");
                   }}
                   placeholder="天气"
                 />
-              )
+              );
             },
           },
           {
-            title: '地点',
-            key: 'location',
+            title: "地点",
+            key: "location",
             width: 200,
             render(row) {
-              const { coordinates, location } = row
-              if (!location) return null
+              const { coordinates, location } = row;
+              if (!location)
+                return null;
 
               return (
                 <NEllipsis class="max-w-[200px] truncate">
@@ -441,29 +458,31 @@ export const ManageNoteListView = defineComponent({
                         <div>
                           <p>{location}</p>
                           <p>
-                            {coordinates?.longitude}, {coordinates?.latitude}
+                            {coordinates?.longitude}
+                            ,
+                            {coordinates?.latitude}
                           </p>
                         </div>
-                      )
+                      );
                     },
                     default() {
-                      return location
+                      return location;
                     },
                   }}
                 </NEllipsis>
-              )
+              );
             },
           },
 
           {
             title: () => <BookIcon class="h-4 w-4" />,
-            key: 'readCount',
+            key: "readCount",
             width: 50,
             ellipsis: {
               tooltip: true,
             },
             render(row) {
-              return formatNumber(row.readCount || 0)
+              return formatNumber(row.readCount || 0);
             },
           },
           {
@@ -472,52 +491,52 @@ export const ManageNoteListView = defineComponent({
             ellipsis: {
               tooltip: true,
             },
-            key: 'likeCount',
+            key: "likeCount",
             render(row) {
-              return formatNumber(row.likeCount || 0)
+              return formatNumber(row.likeCount || 0);
             },
           },
 
           {
-            title: '创建于',
-            key: 'createdAt',
-            sortOrder: 'descend',
-            sorter: 'default',
+            title: "创建于",
+            key: "createdAt",
+            sortOrder: "descend",
+            sorter: "default",
             width: 200,
             render(row) {
-              return <RelativeTime time={row.createdAt} />
+              return <RelativeTime time={row.createdAt} />;
             },
           },
           {
-            title: '修改于',
-            key: 'modifiedAt',
-            sorter: 'default',
+            title: "修改于",
+            key: "modifiedAt",
+            sorter: "default",
             sortOrder: false,
             width: 200,
             render(row) {
-              return <RelativeTime time={row.modifiedAt ?? row.createdAt} />
+              return <RelativeTime time={row.modifiedAt ?? row.createdAt} />;
             },
           },
           {
-            title: '状态',
-            key: 'isPublished',
+            title: "状态",
+            key: "isPublished",
             width: 120,
             render(row) {
-              return <StatusToggle isPublished={row.isPublished ?? false} />
+              return <StatusToggle isPublished={row.isPublished ?? false} />;
             },
           },
           {
-            title: '操作',
-            key: 'id',
+            title: "操作",
+            key: "_id",
             width: 100,
-            fixed: 'right',
+            fixed: "right",
             render(row) {
               return (
                 <NSpace>
                   <NPopconfirm
-                    positiveText={'取消'}
+                    positiveText="取消"
                     negativeText="删除"
-                    onNegativeClick={() => handleDelete(row.id)}
+                    onNegativeClick={() => handleDelete(row._id)}
                   >
                     {{
                       trigger: () => (
@@ -527,31 +546,36 @@ export const ManageNoteListView = defineComponent({
                       ),
 
                       default: () => (
-                        <span class="max-w-48">确定要删除 {row.title} ?</span>
+                        <span class="max-w-48">
+                          确定要删除
+                          {row.title}
+                          {" "}
+                          ?
+                        </span>
                       ),
                     }}
                   </NPopconfirm>
                 </NSpace>
-              )
+              );
             },
           },
-        ])
+        ]);
 
         return () => (
           <Table
             nTableProps={{
               async onUpdateFilters(filter: { title: string[] }, _column) {
-                const { title } = filter
+                const { title } = filter;
                 if (!title || title.length === 0) {
-                  dbQuery.value = undefined
-                  refresh()
-                  return
+                  dbQuery.value = undefined;
+                  refresh();
+                  return;
                 }
                 dbQuery.value = title.reduce(
                   (acc, i) => ({ ...acc, [i]: true }),
                   {},
-                )
-                setPage(1)
+                );
+                setPage(1);
               },
             }}
             loading={loading.value}
@@ -560,17 +584,18 @@ export const ManageNoteListView = defineComponent({
             onFetchData={refresh}
             pager={pager as any}
             onUpdateCheckedRowKeys={(keys) => {
-              checkedRowKeys.value = keys
+              checkedRowKeys.value = keys;
             }}
             onUpdateSorter={async (props) => {
-              setSort(props.sortBy, props.sortOrder as 0 | 1 | -1)
+              setSort(props.sortBy, props.sortOrder as 0 | 1 | -1);
             }}
+            checkedRowKey="_id"
           />
-        )
+        );
       },
-    })
+    });
 
-    const { setActions } = useLayout()
+    const { setActions } = useLayout();
 
     watchEffect(() => {
       setActions(
@@ -579,28 +604,28 @@ export const ManageNoteListView = defineComponent({
             checkedRowKeys={checkedRowKeys.value}
             onDelete={async () => {
               const status = await Promise.allSettled(
-                checkedRowKeys.value.map((id) => notesApi.delete(id as string)),
-              )
+                checkedRowKeys.value.map(_id => notesApi.delete(_id as string)),
+              );
 
               for (const s of status) {
-                if (s.status === 'rejected') {
-                  toast.error(`删除失败，${s.reason.message}`)
+                if (s.status === "rejected") {
+                  toast.error(`删除失败，${s.reason.message}`);
                 }
               }
 
-              checkedRowKeys.value.length = 0
-              queryClient.invalidateQueries({ queryKey: queryKeys.notes.all })
+              checkedRowKeys.value.length = 0;
+              queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
             }}
           />
 
-          <HeaderActionButton to={'/notes/edit'} icon={<PlusIcon />} />
+          <HeaderActionButton to="/notes/edit" icon={<PlusIcon />} />
         </>,
-      )
-    })
+      );
+    });
 
     return () => (
       <div class="flex flex-col gap-4">
-        <div class="flex items-center gap-2">
+        <div class="flex gap-2 items-center">
           <NInput
             v-model:value={searchKeyword.value}
             placeholder="搜索标题..."
@@ -608,13 +633,13 @@ export const ManageNoteListView = defineComponent({
             class="max-w-xs"
           >
             {{
-              prefix: () => <SearchIcon class="h-4 w-4 text-neutral-400" />,
+              prefix: () => <SearchIcon class="text-neutral-400 h-4 w-4" />,
             }}
           </NInput>
         </div>
 
         {isMobile.value ? <CardList /> : <DataTable />}
       </div>
-    )
+    );
   },
-})
+});
