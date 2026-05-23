@@ -180,8 +180,8 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .merge(health_router)
         .merge(SwaggerUi::new("/api-docs-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
 
-    if let Some(admin_router) = crate::admin_dashboard::router(&state) {
-        router = router.nest(&state.config.admin_dashboard_path, admin_router);
+    if let Some(admin_router) = crate::admin_dashboard::mounted_router(&state) {
+        router = router.merge(admin_router);
     }
 
     router

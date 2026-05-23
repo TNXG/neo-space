@@ -415,8 +415,9 @@ fn decode_oauth_state(raw_state: Option<&str>) -> OAuthReturnTo {
 fn callback_base_url(state: &SharedState, return_to: &OAuthReturnTo) -> String {
     match return_to {
         OAuthReturnTo::Admin => format!(
-            "{}{}/auth/callback",
-            state.config.backend_url, state.config.admin_dashboard_path
+            "{}{}/#/auth/callback",
+            state.config.backend_url,
+            crate::admin_dashboard::ADMIN_DASHBOARD_PROXY_PATH
         ),
         OAuthReturnTo::Web => format!("{}/auth/callback", state.config.frontend_url),
     }

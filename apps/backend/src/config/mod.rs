@@ -35,8 +35,6 @@ pub struct AppConfig {
     pub meilisearch_api_key: String,
     /// Whether to expose the embedded admin dashboard
     pub admin_dashboard_enabled: bool,
-    /// HTTP path prefix where the admin dashboard is mounted (e.g. `/admin`)
-    pub admin_dashboard_path: String,
 }
 
 /// Configuration error types
@@ -116,24 +114,6 @@ impl AppConfig {
                     )
                 })
                 .unwrap_or(true),
-            admin_dashboard_path: normalize_mount_path(
-                env::var("ADMIN_DASHBOARD_PATH").unwrap_or_else(|_| "/admin".to_string()),
-            ),
         })
     }
-}
-
-fn normalize_mount_path(raw: String) -> String {
-    let trimmed = raw.trim();
-    if trimmed.is_empty() || trimmed == "/" {
-        return "/admin".to_string();
-    }
-    let mut path = trimmed.to_string();
-    if !path.starts_with('/') {
-        path.insert(0, '/');
-    }
-    while path.len() > 1 && path.ends_with('/') {
-        path.pop();
-    }
-    path
 }
