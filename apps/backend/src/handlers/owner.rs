@@ -1,7 +1,7 @@
 //! Owner-side public endpoints used by the admin dashboard
 //!
 //! 这些端点不需要鉴权——admin 在登录前用它判断当前部署支持哪些登录方式。
-//! 所有结果都从数据库 / 配置实读，绝不允许硬编码。
+//! 返回值必须和真实登录链路一致，避免前端隐藏后端实际可用的登录入口。
 
 use crate::{
     app::SharedState,
@@ -20,7 +20,8 @@ use serde_json::Value;
 /// - `password`: `accounts` 集合中存在 credential/password provider 的记录。
 /// - `passkey`: `accounts` 集合中存在 `providerId == "passkey"` 或 `provider == "passkey"`
 ///   的记录（暂未启用 WebAuthn，所以现网应当返回 false）。
-/// - `github` / `qq` / 其他 provider：来自 `AppConfig` 或 `options.oauth` 的真实配置。
+/// - `github`: 来自 `AppConfig` 或 `options.oauth` 的真实配置。
+/// - `qq`: 本地配置可用时直连 QQ；未配置时 OAuth service 会回退到 QQ 中转登录。
 pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<ApiResponse<Value>>> {
     let accounts = state.db.collection::<Document>("accounts");
 
@@ -48,11 +49,11 @@ pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<Api
         .map_err(|e| AppError::Database(format!("count passkey failed: {e}")))?
         > 0;
 
-    // OAuth: 优先看 AppConfig，再回退 options.oauth
+    // OAuth: GitHub 必须有真实 client id；QQ handler 在无本地凭据时会使用旧中转服务。
     let mut github = !state.config.github_client_id.trim().is_empty();
-    let mut qq = !state.config.qq_app_id.trim().is_empty();
+    let qq = true;
 
-    if !github || !qq {
+    if !github {
         let oauth_doc = state
             .db
             .collection::<RawOption>("options")
@@ -70,18 +71,6 @@ pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<Api
                         &["github", "clientId"],
                         &["public", "github", "clientId"],
                         &["github", "client_id"],
-                    ],
-                )
-                .is_some();
-            }
-            if !qq {
-                qq = first_non_empty_str(
-                    &d,
-                    &[
-                        &["qq", "appId"],
-                        &["public", "qq", "appId"],
-                        &["qq", "clientId"],
-                        &["qq", "app_id"],
                     ],
                 )
                 .is_some();
