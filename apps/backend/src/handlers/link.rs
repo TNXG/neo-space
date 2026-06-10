@@ -107,7 +107,7 @@ pub async fn list_links(
         let cache_key = format!("link_health_{}", link.id.to_hex());
         // Try to get from cache - returns None if not cached yet
         let health = state
-            .cache
+            .link_health_cache
             .get(&cache_key)
             .await
             .and_then(|bytes| serde_json::from_slice::<LinkHealthStatus>(&bytes).ok());

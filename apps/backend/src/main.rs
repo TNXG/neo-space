@@ -78,6 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(6);
+    info!("正在预热友链健康检查缓存...");
+    tasks::run_link_health_check(&state).await;
     tasks::start_link_health_task(state.clone());
     info!(
         "友链健康检查任务已启动（间隔: {}小时）",

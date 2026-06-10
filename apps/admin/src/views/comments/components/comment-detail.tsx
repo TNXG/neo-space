@@ -35,19 +35,18 @@ import { useUserStore } from "~/stores/user";
 import { CommentMarkdownRender } from "../markdown-render";
 
 const getReferenceLink = (row: CommentModel) => {
-  const ref = (row as any).ref;
   switch (row.refType) {
     case "post": {
-      return `${WEB_URL}/posts/${ref.category.slug}/${ref.slug}`;
+      return `${WEB_URL}/posts/${row.ref}`;
     }
     case "note": {
-      return `${WEB_URL}/notes/${ref.nid}`;
+      return `${WEB_URL}/notes/${row.ref}`;
     }
     case "page": {
-      return `${WEB_URL}/${ref.slug}`;
+      return `${WEB_URL}/pages/${row.ref}`;
     }
     case "recently": {
-      return `${WEB_URL}/thinking/${ref.id}`;
+      return `${WEB_URL}/thinking/${row.ref}`;
     }
     default:
       return "";
@@ -162,7 +161,7 @@ export const CommentDetail = defineComponent({
     };
 
     watch(
-      () => props.comment.id,
+      () => props.comment._id,
       () => {
         replyText.value = "";
         localReplies.value = [];
@@ -177,7 +176,7 @@ export const CommentDetail = defineComponent({
       const text = replyText.value;
       replyText.value = "";
 
-      await props.onReply(props.comment.id, text);
+      await props.onReply(props.comment._id, text);
 
       localReplies.value.push({
         id: Date.now().toString(),
@@ -242,7 +241,7 @@ export const CommentDetail = defineComponent({
                 icon={CheckIcon}
                 label="标为已读"
                 onClick={() =>
-                  props.onChangeState(props.comment.id, CommentState.Read)}
+                  props.onChangeState(props.comment._id, CommentState.Read)}
               />
             )}
             {props.currentTab !== 2 && (
@@ -250,13 +249,13 @@ export const CommentDetail = defineComponent({
                 icon={SpamIcon}
                 label="标为垃圾"
                 onClick={() =>
-                  props.onChangeState(props.comment.id, CommentState.Junk)}
+                  props.onChangeState(props.comment._id, CommentState.Junk)}
               />
             )}
             <NPopconfirm
               positiveText="确认删除"
               negativeText="取消"
-              onPositiveClick={() => props.onDelete(props.comment.id)}
+              onPositiveClick={() => props.onDelete(props.comment._id)}
             >
               {{
                 trigger: () => (
@@ -345,7 +344,7 @@ export const CommentDetail = defineComponent({
                 <CommentMarkdownRender text={commentBody.value} />
               </div>
 
-              {props.comment.ref?.title && (
+              {props.comment.ref && (
                 <div class="text-sm text-neutral-600 px-3 py-2 border border-neutral-100 rounded-md bg-neutral-50 flex gap-2 transition-colors items-center dark:text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800">
                   <span class="text-neutral-400">来源:</span>
                   <a
@@ -354,7 +353,7 @@ export const CommentDetail = defineComponent({
                     class="font-medium truncate hover:underline"
                     rel="noreferrer"
                   >
-                    {props.comment.ref.title}
+                    {props.comment.ref}
                   </a>
                   <ChevronRightIcon class="text-neutral-400 ml-auto h-4 w-4" />
                 </div>

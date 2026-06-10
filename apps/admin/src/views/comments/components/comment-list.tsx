@@ -18,7 +18,7 @@ interface Pager {
 }
 
 const FILTER_OPTIONS = [
-  { value: 0, label: "待审核" },
+  { value: 3, label: "待审核" },
   { value: 1, label: "已读" },
   { value: 2, label: "垃圾桶" },
 ];
@@ -204,11 +204,11 @@ export const CommentList = defineComponent({
                     <div>
                       {props.data.map(item => (
                         <CommentListItem
-                          key={item.id}
+                          key={item._id}
                           data={item}
-                          checked={props.checkedKeys.includes(item.id)}
-                          selected={props.selectedId === item.id}
-                          onCheck={c => props.onCheck(item.id, c)}
+                          checked={props.checkedKeys.includes(item._id)}
+                          selected={props.selectedId === item._id}
+                          onCheck={c => props.onCheck(item._id, c)}
                           onSelect={() => props.onSelect(item)}
                         />
                       ))}

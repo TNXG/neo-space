@@ -11,7 +11,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use bson::{doc, oid::ObjectId};
+use bson::{Document, doc, oid::ObjectId};
 
 /// Update a comment
 pub async fn update_comment(
@@ -102,11 +102,12 @@ pub async fn delete_comment(
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| AppError::BadRequest("Invalid ID format".to_string()))?;
 
-    let collection = state.db.collection::<Comment>("comments");
+    let collection = state.db.collection::<Document>("comments");
 
-    // Get existing comment
+    // 仅确认目标存在，避免历史评论字段别名触发完整 Comment 反序列化冲突。
     let _existing_comment = collection
         .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
+        .projection(doc! { "_id": 1 })
         .await
         .map_err(|e| AppError::Database(format!("Failed to find comment: {}", e)))?
         .ok_or(AppError::NotFound("Comment not found".to_string()))?;

@@ -1,4 +1,9 @@
-import type { LinkModel, LinkResponse, LinkStateCount } from "~/models/link";
+import type {
+  LinkHealthStatus,
+  LinkModel,
+  LinkResponse,
+  LinkStateCount,
+} from "~/models/link";
 
 import { request } from "~/utils/request";
 
@@ -18,6 +23,23 @@ export interface CreateLinkData {
 }
 
 export interface UpdateLinkData extends Partial<CreateLinkData> {}
+
+interface ApiResponse<T> {
+  data: T;
+}
+
+function unwrapApiResponse<T>(response: T | ApiResponse<T>): T {
+  if (
+    response
+    && typeof response === "object"
+    && "data" in response
+    && "status" in response
+  ) {
+    return (response as ApiResponse<T>).data;
+  }
+
+  return response as T;
+}
 
 export const linksApi = {
   // 获取友链列表
@@ -45,10 +67,13 @@ export const linksApi = {
     request.patch<LinkModel>(`/links/${id}`, { data: { state } }),
 
   // 检查友链健康状态
-  checkHealth: (options?: { timeout?: number }) =>
-    request.get<
-      Record<string, { id: string; status: number | string; message?: string }>
-    >("/links/health", { timeout: options?.timeout }),
+  checkHealth: async (options?: { timeout?: number }) => {
+    const response = await request.get<
+      ApiResponse<Record<string, LinkHealthStatus>>
+    >("/links/health", { timeout: options?.timeout });
+
+    return unwrapApiResponse(response);
+  },
 
   // 审核通过友链
   auditPass: (id: string) => request.patch<LinkModel>(`/links/audit/${id}`),

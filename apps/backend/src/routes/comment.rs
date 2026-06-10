@@ -12,7 +12,7 @@ pub fn routes() -> axum::Router<SharedState> {
             axum::routing::get(handlers::comment::list_comments)
                 .post(handlers::comment::create_comment),
         )
-        // Admin comment operations
+        // Owner-authenticated comment management extensions
         .route(
             "/{id}",
             axum::routing::put(handlers::admin::comment::update_comment)

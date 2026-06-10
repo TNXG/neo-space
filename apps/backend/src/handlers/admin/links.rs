@@ -5,13 +5,16 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
     models::*,
+    tasks::link_health_check::perform_health_check,
 };
 use axum::{
     extract::{Path, State},
     response::Json,
 };
 use bson::{doc, oid::ObjectId};
+use futures::stream::{self, StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 fn parse_oid(id: &str) -> AppResult<ObjectId> {
     ObjectId::parse_str(id).map_err(|_| AppError::BadRequest("Invalid ObjectId".to_string()))
@@ -162,4 +165,70 @@ pub async fn link_state_count(
         outdate,
         banned,
     })))
+}
+
+pub async fn check_link_health(
+    State(state): State<SharedState>,
+    _owner: OwnerOnly,
+) -> AppResult<Json<ApiResponse<HashMap<String, LinkHealthStatus>>>> {
+    let collection = state.db.collection::<serde_json::Value>("links");
+    let filter = doc! {
+        "$or": [
+            { "state": LinkState::NORMAL },
+            { "state": { "$exists": false } }
+        ]
+    };
+
+    let mut cursor = collection
+        .find(filter)
+        .await
+        .map_err(|error| AppError::Database(format!("Failed to query links: {error}")))?;
+
+    let mut links = Vec::new();
+    while let Some(link) = cursor
+        .try_next()
+        .await
+        .map_err(|error| AppError::Database(format!("Failed to iterate links: {error}")))?
+    {
+        links.push(link);
+    }
+
+    let concurrency_limit = (links.len() / 2).clamp(3, 17);
+    let results = stream::iter(links)
+        .map(|link| {
+            let http_client = state.http_client.clone();
+            async move { perform_health_check(&link, &http_client).await }
+        })
+        .buffer_unordered(concurrency_limit)
+        .collect::<Vec<_>>()
+        .await;
+
+    let mut response = HashMap::new();
+    for result in results {
+        let hosting_provider = serde_json::to_value(&result.hosting_provider)
+            .ok()
+            .and_then(|value| value.as_str().map(ToString::to_string))
+            .unwrap_or_else(|| "unknown".to_string());
+
+        let health_data = LinkHealthStatus {
+            link_id: result.link_id.clone(),
+            url: result.url,
+            is_alive: result.is_alive,
+            status_code: result.status_code,
+            latency_ms: result.latency_ms,
+            hosting_provider,
+            checked_at: result.checked_at.to_rfc3339(),
+            error_message: result.error_message,
+            is_stale: false,
+        };
+
+        if let Ok(serialized) = serde_json::to_vec(&health_data) {
+            let cache_key = format!("link_health_{}", health_data.link_id);
+            state.link_health_cache.insert(cache_key, serialized).await;
+        }
+
+        response.insert(health_data.link_id.clone(), health_data);
+    }
+
+    Ok(Json(ApiResponse::success(response)))
 }

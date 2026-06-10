@@ -33,9 +33,9 @@ import { CommentEmptyState } from "./components/comment-empty-state";
 import { CommentList } from "./components/comment-list";
 
 enum CommentType {
-  Pending,
-  Marked,
-  Trash,
+  Pending = CommentState.Pending,
+  Marked = CommentState.Read,
+  Trash = CommentState.Junk,
 }
 
 const ManageComment = defineComponent(() => {
@@ -77,12 +77,12 @@ const ManageComment = defineComponent(() => {
   const selectedComment = computed(() => {
     if (!selectedId.value)
       return null;
-    const fromList = data.value.find(c => c.id === selectedId.value);
+    const fromList = data.value.find(comment => comment._id === selectedId.value);
     if (fromList)
       return fromList;
     if (
       selectedCommentSnapshot.value
-      && selectedCommentSnapshot.value.id === selectedId.value
+      && selectedCommentSnapshot.value._id === selectedId.value
     ) {
       return selectedCommentSnapshot.value;
     }
@@ -90,8 +90,8 @@ const ManageComment = defineComponent(() => {
   });
 
   const replyMutation = useMutation({
-    mutationFn: ({ id, text }: { id: string; text: string }) =>
-      commentsApi.readerReply(id, text),
+    mutationFn: ({ comment, text }: { comment: CommentModel; text: string }) =>
+      commentsApi.readerReply(comment, text),
     onSuccess: () => {
       toast.success("回复成功");
       queryClient.invalidateQueries({ queryKey: queryKeys.comments.all });
@@ -145,7 +145,14 @@ const ManageComment = defineComponent(() => {
   };
 
   const handleReply = async (id: string, text: string) => {
-    await replyMutation.mutateAsync({ id, text });
+    const comment = data.value.find(item => item._id === id) ?? selectedComment.value;
+
+    if (!comment) {
+      toast.error("评论数据不存在，无法回复");
+      return;
+    }
+
+    await replyMutation.mutateAsync({ comment, text });
   };
 
   const selectAllMode = ref(false);
@@ -162,7 +169,7 @@ const ManageComment = defineComponent(() => {
   const handleCheckAll = (checked: boolean) => {
     selectAllMode.value = false;
     if (checked) {
-      checkedRowKeys.value = data.value.map(d => d.id);
+      checkedRowKeys.value = data.value.map(comment => comment._id);
     } else {
       checkedRowKeys.value = [];
     }
@@ -170,11 +177,11 @@ const ManageComment = defineComponent(() => {
 
   const handleSelectAll = () => {
     selectAllMode.value = true;
-    checkedRowKeys.value = data.value.map(d => d.id);
+    checkedRowKeys.value = data.value.map(comment => comment._id);
   };
 
   const handleSelect = (comment: CommentModel) => {
-    selectedId.value = comment.id;
+    selectedId.value = comment._id;
     selectedCommentSnapshot.value = { ...comment };
     if (isMobile.value) {
       showDetailOnMobile.value = true;

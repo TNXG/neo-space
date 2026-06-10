@@ -28,6 +28,18 @@ export interface LinkModel {
 
 export type LinkResponse = PaginateResult<LinkModel>;
 
+export interface LinkHealthStatus {
+  linkId: string;
+  url: string;
+  isAlive: boolean;
+  statusCode?: number;
+  latencyMs?: number;
+  hostingProvider: string;
+  checkedAt: string;
+  errorMessage?: string;
+  isStale: boolean;
+}
+
 export interface LinkStateCount {
   audit: number;
   collection: number;

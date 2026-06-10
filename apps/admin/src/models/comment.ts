@@ -1,7 +1,5 @@
-import type { Pager } from "./base";
-
 export interface CommentParentPreview {
-  id: string;
+  _id: string;
   author: string | null;
   text: string;
   isDeleted: boolean;
@@ -17,7 +15,7 @@ export interface CommentReplyWindow {
 }
 
 export interface CommentModel {
-  id: string;
+  _id: string;
   createdAt: string;
   refType: "post" | "note" | "page" | "recently";
   state: number;
@@ -41,16 +39,12 @@ export interface CommentModel {
   anchor?: Record<string, unknown> | null;
   replies?: CommentModel[];
   replyWindow?: CommentReplyWindow;
-  ref?: Record<string, any>;
-}
-
-export interface CommentsResponse {
-  data: CommentModel[];
-  pagination: Pager;
+  ref: string;
 }
 
 export enum CommentState {
   Unread,
   Read,
   Junk,
+  Pending,
 }

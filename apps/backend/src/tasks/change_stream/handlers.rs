@@ -225,7 +225,9 @@ pub(super) async fn handle_link_change(
 
     if let Some(id) = &link_id {
         let key = format!("link:{id}");
+        let health_key = format!("link_health_{id}");
         state.cache.invalidate(&key).await;
+        state.link_health_cache.invalidate(&health_key).await;
     }
     state.cache.invalidate("links").await;
 

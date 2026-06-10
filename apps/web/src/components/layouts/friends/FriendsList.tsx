@@ -59,13 +59,11 @@ const DetailCard = ({
   children,
   className,
   delay = 0,
-  noHover = false,
   style,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  noHover?: boolean;
   style?: React.CSSProperties;
 }) => (
   <motion.div
@@ -74,8 +72,7 @@ const DetailCard = ({
     exit={{ opacity: 0, y: 10, filter: "blur(4px)" }}
     transition={{ duration: 0.4, delay, ease: [0.2, 0.65, 0.3, 0.9] }}
     className={cn(
-      "group relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-4 backdrop-blur-xl transition-colors duration-300",
-      !noHover && "hover:bg-card/50",
+      "relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-4 backdrop-blur-xl",
       className,
     )}
     style={style}
@@ -132,11 +129,20 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
     const { health } = activeItem;
     const providerName = health?.hosting_provider || "Unknown";
     const providerDisplayName = getHostingDisplayName(providerName);
+    const hasHealth = Boolean(health);
     const isAlive = health?.is_alive;
 
     // 获取颜色主题
-    const statusColor = isAlive ? "text-green-500" : "text-red-500";
-    const statusBg = isAlive ? "bg-green-500" : "bg-red-500";
+    const statusColor = !hasHealth
+      ? "text-muted-foreground"
+      : isAlive
+        ? "text-green-500"
+        : "text-red-500";
+    const statusBg = !hasHealth
+      ? "bg-muted-foreground/50"
+      : isAlive
+        ? "bg-green-500"
+        : "bg-red-500";
 
     return (
       <AnimatePresence mode="wait">
@@ -148,106 +154,105 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
           className="flex flex-col gap-4 p-1"
         >
           {/* 1. Identity & Browser Header */}
-          <a
-            href={activeItem.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block cursor-pointer"
-          >
-            <DetailCard className="p-0 border-0 bg-transparent overflow-visible group/browser">
-              <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card shadow-lg transition-all duration-300 group-hover/browser:border-primary/30 group-hover/browser:shadow-primary/5">
-                {/* 模拟浏览器头部 */}
-                <div className="h-24 w-full bg-secondary/30 relative overflow-hidden">
-                  <div
-                    className="absolute inset-0 opacity-30 bg-cover bg-center blur-2xl scale-125 saturate-150 transition-transform duration-700 group-hover/browser:scale-110"
-                    style={{ backgroundImage: `url(${activeItem.avatar})` }}
-                  />
-                  <div className="absolute inset-0 bg-linear-to-b from-transparent to-card" />
-                  <div className="absolute top-3 left-3 flex gap-1.5 z-10 opacity-70">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                  </div>
+          <DetailCard className="p-0 border-0 bg-transparent overflow-visible">
+            <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
+              {/* 模拟浏览器头部 */}
+              <div className="h-24 w-full bg-secondary/30 relative overflow-hidden">
+                <div
+                  className="absolute inset-0 opacity-30 bg-cover bg-center blur-2xl scale-125 saturate-150"
+                  style={{ backgroundImage: `url(${activeItem.avatar})` }}
+                />
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-card" />
+                <div className="absolute top-3 left-3 flex gap-1.5 z-10 opacity-70">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                 </div>
+              </div>
 
-                {/* 内容区域 */}
-                <div className="relative px-5 pb-5 -mt-10 flex flex-col items-center text-center">
-                  <motion.div
-                    layoutId={`avatar-large-${activeItem._id}`}
-                    className="relative z-10 rounded-2xl p-1.5 bg-card border border-border/20 shadow-xl backface-hidden transform-[translateZ(0)]"
-                  >
-                    <img
-                      src={activeItem.avatar}
-                      alt={activeItem.name}
-                      className="w-20 h-20 rounded-xl object-cover [image-rendering:auto]"
-                    />
-                    <div className="absolute -bottom-2 -right-2 bg-card p-1 rounded-full">
-                      <div
-                        className={cn(
-                          "w-4 h-4 rounded-full border-2 border-card animate-pulse",
-                          statusBg,
-                        )}
-                      />
-                    </div>
-                  </motion.div>
-
-                  <div className="mt-3 w-full">
-                    <motion.h2
-                      layoutId={`title-${activeItem._id}`}
-                      className="text-2xl font-bold tracking-tight text-foreground group-hover/browser:text-primary transition-colors"
-                    >
-                      {activeItem.name}
-                    </motion.h2>
-                    <div className="flex items-center justify-center gap-1.5 mt-1 text-xs font-mono text-muted-foreground/80">
-                      <Icon icon="mingcute:link-2-line" className="w-3.5 h-3.5" />
-                      <span className="truncate max-w-50">
-                        {new URL(activeItem.url).hostname}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 访问按钮 */}
-                  <div className="mt-5 w-full group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-medium transition-transform hover:scale-[1.02] shadow-md shadow-black/5">
+              {/* 内容区域 */}
+              <div className="relative px-5 pb-5 -mt-10 flex flex-col items-center text-center">
+                <motion.div
+                  layoutId={`avatar-large-${activeItem._id}`}
+                  className="relative z-10 rounded-2xl p-1.5 bg-card border border-border/20 backface-hidden transform-[translateZ(0)]"
+                >
+                  <img
+                    src={activeItem.avatar}
+                    alt={activeItem.name}
+                    className="w-20 h-20 rounded-xl object-cover [image-rendering:auto]"
+                  />
+                  <div className="absolute -bottom-2 -right-2 bg-card p-1 rounded-full">
                     <div
-                      className="absolute inset-0 blur-xl scale-150 saturate-150"
-                      style={{ backgroundImage: `url(${activeItem.avatar})` }}
+                      className={cn(
+                        "w-4 h-4 rounded-full border-2 border-card animate-pulse",
+                        statusBg,
+                      )}
                     />
-                    <div className="absolute inset-0 bg-black/10" />
+                  </div>
+                </motion.div>
 
-                    <span className="relative z-10 flex items-center gap-2 w-full justify-center">
-                      <span className="text-white/90">
-                        访问站点
-                      </span>
-                      <Icon
-                        icon="mingcute:arrow-right-line"
-                        className="w-4 h-4 text-white/90"
-                      />
-
-                      <span className="ml-auto flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/60 backdrop-blur-md border border-white/5">
-                        <Icon icon="mingcute:mouse-line" className="w-3 h-3" />
-                        左键直达
-                      </span>
+                <div className="mt-3 w-full">
+                  <motion.h2
+                    layoutId={`title-${activeItem._id}`}
+                    className="text-2xl font-bold tracking-tight text-foreground"
+                  >
+                    {activeItem.name}
+                  </motion.h2>
+                  <div className="flex items-center justify-center gap-1.5 mt-1 text-xs font-mono text-muted-foreground/80">
+                    <Icon icon="mingcute:link-2-line" className="w-3.5 h-3.5" />
+                    <span className="truncate max-w-50">
+                      {new URL(activeItem.url).hostname}
                     </span>
                   </div>
                 </div>
               </div>
-            </DetailCard>
-          </a>
+            </div>
+          </DetailCard>
 
-          {/* 2. Monitor Dashboard */}
+          {/* 2. Primary Action */}
+          <DetailCard delay={0.05} className="p-0 border-0 bg-transparent overflow-visible">
+            <a
+              href={activeItem.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`访问 ${activeItem.name}`}
+              className="group relative flex min-h-14 cursor-pointer items-center justify-between rounded-2xl border border-border/50 bg-secondary/10 px-4 py-3 overflow-hidden"
+            >
+              <div
+                className="absolute inset-0 opacity-40 bg-cover bg-center blur-xl scale-125 saturate-200 transition-opacity duration-300 group-hover:opacity-60"
+                style={{ backgroundImage: `url(${activeItem.avatar})` }}
+              />
+              <div className="absolute inset-0 bg-card/80 transition-colors duration-300 group-hover:bg-card/60" />
+              <div className="relative z-10 flex min-w-0 flex-col">
+                <span className="text-sm font-semibold leading-tight text-foreground drop-shadow-xs">
+                  访问站点
+                </span>
+                <span className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground drop-shadow-xs">
+                  <Icon icon="mingcute:mouse-line" className="w-3.5 h-3.5" />
+                  鼠标左键直接打开
+                </span>
+              </div>
+              <Icon
+                icon="mingcute:external-link-line"
+                className="relative z-10 h-5 w-5 text-muted-foreground transition-colors duration-200 group-hover:text-foreground drop-shadow-xs"
+              />
+            </a>
+          </DetailCard>
+
+          {/* 3. Monitor Dashboard */}
           <div className="grid grid-cols-2 gap-3">
             {/* Health - 边缘均匀光晕 */}
             <DetailCard
               delay={0.1}
-              noHover={true}
               className="flex flex-col justify-between gap-3 border-0 bg-transparent"
               style={{
                 boxShadow: isAlive
                   ? "inset 0 0 24px 8px rgba(34,197,94,0.12)"
-                  : "inset 0 0 24px 8px rgba(239,68,68,0.12)",
+                  : hasHealth
+                    ? "inset 0 0 24px 8px rgba(239,68,68,0.12)"
+                    : "inset 0 0 24px 8px rgba(100,116,139,0.08)",
               }}
             >
-
               <div className="relative z-10 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase text-muted-foreground/70 tracking-wider">
                   Health
@@ -259,7 +264,11 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
               </div>
               <div className="relative z-10">
                 <div className="text-xl font-bold font-mono tracking-tight text-foreground">
-                  {health?.status_code || (isAlive ? "200" : "ERR")}
+                  {health?.status_code || (
+                    hasHealth
+                      ? (isAlive ? "200" : "ERR")
+                      : "N/A"
+                  )}
                 </div>
                 <div
                   className={cn(
@@ -268,7 +277,11 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                   )}
                 >
                   <span className={cn("w-1.5 h-1.5 rounded-full", statusBg)} />
-                  {isAlive ? "System Operational" : "System Error"}
+                  {!hasHealth
+                    ? "Not Checked"
+                    : isAlive
+                      ? "System Operational"
+                      : "System Error"}
                 </div>
               </div>
             </DetailCard>
@@ -312,7 +325,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             </div>
           </div>
 
-          {/* 3. Description */}
+          {/* 4. Description */}
           <DetailCard
             delay={0.25}
             className="min-h-20 bg-linear-to-br from-card/30 to-secondary/10"
@@ -341,7 +354,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             )}
           </DetailCard>
 
-          {/* 4. Tech Stack */}
+          {/* 5. Tech Stack */}
           {activeItem.techstack && activeItem.techstack.length > 0 && (
             <DetailCard delay={0.3} className="bg-transparent border-0 p-0 overflow-visible">
               <div className="flex items-center gap-2 mb-2 px-1">
@@ -358,7 +371,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.3 + i * 0.05 }}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-secondary/50 backdrop-blur-md border border-border/50 rounded-lg text-secondary-foreground shadow-xs hover:scale-105 transition-transform cursor-default"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-secondary/50 backdrop-blur-md border border-border/50 rounded-lg text-secondary-foreground cursor-default"
                     >
                       {TechIcon && <TechIcon size={12} className="opacity-70" />}
                       {tech}
@@ -369,44 +382,15 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
             </DetailCard>
           )}
 
-          {/* 5. RSS / Footer Tools */}
-          <div className="grid grid-cols-2 gap-3 mt-auto pt-2">
-            {activeItem.rssurl
-              ? (
-                  <a
-                    href={activeItem.rssurl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/5 border border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/10 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden"
-                  >
-                    <div className="p-1.5 bg-orange-500/10 text-orange-600 rounded-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                      <Icon icon="mingcute:rss-fill" className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex flex-col z-10 flex-1">
-                      <span className="text-[10px] font-bold text-orange-700 group-hover:text-orange-600 transition-colors">
-                        RSS Feed
-                      </span>
-                      <span className="text-[9px] text-foreground/60 group-hover:text-orange-600 transition-colors flex items-center gap-1">
-                        <Icon icon="mingcute:mouse-line" className="w-3 h-3" />
-                        点击订阅
-                      </span>
-                    </div>
-                  </a>
-                )
-              : (
-                  <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border/60 text-muted-foreground/50 cursor-not-allowed opacity-70">
-                    <Icon icon="mingcute:rss-line" className="w-4 h-4" />
-                    <span className="text-[10px]">No RSS</span>
-                  </div>
-                )}
-
-            <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-border/40 bg-card/20 text-muted-foreground/60 text-[10px]">
+          {/* 6. Footer Meta */}
+          <DetailCard delay={0.35} className="mt-auto p-0 border-0 bg-transparent">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-border/40 bg-card/20 p-3 text-[10px] text-muted-foreground/60">
               <Icon icon="mingcute:eye-line" className="w-3.5 h-3.5" />
               Last Check:
               {" "}
               {health?.checked_at ? formatTimeAgo(health.checked_at) : "N/A"}
             </div>
-          </div>
+          </DetailCard>
         </motion.div>
       </AnimatePresence>
     );
@@ -458,7 +442,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
         <aside className="hidden lg:block sticky top-24 max-h-[calc(100vh-8rem)]">
           {activeItem
             ? (
-                <div className="overflow-y-auto no-scrollbar pr-1 max-h-[calc(100vh-8rem)]">
+                <div className="overflow-y-auto overflow-x-hidden no-scrollbar pr-1 pb-4 max-h-[calc(100vh-8rem)]">
                   {renderPreview()}
                 </div>
               )
@@ -538,7 +522,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                         >
                           {new URL(item.url).hostname}
                         </span>
-                        <p className="text-xs text-foreground/70 line-clamp-2 mt-1.5 leading-relaxed">
+                        <p className="mt-1.5 truncate text-xs leading-relaxed text-foreground/70">
                           {item.description || "暂无简介"}
                         </p>
                       </div>

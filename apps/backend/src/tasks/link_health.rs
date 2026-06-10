@@ -23,46 +23,34 @@ pub fn start_link_health_task(state: SharedState) {
 
     tokio::spawn(async move {
         let mut timer = interval(Duration::from_secs(check_interval_hours * 3600));
-
-        // 立即执行第一次检查（跳过第一个 tick）
+        // Initial health data is warmed during startup; consume the immediate tick so the loop waits for the real interval.
         timer.tick().await;
-        tracing::info!("开始友链健康检查...");
-
-        match check_all_links(&state).await {
-            Ok(result) => {
-                tracing::info!(
-                    "[LinkHealth] 批量检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
-                    result.total,
-                    result.alive_count,
-                    result.failed_count,
-                    result.duration_ms
-                );
-            }
-            Err(e) => {
-                tracing::error!("友链健康检查失败: {}", e);
-            }
-        }
 
         loop {
             timer.tick().await;
-            tracing::info!("开始友链健康检查...");
-
-            match check_all_links(&state).await {
-                Ok(result) => {
-                    tracing::info!(
-                        "[LinkHealth] 批量检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
-                        result.total,
-                        result.alive_count,
-                        result.failed_count,
-                        result.duration_ms
-                    );
-                }
-                Err(e) => {
-                    tracing::error!("友链健康检查失败: {}", e);
-                }
-            }
+            run_link_health_check(&state).await;
         }
     });
+}
+
+/// Run one full link health check and populate the health cache.
+pub async fn run_link_health_check(state: &SharedState) {
+    tracing::info!("开始友链健康检查...");
+
+    match check_all_links(state).await {
+        Ok(result) => {
+            tracing::info!(
+                "[LinkHealth] 批量检查完成 - 总数: {}, 存活: {}, 失败: {}, 耗时: {}ms",
+                result.total,
+                result.alive_count,
+                result.failed_count,
+                result.duration_ms
+            );
+        }
+        Err(error) => {
+            tracing::error!("友链健康检查失败: {}", error);
+        }
+    }
 }
 
 /// Check all links in the database
@@ -118,7 +106,7 @@ async fn check_all_links(state: &SharedState) -> Result<LinkHealthCheckResult, S
             is_stale: false,
         };
         if let Ok(serialized) = serde_json::to_vec(&health_data) {
-            state.cache.insert(cache_key, serialized).await;
+            state.link_health_cache.insert(cache_key, serialized).await;
         }
     }
 

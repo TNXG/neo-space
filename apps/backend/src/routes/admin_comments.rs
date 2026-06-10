@@ -1,4 +1,4 @@
-//! Admin comment batch routes (mounted under /comments)
+//! Comment admin extension routes (mounted under /comments)
 
 use crate::app::SharedState;
 use crate::handlers::admin::comments_batch as cb;

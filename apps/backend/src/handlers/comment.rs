@@ -7,7 +7,7 @@ use crate::{
     external::ip_location::get_ip_location,
     models::{
         comment::{Comment, CommentListResponse, CommentState, CommentTree, CreateCommentRequest},
-        common::{ApiResponse, ResponseStatus},
+        common::{ApiResponse, PaginatedData, ResponseStatus},
         user::Reader,
     },
     services::{
@@ -21,7 +21,7 @@ use axum::http::HeaderMap;
 use axum::{Json, extract::State};
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 fn extract_request_user_agent(headers: &HeaderMap) -> Option<String> {
     headers
@@ -40,6 +40,16 @@ pub struct ListCommentsQuery {
     pub r#ref: Option<String>,
     /// Reference type ("posts" / "notes" / "pages")
     pub ref_type: Option<String>,
+    pub page: Option<u64>,
+    pub size: Option<u64>,
+    pub state: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum ListCommentsResponseData {
+    Public(CommentListResponse),
+    Admin(PaginatedData<crate::handlers::admin::comments_batch::AdminCommentItem>),
 }
 
 /// List comments with tree structure
@@ -47,10 +57,30 @@ pub async fn list_comments(
     State(state): State<SharedState>,
     AppQuery(query): AppQuery<ListCommentsQuery>,
     auth: OptionalAuth,
-) -> AppResult<Json<ApiResponse<CommentListResponse>>> {
-    let r#ref = query
-        .r#ref
-        .ok_or_else(|| AppError::BadRequest("Missing ref parameter".to_string()))?;
+) -> AppResult<Json<ApiResponse<ListCommentsResponseData>>> {
+    let Some(r#ref) = query.r#ref else {
+        if auth.is_owner {
+            let admin_data = crate::handlers::admin::comments_batch::list_comments_admin_data(
+                &state.db,
+                crate::handlers::admin::comments_batch::ListCommentsAdminQuery {
+                    page: query.page,
+                    size: query.size,
+                    state: query.state,
+                },
+            )
+            .await?;
+
+            return Ok(Json(ApiResponse {
+                code: 200,
+                status: ResponseStatus::Success,
+                message: "Success".to_string(),
+                data: ListCommentsResponseData::Admin(admin_data),
+            }));
+        }
+
+        return Err(AppError::BadRequest("Missing ref parameter".to_string()));
+    };
+
     let ref_type = query
         .ref_type
         .ok_or_else(|| AppError::BadRequest("Missing ref_type parameter".to_string()))?;
@@ -103,10 +133,10 @@ pub async fn list_comments(
         code: 200,
         status: ResponseStatus::Success,
         message: "Success".to_string(),
-        data: CommentListResponse {
+        data: ListCommentsResponseData::Public(CommentListResponse {
             comments: comment_trees,
             count,
-        },
+        }),
     }))
 }
 

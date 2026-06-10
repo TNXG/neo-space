@@ -22,6 +22,8 @@ pub struct AppState {
     pub db: Database,
     /// In-memory cache for frequently accessed data
     pub cache: Cache<String, Vec<u8>>,
+    /// 友链健康状态刷新周期较长，需要独立缓存避免被通用短 TTL 提前清掉
+    pub link_health_cache: Cache<String, Vec<u8>>,
     /// Application configuration
     pub config: AppConfig,
     /// Event bus for real-time updates
@@ -72,6 +74,21 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         CACHE_TTL_SECS
     );
 
+    let link_health_interval_hours = std::env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(6);
+    let link_health_cache_ttl_secs = (link_health_interval_hours + 1) * 3600;
+    let link_health_cache = Cache::builder()
+        .max_capacity(CACHE_CAPACITY)
+        .time_to_live(Duration::from_secs(link_health_cache_ttl_secs))
+        .build();
+    tracing::info!(
+        "友链健康缓存初始化完成 - 容量: {}, TTL: {}秒",
+        CACHE_CAPACITY,
+        link_health_cache_ttl_secs
+    );
+
     // Create event bus with channel size 100
     let (event_bus, _) = broadcast::channel(100);
     tracing::info!("EventBus 初始化完成 - 频道容量: 100");
@@ -109,6 +126,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
     Arc::new(AppState {
         db,
         cache,
+        link_health_cache,
         config,
         event_bus,
         http_client,

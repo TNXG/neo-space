@@ -1,4 +1,4 @@
-import type { LinkModel, LinkStateCount } from "~/models/link";
+import type { LinkHealthStatus, LinkModel, LinkStateCount } from "~/models/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { omit } from "es-toolkit/compat";
 import {
@@ -157,11 +157,7 @@ export default defineComponent({
     const health = ref<
       Record<
         string,
-        {
-          id: string;
-          status: number | string;
-          message?: string;
-        }
+        LinkHealthStatus
       >
     >();
 
@@ -346,11 +342,18 @@ export default defineComponent({
                 key: "url",
                 render(row) {
                   const urlHealth = health.value?.[row.id];
+                  const healthErrorMessage = urlHealth && !urlHealth.isAlive
+                    ? urlHealth.errorMessage ?? "HTTP 状态异常"
+                    : undefined;
                   return (
                     <UrlComponent
                       url={row.url}
-                      errorMessage={urlHealth?.message}
-                      status={urlHealth?.status}
+                      errorMessage={healthErrorMessage}
+                      status={
+                        urlHealth
+                          ? urlHealth.statusCode ?? (urlHealth.isAlive ? 200 : "ERR")
+                          : undefined
+                      }
                     />
                   );
                 },

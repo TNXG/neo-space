@@ -10,8 +10,8 @@ mod tree;
 
 use crate::auth::extractors::OptionalAuth;
 use crate::error::{AppError, AppResult};
-use crate::models::{Comment, CommentState, account::Account, user::Reader};
-use bson::{doc, oid::ObjectId};
+use crate::models::{CommentState, account::Account, user::Reader};
+use bson::{Document, doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use mongodb::Database;
 
@@ -169,7 +169,7 @@ impl CommentService {
         root_comment_id: Option<ObjectId>,
         reply_created_at: bson::DateTime,
     ) -> Result<(), String> {
-        let collection = self.db.collection::<Comment>("comments");
+        let collection = self.db.collection::<Document>("comments");
 
         collection
             .update_one(
@@ -204,22 +204,31 @@ impl CommentService {
         &self,
         root_id: ObjectId,
     ) -> Result<Vec<ObjectId>, String> {
-        let collection = self.db.collection::<Comment>("comments");
+        let collection = self.db.collection::<Document>("comments");
         let mut all_ids = vec![root_id];
         let mut frontier = vec![root_id];
 
         while !frontier.is_empty() {
             let mut cursor = collection
                 .find(doc! {
-                    "parentCommentId": { "$in": &frontier },
-                    "isDeleted": { "$ne": true }
+                    "$and": [
+                        {
+                            "$or": [
+                                { "parentCommentId": { "$in": &frontier } },
+                                { "parent": { "$in": &frontier } },
+                                { "parentId": { "$in": &frontier } }
+                            ]
+                        },
+                        { "isDeleted": { "$ne": true } }
+                    ]
                 })
+                .projection(doc! { "_id": 1 })
                 .await
                 .map_err(|e| e.to_string())?;
 
             let mut next_frontier = Vec::new();
-            while let Some(comment) = cursor.try_next().await.map_err(|e| e.to_string())? {
-                if let Some(id) = comment.id {
+            while let Some(document) = cursor.try_next().await.map_err(|e| e.to_string())? {
+                if let Ok(id) = document.get_object_id("_id") {
                     next_frontier.push(id);
                 }
             }
