@@ -17,11 +17,13 @@ use crate::{
         spam::SpamDetector,
     },
 };
+use axum::extract::ConnectInfo;
 use axum::http::HeaderMap;
 use axum::{Json, extract::State};
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 
 fn extract_request_user_agent(headers: &HeaderMap) -> Option<String> {
     headers
@@ -49,7 +51,7 @@ pub struct ListCommentsQuery {
 #[serde(untagged)]
 pub enum ListCommentsResponseData {
     Public(CommentListResponse),
-    Admin(PaginatedData<crate::handlers::admin::comments_batch::AdminCommentItem>),
+    Admin(PaginatedData<crate::handlers::admin::comments_data::AdminCommentItem>),
 }
 
 /// List comments with tree structure
@@ -60,9 +62,9 @@ pub async fn list_comments(
 ) -> AppResult<Json<ApiResponse<ListCommentsResponseData>>> {
     let Some(r#ref) = query.r#ref else {
         if auth.is_owner {
-            let admin_data = crate::handlers::admin::comments_batch::list_comments_admin_data(
+            let admin_data = crate::handlers::admin::comments_data::list_comments_admin_data(
                 &state.db,
-                crate::handlers::admin::comments_batch::ListCommentsAdminQuery {
+                crate::handlers::admin::comments_data::ListCommentsAdminQuery {
                     page: query.page,
                     size: query.size,
                     state: query.state,
@@ -144,6 +146,7 @@ pub async fn list_comments(
 pub async fn create_comment(
     State(state): State<SharedState>,
     auth: OptionalAuth,
+    ConnectInfo(peer_addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     AppJson(payload): AppJson<CreateCommentRequest>,
 ) -> AppResult<Json<ApiResponse<CommentTree>>> {
@@ -197,7 +200,7 @@ pub async fn create_comment(
     let comment = CommentService::new(state.db.clone());
 
     // Extract client IP from headers
-    let client_ip = extract_client_ip(&headers);
+    let client_ip = extract_client_ip(&headers).or_else(|| Some(peer_addr.ip().to_string()));
 
     // Get IP location asynchronously
     let location = if let Some(ref ip) = client_ip {
@@ -337,12 +340,12 @@ pub async fn create_comment(
         id: None,
         r#ref: ref_bson,
         ref_type: normalized_ref_type.clone(),
-        ref_id: Some(payload.r#ref.clone()),
+        ref_id: None,
         author,
         mail,
         text: payload.text,
         state: state_value,
-        status: Some(if is_owner { "approved" } else { "pending" }.to_string()),
+        status: None,
         ip: client_ip,
         agent: payload
             .ua

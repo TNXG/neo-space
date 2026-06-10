@@ -3,7 +3,9 @@
 pub mod ai;
 pub mod categories;
 pub mod comment;
+pub mod comments_anchor;
 pub mod comments_batch;
+pub mod comments_data;
 pub mod draft_history;
 pub mod drafts;
 pub mod files;

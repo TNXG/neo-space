@@ -18,9 +18,10 @@ interface Pager {
 }
 
 const FILTER_OPTIONS = [
+  { value: -1, label: "全部" },
   { value: 3, label: "待审核" },
-  { value: 1, label: "已读" },
-  { value: 2, label: "垃圾桶" },
+  { value: 1, label: "已通过" },
+  { value: 2, label: "垃圾评论" },
 ];
 
 export const CommentList = defineComponent({
@@ -105,7 +106,7 @@ export const CommentList = defineComponent({
     const currentFilterLabel = computed(
       () =>
         FILTER_OPTIONS.find(o => o.value === props.filterValue)?.label
-        || "待审核",
+        || "全部",
     );
 
     return () => (

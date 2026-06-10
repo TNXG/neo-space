@@ -33,6 +33,7 @@ import { CommentEmptyState } from "./components/comment-empty-state";
 import { CommentList } from "./components/comment-list";
 
 enum CommentType {
+  All = -1,
   Pending = CommentState.Pending,
   Marked = CommentState.Read,
   Trash = CommentState.Junk,
@@ -46,7 +47,9 @@ const ManageComment = defineComponent(() => {
   const { isMobile } = useMasterDetailLayout();
 
   const tabValue = ref(
-    (+(route.query.state as string) as CommentType) || CommentType.Pending,
+    route.query.state === undefined
+      ? CommentType.All
+      : (+(route.query.state as string) as CommentType),
   );
 
   const selectedId = ref<string | null>((route.query.id as string) || null);
@@ -61,12 +64,13 @@ const ManageComment = defineComponent(() => {
     setPage,
   } = useDataTable<CommentModel>({
     queryKey: params =>
-      queryKeys.comments.list(params.filters?.state ?? 0, params),
+      queryKeys.comments.list(params.filters?.state, params),
     queryFn: async (params) => {
+      const state = params.filters?.state;
       const response = await commentsApi.getList({
         page: params.page,
         size: params.size,
-        state: params.filters?.state ?? 0,
+        ...(state === CommentType.All ? {} : { state }),
       });
       return response;
     },
@@ -176,6 +180,10 @@ const ManageComment = defineComponent(() => {
   };
 
   const handleSelectAll = () => {
+    if (tabValue.value === CommentType.All) {
+      toast.error("全部视图不支持跨页全选，请先选择具体状态");
+      return;
+    }
     selectAllMode.value = true;
     checkedRowKeys.value = data.value.map(comment => comment._id);
   };
@@ -261,7 +269,7 @@ const ManageComment = defineComponent(() => {
       <Fragment>
         {tabValue.value !== CommentType.Marked && (
           <HeaderActionButton
-            name="全部已读"
+            name="通过审核"
             disabled={
               checkedRowKeys.value.length === 0 || batchOperationLoading.value
             }
@@ -310,7 +318,7 @@ const ManageComment = defineComponent(() => {
       router.replace({
         name: RouteName.Comment,
         query: {
-          state,
+          ...(state === CommentType.All ? {} : { state }),
           ...(id ? { id } : {}),
         },
       });

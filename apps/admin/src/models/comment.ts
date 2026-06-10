@@ -14,6 +14,14 @@ export interface CommentReplyWindow {
   nextCursor?: string;
 }
 
+export interface CommentAnchor {
+  title?: string | null;
+  slug?: string | null;
+  categorySlug?: string | null;
+  nid?: number | null;
+  path: string;
+}
+
 export interface CommentModel {
   _id: string;
   createdAt: string;
@@ -36,7 +44,7 @@ export interface CommentModel {
   isDeleted?: boolean;
   deletedAt?: string | null;
   editedAt?: string | null;
-  anchor?: Record<string, unknown> | null;
+  anchor?: CommentAnchor | null;
   replies?: CommentModel[];
   replyWindow?: CommentReplyWindow;
   ref: string;

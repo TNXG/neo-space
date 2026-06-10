@@ -35,6 +35,10 @@ import { useUserStore } from "~/stores/user";
 import { CommentMarkdownRender } from "../markdown-render";
 
 const getReferenceLink = (row: CommentModel) => {
+  if (row.anchor?.path) {
+    return `${WEB_URL}${row.anchor.path}`;
+  }
+
   switch (row.refType) {
     case "post": {
       return `${WEB_URL}/posts/${row.ref}`;
@@ -101,6 +105,9 @@ export const CommentDetail = defineComponent({
     const user = computed(() => userStore.user);
 
     const link = computed(() => getReferenceLink(props.comment));
+    const referenceTitle = computed(() =>
+      props.comment.anchor?.title || props.comment.ref,
+    );
     const isReply = computed(() => !!props.comment.parentCommentId);
     const isTrash = computed(() => props.currentTab === 2);
     const commentBody = computed(() =>
@@ -239,7 +246,7 @@ export const CommentDetail = defineComponent({
             {props.currentTab !== 1 && (
               <ActionButton
                 icon={CheckIcon}
-                label="标为已读"
+                label="通过审核"
                 onClick={() =>
                   props.onChangeState(props.comment._id, CommentState.Read)}
               />
@@ -353,7 +360,7 @@ export const CommentDetail = defineComponent({
                     class="font-medium truncate hover:underline"
                     rel="noreferrer"
                   >
-                    {props.comment.ref}
+                    {referenceTitle.value}
                   </a>
                   <ChevronRightIcon class="text-neutral-400 ml-auto h-4 w-4" />
                 </div>

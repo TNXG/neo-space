@@ -444,9 +444,11 @@ export async function getComments(
 
 export async function createComment(
   request: CreateCommentRequest,
+  headers?: HeadersInit,
 ): Promise<ApiResponse<Comment>> {
   return apiClient<ApiResponse<Comment>>("/comments", {
     method: "POST",
+    headers,
     body: JSON.stringify(request),
   });
 }
