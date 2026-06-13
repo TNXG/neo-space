@@ -368,9 +368,18 @@ pub struct Page {
     pub title: String,
     pub text: String,
     pub slug: String,
+    #[serde(default)]
+    pub subtitle: Option<String>,
+    #[serde(default)]
+    pub order: Option<i32>,
+    #[serde(default)]
+    pub meta: Option<serde_json::Value>,
     #[serde(serialize_with = "serialize_datetime")]
     #[schema(value_type = String)]
     pub created: bson::DateTime,
+    #[serde(default, serialize_with = "serialize_optional_datetime")]
+    #[schema(value_type = Option<String>)]
+    pub modified: Option<bson::DateTime>,
     #[serde(rename = "allowComment", default)]
     pub allow_comment: bool,
     #[serde(rename = "commentsIndex", default)]

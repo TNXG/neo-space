@@ -37,6 +37,11 @@ interface SelectableArticle {
   selected: boolean;
 }
 
+interface SelectablePageSource {
+  _id: string;
+  title: string;
+}
+
 const RefTypeLabels: Record<ArticleRefType, string> = {
   Post: "文章",
   Note: "手记",
@@ -98,6 +103,11 @@ export const InsightsArticleSelectorModal = defineComponent({
         selected: selectedIds.value.has(item.id),
       }));
 
+    const toPageSelectableItems = (
+      items: SelectablePageSource[],
+    ): { id: string; title: string }[] =>
+      items.map(page => ({ id: page._id, title: page.title }));
+
     const fetchArticles = async (keyword?: string) => {
       loading.value = true;
       try {
@@ -129,7 +139,9 @@ export const InsightsArticleSelectorModal = defineComponent({
         const posts = toSelectableArticles(unwrapResponse(postsRes), "Post");
         const notes = toSelectableArticles(unwrapResponse(notesRes), "Note");
 
-        let pages = unwrapResponse(pagesRes);
+        let pages = toPageSelectableItems(
+          unwrapResponse(pagesRes) as unknown as SelectablePageSource[],
+        );
         if (hasKeyword) {
           const lowerKeyword = keyword.toLowerCase();
           pages = pages.filter(page =>

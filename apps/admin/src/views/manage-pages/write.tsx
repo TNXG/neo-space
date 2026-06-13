@@ -64,6 +64,7 @@ const PAGE_META_SCHEMA: MetaFieldsSchema = {
 };
 
 type PageReactiveType = WriteBaseType & {
+  _id?: string;
   subtitle: string;
   slug: string;
   order: number;
@@ -95,7 +96,7 @@ const PageWriteView = defineComponent(() => {
     order: 0,
     slug: "",
     subtitle: "",
-    id: undefined,
+    _id: undefined,
     images: [],
     meta: undefined,
     contentFormat: preferredContentFormat.value,
@@ -167,7 +168,7 @@ const PageWriteView = defineComponent(() => {
     },
   });
 
-  const loading = computed(() => !!(id.value && typeof data.id === "undefined"));
+  const loading = computed(() => !!(id.value && typeof data._id === "undefined"));
 
   onMounted(() => {
     initialize();
@@ -277,7 +278,7 @@ const PageWriteView = defineComponent(() => {
   return () => (
     <>
       <WriteEditor
-        key={data.id}
+        key={data._id}
         loading={loading.value}
         autoFocus={isEditing.value ? "content" : "title"}
         title={data.title}

@@ -1,4 +1,4 @@
-import { request } from "~/utils/request";
+import { $api, request } from "~/utils/request";
 
 export interface MarkdownImportData {
   content?: string;
@@ -22,8 +22,6 @@ export const markdownApi = {
 
   // 导出 Markdown
   export: async (params?: MarkdownExportParams): Promise<Blob> => {
-    // Use $api directly for blob responses
-    const { $api } = await import("~/utils/request");
     return $api("/markdown/export", {
       params,
       responseType: "blob" as any,

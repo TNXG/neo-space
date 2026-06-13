@@ -6,9 +6,11 @@ export enum EnumPageType {
   frame = "frame",
 }
 export interface PageModel {
+  _id: string;
+  created: string;
+  modified?: string | null;
   createdAt: string;
   modifiedAt: string | null;
-  id: string;
   /** Slug */
   slug: string;
 
@@ -32,6 +34,10 @@ export interface PageModel {
 
   /** Other Options */
   options?: object;
+
+  meta?: Record<string, unknown>;
+  allowComment?: boolean;
+  commentsIndex?: number;
 }
 
 export interface PageResponse {

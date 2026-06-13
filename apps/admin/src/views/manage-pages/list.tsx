@@ -47,7 +47,7 @@ const PageItem = defineComponent({
           <div class="flex-1 min-w-0">
             <div class="flex gap-4 items-center">
               <RouterLink
-                to={`/pages/edit?id=${row.id}`}
+                to={`/pages/edit?id=${row._id}`}
                 class="text-sm text-neutral-900 font-medium truncate dark:text-neutral-100"
               >
                 {row.title}
@@ -72,7 +72,7 @@ const PageItem = defineComponent({
               class="text-xs text-neutral-400 dark:text-neutral-500 group-hover:hidden"
             />
             <div class="gap-1 hidden items-center group-hover:flex">
-              <RouterLink to={`/pages/edit?id=${row.id}`}>
+              <RouterLink to={`/pages/edit?id=${row._id}`}>
                 <NButton quaternary size="tiny" class="!px-2">
                   {{
                     icon: () => <Pencil class="text-neutral-500 h-3.5 w-3.5" />,
@@ -97,7 +97,7 @@ const PageItem = defineComponent({
               <NPopconfirm
                 positiveText="取消"
                 negativeText="删除"
-                onNegativeClick={() => props.onDelete(row.id)}
+                onNegativeClick={() => props.onDelete(row._id)}
               >
                 {{
                   trigger: () => (
@@ -160,7 +160,7 @@ export const ManagePageListView = defineComponent({
         pagesApi.getList({
           page: 1,
           size: 50,
-          select: "title subtitle id createdAt modifiedAt slug",
+          select: "title subtitle _id created modified slug order",
         }),
     });
 
@@ -188,7 +188,7 @@ export const ManagePageListView = defineComponent({
     });
 
     const handleDelete = (id: string) => {
-      data.value = data.value.filter(i => i.id !== id);
+      data.value = data.value.filter(item => item._id !== id);
       deleteMutation.mutate(id);
     };
 
@@ -228,7 +228,7 @@ export const ManagePageListView = defineComponent({
 
               const seq = [...reorderData]
                 .reverse()
-                .map((item, idx) => ({ id: item.id, order: idx + 1 }));
+                .map((item, idx) => ({ _id: item._id, order: idx + 1 }));
               reorderMutation.mutate(seq);
             },
           });
@@ -256,7 +256,7 @@ export const ManagePageListView = defineComponent({
             : (
                 <div ref={wrapperRef}>
                   {data.value.map(item => (
-                    <PageItem data={item} key={item.id} onDelete={handleDelete} />
+                    <PageItem data={item} key={item._id} onDelete={handleDelete} />
                   ))}
                 </div>
               )}
