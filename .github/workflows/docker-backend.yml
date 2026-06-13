@@ -5,7 +5,13 @@ on:
     branches: [master]
     tags: ["v*"]
     paths:
+      - "apps/admin/**"
       - "apps/backend/**"
+      - "packages/rich-react/**"
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
       - .github/workflows/docker-backend.yml
   workflow_dispatch:
 
@@ -29,6 +35,21 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin dashboard
+        run: pnpm build:admin
 
       - name: Install musl tools & dependencies
         run: |
