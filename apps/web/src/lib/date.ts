@@ -3,6 +3,8 @@
  * 使用 date-fns + date-fns-tz 进行时区安全的日期转换与计算
  */
 
+import type { Locale } from "date-fns";
+import type { AppLocale } from "@/locales";
 import {
   differenceInDays,
   formatDistanceToNow,
@@ -11,9 +13,7 @@ import {
   parseISO,
 } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
-import type { Locale } from "date-fns";
 import { ja, zhCN } from "date-fns/locale";
-import type { AppLocale } from "@/locales";
 
 // 应用级时区配置 - 可根据需要修改或从配置文件读取
 export const APP_TIMEZONE = "Asia/Shanghai";

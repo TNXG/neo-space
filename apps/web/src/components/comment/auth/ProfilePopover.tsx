@@ -46,7 +46,9 @@ export function ProfilePopover({ isOpen, onOpenChange, onAvatarChange, children 
 
   useEffect(() => {
     if (isOpen && token) {
-      loadAccounts();
+      queueMicrotask(() => {
+        void loadAccounts();
+      });
     }
   }, [isOpen, token, loadAccounts]);
 

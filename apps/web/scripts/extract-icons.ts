@@ -15,13 +15,14 @@
 
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, extname, resolve } from "node:path";
+import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const SRC = resolve(ROOT, "src");
+const GENERATED_ICON_DATA_PATH = resolve(SRC, "lib/icon-data.ts");
 
 // ─── 递归枚举源文件 ───────────────────────────────────────────────────────────
 
@@ -30,11 +31,20 @@ function walkSrc(dir: string, files: string[] = []): string[] {
     const full = resolve(dir, entry);
     if (statSync(full).isDirectory()) {
       walkSrc(full, files);
-    } else if ([".tsx", ".ts"].includes(extname(entry))) {
+    } else if ([".tsx", ".ts"].includes(extname(entry)) && full !== GENERATED_ICON_DATA_PATH) {
       files.push(full);
     }
   }
   return files;
+}
+
+const BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT_RE = /(^|[^:])\/\/.*$/gm;
+
+function stripComments(source: string): string {
+  return source
+    .replace(BLOCK_COMMENT_RE, "")
+    .replace(LINE_COMMENT_RE, "$1");
 }
 
 const allFiles = walkSrc(SRC);
@@ -81,7 +91,7 @@ const HYPHEN_RE = /-/g;
 const byCollection: Record<string, Set<string>> = {};
 
 for (const file of allFiles) {
-  const src = readFileSync(file, "utf-8");
+  const src = stripComments(readFileSync(file, "utf-8"));
   for (const m of src.matchAll(ICON_START_RE)) {
     // 从 icon= 位置往后取一行，提取其中的所有 collection:name
     const nextNewline = src.indexOf("\n", m.index!);
@@ -101,7 +111,7 @@ for (const file of allFiles) {
 const RETURN_ICON_RE = /return\s+["']([\w-]+):([\w.-]+)["']/g;
 
 for (const file of allFiles) {
-  const src = readFileSync(file, "utf-8");
+  const src = stripComments(readFileSync(file, "utf-8"));
   for (const m of src.matchAll(RETURN_ICON_RE)) {
     const col = m[1];
     const name = m[2];
@@ -114,7 +124,7 @@ for (const file of allFiles) {
 // ─── 额外扫描 file-icons.tsx 中的 createXxxIcon("key") ───────────────────────
 
 const FILE_ICONS_PATH = resolve(SRC, "lib/file-icons.tsx");
-const fileIconsSrc = readFileSync(FILE_ICONS_PATH, "utf-8");
+const fileIconsSrc = stripComments(readFileSync(FILE_ICONS_PATH, "utf-8"));
 
 const CREATE_SI_RE = /createSimpleIcon\(["']([\w.-]+)["']/g;
 const CREATE_MG_RE = /createMingcuteIcon\(["']([\w.-]+)["']/g;
@@ -269,3 +279,4 @@ tsBody += `};\n`;
 const outPath = resolve(ROOT, "src/lib/icon-data.ts");
 writeFileSync(outPath, tsBody, "utf-8");
 console.log(`\n📄 已生成 src/lib/icon-data.ts（共 ${totalIcons} 个图标）`);
+console.log(`   ${relative(ROOT, outPath)}`);

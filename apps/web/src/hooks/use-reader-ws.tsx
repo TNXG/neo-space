@@ -103,7 +103,10 @@ async function getFingerprint(): Promise<string> {
 
 export function useReaderWS(options: UseReaderWSOptions = {}) {
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   // Get state and actions from Zustand store
   const isConnected = useWSStore(state => state.isConnected);

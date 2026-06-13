@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import type { AppLocale } from "@/locales";
 import { useLocale, useTranslations } from "next-intl";
+import { useMemo } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -14,7 +15,6 @@ import {
   getRelativeTime,
   shouldShowRelative,
 } from "@/lib/date";
-import type { AppLocale } from "@/locales";
 import { cn } from "@/lib/utils";
 
 export type DateDisplayMode = "auto" | "absolute" | "relative";

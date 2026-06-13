@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { ReactElement, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   Children,
   isValidElement,
