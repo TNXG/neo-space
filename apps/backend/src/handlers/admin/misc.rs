@@ -330,10 +330,10 @@ pub async fn create_token(
         "token": &token_value,
         "created": bson::DateTime::now(),
     };
-    if let Some(exp) = req.expired {
-        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&exp) {
-            doc.insert("expired", bson::DateTime::from_chrono(dt.to_utc()));
-        }
+    if let Some(exp) = req.expired
+        && let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&exp)
+    {
+        doc.insert("expired", bson::DateTime::from_chrono(dt.to_utc()));
     }
     state
         .db

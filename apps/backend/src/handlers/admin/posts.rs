@@ -157,12 +157,12 @@ pub async fn create_post(
     if let Some(content) = &req.content {
         doc.insert("content", content);
     }
-    if let Some(pin) = &req.pin {
-        if let Some(pin_at) = parse_pin_at(pin)? {
-            doc.insert("pinAt", pin_at);
-            if let Some(pin_order) = req.pin_order {
-                doc.insert("pinOrder", pin_order);
-            }
+    if let Some(pin) = &req.pin
+        && let Some(pin_at) = parse_pin_at(pin)?
+    {
+        doc.insert("pinAt", pin_at);
+        if let Some(pin_order) = req.pin_order {
+            doc.insert("pinOrder", pin_order);
         }
     }
     if let Some(s) = &req.summary {
@@ -235,10 +235,10 @@ pub async fn update_post(
         set_doc.insert("meta", meta);
     }
 
-    if let Some(pin) = &req.pin {
-        if let Some(pin_at) = parse_pin_at(pin)? {
-            set_doc.insert("pinAt", pin_at);
-        }
+    if let Some(pin) = &req.pin
+        && let Some(pin_at) = parse_pin_at(pin)?
+    {
+        set_doc.insert("pinAt", pin_at);
     }
     let update_doc = doc! { "$set": set_doc };
 

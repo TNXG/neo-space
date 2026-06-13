@@ -200,7 +200,7 @@ async fn find_owner_credential_account(
         })
         .await
         .map_err(|e| AppError::Database(format!("Failed to load credential account: {e}")))?
-        .ok_or_else(|| AppError::Unauthorized)?;
+        .ok_or(AppError::Unauthorized)?;
 
     Ok((reader, account))
 }
@@ -231,7 +231,7 @@ async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Rea
         .find_one(doc! {})
         .await
         .map_err(|e| AppError::Database(format!("Failed to load owner profile: {e}")))?
-        .ok_or_else(|| AppError::Unauthorized)?;
+        .ok_or(AppError::Unauthorized)?;
 
     let reader_id = owner_profile
         .get_object_id("readerId")
@@ -245,7 +245,7 @@ async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Rea
         .filter(|reader| {
             reader.handle == username || reader.name == username || reader.email == username
         })
-        .ok_or_else(|| AppError::Unauthorized)
+        .ok_or(AppError::Unauthorized)
 }
 
 fn account_password_hash(account: &Document) -> AppResult<&str> {

@@ -63,18 +63,17 @@ pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<Api
 
         if let Some(option) = oauth_doc
             && let Bson::Document(d) = option.value
+            && !github
         {
-            if !github {
-                github = first_non_empty_str(
-                    &d,
-                    &[
-                        &["github", "clientId"],
-                        &["public", "github", "clientId"],
-                        &["github", "client_id"],
-                    ],
-                )
-                .is_some();
-            }
+            github = first_non_empty_str(
+                &d,
+                &[
+                    &["github", "clientId"],
+                    &["public", "github", "clientId"],
+                    &["github", "client_id"],
+                ],
+            )
+            .is_some();
         }
     }
 

@@ -112,10 +112,10 @@ pub async fn create_note(
     if let Some(v) = &req.location {
         doc.insert("location", v);
     }
-    if let Some(p) = &req.password {
-        if !p.is_empty() {
-            doc.insert("password", p);
-        }
+    if let Some(p) = &req.password
+        && !p.is_empty()
+    {
+        doc.insert("password", p);
     }
     if let Some(t) = &req.topic_id {
         doc.insert("topicId", parse_oid(t)?);

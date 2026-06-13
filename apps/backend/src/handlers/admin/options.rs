@@ -30,12 +30,12 @@ pub async fn get_all_options(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
     {
-        if let Ok(name) = d.get_str("name") {
-            if let Some(v) = d.get("value") {
-                let val: Value = bson::from_bson(v.clone())
-                    .map_err(|e| AppError::Internal(format!("Bson decode: {}", e)))?;
-                map.insert(name.to_string(), val);
-            }
+        if let Ok(name) = d.get_str("name")
+            && let Some(v) = d.get("value")
+        {
+            let val: Value = bson::from_bson(v.clone())
+                .map_err(|e| AppError::Internal(format!("Bson decode: {}", e)))?;
+            map.insert(name.to_string(), val);
         }
     }
     Ok(Json(ApiResponse::success(map)))
@@ -56,7 +56,7 @@ pub async fn get_option(
     let value = d
         .get("value")
         .cloned()
-        .map(|v| bson::from_bson::<Value>(v))
+        .map(bson::from_bson::<Value>)
         .transpose()
         .map_err(|e| AppError::Internal(format!("Bson decode: {}", e)))?
         .unwrap_or(Value::Null);
