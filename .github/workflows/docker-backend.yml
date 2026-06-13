@@ -5,7 +5,7 @@ on:
     branches: [master]
     tags: ["v*"]
     paths:
-      - "backend/**"
+      - "apps/backend/**"
       - .github/workflows/docker-backend.yml
   workflow_dispatch:
 
@@ -38,16 +38,16 @@ jobs:
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: backend -> target
+          workspaces: apps/backend -> target
 
       - name: Build binary
-        working-directory: backend
+        working-directory: apps/backend
         run: cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Prepare artifacts
         run: |
           mkdir -p dist
-          cp backend/target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }} dist/
+          cp apps/backend/target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }} dist/
           chmod +x dist/${{ env.BINARY_NAME }}
 
       - name: Upload binary artifact
@@ -81,7 +81,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: dist
-          file: backend/Dockerfile
+          file: apps/backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
