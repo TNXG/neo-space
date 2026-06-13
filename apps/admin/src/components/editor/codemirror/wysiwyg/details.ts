@@ -5,6 +5,7 @@ import type { App } from "vue";
 import { Prec, StateField } from "@codemirror/state";
 import { Decoration, EditorView, keymap, WidgetType } from "@codemirror/view";
 
+import { CodemirrorEditor } from "../codemirror";
 import { blockDetectorFacet, isHiddenSeparatorLine } from "./block-registry";
 
 const detailsOpenPattern = /^\s*<details(\s+open)?\s*>\s*$/i;
@@ -395,9 +396,6 @@ async function mountInnerEditor(
     return;
 
   const [{ createApp, h, ref, onMounted }] = await Promise.all([import("vue")]);
-
-  // Dynamically import to avoid circular dependency
-  const { CodemirrorEditor } = await import("../codemirror");
 
   const contentRef = ref(state.content);
   const syncingRef = ref(false);

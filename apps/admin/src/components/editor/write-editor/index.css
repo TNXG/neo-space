@@ -39,21 +39,21 @@
 }
 
 /* CodeMirror 编辑器区域左右 padding */
-.write-editor-content :deep(.cm-editor) {
+.write-editor-content .cm-editor {
   height: 100%;
 }
 
-.write-editor-content :deep(.cm-scroller) {
+.write-editor-content .cm-scroller {
   padding: 0 1.5rem 2rem;
 }
 
 /* 确保编辑器内容有足够的左边距与 Title 对齐 */
-.write-editor-content :deep(.cm-content) {
+.write-editor-content .cm-content {
   padding-left: 0.5rem;
 }
 
 /* 行号区域样式调整 */
-.write-editor-content :deep(.cm-gutters) {
+.write-editor-content .cm-gutters {
   padding-left: 1rem;
 }
 
@@ -86,7 +86,7 @@
 }
 
 /* WYSIWYG mode scroller - remove extra padding since content is centered */
-.write-editor-wrapper:has(.cm-wysiwyg-mode) :deep(.cm-scroller) {
+.write-editor-wrapper:has(.cm-wysiwyg-mode) .cm-scroller {
   padding: 0 0 2rem;
 }
 
