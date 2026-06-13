@@ -78,12 +78,12 @@ tokio = { version = "1.52.3", default-features = false, features = [
 ] }
 
 # Database
-mongodb = { version = "3.6.0", features = [ "rustls-tls" ] }
+mongodb = { version = "3.7.0", features = [ "rustls-tls" ] }
 bson = { version = "2.13", default-features = false, features = [ "chrono-0_4" ] }
 
 # Serialization
 serde = { version = "1.0.228", features = [ "derive" ], default-features = false }
-serde_json = { version = "1.0.149", default-features = false, features = [ "std" ] }
+serde_json = { version = "1.0.150", default-features = false, features = [ "std" ] }
 
 # Auth
 jsonwebtoken = { version = "10.4.0", default-features = false, features = [ "rust_crypto" ] }
@@ -107,7 +107,7 @@ reqwest = { version = "0.13.3", default-features = false, features = [
 ] }
 
 # Utilities
-chrono = { version = "0.4.44", default-features = false, features = [
+chrono = { version = "0.4.45", default-features = false, features = [
   "serde",
   "clock",
   "std"
@@ -118,7 +118,7 @@ dotenv = "0.15.0"
 hmac = "0.13.0"
 sha2 = "0.11.0"
 hex = { version = "0.4.3", default-features = false, features = [ "alloc" ] }
-uuid = { version = "1.23.1", default-features = false, features = [ "v4" ] }
+uuid = { version = "1.23.3", default-features = false, features = [ "v4" ] }
 rand = { version = "0.10.1", default-features = false, features = [
   "std",
   "std_rng",
@@ -127,7 +127,7 @@ rand = { version = "0.10.1", default-features = false, features = [
 md5 = { version = "0.8.0", default-features = false }
 
 # Cache
-moka = { version = "0.12.14", default-features = false, features = [ "future" ] }
+moka = { version = "0.12.15", default-features = false, features = [ "future" ] }
 
 # OpenAPI
 utoipa = { version = "5.5.0", features = [
@@ -152,7 +152,7 @@ lettre = { version = "0.11.22", default-features = false, features = [
 meilisearch-sdk = { version = "0.33.0", default-features = false, features = [ "tls" ] }
 
 # OpenAI — rustls backend
-async-openai = { version = "0.38.2", default-features = false, features = [ "rustls" ] }
+async-openai = { version = "0.41.0", default-features = false, features = [ "rustls" ] }
 
 # Stream utilities
 tokio-stream = { version = "0.1.18", default-features = false, features = [ "time" ] }
@@ -164,12 +164,12 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
   "fmt",
   "ansi"
 ] }
-aes = { version = "0.9.0", default-features = false }
+aes = { version = "0.9.1", default-features = false }
 ecb = { version = "0.2.0", default-features = false, features = [ "alloc" ] }
-cipher = { version = "0.5.1", default-features = false, features = [ "block-padding" ] }
+cipher = { version = "0.5.2", default-features = false, features = [ "block-padding" ] }
 
 
 # 用于将 admin 控制面板构建产物打包进可执行文件
-rust-embed = { version = "8.7.2", default-features = false, features = [ "include-exclude" ] }
+rust-embed = { version = "8.11.0", default-features = false, features = [ "include-exclude" ] }
 mime_guess = { version = "2.0.5", default-features = false }
 bcrypt = "0.19.1"

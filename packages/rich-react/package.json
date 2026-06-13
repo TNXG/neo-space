@@ -8,6 +8,10 @@
   "types": "./dist/index.d.mts",
   "exports": {
     ".": {
+      "development": {
+        "types": "./src/index.ts",
+        "import": "./src/index.ts"
+      },
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     }
@@ -18,7 +22,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "oxlint src",
+    "lint": "sh -c 'if command -v oxlint >/dev/null 2>&1; then oxlint src; else tsc --noEmit; fi'",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

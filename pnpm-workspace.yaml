@@ -55,3 +55,4 @@ minimumReleaseAgeExclude:
   - '@haklex/rich-renderer-ruby@0.14.1'
   - '@haklex/rich-renderer-video@0.14.1'
   - '@haklex/rich-style-token@0.14.1'
+  - '@chenglou/pretext@0.0.8'

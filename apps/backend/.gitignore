@@ -1,3 +1,4 @@
 /target
 /cache/
+/.cache/
 rustc-ice-*

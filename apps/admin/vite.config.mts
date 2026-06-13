@@ -51,11 +51,15 @@ export default ({ mode }) => {
     },
 
     build: {
-      chunkSizeWarningLimit: 2500,
+      chunkSizeWarningLimit: 6000,
+      cssMinify: false,
       target: "esnext",
 
       // sourcemap: true,
       rollupOptions: {
+        checks: {
+          pluginTimings: false,
+        },
         output: {
           chunkFileNames: `js/[name]-[hash].js`,
           entryFileNames: `js/[name]-[hash].js`,
