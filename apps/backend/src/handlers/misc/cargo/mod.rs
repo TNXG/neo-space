@@ -1,3 +1,4 @@
+mod cache;
 mod index;
 mod resolver;
 mod tree;
@@ -48,6 +49,20 @@ async fn get_crate_info_inner(
             AppError::Internal(format!("Failed to decode cargo cache: {error}"))
         })?;
 
+        if has_usable_size_cache(&data) {
+            return Ok(Json(ApiResponse::success(data)));
+        }
+
+        state.cache.invalidate(&cache_key).await;
+    }
+
+    if let Some(data) = cache::read_crate_info(&name, version.as_deref()).await?
+        && has_usable_size_cache(&data)
+    {
+        if let Ok(serialized) = serde_json::to_vec(&data) {
+            state.cache.insert(cache_key, serialized).await;
+        }
+
         return Ok(Json(ApiResponse::success(data)));
     }
 
@@ -58,6 +73,16 @@ async fn get_crate_info_inner(
     if let Ok(serialized) = serde_json::to_vec(&data) {
         state.cache.insert(cache_key, serialized).await;
     }
+    cache::write_crate_info(&name, version.as_deref(), &data).await;
 
     Ok(Json(ApiResponse::success(data)))
+}
+
+fn has_usable_size_cache(data: &CrateInfo) -> bool {
+    data.deps.is_empty()
+        || data.total_dep_size > 0
+        || data
+            .deps
+            .iter()
+            .any(|dependency| dependency.crate_size.is_some())
 }

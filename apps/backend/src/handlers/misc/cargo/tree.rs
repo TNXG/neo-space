@@ -8,9 +8,10 @@ use crate::{
 };
 
 use super::{
-    index::{self, fetch_crate_size},
+    index::{self, fetch_cached_crate_size, fetch_crate_size},
     types::{
         CONCURRENCY, CrateDepInfo, DependencySeed, IndexCache, IndexEntry, MAX_DEPS, MAX_DEPTH,
+        MAX_SIZE_LOOKUPS,
     },
     utils,
 };
@@ -199,7 +200,17 @@ async fn resolve_missing_versions(
         return Ok(());
     }
 
-    let resolution_results = stream::iter(unresolved_dependencies)
+    let resolvable_dependencies = unresolved_dependencies
+        .iter()
+        .filter(|dependency_seed| {
+            dependency_seed.depth < MAX_DEPTH
+                && dependency_seed.kind != "dev"
+                && !dependency_seed.optional
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+
+    let resolution_results = stream::iter(resolvable_dependencies)
         .map(|dependency_seed| {
             let shared_state = state.clone();
             let shared_index_cache = Arc::clone(index_cache);
@@ -222,6 +233,14 @@ async fn resolve_missing_versions(
         if let Some(stored_seed) = discovered_dependencies.get_mut(&resolved_seed.name) {
             stored_seed.resolved_version =
                 resolved_version.or_else(|| Some(utils::base_version(&resolved_seed.req)));
+        }
+    }
+
+    for unresolved_seed in unresolved_dependencies {
+        if let Some(stored_seed) = discovered_dependencies.get_mut(&unresolved_seed.name)
+            && stored_seed.resolved_version.is_none()
+        {
+            stored_seed.resolved_version = Some(utils::base_version(&unresolved_seed.req));
         }
     }
 
@@ -259,7 +278,46 @@ async fn fetch_dependency_sizes(
     state: &SharedState,
     seeds: &[DependencySeed],
 ) -> HashMap<String, Option<u64>> {
-    stream::iter(seeds.iter().cloned())
+    let cached_sizes = stream::iter(seeds.iter().cloned())
+        .map(|dependency_seed| {
+            let shared_state = state.clone();
+            async move {
+                let version = dependency_seed
+                    .resolved_version
+                    .clone()
+                    .unwrap_or_else(|| utils::base_version(&dependency_seed.req));
+                let cached_size =
+                    fetch_cached_crate_size(&shared_state, &dependency_seed.name, &version).await;
+                (dependency_seed.name, cached_size)
+            }
+        })
+        .buffer_unordered(CONCURRENCY)
+        .collect::<Vec<_>>()
+        .await;
+
+    let mut size_by_crate = HashMap::new();
+    for (name, cached_size) in cached_sizes {
+        if let Some(size) = cached_size {
+            size_by_crate.insert(name, size);
+        }
+    }
+
+    let mut network_candidates = seeds
+        .iter()
+        .filter(|dependency_seed| !size_by_crate.contains_key(&dependency_seed.name))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    network_candidates.sort_by(|left, right| {
+        left.depth
+            .cmp(&right.depth)
+            .then_with(|| left.optional.cmp(&right.optional))
+            .then_with(|| dependency_kind_rank(&left.kind).cmp(&dependency_kind_rank(&right.kind)))
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    network_candidates.truncate(MAX_SIZE_LOOKUPS);
+
+    let network_sizes = stream::iter(network_candidates)
         .map(|dependency_seed| {
             let shared_state = state.clone();
             async move {
@@ -273,7 +331,20 @@ async fn fetch_dependency_sizes(
         })
         .buffer_unordered(CONCURRENCY)
         .collect::<Vec<_>>()
-        .await
-        .into_iter()
-        .collect()
+        .await;
+
+    for (name, size) in network_sizes {
+        size_by_crate.insert(name, size);
+    }
+
+    size_by_crate
+}
+
+fn dependency_kind_rank(kind: &str) -> u8 {
+    match kind {
+        "normal" => 0,
+        "build" => 1,
+        "dev" => 2,
+        _ => 3,
+    }
 }

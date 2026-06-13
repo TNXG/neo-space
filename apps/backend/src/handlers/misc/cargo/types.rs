@@ -5,11 +5,12 @@ use tokio::sync::Mutex;
 
 pub const INDEX_BASE: &str = "https://index.crates.io";
 pub const STATIC_BASE: &str = "https://static.crates.io/crates";
-pub const INDEX_TIMEOUT_SECS: u64 = 8;
-pub const SIZE_TIMEOUT_SECS: u64 = 5;
-pub const MAX_DEPTH: usize = 3;
-pub const MAX_DEPS: usize = 200;
-pub const CONCURRENCY: usize = 10;
+pub const INDEX_TIMEOUT_SECS: u64 = 4;
+pub const SIZE_TIMEOUT_SECS: u64 = 2;
+pub const MAX_DEPTH: usize = 2;
+pub const MAX_DEPS: usize = 120;
+pub const MAX_SIZE_LOOKUPS: usize = 48;
+pub const CONCURRENCY: usize = 16;
 pub const INDEX_CACHE_PREFIX: &str = "cargo_index_";
 pub const SIZE_CACHE_PREFIX: &str = "cargo_size_";
 
