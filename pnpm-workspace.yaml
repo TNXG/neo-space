@@ -5,6 +5,14 @@ trustPolicy: no-downgrade
 packages:
   - apps/*
   - packages/*
+  
+packageExtensions:
+  "@hookform/resolvers@*":
+    peerDependencies:
+      zod: "^3.25 || ^4.0"
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
 allowBuilds:
   "@parcel/watcher": true
