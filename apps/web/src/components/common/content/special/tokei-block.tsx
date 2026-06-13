@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
   InvalidBlock,
   Metric,
+  SpecialBlockCollapsible,
   SpecialBlockHeader,
   StackBar,
 } from "./components";
@@ -31,6 +32,8 @@ interface TokeiTooltipState {
   y: number;
   stat: LangStat;
 }
+
+const TOKEI_COLLAPSE_LANG_THRESHOLD = 24;
 
 export function TokeiBlock({ raw }: { raw: string }) {
   const [view, setView] = useState<"treemap" | "table">("treemap");
@@ -75,7 +78,9 @@ export function TokeiBlock({ raw }: { raw: string }) {
               <TokeiTreemap data={data} />
             )
           : (
-              <TokeiTable data={data} />
+              <SpecialBlockCollapsible shouldCollapse={data.length > TOKEI_COLLAPSE_LANG_THRESHOLD}>
+                <TokeiTable data={data} />
+              </SpecialBlockCollapsible>
             )}
       </div>
 
@@ -111,6 +116,7 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<TokeiTooltipState | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const tooltipSizeRef = useRef({ width: 300, height: 220 });
   const isMobile = useIsMobile();
 
@@ -219,11 +225,14 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
               .style("filter", "brightness(1.15)");
             const containerRect = containerRef.current?.getBoundingClientRect();
             if (containerRect) {
+              const x = event.clientX - containerRect.left;
+              const y = event.clientY - containerRect.top;
               setTooltip({
-                x: event.clientX - containerRect.left,
-                y: event.clientY - containerRect.top,
+                x,
+                y,
                 stat,
               });
+              setTooltipPosition(getTooltipPosition(x, y, tooltipSizeRef.current, containerRect));
             }
           }
         })
@@ -231,11 +240,14 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
           if (!isMobile) {
             const containerRect = containerRef.current?.getBoundingClientRect();
             if (containerRect) {
+              const x = event.clientX - containerRect.left;
+              const y = event.clientY - containerRect.top;
               setTooltip({
-                x: event.clientX - containerRect.left,
-                y: event.clientY - containerRect.top,
+                x,
+                y,
                 stat,
               });
+              setTooltipPosition(getTooltipPosition(x, y, tooltipSizeRef.current, containerRect));
             }
           }
         })
@@ -246,10 +258,14 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
               .attr("opacity", 0.88)
               .style("filter", "none");
             setTooltip(null);
+            setTooltipPosition(null);
           }
         });
     });
-    svg.on("mouseleave", () => setTooltip(null));
+    svg.on("mouseleave", () => {
+      setTooltip(null);
+      setTooltipPosition(null);
+    });
   }, [data, isMobile]);
 
   useLayoutEffect(() => {
@@ -264,18 +280,20 @@ function TokeiTreemap({ data }: { data: LangStat[] }) {
   }, [tooltip]);
 
   return (
-    <div ref={containerRef} className="relative" onMouseLeave={() => setTooltip(null)}>
+    <div
+      ref={containerRef}
+      className="relative"
+      onMouseLeave={() => {
+        setTooltip(null);
+        setTooltipPosition(null);
+      }}
+    >
       <svg ref={svgRef} width="100%" className="min-h-65" />
-      {!isMobile && tooltip && (
+      {!isMobile && tooltipPosition && tooltip && (
         <div
           ref={tooltipRef}
           className="pointer-events-none absolute z-20 min-w-52 max-w-[min(22rem,calc(100%-1rem))] rounded-xl border border-border/60 bg-popover/95 p-3 text-xs text-popover-foreground shadow-glass backdrop-blur-xl"
-          style={getTooltipPosition(
-            tooltip.x,
-            tooltip.y,
-            tooltipSizeRef.current,
-            containerRef.current?.getBoundingClientRect(),
-          )}
+          style={tooltipPosition}
         >
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 font-semibold text-primary-900 dark:text-primary-900">

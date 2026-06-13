@@ -10,6 +10,7 @@ import {
   CargoLoadingSkeleton,
   InvalidBlock,
   Metric,
+  SpecialBlockCollapsible,
   SpecialBlockHeader,
 } from "./components";
 import {
@@ -33,6 +34,8 @@ interface CargoTooltipState {
   y: number;
   dep: CargoDepInfo;
 }
+
+const CARGO_COLLAPSE_DEP_THRESHOLD = 32;
 
 export function CargoBlock({ raw }: { raw: string }) {
   const [view, setView] = useState<"treemap" | "table">("treemap");
@@ -121,7 +124,9 @@ export function CargoBlock({ raw }: { raw: string }) {
               <CargoTreemap data={data.deps} />
             )
           : (
-              <CargoTable data={data.deps} />
+              <SpecialBlockCollapsible shouldCollapse={data.deps.length > CARGO_COLLAPSE_DEP_THRESHOLD}>
+                <CargoTable data={data.deps} />
+              </SpecialBlockCollapsible>
             )}
       </div>
 
@@ -175,15 +180,20 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<CargoTooltipState | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const tooltipSizeRef = useRef({ width: 320, height: 180 });
-  const sizedDeps = useMemo(
-    () => data.filter(dep => (dep.crate_size ?? 0) > 0),
+  const hasSizeData = useMemo(
+    () => data.some(dep => (dep.crate_size ?? 0) > 0),
     [data],
+  );
+  const layoutDeps = useMemo(
+    () => hasSizeData ? data.filter(dep => (dep.crate_size ?? 0) > 0) : data,
+    [data, hasSizeData],
   );
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (!svgRef.current || sizedDeps.length === 0) {
+    if (!svgRef.current || layoutDeps.length === 0) {
       return;
     }
 
@@ -196,9 +206,9 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
 
     const root = d3
       .hierarchy({
-        children: sizedDeps.map(item => ({
+        children: layoutDeps.map(item => ({
           ...item,
-          value: item.crate_size ?? 0,
+          value: getCargoTreemapValue(item, hasSizeData),
         })),
       })
       .sum((item: any) => item.value ?? 0)
@@ -284,7 +294,7 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
             + 8;
 
         if (canRenderMeta) {
-          const metaText = `${formatBytes(dep.crate_size ?? 0)} · ${dep.depth === 0 ? "直接依赖" : `间接(d${dep.depth})`}`;
+          const metaText = `${dep.crate_size != null ? formatBytes(dep.crate_size) : "体积未知"} · ${dep.depth === 0 ? "直接依赖" : `间接(d${dep.depth})`}`;
           const metaLine = layoutTreemapText(
             metaText,
             availableTextWidth,
@@ -313,11 +323,14 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
               .style("filter", "brightness(1.15)");
             const containerRect = containerRef.current?.getBoundingClientRect();
             if (containerRect) {
+              const x = event.clientX - containerRect.left;
+              const y = event.clientY - containerRect.top;
               setTooltip({
-                x: event.clientX - containerRect.left,
-                y: event.clientY - containerRect.top,
+                x,
+                y,
                 dep,
               });
+              setTooltipPosition(getTooltipPosition(x, y, tooltipSizeRef.current, containerRect));
             }
           }
         })
@@ -325,11 +338,14 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
           if (!isMobile) {
             const containerRect = containerRef.current?.getBoundingClientRect();
             if (containerRect) {
+              const x = event.clientX - containerRect.left;
+              const y = event.clientY - containerRect.top;
               setTooltip({
-                x: event.clientX - containerRect.left,
-                y: event.clientY - containerRect.top,
+                x,
+                y,
                 dep,
               });
+              setTooltipPosition(getTooltipPosition(x, y, tooltipSizeRef.current, containerRect));
             }
           }
         })
@@ -340,11 +356,15 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
               .attr("opacity", rect.attr("data-base-opacity") || 0.88)
               .style("filter", "none");
             setTooltip(null);
+            setTooltipPosition(null);
           }
         });
     });
-    svg.on("mouseleave", () => setTooltip(null));
-  }, [sizedDeps, isMobile]);
+    svg.on("mouseleave", () => {
+      setTooltip(null);
+      setTooltipPosition(null);
+    });
+  }, [layoutDeps, hasSizeData, isMobile]);
 
   useLayoutEffect(() => {
     if (!tooltip || !tooltipRef.current) {
@@ -357,25 +377,23 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
     };
   }, [tooltip]);
 
-  if (sizedDeps.length === 0) {
+  if (layoutDeps.length === 0) {
     return (
       <div className="py-8 text-center text-sm text-primary-600 dark:text-primary-600">
-        没有可用的依赖体积数据。
+        没有可用的依赖数据。
       </div>
     );
   }
 
-  const tooltipPosition = tooltip
-    ? getTooltipPosition(
-        tooltip.x,
-        tooltip.y,
-        tooltipSizeRef.current,
-        containerRef.current?.getBoundingClientRect(),
-      )
-    : null;
-
   return (
-    <div ref={containerRef} className="relative" onMouseLeave={() => setTooltip(null)}>
+    <div
+      ref={containerRef}
+      className="relative"
+      onMouseLeave={() => {
+        setTooltip(null);
+        setTooltipPosition(null);
+      }}
+    >
       <svg ref={svgRef} width="100%" className="min-h-65" />
       {!isMobile && tooltipPosition && tooltip && (
         <div
@@ -414,6 +432,17 @@ function CargoTreemap({ data }: { data: CargoDepInfo[] }) {
       )}
     </div>
   );
+}
+
+function getCargoTreemapValue(dep: CargoDepInfo, hasSizeData: boolean) {
+  if (hasSizeData) {
+    return dep.crate_size ?? 0;
+  }
+
+  const depthWeight = Math.max(1, 4 - dep.depth);
+  const kindWeight = dep.kind === "normal" ? 1 : 0.75;
+  const optionalWeight = dep.optional ? 0.55 : 1;
+  return depthWeight * kindWeight * optionalWeight;
 }
 
 function getTooltipPosition(

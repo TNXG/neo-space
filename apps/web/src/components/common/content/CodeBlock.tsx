@@ -9,6 +9,11 @@ import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { SpecialCodeBlock } from "./special";
 
+const COLLAPSED_CODE_MAX_HEIGHT = 420;
+const CODE_COLLAPSE_LINE_THRESHOLD = 50;
+const CODE_COLLAPSE_CHAR_THRESHOLD = 3000;
+const LINE_BREAK_REGEX = /\r\n|\r|\n/;
+
 interface CodeBlockProps {
   children: React.ReactNode;
   className?: string;
@@ -23,6 +28,9 @@ export function CodeBlock({ children, className, language = "text", filename, st
   const mounted = useHasMounted();
   const preRef = useRef<HTMLPreElement>(null);
   const rawCode = fallbackText ?? extractTextContent(children);
+  const shouldCollapse = isLongCode(rawCode);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isContentExpanded = !shouldCollapse || isExpanded;
 
   if (language === "tokei" || language === "cargo") {
     return <SpecialCodeBlock language={language} raw={rawCode} />;
@@ -94,7 +102,17 @@ export function CodeBlock({ children, className, language = "text", filename, st
         </button>
       </div>
 
-      <div className="relative overflow-x-auto">
+      <div
+        className={cn(
+          "relative overflow-x-auto",
+          !isContentExpanded && "overflow-y-hidden",
+        )}
+        style={
+          !isContentExpanded
+            ? { maxHeight: COLLAPSED_CODE_MAX_HEIGHT }
+            : undefined
+        }
+      >
         {!mounted
           ? (
               <pre
@@ -120,9 +138,35 @@ export function CodeBlock({ children, className, language = "text", filename, st
                 {children}
               </pre>
             )}
+        {!isContentExpanded && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/85 to-transparent dark:from-primary-100 dark:via-primary-100/85" />
+        )}
       </div>
+
+      {shouldCollapse && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(value => !value)}
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 border-t border-border/60 bg-zinc-50/70 px-3 py-2 text-xs font-medium text-primary-600 transition-colors hover:bg-accent-50 hover:text-accent-700 dark:bg-primary-200/50 dark:hover:bg-primary-300/50"
+          aria-expanded={isContentExpanded}
+        >
+          <Icon
+            icon="mingcute:down-line"
+            className={cn(
+              "size-4 transition-transform duration-200",
+              isContentExpanded && "rotate-180",
+            )}
+          />
+          {isContentExpanded ? "收起代码" : "展开完整代码"}
+        </button>
+      )}
     </div>
   );
+}
+
+function isLongCode(code: string) {
+  return code.length > CODE_COLLAPSE_CHAR_THRESHOLD
+    || code.split(LINE_BREAK_REGEX).length > CODE_COLLAPSE_LINE_THRESHOLD;
 }
 
 /**
