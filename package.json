@@ -20,6 +20,7 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "next": "16.2.9",
     "turbo": "2.9.6"
   },
   "engines": {
