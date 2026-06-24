@@ -165,11 +165,14 @@ pub(crate) struct CachedNowPlaying {
     pub(crate) artist: Option<String>,
     pub(crate) album: Option<String>,
     pub(crate) cover: Option<String>,
+    pub(crate) duration: Option<Duration>,
     pub(crate) last_song_change: Instant, // 记录歌曲 ID 最后变更时间
 }
 
 /// Song expiration timeout (5 minutes)
-const SONG_EXPIRY_DURATION: Duration = Duration::from_secs(5 * 60);
+const FALLBACK_SONG_EXPIRY_DURATION: Duration = Duration::from_secs(5 * 60);
+/// 额外宽限时间，用于容忍接口轮询和播放结束之间的短暂延迟。
+const SONG_EXPIRY_GRACE_DURATION: Duration = Duration::from_secs(15);
 
 /// NetEase Cloud Music Now Playing Service
 #[derive(Clone)]
@@ -265,6 +268,11 @@ impl NeteaseNowPlayingService {
                 .and_then(|obj| obj.get("picUrl"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
+            let duration = song
+                .get("duration")
+                .or_else(|| song.get("dt"))
+                .and_then(|v| v.as_u64())
+                .map(Duration::from_millis);
 
             CachedNowPlaying {
                 active: true,
@@ -273,6 +281,7 @@ impl NeteaseNowPlayingService {
                 artist,
                 album,
                 cover,
+                duration,
                 last_song_change: Instant::now(), // 新歌曲，记录当前时间
             }
         } else {
@@ -283,6 +292,7 @@ impl NeteaseNowPlayingService {
                 artist: None,
                 album: None,
                 cover: None,
+                duration: None,
                 last_song_change: Instant::now(), // 停止播放，记录当前时间
             }
         };
@@ -329,7 +339,7 @@ impl NeteaseNowPlayingService {
     pub async fn is_song_expired(&self) -> bool {
         let guard = self.cache.read().await;
         if let Some(ref cached) = *guard {
-            cached.active && cached.last_song_change.elapsed() > SONG_EXPIRY_DURATION
+            cached.active && cached.last_song_change.elapsed() > song_expiry_duration(cached)
         } else {
             false
         }
@@ -352,15 +362,16 @@ impl NeteaseNowPlayingService {
             }
         };
 
-        // 检查歌曲是否过期（超过 5 分钟未更新）
-        let is_expired = cached.active && cached.last_song_change.elapsed() > SONG_EXPIRY_DURATION;
+        // 检查歌曲是否过期，优先使用歌曲时长，缺失时回退到固定时长。
+        let expiry_duration = song_expiry_duration(&cached);
+        let is_expired = cached.active && cached.last_song_change.elapsed() > expiry_duration;
 
         if is_expired {
             tracing::debug!(
                 "Song expired: {:?} has been playing for {:?} (> {:?})",
                 cached.song_name,
                 cached.last_song_change.elapsed(),
-                SONG_EXPIRY_DURATION
+                expiry_duration
             );
         }
 
@@ -382,4 +393,12 @@ impl NeteaseNowPlayingService {
             }),
         })
     }
+}
+
+/// 计算歌曲过期时长，优先使用接口返回的歌曲时长，缺失时使用保守兜底值。
+fn song_expiry_duration(cached: &CachedNowPlaying) -> Duration {
+    cached
+        .duration
+        .map(|duration| duration + SONG_EXPIRY_GRACE_DURATION)
+        .unwrap_or(FALLBACK_SONG_EXPIRY_DURATION)
 }

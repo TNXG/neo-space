@@ -66,10 +66,10 @@ async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool,
     // Check if the song is expired before fetching
     let was_expired_before = service.is_song_expired().await;
 
-    // Check if status changed: only active state or song ID matters
+    // active 状态和歌曲 ID 都会影响读者端 UI，任一变化都需要广播。
     let has_changed = match &prev_status {
         None => true,
-        Some(prev) => prev.song_id != new_status.song_id,
+        Some(prev) => prev.active != new_status.active || prev.song_id != new_status.song_id,
     };
 
     // Always update cache to refresh TTL, even when unchanged

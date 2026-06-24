@@ -14,23 +14,27 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { isConnected, ownerStatus } = useReaderWS();
+  const activeMediaPlayback = ownerStatus?.mediaPlayback?.playbackState.playing
+    ? ownerStatus.mediaPlayback
+    : null;
+  const activeNetease = ownerStatus?.netease?.active ? ownerStatus.netease : null;
 
   // 通过 ws 中是否有 media 或 window 信息判断博主在线
   const isOwnerOnline = Boolean(
     isConnected
     && ownerStatus
-    && (ownerStatus.mediaPlayback || ownerStatus.windowInfo || ownerStatus.netease?.active),
+    && (activeMediaPlayback || ownerStatus.windowInfo || activeNetease),
   );
 
   // 获取专辑封面
   const albumCover
-    = ownerStatus?.mediaPlayback?.metadata?.artwork_url
-      || ownerStatus?.netease?.song?.cover
+    = activeMediaPlayback?.metadata?.artwork_url
+      || activeNetease?.song?.cover
       || null;
 
   // 获取歌曲信息
-  const songName = ownerStatus?.mediaPlayback?.metadata?.title || ownerStatus?.netease?.song?.name || null;
-  const artistName = ownerStatus?.mediaPlayback?.metadata?.artist || ownerStatus?.netease?.song?.artist || null;
+  const songName = activeMediaPlayback?.metadata?.title || activeNetease?.song?.name || null;
+  const artistName = activeMediaPlayback?.metadata?.artist || activeNetease?.song?.artist || null;
 
   return (
     <header className="space-y-4 md:space-y-8">
@@ -39,7 +43,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         {/* 左侧：头像 */}
         <div className="shrink-0">
           <div className="relative">
-            <div className="rounded-2xl bg-secondary w-40 h-full min-h-[140px] shadow-sm relative overflow-hidden border border-border/50">
+            <div className="rounded-2xl bg-secondary w-40 h-full min-h-35 shadow-sm relative overflow-hidden border border-border/50">
               {profile.avatar
                 ? (
                     <img
@@ -175,7 +179,7 @@ function AlbumCover({ cover, songName, artistName }: {
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="flex items-center gap-3 mt-2"
       >
-        <div className="h-10 w-10 rounded-lg overflow-hidden shadow-sm border border-border/50 flex-shrink-0">
+        <div className="h-10 w-10 rounded-lg overflow-hidden shadow-sm border border-border/50 shrink-0">
           <img
             src={cover}
             alt={t("home.album.playingAlt")}
