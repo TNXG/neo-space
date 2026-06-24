@@ -1,6 +1,7 @@
 "use client";
 
 import type { Note, Post, RecentlyWithRendered, User } from "@/types/api";
+import { motion, useScroll, useTransform } from "motion/react";
 import { ArticlesSection } from "./home/ArticlesSection";
 import { NotesSection } from "./home/NotesSection";
 import { ProfileHeader } from "./home/ProfileHeader";
@@ -18,10 +19,31 @@ interface HomePageProps {
  * Main entry point for the homepage, receives data from server component
  */
 export function HomePage({ profile, articles, notes, recently }: HomePageProps) {
+  const { scrollYProgress } = useScroll();
+  const characterRotate = useTransform(scrollYProgress, [0, 0.35], [0, 42]);
+  const characterTranslateX = useTransform(scrollYProgress, [0, 0.35], ["0%", "140%"]);
+  const characterOpacity = useTransform(scrollYProgress, [0, 0.25, 0.35], [1, 1, 0]);
+
   return (
-    <div className="font-sans min-h-screen antialiased transition-colors duration-300 bg-background text-foreground">
-      {/* Main Content */}
-      <main className="mx-auto px-4 md:px-6 py-16 md:py-20 pb-24 md:pb-32 max-w-170 space-y-16 md:space-y-24">
+    <div className="relative isolate min-h-screen overflow-hidden bg-background font-sans text-foreground antialiased transition-colors duration-300">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-y-0 right-0 z-0 hidden w-[max(0px,calc((100vw-42.5rem)/2-1.5rem))] items-center justify-end overflow-hidden min-[90rem]:flex"
+      >
+        <motion.img
+          src="https://cdn.tnxg.top/images/cover/background_aijo_karen.webp"
+          alt="background_aijo_karen"
+          className="h-auto max-h-[124vh] w-auto max-w-[124%] object-contain"
+          style={{
+            opacity: characterOpacity,
+            rotate: characterRotate,
+            x: characterTranslateX,
+            transformOrigin: "72% 50%",
+          }}
+        />
+      </div>
+
+      <main className="relative z-10 mx-auto max-w-170 space-y-16 px-4 py-16 pb-24 md:px-6 md:py-20 md:pb-32">
         <ProfileHeader profile={profile} />
         <ArticlesSection articles={articles} />
         <NotesSection notes={notes} />
