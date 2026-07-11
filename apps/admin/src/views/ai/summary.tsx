@@ -1,146 +1,144 @@
-import type {
-  ArticleInfo,
-  GroupedSummaryData,
-  GroupedSummaryResponse,
-} from "~/api/ai";
-import { useQuery } from "@tanstack/vue-query";
-import { computed, defineComponent, ref, watch } from "vue";
-
-import { useRoute, useRouter } from "vue-router";
+import type { DataTableColumns } from "naive-ui";
+import type { AISummary } from "~/api/ai";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { RefreshCw as RefreshIcon, Trash2 as TrashIcon } from "lucide-vue-next";
+import {
+  NButton,
+  NCard,
+  NDataTable,
+  NEllipsis,
+  NPopconfirm,
+  NTag,
+} from "naive-ui";
+import { computed, defineComponent, ref } from "vue";
+import { toast } from "vue-sonner";
 
 import { aiApi } from "~/api/ai";
-import { MasterDetailLayout, useMasterDetailLayout } from "~/components/layout";
+import { HeaderActionButton } from "~/components/button/header-action-button";
+import { RelativeTime } from "~/components/time/relative-time";
 import { queryKeys } from "~/hooks/queries/keys";
-import { RouteName } from "~/router/name";
-
-import {
-  SummaryDetailEmptyState,
-  SummaryDetailPanel,
-} from "./components/summary-detail-panel";
-import { SummaryList } from "./components/summary-list";
+import { useLayout } from "~/layouts/content";
 
 export default defineComponent({
   name: "AISummaryPage",
   setup() {
-    const router = useRouter();
-    const route = useRoute();
-    const { isMobile } = useMasterDetailLayout();
+    const queryClient = useQueryClient();
+    const page = ref(1);
+    const pageSize = ref(20);
 
-    const pageRef = ref(1);
-    const searchRef = ref("");
-    const listData = ref<GroupedSummaryData[]>([]);
-    const pagerRef = ref<GroupedSummaryResponse["pagination"] | null>(null);
-    const { data, refetch, isPending } = useQuery({
+    const { setActions } = useLayout();
+    const { data, isFetching, refetch } = useQuery({
       queryKey: computed(() =>
-        queryKeys.ai.summariesGrouped({
-          page: pageRef.value,
-          search: searchRef.value,
+        queryKeys.ai.summariesList({
+          page: page.value,
+          size: pageSize.value,
         }),
       ),
       queryFn: () =>
-        aiApi.getSummariesGrouped({
-          page: pageRef.value,
-          search: searchRef.value || undefined,
+        aiApi.getSummaries({
+          page: page.value,
+          size: pageSize.value,
         }),
     });
 
-    const selectedId = ref<string | null>((route.query.id as string) || null);
-    const showDetailOnMobile = ref(false);
-
-    const handleSelect = (article: ArticleInfo) => {
-      selectedId.value = article.id;
-      if (isMobile.value) {
-        showDetailOnMobile.value = true;
-      }
-    };
-
-    const handleBack = () => {
-      showDetailOnMobile.value = false;
-    };
-
-    const handlePageChange = (page: number) => {
-      if (pageRef.value === page)
-        return;
-      pageRef.value = page;
-      refetch();
-    };
-
-    const handleSearchChange = (search: string) => {
-      if (searchRef.value === search)
-        return;
-      searchRef.value = search;
-      pageRef.value = 1;
-      listData.value = [];
-      refetch();
-    };
-
-    const refreshList = () => {
-      pageRef.value = 1;
-      refetch();
-    };
-
-    watch(
-      () => data.value,
-      (value) => {
-        if (!value)
-          return;
-        pagerRef.value = value.pagination ?? null;
-        if (value.data !== undefined) {
-          if (pageRef.value === 1) {
-            listData.value = value.data;
-          } else {
-            listData.value = [...listData.value, ...value.data];
-          }
-        }
+    const deleteMutation = useMutation({
+      mutationFn: aiApi.deleteSummary,
+      onSuccess: () => {
+        toast.success("摘要已删除");
+        queryClient.invalidateQueries({ queryKey: queryKeys.ai.summaries() });
       },
-      { immediate: true },
+    });
+
+    setActions(
+      <HeaderActionButton
+        icon={<RefreshIcon />}
+        name="刷新"
+        onClick={() => refetch()}
+      />,
     );
 
-    watch(
-      selectedId,
-      (id) => {
-        router.replace({
-          name: RouteName.AiSummary,
-          query: (id ? { id } : {}),
-        });
+    const rows = computed(() => data.value?.items ?? []);
+    const pagination = computed(() => data.value?.pagination);
+
+    const columns: DataTableColumns<AISummary> = [
+      {
+        title: "引用 ID",
+        key: "refId",
+        width: 220,
+        render: row => (
+          <span class="font-mono text-xs text-neutral-500">{row.refId}</span>
+        ),
       },
-      { flush: "post" },
-    );
+      {
+        title: "语言",
+        key: "lang",
+        width: 90,
+        render: row => <NTag size="small">{row.lang}</NTag>,
+      },
+      {
+        title: "摘要",
+        key: "summary",
+        render: row => (
+          <NEllipsis lineClamp={2} tooltip>
+            {row.summary}
+          </NEllipsis>
+        ),
+      },
+      {
+        title: "创建时间",
+        key: "created",
+        width: 140,
+        render: row => <RelativeTime time={row.created} />,
+      },
+      {
+        title: "操作",
+        key: "action",
+        width: 90,
+        render: row => (
+          <NPopconfirm
+            positiveText="取消"
+            negativeText="删除"
+            onNegativeClick={() => deleteMutation.mutate(row._id)}
+          >
+            {{
+              trigger: () => (
+                <NButton quaternary size="tiny" type="error">
+                  <TrashIcon class="size-4" />
+                </NButton>
+              ),
+              default: () => "确定要删除这条 AI 摘要吗？",
+            }}
+          </NPopconfirm>
+        ),
+      },
+    ];
 
     return () => (
-      <MasterDetailLayout
-        showDetailOnMobile={showDetailOnMobile.value}
-        defaultSize={0.28}
-        min={0.2}
-        max={0.4}
-      >
-        {{
-          list: () => (
-            <SummaryList
-              data={listData.value}
-              loading={isPending.value}
-              selectedId={selectedId.value}
-              pager={pagerRef.value}
-              search={searchRef.value}
-              onSelect={handleSelect}
-              onPageChange={handlePageChange}
-              onSearchChange={handleSearchChange}
-            />
-          ),
-          detail: () =>
-            selectedId.value
-              ? (
-                  <SummaryDetailPanel
-                    articleId={selectedId.value}
-                    isMobile={isMobile.value}
-                    onBack={handleBack}
-                    onRefresh={refreshList}
-                  />
-                )
-              : null,
-          empty: () => <SummaryDetailEmptyState />,
-        }}
-      </MasterDetailLayout>
+      <div class="p-4">
+        <NCard title="AI 摘要">
+          <NDataTable
+            columns={columns}
+            data={rows.value}
+            loading={isFetching.value}
+            rowKey={row => row._id}
+            pagination={{
+              page: page.value,
+              pageSize: pageSize.value,
+              itemCount: pagination.value?.total ?? 0,
+              pageCount: pagination.value?.total_page ?? 0,
+              showSizePicker: true,
+              pageSizes: [10, 20, 50, 100],
+              onUpdatePage: (nextPage: number) => {
+                page.value = nextPage;
+              },
+              onUpdatePageSize: (nextSize: number) => {
+                pageSize.value = nextSize;
+                page.value = 1;
+              },
+            }}
+          />
+        </NCard>
+      </div>
     );
   },
 });

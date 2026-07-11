@@ -1,8 +1,32 @@
-import type { ContentFormat } from "~/shared/types/base";
-
 import { request } from "~/utils/request";
 
-// AI Writer 类型
+interface ApiResponse<T> {
+  code: number;
+  status: "success" | "failed";
+  message: string;
+  data: T | null;
+}
+
+export interface BackendPagination {
+  total: number;
+  current_page: number;
+  total_page: number;
+  size: number;
+  has_next_page: boolean;
+  has_prev_page: boolean;
+}
+
+export interface PaginatedPayload<T> {
+  items: T[];
+  pagination: BackendPagination;
+}
+
+const unwrapApiResponse = <T>(response: ApiResponse<T>): T => {
+  if (response.data === null)
+    throw new Error(response.message || "接口未返回数据");
+  return response.data;
+};
+
 export enum AiQueryType {
   TitleSlug = "title-slug",
   Slug = "slug",
@@ -10,8 +34,8 @@ export enum AiQueryType {
 
 export interface AIWriterGenerateData {
   type: AiQueryType;
-  text?: string; // 当 type 为 title-slug 时需要
-  title?: string; // 当 type 为 slug 时需要
+  text?: string;
+  title?: string;
 }
 
 export interface AIWriterGenerateResponse {
@@ -19,108 +43,40 @@ export interface AIWriterGenerateResponse {
   slug?: string;
 }
 
-// AI Summary 类型
 export interface AISummary {
-  id: string;
-  createdAt: string;
+  _id: string;
+  created: string;
   summary: string;
   hash: string;
   refId: string;
   lang: string;
 }
 
-export interface GroupedSummary {
-  type: string;
+export interface SummaryListResponse {
   items: AISummary[];
+  pagination: BackendPagination;
 }
 
 export interface ArticleInfo {
-  type: "Post" | "Note" | "Page" | "Recently";
+  _id: string;
+  type: "posts" | "notes" | "pages" | "recently";
   title: string;
-  id: string;
 }
 
-export interface GroupedSummaryData {
-  article: ArticleInfo;
-  summaries: AISummary[];
-}
-
-export interface GroupedSummaryResponse {
-  data: GroupedSummaryData[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPage: number;
-    size: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-}
-
-export interface SummaryByRefResponse {
-  summaries: AISummary[];
-  article: {
-    type: "Post" | "Note" | "Page" | "Recently";
-    document: { title: string };
-  };
-}
-
-// AI Insights 类型
-export interface AIInsights {
-  id: string;
-  createdAt: string;
-  refId: string;
-  lang: string;
-  hash: string;
-  content: string;
-  isTranslation: boolean;
-  sourceInsightsId?: string;
-  sourceLang?: string;
-}
-
-export interface GroupedInsightsData {
-  article: ArticleInfo;
-  insights: AIInsights[];
-}
-
-export interface GroupedInsightsResponse {
-  data: GroupedInsightsData[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPage: number;
-    size: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-}
-
-export interface InsightsByRefResponse {
-  insights: AIInsights[];
-  article: {
-    type: "Post" | "Note" | "Page" | "Recently";
-    document: { title: string };
-  } | null;
-}
-
-// AI Translation 类型
 export interface AITranslation {
-  id: string;
-  createdAt: string;
+  _id: string;
+  created: string;
   hash: string;
   refId: string;
   refType: string;
   lang: string;
   sourceLang: string;
-  title: string;
-  subtitle?: string;
-  text: string;
+  title?: string;
+  text?: string;
   summary?: string;
   tags?: string[];
   aiModel?: string;
   aiProvider?: string;
-  contentFormat?: ContentFormat;
-  content?: string;
 }
 
 export interface GroupedTranslationData {
@@ -129,23 +85,13 @@ export interface GroupedTranslationData {
 }
 
 export interface GroupedTranslationResponse {
-  data: GroupedTranslationData[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPage: number;
-    size: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
+  items: GroupedTranslationData[];
+  pagination: BackendPagination;
 }
 
 export interface TranslationByRefResponse {
   translations: AITranslation[];
-  article: {
-    type: "Post" | "Note" | "Page" | "Recently";
-    document: { title: string };
-  };
+  article: ArticleInfo | null;
 }
 
 export interface ProviderModel {
@@ -176,78 +122,6 @@ export interface AIModelListData {
   endpoint?: string;
 }
 
-// AI Task 类型
-export enum AITaskType {
-  Summary = "ai:summary",
-  Translation = "ai:translation",
-  TranslationBatch = "ai:translation:batch",
-  TranslationAll = "ai:translation:all",
-  SlugBackfill = "ai:slug:backfill",
-  Insights = "ai:insights",
-  InsightsTranslation = "ai:insights:translation",
-}
-
-export enum AITaskStatus {
-  Pending = "pending",
-  Running = "running",
-  Completed = "completed",
-  PartialFailed = "partial_failed",
-  Failed = "failed",
-  Cancelled = "cancelled",
-}
-
-export interface AITaskLog {
-  timestamp: number;
-  level: "info" | "warn" | "error";
-  message: string;
-}
-
-export interface SubTaskStats {
-  total: number;
-  completed: number;
-  failed: number;
-  running: number;
-  pending: number;
-}
-
-export interface AITask {
-  id: string;
-  type: AITaskType;
-  status: AITaskStatus;
-  payload: Record<string, unknown>;
-  groupId?: string;
-
-  progress?: number;
-  progressMessage?: string;
-  totalItems?: number;
-  completedItems?: number;
-  tokensGenerated?: number;
-
-  createdAt: number;
-  startedAt?: number;
-  completedAt?: number;
-
-  result?: unknown;
-  error?: string;
-  logs: AITaskLog[];
-
-  workerId?: string;
-  retryCount: number;
-
-  // For batch tasks: sub-task statistics
-  subTaskStats?: SubTaskStats;
-}
-
-export interface AITasksResponse {
-  data: AITask[];
-  total: number;
-}
-
-export interface CreateTaskResponse {
-  taskId: string;
-  created: boolean;
-}
-
 export interface AICommentReviewTestData {
   text: string;
   author?: string;
@@ -259,7 +133,6 @@ export interface AICommentReviewTestResponse {
   reason?: string;
 }
 
-// Translation Entry (词表) 类型
 export type TranslationEntryKeyPath
   = | "category.name"
     | "topic.name"
@@ -268,8 +141,8 @@ export type TranslationEntryKeyPath
     | "note.weather";
 
 export interface TranslationEntry {
-  id: string;
-  createdAt: string;
+  _id: string;
+  created: string;
   keyPath: TranslationEntryKeyPath;
   lang: string;
   keyType: "entity" | "dict";
@@ -280,241 +153,15 @@ export interface TranslationEntry {
 }
 
 export interface TranslationEntriesResponse {
-  data: TranslationEntry[];
-  pagination: {
-    total: number;
-    page: number;
-    size: number;
-  };
+  items: TranslationEntry[];
+  pagination: BackendPagination;
 }
-
-export interface GenerateEntriesResponse {
-  created: number;
-  skipped: number;
-}
-
-export const aiApi = {
-  // AI 评论审核测试
-  testCommentReview: (data: AICommentReviewTestData) =>
-    request.post<AICommentReviewTestResponse>("/ai/comment-review/test", {
-      data,
-    }),
-
-  // AI 写作生成标题/Slug
-  writerGenerate: (data: AIWriterGenerateData) =>
-    request.post<AIWriterGenerateResponse>("/ai/writer/generate", { data }),
-
-  // 获取摘要列表（分组）
-  getSummariesGrouped: (params?: {
-    page?: number;
-    size?: number;
-    search?: string;
-  }) =>
-    request.get<GroupedSummaryResponse>("/ai/summaries/grouped", { params }),
-
-  // 根据引用获取摘要
-  getSummaryByRef: (refId: string) =>
-    request.get<SummaryByRefResponse>(`/ai/summaries/ref/${refId}`),
-
-  // 删除摘要
-  deleteSummary: (id: string) => request.delete<void>(`/ai/summaries/${id}`),
-
-  // 更新摘要
-  updateSummary: (id: string, data: { summary: string }) =>
-    request.patch<AISummary>(`/ai/summaries/${id}`, { data }),
-
-  // 生成摘要（创建任务）
-  createSummaryTask: (data: { refId: string; lang?: string }) =>
-    request.post<CreateTaskResponse>("/ai/summaries/task", { data }),
-
-  // === AI Insights ===
-
-  // 获取精读列表（分组）
-  getInsightsGrouped: (params: {
-    page: number;
-    size?: number;
-    search?: string;
-  }) =>
-    request.get<GroupedInsightsResponse>("/ai/insights/grouped", { params }),
-
-  // 根据引用获取精读
-  getInsightsByRef: (refId: string) =>
-    request.get<InsightsByRefResponse>(`/ai/insights/ref/${refId}`),
-
-  // 删除精读
-  deleteInsights: (id: string) => request.delete<void>(`/ai/insights/${id}`),
-
-  // 更新精读
-  updateInsights: (id: string, data: { content: string }) =>
-    request.patch<AIInsights>(`/ai/insights/${id}`, { data }),
-
-  // 生成精读（创建任务）
-  createInsightsTask: (data: { refId: string }) =>
-    request.post<CreateTaskResponse>("/ai/insights/task", { data }),
-
-  // 翻译精读（创建任务）
-  createInsightsTranslationTask: (data: {
-    refId: string;
-    targetLang: string;
-  }) =>
-    request.post<CreateTaskResponse>("/ai/insights/task/translate", { data }),
-
-  // 获取可用模型列表
-  getModels: () => request.get<ProviderModelsResponse[]>("/ai/models"),
-
-  // 获取指定 provider 的模型列表
-  getModelList: (data: AIModelListData) =>
-    request.post<{ models: ProviderModel[]; error?: string }>(
-      "/ai/models/list",
-      { data },
-    ),
-
-  // 测试 AI 配置
-  testConfig: (data: AITestData) => request.post<void>("/ai/test", { data }),
-
-  // === AI Translation ===
-
-  // 获取翻译列表（分组）
-  getTranslationsGrouped: (params?: {
-    page?: number;
-    size?: number;
-    search?: string;
-  }) =>
-    request.get<GroupedTranslationResponse>("/ai/translations/grouped", {
-      params,
-    }),
-
-  // 根据引用获取翻译
-  getTranslationsByRef: (refId: string) =>
-    request.get<TranslationByRefResponse>(`/ai/translations/ref/${refId}`),
-
-  // 删除翻译
-  deleteTranslation: (id: string) =>
-    request.delete<void>(`/ai/translations/${id}`),
-
-  // 更新翻译
-  updateTranslation: (
-    id: string,
-    data: {
-      title?: string;
-      subtitle?: string;
-      text?: string;
-      summary?: string;
-      tags?: string[];
-      content?: string;
-    },
-  ) => request.patch<AITranslation>(`/ai/translations/${id}`, { data }),
-
-  // 生成翻译（创建任务）
-  createTranslationTask: (data: {
-    refId: string;
-    targetLanguages?: string[];
-  }) => request.post<CreateTaskResponse>("/ai/translations/task", { data }),
-
-  // 批量生成翻译（创建任务）
-  createTranslationBatchTask: (data: {
-    refIds: string[];
-    targetLanguages?: string[];
-  }) =>
-    request.post<CreateTaskResponse>("/ai/translations/task/batch", { data }),
-
-  // 为全部文章生成翻译（创建任务）
-  createTranslationAllTask: (data: { targetLanguages?: string[] }) =>
-    request.post<CreateTaskResponse>("/ai/translations/task/all", { data }),
-
-  // === AI Tasks ===
-
-  // 获取任务列表
-  getTasks: (params?: {
-    status?: AITaskStatus;
-    type?: AITaskType;
-    page?: number;
-    size?: number;
-  }) => request.get<AITasksResponse>("/ai/tasks", { params }),
-
-  // 获取单个任务
-  getTask: (taskId: string) => request.get<AITask>(`/ai/tasks/${taskId}`),
-
-  // 重试任务
-  retryTask: (taskId: string) =>
-    request.post<CreateTaskResponse>(`/ai/tasks/${taskId}/retry`),
-
-  // 取消任务
-  cancelTask: (taskId: string) =>
-    request.post<{ success: boolean }>(`/ai/tasks/${taskId}/cancel`),
-
-  // 删除单个任务
-  deleteTask: (taskId: string) =>
-    request.delete<{ success: boolean }>(`/ai/tasks/${taskId}`),
-
-  // 批量删除任务
-  deleteTasks: (params: {
-    status?: AITaskStatus;
-    type?: AITaskType;
-    before: number;
-  }) => request.delete<{ deleted: number }>("/ai/tasks", { params }),
-
-  // 获取组内所有任务（子任务）
-  getTasksByGroupId: (groupId: string) =>
-    request.get<AITask[]>(`/ai/tasks/group/${groupId}`),
-
-  // 取消组内所有任务
-  cancelTasksByGroupId: (groupId: string) =>
-    request.delete<{ cancelled: number }>(`/ai/tasks/group/${groupId}`),
-
-  // === Translation Entries (词表) ===
-
-  getTranslationEntries: (params?: {
-    keyPath?: TranslationEntryKeyPath;
-    lang?: string;
-    page?: number;
-    size?: number;
-  }) =>
-    request.get<TranslationEntriesResponse>("/ai/translations/entries", {
-      params,
-    }),
-
-  generateTranslationEntries: (data?: {
-    keyPaths?: TranslationEntryKeyPath[];
-    targetLanguages?: string[];
-  }) =>
-    request.post<GenerateEntriesResponse>("/ai/translations/entries/generate", {
-      data,
-    }),
-
-  updateTranslationEntry: (id: string, data: { translatedText: string }) =>
-    request.patch<TranslationEntry>(`/ai/translations/entries/${id}`, { data }),
-
-  deleteTranslationEntry: (id: string) =>
-    request.delete<void>(`/ai/translations/entries/${id}`),
-
-  // === Slug Backfill ===
-
-  getSlugBackfillStatus: () =>
-    request.get<{
-      count: number;
-      notes: Array<{ id: string; title: string; nid: number }>;
-    }>("/ai/writer/backfill-slugs/status"),
-
-  createSlugBackfillTask: () =>
-    request.post<CreateTaskResponse>("/ai/writer/backfill-slugs"),
-
-  // === Time Capsule（时光胶囊：内容时效性分析）===
-
-  analyzeTimeCapsule: (data: TimeCapsuleRequest) =>
-    request.post<TimeCapsuleResult>("/ai/time-capsule", { data }),
-
-  getTimeCapsule: (refId: string, params?: GetTimeCapsuleParams) =>
-    request.get<TimeCapsuleResult | null>(`/ai/time-capsule/${refId}`, {
-      params,
-    }),
-};
 
 export type TimeSensitivity = "high" | "medium" | "low";
 
 export interface TimeCapsuleRequest {
   refId: string;
-  refType: "Post" | "Note" | "Page" | "Recently" | string;
+  refType: TimeCapsuleContentType;
   lang?: string;
 }
 
@@ -529,3 +176,176 @@ export interface TimeCapsuleResult {
   markers: string[];
   isNew: boolean;
 }
+
+export type TimeCapsuleContentType = "post" | "note" | "page" | "recently";
+
+export interface TimeCapsuleSummary {
+  lang: string;
+  sensitivity: TimeSensitivity;
+  reason: string;
+  markers: string[];
+  created: string;
+}
+
+export interface TimeCapsuleContent {
+  _id: string;
+  type: TimeCapsuleContentType;
+  title: string;
+  created: string;
+  availableLanguages: string[];
+  capsules: TimeCapsuleSummary[];
+}
+
+export interface TimeCapsuleContentsResponse {
+  items: TimeCapsuleContent[];
+  pagination: BackendPagination;
+}
+
+export const aiApi = {
+  writerGenerate: async (data: AIWriterGenerateData) => {
+    const response = await request.post<ApiResponse<AIWriterGenerateResponse>>(
+      "/ai/writer/generate",
+      { data, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  getSummaries: async (params?: { page?: number; size?: number }) => {
+    const response = await request.get<ApiResponse<SummaryListResponse>>(
+      "/ai/summaries",
+      { params, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  deleteSummary: async (id: string) => {
+    await request.delete<ApiResponse<void>>(
+      `/ai/summaries/${id}`,
+      { bypassTransform: true },
+    );
+  },
+
+  getTranslationsGrouped: async (params?: {
+    page?: number;
+    size?: number;
+    search?: string;
+  }) => {
+    const response = await request.get<ApiResponse<GroupedTranslationResponse>>(
+      "/ai/translations/grouped",
+      { params, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  getTranslationsByRef: async (refId: string, params?: { refType?: string }) => {
+    const response = await request.get<ApiResponse<TranslationByRefResponse>>(
+      `/ai/translations/ref/${refId}`,
+      { params, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  generateTranslations: async (data: {
+    refId: string;
+    refType: ArticleInfo["type"];
+    targetLanguages: string[];
+  }) => {
+    const response = await request.post<ApiResponse<AITranslation[]>>(
+      "/ai/translations/generate",
+      { data, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  deleteTranslation: async (id: string) => {
+    await request.delete<ApiResponse<void>>(
+      `/ai/translations/${id}`,
+      { bypassTransform: true },
+    );
+  },
+
+  updateTranslation: async (
+    id: string,
+    data: {
+      title?: string;
+      text?: string;
+      summary?: string;
+      tags?: string[];
+    },
+  ) => {
+    const response = await request.patch<ApiResponse<AITranslation>>(
+      `/ai/translations/${id}`,
+      { data, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  getTranslationEntries: async (params?: {
+    keyPath?: TranslationEntryKeyPath;
+    lang?: string;
+    page?: number;
+    size?: number;
+  }) => {
+    const response = await request.get<ApiResponse<TranslationEntriesResponse>>(
+      "/ai/translations/entries",
+      { params, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  updateTranslationEntry: async (id: string, data: { translatedText: string }) => {
+    const response = await request.patch<ApiResponse<TranslationEntry>>(
+      `/ai/translations/entries/${id}`,
+      { data, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  deleteTranslationEntry: async (id: string) => {
+    await request.delete<ApiResponse<void>>(
+      `/ai/translations/entries/${id}`,
+      { bypassTransform: true },
+    );
+  },
+
+  analyzeTimeCapsule: async (data: TimeCapsuleRequest) => {
+    const response = await request.post<ApiResponse<TimeCapsuleResult>>(
+      "/ai/time-capsule",
+      { data, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  getTimeCapsuleContents: async (params?: {
+    page?: number;
+    size?: number;
+    search?: string;
+    type?: TimeCapsuleContentType;
+  }) => {
+    const response = await request.get<ApiResponse<TimeCapsuleContentsResponse>>(
+      "/ai/time-capsule/contents",
+      { params, bypassTransform: true },
+    );
+    return unwrapApiResponse(response);
+  },
+
+  getTimeCapsule: async (refId: string, params?: GetTimeCapsuleParams) => {
+    const response = await request.get<ApiResponse<TimeCapsuleResult | null>>(
+      `/ai/time-capsule/${refId}`,
+      { params, bypassTransform: true },
+    );
+    return response.data;
+  },
+
+  testCommentReview: (_data: AICommentReviewTestData): Promise<AICommentReviewTestResponse> =>
+    Promise.reject(new Error("当前后端未提供 AI 评论审核测试接口")),
+
+  getModels: () => Promise.resolve([] as ProviderModelsResponse[]),
+
+  getModelList: (_data: AIModelListData) =>
+    Promise.resolve({ models: [] as ProviderModel[], error: undefined as string | undefined }),
+
+  testConfig: (_data: AITestData) =>
+    Promise.reject(new Error("当前后端未提供 AI 配置测试接口")),
+
+};

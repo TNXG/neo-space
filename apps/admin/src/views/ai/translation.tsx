@@ -49,7 +49,7 @@ export default defineComponent({
     const showDetailOnMobile = ref(false);
 
     const handleSelect = (article: ArticleInfo) => {
-      selectedId.value = article.id;
+      selectedId.value = article._id;
       if (isMobile.value) {
         showDetailOnMobile.value = true;
       }
@@ -96,7 +96,7 @@ export default defineComponent({
     const applyOptimisticUpdate = (update: TranslationListOptimisticUpdate) => {
       if (update.type === "upsert") {
         const idx = listData.value.findIndex(
-          g => g.article.id === update.article.id,
+          g => g.article._id === update.article._id,
         );
         if (idx === -1) {
           if (pageRef.value === 1) {
@@ -135,13 +135,13 @@ export default defineComponent({
       }
 
       const idx = listData.value.findIndex(
-        g => g.article.id === update.articleId,
+        g => g.article._id === update.articleId,
       );
       if (idx === -1)
         return;
       const group = listData.value[idx];
       const nextTranslations = group.translations.filter(
-        t => t.id !== update.translationId && t.lang !== update.lang,
+        t => t._id !== update.translationId && t.lang !== update.lang,
       );
       if (nextTranslations.length === 0) {
         listData.value = listData.value.filter((_, i) => i !== idx);
@@ -156,11 +156,11 @@ export default defineComponent({
         if (!value)
           return;
         pagerRef.value = value.pagination ?? null;
-        if (value.data !== undefined) {
+        if (value.items !== undefined) {
           if (pageRef.value === 1) {
-            listData.value = value.data;
+            listData.value = value.items;
           } else {
-            listData.value = [...listData.value, ...value.data];
+            listData.value = [...listData.value, ...value.items];
           }
         }
       },

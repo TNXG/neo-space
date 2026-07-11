@@ -2,8 +2,7 @@ import type { LexicalEditor } from "lexical";
 import type { SelectOption } from "naive-ui";
 import type { PropType, VNode } from "vue";
 import type { Image } from "~/models/base";
-import type { MetaPresetScope } from "~/models/meta-preset";
-import { BracesIcon, ImageIcon, SettingsIcon } from "lucide-vue-next";
+import { ImageIcon, SettingsIcon } from "lucide-vue-next";
 import {
   NDatePicker,
   NDrawer,
@@ -19,7 +18,6 @@ import { defineComponent, h, ref } from "vue";
 
 import { ImageDetailSection } from "./components/image-detail-section";
 import { LexicalImageDetailSection } from "./components/lexical-image-detail-section";
-import { MetaPresetSection } from "./components/meta-preset-section";
 import { FormField, SectionTitle } from "./components/ui";
 
 // 重新导出 UI 组件，方便外部使用
@@ -59,13 +57,6 @@ export const TextBaseDrawer = defineComponent({
       required: false,
     },
 
-    /**
-     * 元数据预设字段的适用范围
-     */
-    scope: {
-      type: String as PropType<MetaPresetScope>,
-      default: "both",
-    },
     lexicalEditor: {
       type: Object as PropType<LexicalEditor | null>,
       required: false,
@@ -74,11 +65,6 @@ export const TextBaseDrawer = defineComponent({
   },
   setup(props, { slots }) {
     const disabledItem = new Set(props.disabledItem || []);
-
-    // 更新 meta 数据
-    const handleUpdateMeta = (meta: Record<string, any> | undefined) => {
-      props.data.meta = meta;
-    };
 
     return () => (
       <NDrawer
@@ -165,15 +151,6 @@ export const TextBaseDrawer = defineComponent({
                     editor={props.lexicalEditor}
                   />
                 )}
-
-            {/* 附加字段 */}
-            <SectionTitle icon={BracesIcon}>附加字段</SectionTitle>
-
-            <MetaPresetSection
-              meta={props.data.meta}
-              onUpdateMeta={handleUpdateMeta}
-              scope={props.scope}
-            />
           </div>
         </NDrawerContent>
       </NDrawer>

@@ -1,693 +1,169 @@
-import type { IPAggregate, Month, Path, Today, Total, Week } from "./types";
-import type { ReadingRankItem } from "~/api/activity";
-import type {
-  DeviceDistributionResponse,
-  TrafficSourceResponse,
-} from "~/api/analyze";
-import { Chart } from "@antv/g2";
-import { isEmpty } from "es-toolkit/compat";
+import type { PublicationPoint } from "~/api/dashboard";
+import { useQuery } from "@tanstack/vue-query";
+import { format } from "date-fns";
 import {
-  Eye as EyeIcon,
-  Globe as GlobeIcon,
-  Route as RouteIcon,
+  BarChart3 as ChartIcon,
+  FileText as FileTextIcon,
+  MessageSquare as CommentIcon,
   Users as UsersIcon,
 } from "lucide-vue-next";
-import {
-  NButton,
-  NDataTable,
-  NSkeleton,
-  NTabPane,
-  NTabs,
-  useDialog,
-} from "naive-ui";
+import { NButton, NDataTable, NEmpty, NSkeleton, NTag } from "naive-ui";
+import { computed, defineComponent } from "vue";
 
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onBeforeMount,
-  onMounted,
-  onUnmounted,
-  ref,
-  toRaw,
-  watch,
-} from "vue";
-
-import { activityApi } from "~/api/activity";
-import { analyzeApi } from "~/api/analyze";
-import { IpInfoPopover } from "~/components/ip-info";
-
-import { AnalyzeDataTable } from "./components/analyze-data-table";
-import { GuestActivity } from "./components/guest-activity";
-import { ReadingRank } from "./components/reading-rank";
-import styles from "./index.module.css";
+import { dashboardApi } from "~/api/dashboard";
 
 export default defineComponent({
+  name: "AnalyzeView",
   setup() {
-    const count = ref({} as Total);
-    const todayIp = ref<string[]>();
-    const graphData = ref(
-      {} as {
-        day: Today[];
-        week: Week[];
-        month: Month[];
-      },
-    );
-    const topPaths = ref([] as Path[]);
-    const loading = ref(true);
-
-    onBeforeMount(async () => {
-      const data = (await analyzeApi.getAggregate()) as IPAggregate;
-      count.value = data.total;
-      todayIp.value = data.todayIps;
-      graphData.value = {
-        day: data.today,
-        week: data.weeks,
-        month: data.months,
-      };
-      topPaths.value = [...data.paths];
-      loading.value = false;
+    const { data, isPending, isError, refetch } = useQuery({
+      queryKey: ["dashboard", "overview"],
+      queryFn: dashboardApi.getOverview,
     });
+    const maxDailyCount = computed(() =>
+      Math.max(
+        1,
+        ...(data.value?.publicationTrend.map(point =>
+          point.posts + point.notes + point.pages + point.recently,
+        ) ?? [1]),
+      ),
+    );
 
     return () => (
-      <div class={styles.container}>
-        <StatsOverview
-          count={count.value}
-          todayIpCount={todayIp.value?.length || 0}
-          loading={loading.value}
-        />
+      <div class="mx-auto p-5 max-w-7xl space-y-7 md:p-8">
+        <header>
+          <h1 class="text-2xl font-semibold">数据</h1>
+          <p class="text-sm text-neutral-500 mt-1">基于站点内容、评论与读者的真实统计</p>
+        </header>
 
-        <ChartsSection
-          graphData={graphData.value}
-          topPaths={topPaths.value}
-          loading={loading.value}
-        />
+        {isPending.value
+          ? <NSkeleton height="320px" />
+          : isError.value || !data.value
+            ? (
+                <NEmpty description="数据加载失败">
+                  {{ extra: () => <NButton onClick={() => refetch()}>重试</NButton> }}
+                </NEmpty>
+              )
+            : (
+                <>
+                  <section class="grid gap-3 sm:grid-cols-3">
+                    <OverviewCard label="内容总数" value={data.value.stats.totalContent} icon={<FileTextIcon />} />
+                    <OverviewCard label="评论总数" value={data.value.stats.comments} icon={<CommentIcon />} />
+                    <OverviewCard label="读者总数" value={data.value.stats.readers} icon={<UsersIcon />} />
+                  </section>
 
-        <div class={styles.tabsContainer}>
-          <NTabs type="line" animated>
-            <NTabPane name="ip" tab="IP 记录">
-              <IpRecordSection
-                todayIp={todayIp.value}
-                loading={loading.value}
-              />
-            </NTabPane>
-
-            <NTabPane name="path" tab="访问路径">
-              <AnalyzeDataTable />
-            </NTabPane>
-
-            <NTabPane name="activity" tab="访客活动">
-              <GuestActivity />
-            </NTabPane>
-
-            <NTabPane name="rank" tab="阅读排名">
-              <ReadingRank />
-            </NTabPane>
-          </NTabs>
-        </div>
-      </div>
-    );
-  },
-});
-
-const StatsOverview = defineComponent({
-  props: {
-    count: {
-      type: Object as () => Total,
-      required: true,
-    },
-    todayIpCount: {
-      type: Number,
-      required: true,
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const stats = computed(() => [
-      {
-        label: "总访问量 (PV)",
-        value: props.count.callTime || 0,
-        icon: EyeIcon,
-      },
-      {
-        label: "独立访客 (UV)",
-        value: props.count.uv || 0,
-        icon: UsersIcon,
-      },
-      {
-        label: "今日访问 IP",
-        value: props.todayIpCount,
-        icon: GlobeIcon,
-      },
-      {
-        label: "平均访问深度",
-        value: props.count.uv
-          ? (props.count.callTime / props.count.uv).toFixed(1)
-          : "0",
-        icon: RouteIcon,
-      },
-    ]);
-
-    return () => (
-      <div class={styles.statsGrid} role="region" aria-label="访问统计概览">
-        {props.loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                class={[styles.statCard, "flex items-center justify-between"]}
-              >
-                <NSkeleton text style={{ width: "120px" }} />
-                <NSkeleton text style={{ width: "60px", height: "28px" }} />
-              </div>
-            ))
-          : stats.value.map(stat => (
-              <div key={stat.label} class={styles.statCard}>
-                <stat.icon class={styles.statIcon} aria-hidden="true" />
-                <div class={styles.statLabel}>{stat.label}</div>
-                <div class={styles.statValue}>
-                  {stat.value.toLocaleString()}
-                </div>
-              </div>
-            ))}
-      </div>
-    );
-  },
-});
-
-const ChartsSection = defineComponent({
-  props: {
-    graphData: {
-      type: Object as () => { day: Today[]; week: Week[]; month: Month[] },
-      required: true,
-    },
-    topPaths: {
-      type: Array as () => Path[],
-      required: true,
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const trendChart = ref<HTMLDivElement>();
-    const articlesChart = ref<HTMLDivElement>();
-    const trafficChart = ref<HTMLDivElement>();
-    const deviceChart = ref<HTMLDivElement>();
-    const charts: Record<string, Chart | null> = {
-      trend: null,
-      articles: null,
-      traffic: null,
-      device: null,
-    };
-
-    const topArticles = ref<ReadingRankItem[]>([]);
-    const trafficSource = ref<TrafficSourceResponse | null>(null);
-    const deviceDistribution = ref<DeviceDistributionResponse | null>(null);
-    const chartsLoading = ref(true);
-
-    const isDark = () => document.documentElement.classList.contains("dark");
-    const getTextColor = () => (isDark() ? "#a3a3a3" : "#525252");
-
-    const fetchChartsData = async () => {
-      chartsLoading.value = true;
-      try {
-        const [articlesRes, trafficRes, deviceRes] = await Promise.all([
-          activityApi.getTopReadings(),
-          analyzeApi.getTrafficSource(),
-          analyzeApi.getDeviceDistribution(),
-        ]);
-        topArticles.value = articlesRes.slice(0, 5);
-        trafficSource.value = trafficRes;
-        deviceDistribution.value = deviceRes;
-      } catch (e) {
-        console.error("Failed to fetch charts data:", e);
-      } finally {
-        chartsLoading.value = false;
-      }
-    };
-
-    function renderTrendChart(
-      element: HTMLElement | undefined,
-      weekData: Week[],
-    ) {
-      if (!element || !weekData?.length)
-        return;
-
-      if (charts.trend) {
-        charts.trend.destroy();
-      }
-
-      const textColor = getTextColor();
-      const chart = new Chart({
-        container: element,
-        autoFit: true,
-        height: 250,
-        paddingTop: 30,
-        paddingRight: 20,
-        paddingBottom: 50,
-        paddingLeft: 40,
-      });
-      charts.trend = chart;
-
-      chart.options({
-        type: "view",
-        data: weekData,
-        scale: {
-          day: { range: [0, 1] },
-          value: { domainMin: 0, nice: true },
-        },
-        axis: {
-          x: { title: false, labelFill: textColor },
-          y: { title: false, labelFill: textColor },
-        },
-        legend: { color: { itemLabelFill: textColor } },
-        interaction: {
-          tooltip: { crosshairs: true, shared: true },
-        },
-        children: [
-          {
-            type: "line",
-            encode: { x: "day", y: "value", color: "key" },
-            style: { shape: "smooth" },
-          },
-          {
-            type: "point",
-            encode: { x: "day", y: "value", color: "key" },
-          },
-        ],
-      });
-
-      chart.render();
-    }
-
-    function renderArticlesChart(
-      element: HTMLElement | undefined,
-      articles: ReadingRankItem[],
-    ) {
-      if (!element || !articles?.length)
-        return;
-
-      if (charts.articles) {
-        charts.articles.destroy();
-      }
-
-      const textColor = getTextColor();
-      const chart = new Chart({
-        container: element,
-        autoFit: true,
-        height: 250,
-        paddingLeft: 120,
-        paddingRight: 30,
-      });
-      charts.articles = chart;
-
-      const sortedArticles = [...articles]
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      const data = sortedArticles.map((item, index) => ({
-        title: item.ref?.title || "未知标题",
-        count: item.count,
-        rank: index + 1,
-      }));
-
-      chart.options({
-        type: "interval",
-        data,
-        encode: { x: "title", y: "count", color: "rank" },
-        coordinate: { transform: [{ type: "transpose" }] },
-        scale: {
-          x: { domain: data.map(d => d.title) },
-          color: {
-            range: ["#f59e0b", "#fbbf24", "#fcd34d", "#a3a3a3", "#d4d4d4"],
-          },
-        },
-        axis: {
-          y: { title: false, labelFill: textColor },
-          x: {
-            title: false,
-            labelFill: textColor,
-            labelFormatter: (text: string) =>
-              text.length > 12 ? `${text.slice(0, 12)}...` : text,
-          },
-        },
-        legend: false,
-        tooltip: {
-          items: [
-            {
-              channel: "y",
-              name: "阅读量",
-              valueFormatter: (d: number) => `${d.toLocaleString()} 次`,
-            },
-          ],
-        },
-      });
-
-      chart.render();
-    }
-
-    function renderTrafficChart(
-      element: HTMLElement | undefined,
-      data: TrafficSourceResponse | null,
-    ) {
-      if (!element || !data?.categories?.length)
-        return;
-
-      if (charts.traffic) {
-        charts.traffic.destroy();
-      }
-
-      const textColor = getTextColor();
-      const chart = new Chart({
-        container: element,
-        autoFit: true,
-        height: 280,
-        paddingBottom: 40,
-      });
-      charts.traffic = chart;
-
-      chart.options({
-        type: "interval",
-        data: data.categories,
-        encode: { x: "name", y: "value", color: "name" },
-        transform: [{ type: "stackY" }],
-        coordinate: { type: "theta", innerRadius: 0.4 },
-        legend: {
-          color: {
-            position: "bottom",
-            layout: { justifyContent: "center" },
-            itemLabelFill: textColor,
-          },
-        },
-        labels: [
-          {
-            text: "value",
-            position: "outside",
-            style: { fill: textColor },
-          },
-        ],
-        tooltip: {
-          items: [{ channel: "y", valueFormatter: (d: number) => `${d} 次` }],
-        },
-      });
-
-      chart.render();
-    }
-
-    function renderDeviceChart(
-      element: HTMLElement | undefined,
-      data: DeviceDistributionResponse | null,
-    ) {
-      if (!element || !data?.devices?.length)
-        return;
-
-      if (charts.device) {
-        charts.device.destroy();
-      }
-
-      const textColor = getTextColor();
-      const chart = new Chart({
-        container: element,
-        autoFit: true,
-        height: 280,
-        paddingBottom: 40,
-      });
-      charts.device = chart;
-
-      chart.options({
-        type: "interval",
-        data: data.devices,
-        encode: { x: "name", y: "value", color: "name" },
-        transform: [{ type: "stackY" }],
-        coordinate: {
-          type: "theta",
-          innerRadius: 0.4,
-        },
-        legend: {
-          color: {
-            position: "bottom",
-            layout: { justifyContent: "center" },
-            itemLabelFill: textColor,
-          },
-        },
-        labels: [
-          {
-            text: "value",
-            position: "outside",
-            style: { fill: textColor },
-          },
-        ],
-        tooltip: {
-          items: [{ channel: "y", valueFormatter: (d: number) => `${d} 次` }],
-        },
-      });
-
-      chart.render();
-    }
-
-    onMounted(() => {
-      fetchChartsData();
-    });
-
-    onUnmounted(() => {
-      Object.values(charts).forEach(chart => chart?.destroy());
-    });
-
-    watch(
-      () => props.loading,
-      async (loading) => {
-        if (!loading && !isEmpty(toRaw(props.graphData))) {
-          await nextTick();
-          renderTrendChart(trendChart.value, props.graphData.week);
-        }
-      },
-    );
-
-    watch(chartsLoading, async (loading) => {
-      if (!loading) {
-        await nextTick();
-        if (topArticles.value?.length) {
-          renderArticlesChart(articlesChart.value, topArticles.value);
-        }
-        if (trafficSource.value) {
-          renderTrafficChart(trafficChart.value, trafficSource.value);
-        }
-        if (deviceDistribution.value) {
-          renderDeviceChart(deviceChart.value, deviceDistribution.value);
-        }
-      }
-    });
-
-    return () => (
-      <div class={styles.chartsGrid}>
-        <div class={styles.chartCard}>
-          <div class={styles.chartHeader}>
-            <h3 class={styles.chartTitle}>本周访问趋势</h3>
-            <span class={styles.chartSubtitle}>PV / UV 对比</span>
-          </div>
-          <div class={styles.chartContainer}>
-            {props.loading
-              ? (
-                  <NSkeleton animated height={250} />
-                )
-              : (
-                  <div ref={trendChart} />
-                )}
-          </div>
-        </div>
-
-        <div class={styles.chartCard}>
-          <div class={styles.chartHeader}>
-            <h3 class={styles.chartTitle}>热门文章（近 14 天）</h3>
-            <span class={styles.chartSubtitle}>阅读量 Top 5</span>
-          </div>
-          <div class={styles.chartContainer}>
-            {chartsLoading.value
-              ? (
-                  <NSkeleton animated height={250} />
-                )
-              : topArticles.value.length === 0
-                ? (
-                    <div class={styles.empty}>
-                      <p class={styles.emptyDescription}>暂无阅读数据</p>
-                    </div>
-                  )
-                : (
-                    <div ref={articlesChart} />
-                  )}
-          </div>
-        </div>
-
-        <div class={styles.chartCard}>
-          <div class={styles.chartHeader}>
-            <h3 class={styles.chartTitle}>流量来源</h3>
-            <span class={styles.chartSubtitle}>最近 7 天</span>
-          </div>
-          <div class={styles.chartContainer}>
-            {chartsLoading.value
-              ? (
-                  <NSkeleton animated height={250} />
-                )
-              : !trafficSource.value?.categories?.length
-                  ? (
-                      <div class={styles.empty}>
-                        <p class={styles.emptyDescription}>暂无流量来源数据</p>
+                  <section class="border border-neutral-200 rounded-lg p-5 dark:border-neutral-800">
+                    <div class="mb-6 flex items-center justify-between">
+                      <div>
+                        <h2 class="font-medium">近 30 天发布趋势</h2>
+                        <p class="text-xs text-neutral-500 mt-1">文章、手记、页面与说说的每日发布量</p>
                       </div>
-                    )
-                  : (
-                      <div ref={trafficChart} />
-                    )}
-          </div>
-        </div>
-
-        <div class={styles.chartCard}>
-          <div class={styles.chartHeader}>
-            <h3 class={styles.chartTitle}>设备分布</h3>
-            <span class={styles.chartSubtitle}>最近 7 天</span>
-          </div>
-          <div class={styles.chartContainer}>
-            {chartsLoading.value
-              ? (
-                  <NSkeleton animated height={250} />
-                )
-              : !deviceDistribution.value?.devices?.length
-                  ? (
-                      <div class={styles.empty}>
-                        <p class={styles.emptyDescription}>暂无设备数据</p>
-                      </div>
-                    )
-                  : (
-                      <div ref={deviceChart} />
-                    )}
-          </div>
-        </div>
-      </div>
-    );
-  },
-});
-
-const IpRecordSection = defineComponent({
-  props: {
-    todayIp: {
-      type: Array as () => string[],
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const modal = useDialog();
-
-    return () => (
-      <div class={styles.ipSection}>
-        {props.loading
-          ? (
-              <div class={styles.ipGrid}>
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <NSkeleton
-                    key={i}
-                    text
-                    style={{ height: "40px", borderRadius: "8px" }}
-                  />
-                ))}
-              </div>
-            )
-          : !props.todayIp?.length
-              ? (
-                  <div class={styles.empty} role="status">
-                    <div class={styles.emptyIcon}>
-                      <GlobeIcon />
+                      <ChartIcon class="text-neutral-400 size-5" />
                     </div>
-                    <h3 class={styles.emptyTitle}>暂无 IP 记录</h3>
-                    <p class={styles.emptyDescription}>今天还没有访问记录</p>
-                  </div>
-                )
-              : (
-                  <>
-                    <div class={styles.ipSectionHeader}>
-                      <h3 class={styles.ipSectionTitle}>今日访问 IP</h3>
-                      <span class={styles.ipCount}>
-                        {props.todayIp.length}
-                        {" "}
-                        个
-                      </span>
-                    </div>
-
-                    <div class={styles.ipGrid}>
-                      {props.todayIp.slice(0, 20).map(ip => (
-                        <IpInfoPopover
-                          key={ip}
-                          ip={ip}
-                          triggerEl={(
-                            <button
-                              type="button"
-                              class={styles.ipCard}
-                              aria-label={`查看 IP ${ip} 的详情`}
-                            >
-                              <GlobeIcon class={styles.ipIcon} />
-                              <span class={styles.ipAddress}>{ip}</span>
-                            </button>
-                          )}
-                        />
+                    <div class="h-48 flex gap-1 items-end">
+                      {data.value.publicationTrend.map(point => (
+                        <TrendBar key={point.date} point={point} max={maxDailyCount.value} />
                       ))}
                     </div>
+                    <div class="text-xs text-neutral-400 mt-3 flex justify-between">
+                      <span>{data.value.publicationTrend[0]?.date}</span>
+                      <span>{data.value.publicationTrend.at(-1)?.date}</span>
+                    </div>
+                  </section>
 
-                    {props.todayIp.length > 20 && (
-                      <div class={styles.viewMoreButton}>
-                        <NButton
-                          round
-                          onClick={() => {
-                            modal.create({
-                              title: `今天所有请求的 IP (${props.todayIp?.length} 个)`,
-                              content: () => (
-                                <NDataTable
-                                  virtualScroll
-                                  maxHeight={400}
-                                  data={props.todayIp?.map(i => ({ ip: i }))}
-                                  columns={[
-                                    {
-                                      title: "IP 地址",
-                                      key: "ip",
-                                      render(rowData) {
-                                        const ip = rowData.ip;
-                                        return (
-                                          <IpInfoPopover
-                                            ip={ip}
-                                            triggerEl={(
-                                              <NButton
-                                                size="tiny"
-                                                quaternary
-                                                type="primary"
-                                              >
-                                                {ip}
-                                              </NButton>
-                                            )}
-                                          />
-                                        );
-                                      },
-                                    },
-                                  ]}
-                                />
-                              ),
-                            });
-                          }}
-                        >
-                          查看全部
-                          {" "}
-                          {props.todayIp.length}
-                          {" "}
-                          个 IP
-                        </NButton>
+                  <section class="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+                    <div class="border border-neutral-200 rounded-lg p-5 dark:border-neutral-800">
+                      <h2 class="font-medium">内容构成</h2>
+                      <div class="mt-5 space-y-4">
+                        <Composition label="文章" value={data.value.stats.posts} total={data.value.stats.totalContent} tone="bg-blue-500" />
+                        <Composition label="手记" value={data.value.stats.notes} total={data.value.stats.totalContent} tone="bg-emerald-500" />
+                        <Composition label="页面" value={data.value.stats.pages} total={data.value.stats.totalContent} tone="bg-amber-500" />
+                        <Composition label="说说" value={data.value.stats.recently} total={data.value.stats.totalContent} tone="bg-violet-500" />
                       </div>
-                    )}
-                  </>
-                )}
+                    </div>
+
+                    <div class="border border-neutral-200 rounded-lg p-5 dark:border-neutral-800">
+                      <h2 class="font-medium mb-4">每日明细</h2>
+                      <NDataTable
+                        size="small"
+                        bordered={false}
+                        maxHeight={360}
+                        data={[...data.value.publicationTrend].reverse()}
+                        columns={trendColumns}
+                        rowKey={(row: PublicationPoint) => row.date}
+                      />
+                    </div>
+                  </section>
+                </>
+              )}
       </div>
     );
   },
 });
+
+const OverviewCard = defineComponent({
+  props: { label: String, value: Number, icon: Object },
+  setup(props) {
+    return () => (
+      <div class="border border-neutral-200 rounded-lg p-4 dark:border-neutral-800">
+        <div class="text-neutral-500 flex items-center gap-2 text-sm">{props.icon}{props.label}</div>
+        <div class="text-3xl font-semibold mt-3 tabular-nums">{props.value?.toLocaleString()}</div>
+      </div>
+    );
+  },
+});
+
+const TrendBar = defineComponent({
+  props: {
+    point: { type: Object as () => PublicationPoint, required: true },
+    max: { type: Number, required: true },
+  },
+  setup(props) {
+    return () => {
+      const total = props.point.posts + props.point.notes + props.point.pages + props.point.recently;
+      return (
+        <div class="group h-full flex min-w-0 flex-1 flex-col justify-end" title={`${props.point.date}: ${total} 篇`}>
+          <div class="overflow-hidden rounded-t bg-neutral-100 dark:bg-neutral-800" style={{ height: `${Math.max(total ? 8 : 2, total / props.max * 100)}%` }}>
+            <div class="bg-blue-500" style={{ height: `${props.point.posts / Math.max(total, 1) * 100}%` }} />
+            <div class="bg-emerald-500" style={{ height: `${props.point.notes / Math.max(total, 1) * 100}%` }} />
+            <div class="bg-amber-500" style={{ height: `${props.point.pages / Math.max(total, 1) * 100}%` }} />
+            <div class="bg-violet-500" style={{ height: `${props.point.recently / Math.max(total, 1) * 100}%` }} />
+          </div>
+        </div>
+      );
+    };
+  },
+});
+
+const Composition = defineComponent({
+  props: { label: String, value: Number, total: Number, tone: String },
+  setup(props) {
+    return () => (
+      <div>
+        <div class="mb-1.5 flex text-sm justify-between">
+          <span>{props.label}</span>
+          <span class="text-neutral-500">{props.value}</span>
+        </div>
+        <div class="overflow-hidden rounded h-2 bg-neutral-100 dark:bg-neutral-800">
+          <div class={[props.tone, "h-full rounded"]} style={{ width: `${props.total ? props.value! / props.total * 100 : 0}%` }} />
+        </div>
+      </div>
+    );
+  },
+});
+
+const trendColumns = [
+  { title: "日期", key: "date", render: (row: PublicationPoint) => format(new Date(row.date), "MM-dd") },
+  { title: "文章", key: "posts" },
+  { title: "手记", key: "notes" },
+  { title: "页面", key: "pages" },
+  { title: "说说", key: "recently" },
+  {
+    title: "合计",
+    key: "total",
+    render: (row: PublicationPoint) => (
+      <NTag size="small" bordered={false}>
+        {row.posts + row.notes + row.pages + row.recently}
+      </NTag>
+    ),
+  },
+];

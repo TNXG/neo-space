@@ -1,51 +1,69 @@
-import type { FormDSL } from "~/components/config-form/types";
-
 import { request } from "~/utils/request";
 
-export interface SystemOptions {
-  [key: string]: any;
+export type OptionValue
+  = | null
+    | boolean
+    | number
+    | string
+    | OptionValue[]
+    | { [key: string]: OptionValue };
+
+export type SystemOptions = Record<string, OptionValue>;
+
+interface ApiResponse<T> {
+  code: number;
+  status: "success" | "failed";
+  message: string;
+  data: T | null;
 }
 
-export interface EmailTemplateResponse {
-  template: string;
-  props: any;
+async function unwrapResponse<T>(requestPromise: Promise<ApiResponse<T>>): Promise<T> {
+  const response = await requestPromise;
+  if (response.data === null) {
+    throw new Error(response.message || "配置数据为空");
+  }
+  return response.data;
 }
 
 export const optionsApi = {
-  // 获取所有配置
-  getAll: () => request.get<SystemOptions>("/options"),
+  /** 读取 options 集合中的全部配置文档。 */
+  getAll: () =>
+    unwrapResponse(
+      request.get<ApiResponse<SystemOptions>>("/options", {
+        bypassTransform: true,
+      }),
+    ),
 
-  // 获取指定配置（后端直接返回配置对象）
-  get: <T = any>(key: string) => request.get<T>(`/options/${key}`),
+  /** 读取单个配置文档的 value。 */
+  get: <T>(key: string) =>
+    unwrapResponse(
+      request.get<ApiResponse<T>>(`/options/${key}`, { bypassTransform: true }),
+    ),
 
   // 获取 URL 配置
   getUrl: () =>
-    request.get<{
+    unwrapResponse(
+      request.get<ApiResponse<{
       webUrl: string;
-      adminUrl: string;
       serverUrl: string;
-      wsUrl: string;
-    }>("/options/url"),
+      }>>("/options/url", { bypassTransform: true }),
+    ),
 
-  // 更新指定配置
-  patch: (key: string, data: any) =>
-    request.patch<void>(`/options/${key}`, { data }),
+  /** 以 options 集合现有 name 原样回写 value。 */
+  patch: <T extends OptionValue>(key: string, data: T) =>
+    unwrapResponse(
+      request.patch<ApiResponse<T>, T>(`/options/${key}`, {
+        data,
+        bypassTransform: true,
+      }),
+    ),
 
-  // 获取表单 DSL Schema
-  getFormSchema: () => request.get<FormDSL>("/config/form-schema"),
-
-  // 获取邮件模板
-  getEmailTemplate: (params: { type: string }) =>
-    request.get<EmailTemplateResponse>("/options/email/template", {
-      params,
-      bypassTransform: true,
-    }),
-
-  // 更新邮件模板
-  updateEmailTemplate: (params: { type: string }, data: { source: string }) =>
-    request.put<void>("/options/email/template", { params, data }),
-
-  // 删除邮件模板
-  deleteEmailTemplate: (params: { type: string }) =>
-    request.delete<void>("/options/email/template", { params }),
+  /** 完整替换一个配置文档，用于可视化表单保存。 */
+  replace: <T extends OptionValue>(key: string, data: T) =>
+    unwrapResponse(
+      request.put<ApiResponse<T>, T>(`/options/${key}`, {
+        data,
+        bypassTransform: true,
+      }),
+    ),
 };

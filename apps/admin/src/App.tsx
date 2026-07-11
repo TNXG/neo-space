@@ -14,7 +14,6 @@ import { defineComponent, onMounted, provide, ref, watchEffect } from "vue";
 import { RouterView } from "vue-router";
 import { Toaster } from "vue-sonner";
 
-import { AiTaskQueue } from "~/components/ai-task-queue";
 import { PortalInjectKey } from "~/hooks/use-portal-element";
 
 import { useUIStore } from "./stores/ui";
@@ -97,7 +96,6 @@ const App = defineComponent({
             <NElement>
               <Root />
             </NElement>
-            <AiTaskQueue />
           </NDialogProvider>
         </NConfigProvider>
       );

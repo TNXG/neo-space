@@ -2,10 +2,8 @@ import type { DataTableColumns } from "naive-ui";
 import type { TranslationEntry, TranslationEntryKeyPath } from "~/api/ai";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
-  Loader2 as LoaderIcon,
   Pencil as PencilIcon,
   RefreshCw as RefreshIcon,
-  Sparkles as SparklesIcon,
   Trash2 as TrashIcon,
 } from "lucide-vue-next";
 import {
@@ -48,7 +46,6 @@ export default defineComponent({
     const sizeRef = ref(20);
     const filterKeyPath = ref<TranslationEntryKeyPath | null>(null);
     const filterLang = ref<string | null>(null);
-    const generating = ref(false);
     const editingId = ref<string | null>(null);
     const editingText = ref("");
 
@@ -66,25 +63,8 @@ export default defineComponent({
       queryFn: () => aiApi.getTranslationEntries(queryParams.value),
     });
 
-    const entries = computed(() => data.value?.data ?? []);
+    const entries = computed(() => data.value?.items ?? []);
     const pagination = computed(() => data.value?.pagination);
-
-    const handleGenerate = async () => {
-      generating.value = true;
-      try {
-        const result = await aiApi.generateTranslationEntries();
-        toast.success(
-          `生成完成: 新增 ${result.created}，跳过 ${result.skipped}`,
-        );
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.ai.translationEntries(),
-        });
-      } catch {
-        toast.error("生成失败");
-      } finally {
-        generating.value = false;
-      }
-    };
 
     const handleDelete = async (id: string) => {
       try {
@@ -99,7 +79,7 @@ export default defineComponent({
     };
 
     const handleStartEdit = (row: TranslationEntry) => {
-      editingId.value = row.id;
+      editingId.value = row._id;
       editingText.value = row.translatedText;
     };
 
@@ -165,7 +145,7 @@ export default defineComponent({
         key: "translatedText",
         ellipsis: { tooltip: true },
         render: (row) => {
-          if (editingId.value === row.id) {
+          if (editingId.value === row._id) {
             return (
               <div class="flex gap-1 items-center">
                 <NInput
@@ -193,9 +173,9 @@ export default defineComponent({
       },
       {
         title: "创建时间",
-        key: "createdAt",
+        key: "created",
         width: 130,
-        render: row => <RelativeTime time={row.createdAt} />,
+        render: row => <RelativeTime time={row.created} />,
       },
       {
         title: "",
@@ -210,7 +190,7 @@ export default defineComponent({
             >
               {{ icon: () => <PencilIcon class="size-3.5" /> }}
             </NButton>
-            <NPopconfirm onPositiveClick={() => handleDelete(row.id)}>
+            <NPopconfirm onPositiveClick={() => handleDelete(row._id)}>
               {{
                 trigger: () => (
                   <NButton size="tiny" quaternary type="error">
@@ -229,21 +209,6 @@ export default defineComponent({
       watchEffect(() => {
         setActions(
           <div class="flex gap-2 items-center">
-            <HeaderActionButton
-              icon={
-                generating.value
-                  ? (
-                      <LoaderIcon class="animate-spin" />
-                    )
-                  : (
-                      <SparklesIcon />
-                    )
-              }
-              name="生成翻译"
-              variant="primary"
-              disabled={generating.value}
-              onClick={handleGenerate}
-            />
             <HeaderActionButton
               icon={<RefreshIcon />}
               name="刷新"
@@ -298,15 +263,13 @@ export default defineComponent({
           pagination={{
             page: pageRef.value,
             pageSize: sizeRef.value,
-            pageCount: pagination.value
-              ? Math.ceil(pagination.value.total / pagination.value.size)
-              : 1,
+            pageCount: pagination.value?.total_page ?? 1,
             onChange: (p: number) => {
               pageRef.value = p;
             },
           }}
           remote
-          rowKey={(row: TranslationEntry) => row.id}
+          rowKey={(row: TranslationEntry) => row._id}
         />
       </div>
     );

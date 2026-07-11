@@ -262,7 +262,7 @@ export const useShorthand = () => {
   return {
     create() {
       return openDialog({
-        title: "速记",
+        title: "说说",
         type: "success",
         initialContent: "",
         submitLabel: "保存",
@@ -271,11 +271,11 @@ export const useShorthand = () => {
     },
     edit(item: RecentlyModel) {
       return openDialog({
-        title: "编辑速记",
+        title: "编辑说说",
         type: "info",
         initialContent: item.content,
         submitLabel: "保存",
-        onSubmit: payload => recentlyApi.update(item.id, payload),
+        onSubmit: payload => recentlyApi.update(item._id, payload),
       });
     },
   };

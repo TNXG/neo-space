@@ -337,14 +337,8 @@ export interface SeoOptions {
 }
 
 export interface UrlOptions {
-  wsUrl?: string;
-  adminUrl?: string;
   serverUrl?: string;
   webUrl?: string;
-}
-
-export interface FeatureListOptions {
-  emailSubscribe: boolean;
 }
 
 export interface FriendLinkOptions {
@@ -367,26 +361,12 @@ export interface OAuthPublicOptions {
   github_client_id?: string;
 }
 
-export interface AlgoliaPublicOptions {
-  enable: boolean;
-  appId?: string;
-  indexName?: string;
-}
-
-export interface AdminExtraPublic {
-  title?: string;
-  background?: string;
-}
-
 export interface SiteConfig {
   seo: SeoOptions;
   url: UrlOptions;
-  features: FeatureListOptions;
   friend_link: FriendLinkOptions;
   comment: CommentOptionsPublic;
   oauth: OAuthPublicOptions;
-  algolia: AlgoliaPublicOptions;
-  admin_extra: AdminExtraPublic;
 }
 
 /**

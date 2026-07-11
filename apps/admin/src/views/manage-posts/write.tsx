@@ -484,7 +484,6 @@ const PostWriteView = defineComponent(() => {
       <TextBaseDrawer
         title="文章设定"
         show={drawerShow.value}
-        scope="post"
         onUpdateShow={(s) => {
           drawerShow.value = s;
         }}

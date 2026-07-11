@@ -318,6 +318,7 @@ const ManageComment = defineComponent(() => {
       router.replace({
         name: RouteName.Comment,
         query: {
+          ...(route.query.page ? { page: route.query.page } : {}),
           ...(state === CommentType.All ? {} : { state }),
           ...(id ? { id } : {}),
         },

@@ -20,71 +20,117 @@ export interface CreateLinkData {
   description?: string;
   type?: number;
   state?: number;
+  email?: string | null;
+  rssurl?: string | null;
+  techstack?: string[] | null;
 }
 
 export interface UpdateLinkData extends Partial<CreateLinkData> {}
 
 interface ApiResponse<T> {
+  code: number;
+  status: "success" | "failed";
+  message: string;
   data: T;
 }
 
-function unwrapApiResponse<T>(response: T | ApiResponse<T>): T {
-  if (
-    response
-    && typeof response === "object"
-    && "data" in response
-    && "status" in response
-  ) {
-    return (response as ApiResponse<T>).data;
-  }
+interface BackendPaginatedData<T> {
+  items: T[];
+  pagination: {
+    total: number;
+    current_page: number;
+    total_page: number;
+    size: number;
+    has_next_page: boolean;
+    has_prev_page: boolean;
+  };
+}
 
-  return response as T;
+function unwrapApiResponse<T>(response: ApiResponse<T>): T {
+  return response.data;
+}
+
+function normalizeLinkList(response: ApiResponse<BackendPaginatedData<LinkModel>>): LinkResponse {
+  const payload = unwrapApiResponse(response);
+  return {
+    data: payload.items,
+    pagination: {
+      total: payload.pagination.total,
+      currentPage: payload.pagination.current_page,
+      totalPage: payload.pagination.total_page,
+      size: payload.pagination.size,
+      hasNextPage: payload.pagination.has_next_page,
+      hasPrevPage: payload.pagination.has_prev_page,
+    },
+  };
 }
 
 export const linksApi = {
   // 获取友链列表
-  getList: (params?: GetLinksParams) =>
-    request.get<LinkResponse>("/links", { params }),
+  getList: async (params?: GetLinksParams) => {
+    const response = await request.get<ApiResponse<BackendPaginatedData<LinkModel>>>(
+      "/links/admin",
+      { params, bypassTransform: true },
+    );
+    return normalizeLinkList(response);
+  },
 
   // 获取状态计数
-  getStateCount: () => request.get<LinkStateCount>("/links/state"),
+  getStateCount: async () => {
+    const response = await request.get<ApiResponse<LinkStateCount>>("/links/state", {
+      bypassTransform: true,
+    });
+    return unwrapApiResponse(response);
+  },
 
   // 获取单个友链
-  getById: (id: string) => request.get<LinkModel>(`/links/${id}`),
+  getById: async (id: string) => {
+    const response = await request.get<ApiResponse<LinkModel>>(`/links/${id}`, {
+      bypassTransform: true,
+    });
+    return unwrapApiResponse(response);
+  },
 
   // 创建友链
-  create: (data: CreateLinkData) => request.post<LinkModel>("/links", { data }),
+  create: async (data: CreateLinkData) => {
+    const response = await request.post<ApiResponse<LinkModel>>("/links", {
+      data,
+      bypassTransform: true,
+    });
+    return unwrapApiResponse(response);
+  },
 
   // 更新友链
-  update: (id: string, data: UpdateLinkData) =>
-    request.put<LinkModel>(`/links/${id}`, { data }),
+  update: async (id: string, data: UpdateLinkData) => {
+    const response = await request.patch<ApiResponse<LinkModel>>(`/links/${id}`, {
+      data,
+      bypassTransform: true,
+    });
+    return unwrapApiResponse(response);
+  },
 
   // 删除友链
-  delete: (id: string) => request.delete<void>(`/links/${id}`),
+  delete: async (id: string) => {
+    const response = await request.delete<ApiResponse<void>>(`/links/${id}`, {
+      bypassTransform: true,
+    });
+    return unwrapApiResponse(response);
+  },
 
   // 更新友链状态
   updateState: (id: string, state: number) =>
-    request.patch<LinkModel>(`/links/${id}`, { data: { state } }),
+    linksApi.update(id, { state }),
 
   // 检查友链健康状态
   checkHealth: async (options?: { timeout?: number }) => {
-    const response = await request.get<
-      ApiResponse<Record<string, LinkHealthStatus>>
-    >("/links/health", { timeout: options?.timeout });
+    const response = await request.get<ApiResponse<Record<string, LinkHealthStatus>>>(
+      "/links/health",
+      { timeout: options?.timeout, bypassTransform: true },
+    );
 
     return unwrapApiResponse(response);
   },
 
   // 审核通过友链
-  auditPass: (id: string) => request.patch<LinkModel>(`/links/audit/${id}`),
-
-  // 审核友链并发送理由
-  auditWithReason: (id: string, state: number, reason: string) =>
-    request.post<void>(`/links/audit/reason/${id}`, {
-      data: { state, reason },
-    }),
-
-  // 迁移头像
-  migrateAvatars: (options?: { timeout?: number }) =>
-    request.post<void>("/links/avatar/migrate", { timeout: options?.timeout }),
+  auditPass: (id: string) => linksApi.updateState(id, 0),
 };

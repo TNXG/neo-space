@@ -38,7 +38,7 @@ const RefTypeLabels: Record<RecentlyRefTypes, string> = {
   [RecentlyRefTypes.Post]: "文章",
   [RecentlyRefTypes.Note]: "笔记",
   [RecentlyRefTypes.Page]: "页面",
-  [RecentlyRefTypes.Recently]: "速记",
+  [RecentlyRefTypes.Recently]: "说说",
 };
 
 const RecentlyItem = defineComponent({
@@ -93,7 +93,7 @@ const RecentlyItem = defineComponent({
       : null;
 
     return () => (
-      <article class={styles.card} aria-label="速记条目">
+      <article class={styles.card} aria-label="说说条目">
         <div class={styles.content}>
           <p class={styles.text}>{props.item.content}</p>
         </div>
@@ -133,17 +133,17 @@ const RecentlyItem = defineComponent({
           <div class={styles.meta}>
             <div class={styles.timeInfo}>
               <time
-                datetime={props.item.createdAt}
+                datetime={props.item.created}
                 class={styles.time}
                 aria-label="创建时间"
               >
-                <RelativeTime time={props.item.createdAt} />
+                <RelativeTime time={props.item.created} />
               </time>
-              {props.item.modifiedAt && (
+              {props.item.modified && (
                 <span class={styles.modified} aria-label="修改时间">
                   <span aria-hidden="true">·</span>
                   <span>编辑于</span>
-                  <RelativeTime time={props.item.modifiedAt} />
+                  <RelativeTime time={props.item.modified} />
                 </span>
               )}
             </div>
@@ -228,7 +228,7 @@ const RecentlyItem = defineComponent({
                   </NTooltip>
                 ),
                 default: () => (
-                  <span class="max-w-48 break-all">确定要删除这条速记吗？</span>
+                  <span class="max-w-48 break-all">确定要删除这条说说吗？</span>
                 ),
               }}
             </NPopconfirm>
@@ -252,11 +252,11 @@ const EmptyState = defineComponent({
         <div class={styles.emptyIcon} aria-hidden="true">
           <NoteIcon />
         </div>
-        <h3 class={styles.emptyTitle}>还没有速记</h3>
+        <h3 class={styles.emptyTitle}>还没有说说</h3>
         <p class={styles.emptyDescription}>记录你的灵感、想法或日常碎片</p>
         <NButton type="primary" onClick={props.onCreate}>
           <AddIcon class="mr-1.5" />
-          写一条速记
+          写一条说说
         </NButton>
       </div>
     );
@@ -308,7 +308,7 @@ export default defineComponent({
       <HeaderActionButton
         onClick={handleCreate}
         icon={<AddIcon />}
-        aria-label="新建速记"
+        aria-label="新建说说"
       />,
     );
 
@@ -328,11 +328,11 @@ export default defineComponent({
                     key="list"
                     class={styles.list}
                     role="feed"
-                    aria-label="速记列表"
+                    aria-label="说说列表"
                   >
                     {data.value.map((item, index) => (
                       <RecentlyItem
-                        key={item.id}
+                        key={item._id}
                         item={item}
                         onEdit={() => {
                           edit(item).then((res) => {
@@ -342,7 +342,7 @@ export default defineComponent({
                           });
                         }}
                         onDelete={async () => {
-                          await recentlyApi.delete(item.id);
+                          await recentlyApi.delete(item._id);
                           toast.success("删除成功");
                           data.value.splice(data.value.indexOf(item), 1);
                         }}

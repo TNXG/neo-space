@@ -9,36 +9,35 @@ import {
   Search as SearchIcon,
   StickyNote as StickyNoteIcon,
 } from "lucide-vue-next";
-import { NButton, NScrollbar, NTooltip } from "naive-ui";
+import { NButton, NInput, NScrollbar, NSelect } from "naive-ui";
 
 import { computed, defineComponent, ref, watch } from "vue";
 
+import { aiApi } from "~/api/ai";
 import { BorderlessInput } from "~/components/input/borderless-input";
-
-import { ArticleSelectorModal } from "./article-selector-modal";
 
 type ArticleRefType = ArticleInfo["type"];
 
 const RefTypeLabels: Record<ArticleRefType, string> = {
-  Post: "文章",
-  Note: "笔记",
-  Page: "页面",
-  Recently: "速记",
+  posts: "文章",
+  notes: "笔记",
+  pages: "页面",
+  recently: "速记",
 };
 
 const RefTypeIcons: Record<ArticleRefType, typeof FileTextIcon> = {
-  Post: FileTextIcon,
-  Note: StickyNoteIcon,
-  Page: FileTextIcon,
-  Recently: FileTextIcon,
+  posts: FileTextIcon,
+  notes: StickyNoteIcon,
+  pages: FileTextIcon,
+  recently: FileTextIcon,
 };
 
 interface Pager {
-  currentPage: number;
-  totalPage: number;
+  current_page: number;
+  total_page: number;
   total: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
+  has_prev_page: boolean;
+  has_next_page: boolean;
 }
 
 export const TranslationList = defineComponent({
@@ -79,9 +78,61 @@ export const TranslationList = defineComponent({
     },
   },
   setup(props) {
-    const showBatchModal = ref(false);
     const searchInputValue = ref("");
     const debouncedSearch = refDebounced(searchInputValue, 300);
+
+    const handleGenerate = () => {
+      const refId = ref("");
+      const refType = ref<ArticleRefType>("posts");
+      const targetLanguages = ref("en");
+      const currentDialog = dialog.create({
+        title: "生成内容翻译",
+        content: () => (
+          <div class="flex flex-col gap-3">
+            <NSelect
+              value={refType.value}
+              onUpdateValue={value => (refType.value = value)}
+              options={Object.entries(RefTypeLabels).map(([value, label]) => ({ value, label }))}
+            />
+            <NInput
+              value={refId.value}
+              onUpdateValue={value => (refId.value = value)}
+              placeholder="内容 _id"
+            />
+            <NInput
+              value={targetLanguages.value}
+              onUpdateValue={value => (targetLanguages.value = value)}
+              placeholder="目标语言，如 en, ja"
+            />
+          </div>
+        ),
+        positiveText: "生成",
+        negativeText: "取消",
+        onPositiveClick: async () => {
+          const languages = targetLanguages.value
+            .split(",")
+            .map(language => language.trim().toLowerCase())
+            .filter(Boolean);
+          if (!refId.value.trim() || languages.length === 0) {
+            window.$message.warning("请填写内容 _id 和目标语言");
+            return false;
+          }
+          try {
+            await aiApi.generateTranslations({
+              refId: refId.value.trim(),
+              refType: refType.value,
+              targetLanguages: languages,
+            });
+            window.$message.success("翻译生成成功");
+            props.onRefresh?.();
+            currentDialog.destroy();
+          } catch {
+            window.$message.error("翻译生成失败");
+            return false;
+          }
+        },
+      });
+    };
 
     watch(debouncedSearch, (val) => {
       props.onSearchChange?.(val);
@@ -91,12 +142,8 @@ export const TranslationList = defineComponent({
       () => props.search.trim().length > 0 && props.data.length === 0,
     );
 
-    const handleBatchSuccess = () => {
-      props.onRefresh?.();
-    };
-
     const handleScroll = (event: Event) => {
-      if (props.loading || !props.pager?.hasNextPage)
+      if (props.loading || !props.pager?.has_next_page)
         return;
       const target = event.target as HTMLElement;
       if (!target)
@@ -104,21 +151,15 @@ export const TranslationList = defineComponent({
       const reachedBottom
         = target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
       if (reachedBottom) {
-        props.onPageChange?.(props.pager.currentPage + 1);
+        props.onPageChange?.(props.pager.current_page + 1);
       }
     };
 
     return () => (
       <div class="flex flex-col h-full">
-        <ArticleSelectorModal
-          show={showBatchModal.value}
-          onClose={() => (showBatchModal.value = false)}
-          onSuccess={handleBatchSuccess}
-        />
-
         <div class="px-4 py-2 border-b border-neutral-200 flex flex-shrink-0 gap-2 h-12 items-center dark:border-neutral-800">
           <BorderlessInput
-            class="flex-1 -mx-4"
+            class="flex-1"
             value={searchInputValue.value}
             onUpdateValue={val => (searchInputValue.value = val)}
             placeholder="输入文章标题关键词"
@@ -134,22 +175,9 @@ export const TranslationList = defineComponent({
               prefix: () => <SearchIcon class="text-neutral-400 size-4" />,
             }}
           </BorderlessInput>
-
-          <NTooltip>
-            {{
-              trigger: () => (
-                <NButton
-                  size="tiny"
-                  quaternary
-                  circle
-                  onClick={() => (showBatchModal.value = true)}
-                >
-                  <PlusIcon class="size-4" />
-                </NButton>
-              ),
-              default: () => "批量生成翻译",
-            }}
-          </NTooltip>
+          <NButton size="small" type="primary" onClick={handleGenerate}>
+            {{ icon: () => <PlusIcon class="size-4" />, default: () => "生成" }}
+          </NButton>
         </div>
 
         <div class="flex-1 min-h-0">
@@ -182,11 +210,11 @@ export const TranslationList = defineComponent({
                       <div>
                         {props.data.map(group => (
                           <TranslationListItem
-                            key={group.article.id}
+                            key={group.article._id}
                             article={group.article}
                             translationCount={group.translations.length}
                             languages={group.translations.map(t => t.lang)}
-                            selected={props.selectedId === group.article.id}
+                            selected={props.selectedId === group.article._id}
                             onSelect={() => props.onSelect(group.article)}
                           />
                         ))}

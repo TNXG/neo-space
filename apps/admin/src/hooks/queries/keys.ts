@@ -91,14 +91,6 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.says.all, "detail", id] as const,
   },
 
-  // === 项目 ===
-  projects: {
-    all: ["projects"] as const,
-    lists: () => [...queryKeys.projects.all, "list"] as const,
-    list: (params?: object) => [...queryKeys.projects.lists(), params] as const,
-    detail: (id: string) => [...queryKeys.projects.all, "detail", id] as const,
-  },
-
   // === 用户 ===
   user: {
     all: ["user"] as const,
@@ -161,15 +153,8 @@ export const queryKeys = {
   ai: {
     all: ["ai"] as const,
     summaries: () => [...queryKeys.ai.all, "summaries"] as const,
-    summariesGrouped: (params?: object) =>
-      [...queryKeys.ai.summaries(), "grouped", params] as const,
-    summaryByRef: (refId: string) =>
-      [...queryKeys.ai.summaries(), "ref", refId] as const,
-    insights: () => [...queryKeys.ai.all, "insights"] as const,
-    insightsGrouped: (params: { page: number; search: string }) =>
-      [...queryKeys.ai.insights(), "grouped", params] as const,
-    insightsByRef: (refId: string) =>
-      [...queryKeys.ai.insights(), "ref", refId] as const,
+    summariesList: (params?: object) =>
+      [...queryKeys.ai.summaries(), "list", params] as const,
     translations: () => [...queryKeys.ai.all, "translations"] as const,
     translationsGrouped: (params?: object) =>
       [...queryKeys.ai.translations(), "grouped", params] as const,
@@ -184,6 +169,9 @@ export const queryKeys = {
       [...queryKeys.ai.all, "translation-entries"] as const,
     translationEntriesList: (params?: object) =>
       [...queryKeys.ai.translationEntries(), "list", params] as const,
+    timeCapsules: () => [...queryKeys.ai.all, "time-capsules"] as const,
+    timeCapsulesList: (params?: object) =>
+      [...queryKeys.ai.timeCapsules(), "list", params] as const,
   },
 
   // === Cron Task ===
@@ -235,14 +223,6 @@ export const queryKeys = {
     events: () => [...queryKeys.webhooks.all, "events"] as const,
     dispatches: (hookId: string) =>
       [...queryKeys.webhooks.all, "dispatches", hookId] as const,
-  },
-
-  // === Meta 预设 ===
-  metaPresets: {
-    all: ["metaPresets"] as const,
-    list: () => [...queryKeys.metaPresets.all, "list"] as const,
-    detail: (id: string) =>
-      [...queryKeys.metaPresets.all, "detail", id] as const,
   },
 
   // === Enrichment ===

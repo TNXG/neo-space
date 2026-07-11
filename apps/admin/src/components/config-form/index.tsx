@@ -10,7 +10,7 @@ import {
   NSelect,
   NSwitch,
 } from "naive-ui";
-import { defineComponent, inject, provide, ref, watch, watchEffect } from "vue";
+import { defineComponent, inject, provide } from "vue";
 
 import { SettingsItem } from "~/layouts/settings-layout";
 import { uuid } from "~/utils";
@@ -42,7 +42,7 @@ function matchShowWhenValue(actualValue: unknown, expected: unknown): boolean {
  */
 function shouldShowField(
   field: FormField,
-  formData: Ref<any>,
+  formData: Ref<Record<string, unknown>>,
   sectionPrefix: string,
 ): boolean {
   const { showWhen } = field.ui;
@@ -70,7 +70,7 @@ export const SectionFields = defineComponent({
       required: true,
     },
     formData: {
-      type: Object as PropType<Ref<any>>,
+      type: Object as PropType<Ref<Record<string, unknown>>>,
       required: true,
     },
     dataKeyPrefix: {
@@ -133,11 +133,14 @@ export const SectionFields = defineComponent({
                   value={get(formData.value, fieldPath, undefined)}
                   onUpdateValue={(val) => {
                     const parentPath = dataKeyPrefix;
-                    if (get(formData.value, parentPath)) {
+                    const parentValue = get(formData.value, parentPath);
+                    if (parentValue) {
                       set(formData.value, fieldPath, val);
                     } else {
                       set(formData.value, parentPath, {
-                        ...get(formData.value, parentPath, {}),
+                        ...(typeof parentValue === "object" && parentValue !== null && !Array.isArray(parentValue)
+                          ? parentValue
+                          : {}),
                         [field.key]: val,
                       });
                     }
@@ -158,28 +161,17 @@ export const FormFieldItem = defineComponent({
       required: true,
     },
     value: {
-      type: Object as any,
+      type: null as unknown as PropType<unknown>,
       required: false,
     },
     onUpdateValue: {
-      type: Function as PropType<(value: any) => void>,
+      type: Function as PropType<(value: unknown) => void>,
       required: true,
     },
   },
   setup(props) {
-    const innerValue = ref(props.value);
     const actionHandler = inject(ActionHandlerKey, undefined);
-
-    watch(
-      () => props.value,
-      (newVal) => {
-        innerValue.value = newVal;
-      },
-    );
-
-    watchEffect(() => {
-      props.onUpdateValue(innerValue.value);
-    });
+    const inputId = uuid();
 
     const renderComponent = () => {
       const { field } = props;
@@ -189,10 +181,10 @@ export const FormFieldItem = defineComponent({
         case "input":
           return (
             <NInput
-              inputProps={{ id: uuid() }}
-              value={innerValue.value}
+              inputProps={{ id: inputId }}
+              value={typeof props.value === "string" ? props.value : ""}
               onUpdateValue={(val: string | null) => {
-                innerValue.value = val;
+                props.onUpdateValue(val ?? "");
               }}
               placeholder={ui.placeholder}
               clearable
@@ -202,10 +194,10 @@ export const FormFieldItem = defineComponent({
         case "password":
           return (
             <NInput
-              inputProps={{ id: uuid() }}
-              value={innerValue.value}
+              inputProps={{ id: inputId }}
+              value={typeof props.value === "string" ? props.value : ""}
               onUpdateValue={(val: string | null) => {
-                innerValue.value = val;
+                props.onUpdateValue(val ?? "");
               }}
               type="password"
               showPasswordOn="click"
@@ -217,10 +209,10 @@ export const FormFieldItem = defineComponent({
         case "textarea":
           return (
             <NInput
-              inputProps={{ id: uuid() }}
-              value={innerValue.value}
+              inputProps={{ id: inputId }}
+              value={typeof props.value === "string" ? props.value : ""}
               onUpdateValue={(val: string | null) => {
-                innerValue.value = val;
+                props.onUpdateValue(val ?? "");
               }}
               type="textarea"
               autosize={{ maxRows: 5, minRows: 3 }}
@@ -232,9 +224,9 @@ export const FormFieldItem = defineComponent({
         case "number":
           return (
             <NInputNumber
-              value={innerValue.value}
+              value={typeof props.value === "number" ? props.value : null}
               onUpdateValue={(val: number | null) => {
-                innerValue.value = val;
+                props.onUpdateValue(val ?? 0);
               }}
               placeholder={ui.placeholder}
             />
@@ -243,9 +235,9 @@ export const FormFieldItem = defineComponent({
         case "switch":
           return (
             <NSwitch
-              value={innerValue.value}
+              value={Boolean(props.value)}
               onUpdateValue={(val: boolean) => {
-                innerValue.value = val;
+                props.onUpdateValue(val);
               }}
             />
           );
@@ -253,9 +245,9 @@ export const FormFieldItem = defineComponent({
         case "select":
           return (
             <NSelect
-              value={innerValue.value}
+              value={typeof props.value === "string" || typeof props.value === "number" ? props.value : null}
               onUpdateValue={(val: string | number | null) => {
-                innerValue.value = val;
+                props.onUpdateValue(val);
               }}
               options={ui.options}
               filterable
@@ -266,9 +258,9 @@ export const FormFieldItem = defineComponent({
         case "tags":
           return (
             <NDynamicTags
-              value={innerValue.value}
+              value={Array.isArray(props.value) ? props.value.filter((item): item is string => typeof item === "string") : []}
               onUpdateValue={(val: string[]) => {
-                innerValue.value = val;
+                props.onUpdateValue(val);
               }}
             />
           );

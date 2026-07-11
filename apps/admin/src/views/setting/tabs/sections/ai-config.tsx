@@ -7,19 +7,16 @@ import {
   Globe as GlobeIcon,
   Languages as LanguagesIcon,
   Plus as PlusIcon,
-  Telescope as TelescopeIcon,
-  X as XIcon,
   Zap as ZapIcon,
 } from "lucide-vue-next";
 import {
   NButton,
   NInput,
-  NInputNumber,
   NSelect,
   NSpace,
   NSwitch,
 } from "naive-ui";
-import { computed, defineComponent, ref, watch } from "vue";
+import { computed, defineComponent, ref } from "vue";
 import { toast } from "vue-sonner";
 
 import { aiApi } from "~/api/ai";
@@ -50,28 +47,13 @@ interface AIModelAssignment {
   model?: string;
 }
 
-interface AIConfig {
+export interface AIConfig {
   providers: AIProviderConfig[];
   summaryModel?: AIModelAssignment;
-  writerModel?: AIModelAssignment;
   commentReviewModel?: AIModelAssignment;
   translationModel?: AIModelAssignment;
-  insightsModel?: AIModelAssignment;
-  insightsTranslationModel?: AIModelAssignment;
   enableSummary: boolean;
-  enableAutoGenerateSummaryOnCreate?: boolean;
-  enableAutoGenerateSummaryOnUpdate?: boolean;
-  summaryTargetLanguages?: string[];
-  summaryMinTextLength?: number;
   enableTranslation?: boolean;
-  enableAutoGenerateTranslation?: boolean;
-  translationTargetLanguages?: string[];
-  enableInsights?: boolean;
-  enableAutoGenerateInsightsOnCreate?: boolean;
-  enableAutoGenerateInsightsOnUpdate?: boolean;
-  enableAutoTranslateInsights?: boolean;
-  insightsTargetLanguages?: string[];
-  insightsMinTextLength?: number;
 }
 
 interface ModelInfo {
@@ -189,28 +171,19 @@ const AIProviderRow = defineComponent({
     },
   },
   setup(props) {
-    const localProvider = ref({ ...props.provider });
-
-    watch(
-      () => props.provider,
-      (newVal) => {
-        localProvider.value = { ...newVal };
-      },
-      { deep: true },
-    );
-
     const handleChange = <K extends keyof AIProviderConfig>(
       field: K,
       value: AIProviderConfig[K],
     ) => {
-      ;(localProvider.value as AIProviderConfig)[field] = value;
-      props.onUpdate(localProvider.value);
+      props.onUpdate({ ...props.provider, [field]: value });
     };
 
     const handleTypeChange = (type: AIProviderType) => {
-      localProvider.value.type = type;
-      localProvider.value.defaultModel = getDefaultModelForType(type);
-      props.onUpdate(localProvider.value);
+      props.onUpdate({
+        ...props.provider,
+        type,
+        defaultModel: getDefaultModelForType(type),
+      });
     };
 
     const modelOptions = computed(() =>
@@ -222,19 +195,19 @@ const AIProviderRow = defineComponent({
 
     const showEndpoint = computed(
       () =>
-        localProvider.value.type === AIProviderType.OpenAICompatible
-        || localProvider.value.type === AIProviderType.OpenAI
-        || localProvider.value.type === AIProviderType.OpenRouter,
+        props.provider.type === AIProviderType.OpenAICompatible
+        || props.provider.type === AIProviderType.OpenAI
+        || props.provider.type === AIProviderType.OpenRouter,
     );
 
     const cardTitle = computed(() => {
-      if (localProvider.value.name)
-        return localProvider.value.name;
-      return getProviderTypeLabel(localProvider.value.type);
+      if (props.provider.name)
+        return props.provider.name;
+      return getProviderTypeLabel(props.provider.type);
     });
 
     const ProviderIcon = computed(() => {
-      switch (localProvider.value.type) {
+      switch (props.provider.type) {
         case AIProviderType.OpenAI:
           return ZapIcon;
         case AIProviderType.Anthropic:
@@ -255,7 +228,7 @@ const AIProviderRow = defineComponent({
           <div
             class={[
               "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-              localProvider.value.enabled
+              props.provider.enabled
                 ? "bg-primary/10 text-primary dark:bg-primary/20"
                 : "bg-neutral-100 text-neutral-400 dark:bg-neutral-800",
             ]}
@@ -267,14 +240,14 @@ const AIProviderRow = defineComponent({
               <span class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
                 {cardTitle.value}
               </span>
-              {localProvider.value.enabled && (
+              {props.provider.enabled && (
                 <span class="text-xs text-emerald-600 font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 inline-flex items-center dark:text-emerald-400 dark:bg-emerald-500/10">
                   已启用
                 </span>
               )}
             </div>
             <span class="text-xs text-neutral-500 dark:text-neutral-400">
-              {localProvider.value.defaultModel || "未设置模型"}
+              {props.provider.defaultModel || "未设置模型"}
             </span>
           </div>
           <div
@@ -286,8 +259,8 @@ const AIProviderRow = defineComponent({
                 variant="success"
                 icon={<CheckCircleOutlinedIcon />}
                 name="测试"
-                disabled={props.isTesting || !localProvider.value.defaultModel}
-                onClick={() => props.onTest?.(localProvider.value)}
+                disabled={props.isTesting || !props.provider.defaultModel}
+                onClick={() => props.onTest?.(props.provider)}
               />
               <DeleteConfirmButton
                 onDelete={() => props.onDelete()}
@@ -311,7 +284,7 @@ const AIProviderRow = defineComponent({
                   服务类型
                 </label>
                 <NSelect
-                  value={localProvider.value.type}
+                  value={props.provider.type}
                   onUpdateValue={handleTypeChange}
                   options={AIProviderTypeOptions}
                   size="small"
@@ -323,10 +296,10 @@ const AIProviderRow = defineComponent({
                   显示名称
                 </label>
                 <NInput
-                  value={localProvider.value.name}
+                  value={props.provider.name}
                   onUpdateValue={(v: string) => handleChange("name", v)}
                   placeholder={getNamePlaceholderForType(
-                    localProvider.value.type,
+                    props.provider.type,
                   )}
                   size="small"
                 />
@@ -339,12 +312,12 @@ const AIProviderRow = defineComponent({
                 <NInput
                   type="password"
                   showPasswordOn="click"
-                  value={localProvider.value.apiKey}
+                  value={props.provider.apiKey}
                   onUpdateValue={(v: string) => handleChange("apiKey", v)}
                   placeholder={
-                    localProvider.value.type === AIProviderType.Anthropic
+                    props.provider.type === AIProviderType.Anthropic
                       ? "sk-ant-..."
-                      : localProvider.value.type === AIProviderType.OpenRouter
+                      : props.provider.type === AIProviderType.OpenRouter
                         ? "sk-or-..."
                         : "sk-..."
                   }
@@ -358,13 +331,13 @@ const AIProviderRow = defineComponent({
                     Endpoint
                   </label>
                   <NInput
-                    value={localProvider.value.endpoint}
+                    value={props.provider.endpoint}
                     onUpdateValue={(v: string) => handleChange("endpoint", v)}
                     placeholder={
-                      localProvider.value.type
+                      props.provider.type
                       === AIProviderType.OpenAICompatible
                         ? "必填，如 https://api.deepseek.com"
-                        : localProvider.value.type === AIProviderType.OpenRouter
+                        : props.provider.type === AIProviderType.OpenRouter
                           ? "可选，默认 https://openrouter.ai/api/v1"
                           : "可选，留空使用默认"
                     }
@@ -381,7 +354,7 @@ const AIProviderRow = defineComponent({
                   {props.availableModels.length > 0
                     ? (
                         <NSelect
-                          value={localProvider.value.defaultModel}
+                          value={props.provider.defaultModel}
                           onUpdateValue={(v: string) =>
                             handleChange("defaultModel", v)}
                           options={modelOptions.value}
@@ -394,11 +367,11 @@ const AIProviderRow = defineComponent({
                       )
                     : (
                         <NInput
-                          value={localProvider.value.defaultModel}
+                          value={props.provider.defaultModel}
                           onUpdateValue={(v: string) =>
                             handleChange("defaultModel", v)}
                           placeholder={getModelPlaceholderForType(
-                            localProvider.value.type,
+                            props.provider.type,
                           )}
                           size="small"
                           class="min-w-[200px]"
@@ -421,7 +394,7 @@ const AIProviderRow = defineComponent({
                   启用此服务商
                 </span>
                 <NSwitch
-                  value={localProvider.value.enabled}
+                  value={props.provider.enabled}
                   onUpdateValue={(v: boolean) => handleChange("enabled", v)}
                 />
               </div>
@@ -456,16 +429,12 @@ const AIModelAssignmentRow = defineComponent({
     },
   },
   setup(props) {
-    const selectedProviderId = ref(props.assignment?.providerId || "");
-    const selectedModel = ref(props.assignment?.model || "");
-
-    watch(
-      () => props.assignment,
-      (newVal) => {
-        selectedProviderId.value = newVal?.providerId || "";
-        selectedModel.value = newVal?.model || "";
-      },
-      { deep: true },
+    const selectedProviderId = computed(() => props.assignment?.providerId || "");
+    const selectedProvider = computed(() =>
+      props.providers.find(provider => provider.id === selectedProviderId.value),
+    );
+    const selectedModel = computed(() =>
+      props.assignment?.model || selectedProvider.value?.defaultModel || "",
     );
 
     const providerOptions = computed(() =>
@@ -507,25 +476,20 @@ const AIModelAssignmentRow = defineComponent({
     });
 
     const handleProviderChange = (providerId: string) => {
-      selectedProviderId.value = providerId;
-      selectedModel.value = "";
-      emitUpdate();
+      const provider = props.providers.find(item => item.id === providerId);
+      props.onUpdate(
+        providerId
+          ? { providerId, model: provider?.defaultModel || undefined }
+          : undefined,
+      );
     };
 
     const handleModelChange = (model: string) => {
-      selectedModel.value = model;
-      emitUpdate();
-    };
-
-    const emitUpdate = () => {
-      if (!selectedProviderId.value) {
-        props.onUpdate(undefined);
-      } else {
-        props.onUpdate({
-          providerId: selectedProviderId.value,
-          model: selectedModel.value || undefined,
-        });
-      }
+      props.onUpdate(
+        selectedProviderId.value
+          ? { providerId: selectedProviderId.value, model: model || undefined }
+          : undefined,
+      );
     };
 
     return () => (
@@ -544,7 +508,7 @@ const AIModelAssignmentRow = defineComponent({
             value={selectedModel.value || null}
             onUpdateValue={handleModelChange}
             options={modelOptions.value}
-            placeholder="使用 Provider 默认模型"
+            placeholder="选择具体模型"
             clearable
             filterable
             tag
@@ -553,99 +517,12 @@ const AIModelAssignmentRow = defineComponent({
             disabled={!selectedProviderId.value}
           />
         </div>
-      </SettingsRow>
-    );
-  },
-});
-
-const TranslationLanguagesInput = defineComponent({
-  props: {
-    value: {
-      type: Array as PropType<string[]>,
-      default: () => [],
-    },
-    onUpdate: {
-      type: Function as PropType<(value: string[]) => void>,
-      required: true,
-    },
-    disabled: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const inputValue = ref("");
-
-    const handleAdd = () => {
-      const lang = inputValue.value.trim().toLowerCase();
-      if (!lang)
-        return;
-      if (props.value.includes(lang)) {
-        toast.warning(`语言 ${lang} 已存在`);
-        return;
-      }
-      if (lang.length !== 2) {
-        toast.warning("请使用 ISO 639-1 语言代码（2 个字母）");
-        return;
-      }
-      props.onUpdate([...props.value, lang]);
-      inputValue.value = "";
-    };
-
-    const handleRemove = (lang: string) => {
-      props.onUpdate(props.value.filter(l => l !== lang));
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleAdd();
-      }
-    };
-
-    return () => (
-      <div class="space-y-2">
-        <div class="flex gap-2 items-center">
-          <NInput
-            value={inputValue.value}
-            onUpdateValue={(v: string) => (inputValue.value = v)}
-            placeholder="输入语言代码，如 en, ja, ko"
-            size="small"
-            class="max-w-[200px]"
-            disabled={props.disabled}
-            onKeydown={handleKeyDown}
-          />
-          <NButton
-            size="small"
-            type="primary"
-            secondary
-            onClick={handleAdd}
-            disabled={props.disabled || !inputValue.value.trim()}
-          >
-            添加
-          </NButton>
-        </div>
-        {props.value.length > 0 && (
-          <div class="flex flex-wrap gap-1.5">
-            {props.value.map(lang => (
-              <span
-                key={lang}
-                class="text-xs text-neutral-700 font-medium px-2 py-1 rounded-md bg-neutral-100 inline-flex gap-1 items-center dark:text-neutral-300 dark:bg-neutral-800"
-              >
-                {lang.toUpperCase()}
-                {!props.disabled && (
-                  <button
-                    class="text-neutral-400 ml-0.5 p-0.5 rounded transition-colors hover:text-neutral-600 hover:bg-neutral-200 dark:hover:text-neutral-200 dark:hover:bg-neutral-700"
-                    onClick={() => handleRemove(lang)}
-                  >
-                    <XIcon class="size-3" />
-                  </button>
-                )}
-              </span>
-            ))}
-          </div>
+        {selectedProvider.value && selectedModel.value && (
+          <p class="text-xs text-neutral-500 mt-2 m-0 dark:text-neutral-400">
+            当前使用：{formatProviderLabel(selectedProvider.value)} / {selectedModel.value}
+          </p>
         )}
-      </div>
+      </SettingsRow>
     );
   },
 });
@@ -824,8 +701,23 @@ export const AIConfigSection = defineComponent({
         </SettingsSection>
 
         <SettingsSection
-          title="模型分配"
-          description="为不同功能分配 AI 模型"
+          title="评论 AI 审核"
+          description="明确指定垃圾评论审核使用的服务商与具体模型"
+          icon={CpuIcon}
+        >
+          <AIModelAssignmentRow
+            label="审核模型"
+            description="评论反垃圾只会使用这里指定的模型，不再自动选择第一个服务商"
+            assignment={config.value.commentReviewModel}
+            providers={config.value.providers || []}
+            providerModels={providerModels.value || {}}
+            onUpdate={a => updateConfig({ commentReviewModel: a })}
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title="内容模型"
+          description="为摘要与翻译功能分配模型"
           icon={CpuIcon}
         >
           <AIModelAssignmentRow
@@ -838,24 +730,6 @@ export const AIConfigSection = defineComponent({
           />
 
           <AIModelAssignmentRow
-            label="写作助手"
-            description="用于生成标题、Slug 等的模型"
-            assignment={config.value.writerModel}
-            providers={config.value.providers || []}
-            providerModels={providerModels.value || {}}
-            onUpdate={a => updateConfig({ writerModel: a })}
-          />
-
-          <AIModelAssignmentRow
-            label="评论审核"
-            description="用于审核评论的模型"
-            assignment={config.value.commentReviewModel}
-            providers={config.value.providers || []}
-            providerModels={providerModels.value || {}}
-            onUpdate={a => updateConfig({ commentReviewModel: a })}
-          />
-
-          <AIModelAssignmentRow
             label="翻译功能"
             description="用于生成文章翻译的模型"
             assignment={config.value.translationModel}
@@ -864,23 +738,6 @@ export const AIConfigSection = defineComponent({
             onUpdate={a => updateConfig({ translationModel: a })}
           />
 
-          <AIModelAssignmentRow
-            label="精读生成"
-            description="用于生成长篇精读的模型"
-            assignment={config.value.insightsModel}
-            providers={config.value.providers || []}
-            providerModels={providerModels.value || {}}
-            onUpdate={a => updateConfig({ insightsModel: a })}
-          />
-
-          <AIModelAssignmentRow
-            label="精读翻译"
-            description="用于翻译精读的模型，留空则复用翻译模型"
-            assignment={config.value.insightsTranslationModel}
-            providers={config.value.providers || []}
-            providerModels={providerModels.value || {}}
-            onUpdate={a => updateConfig({ insightsTranslationModel: a })}
-          />
         </SettingsSection>
 
         <SettingsSection
@@ -895,129 +752,6 @@ export const AIConfigSection = defineComponent({
             />
           </SettingsRow>
 
-          <SettingsRow
-            title="文章创建时自动生成摘要"
-            description="发布文章时自动生成摘要（需要先启用 AI 摘要）"
-          >
-            <NSwitch
-              value={config.value.enableAutoGenerateSummaryOnCreate}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoGenerateSummaryOnCreate: v })}
-              disabled={!config.value.enableSummary}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="文章更新时重新生成摘要"
-            description="文章内容变更时仅重新生成 hash 变化的语言"
-          >
-            <NSwitch
-              value={config.value.enableAutoGenerateSummaryOnUpdate}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoGenerateSummaryOnUpdate: v })}
-              disabled={!config.value.enableSummary}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="摘要目标语言"
-            description="自动生成摘要的目标语言列表，使用 ISO 639-1 语言代码"
-          >
-            <TranslationLanguagesInput
-              value={config.value.summaryTargetLanguages || []}
-              onUpdate={v => updateConfig({ summaryTargetLanguages: v })}
-              disabled={!config.value.enableSummary}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="自动生成最小文本长度"
-            description="正文字符数低于此值时跳过自动钩子，仅影响自动触发；0 表示不限"
-          >
-            <NInputNumber
-              value={config.value.summaryMinTextLength ?? 0}
-              min={0}
-              step={50}
-              onUpdateValue={v =>
-                updateConfig({ summaryMinTextLength: v ?? 0 })}
-              disabled={!config.value.enableSummary}
-            />
-          </SettingsRow>
-        </SettingsSection>
-
-        <SettingsSection
-          title="AI 精读"
-          description="在摘要之外输出长篇精读版本，含结构化章节"
-          icon={TelescopeIcon}
-        >
-          <SettingsRow title="启用 AI 精读">
-            <NSwitch
-              value={config.value.enableInsights}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableInsights: v })}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="文章创建时自动生成精读"
-            description="发布文章时自动生成精读（需要先启用 AI 精读）"
-          >
-            <NSwitch
-              value={config.value.enableAutoGenerateInsightsOnCreate}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoGenerateInsightsOnCreate: v })}
-              disabled={!config.value.enableInsights}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="文章更新时重新生成精读"
-            description="文章内容变更时重新生成精读"
-          >
-            <NSwitch
-              value={config.value.enableAutoGenerateInsightsOnUpdate}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoGenerateInsightsOnUpdate: v })}
-              disabled={!config.value.enableInsights}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="自动翻译精读"
-            description="精读生成后按目标语言自动翻译"
-          >
-            <NSwitch
-              value={config.value.enableAutoTranslateInsights}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoTranslateInsights: v })}
-              disabled={!config.value.enableInsights}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="精读目标语言"
-            description="自动翻译精读的目标语言列表，使用 ISO 639-1 语言代码"
-          >
-            <TranslationLanguagesInput
-              value={config.value.insightsTargetLanguages || []}
-              onUpdate={v => updateConfig({ insightsTargetLanguages: v })}
-              disabled={!config.value.enableInsights}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="自动生成最小文本长度"
-            description="正文字符数低于此值时跳过自动钩子，仅影响自动触发；0 表示不限"
-          >
-            <NInputNumber
-              value={config.value.insightsMinTextLength ?? 0}
-              min={0}
-              step={50}
-              onUpdateValue={v =>
-                updateConfig({ insightsMinTextLength: v ?? 0 })}
-              disabled={!config.value.enableInsights}
-            />
-          </SettingsRow>
         </SettingsSection>
 
         <SettingsSection
@@ -1033,28 +767,6 @@ export const AIConfigSection = defineComponent({
             />
           </SettingsRow>
 
-          <SettingsRow
-            title="自动生成翻译"
-            description="发布文章时自动生成翻译（需要先启用 AI 翻译）"
-          >
-            <NSwitch
-              value={config.value.enableAutoGenerateTranslation}
-              onUpdateValue={(v: boolean) =>
-                updateConfig({ enableAutoGenerateTranslation: v })}
-              disabled={!config.value.enableTranslation}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            title="翻译目标语言"
-            description="自动生成翻译的目标语言列表，使用 ISO 639-1 语言代码"
-          >
-            <TranslationLanguagesInput
-              value={config.value.translationTargetLanguages || []}
-              onUpdate={v => updateConfig({ translationTargetLanguages: v })}
-              disabled={!config.value.enableTranslation}
-            />
-          </SettingsRow>
         </SettingsSection>
       </div>
     );

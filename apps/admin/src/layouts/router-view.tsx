@@ -14,7 +14,9 @@ const $RouterView = defineComponent({
               <Suspense>
                 {{
                   default: () =>
-                    Component ? cloneVNode(Component, { key: route.fullPath }) : null,
+                    Component
+                      ? cloneVNode(Component, { key: String(route.name ?? route.path) })
+                      : null,
 
                   fallback() {
                     return (

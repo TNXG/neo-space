@@ -10,7 +10,6 @@ import {
   Code as CodeIcon,
   Settings as CogsIcon,
   MessageSquare as CommentIcon,
-  MessagesSquare as CommentsIcon,
   Bug as DebugIcon,
   FileEdit as DraftIcon,
   MoreHorizontal as EllipsisHIcon,
@@ -18,12 +17,8 @@ import {
   Eye as EyeIcon,
   File as FileIcon,
   FileText as FileTextIcon,
-  Beaker as FlaskIcon,
-  FunctionSquare as FunctionIcon,
   Hourglass as HourglassIcon,
   Languages as LanguagesIcon,
-  Link as LinkIcon,
-  ListTodo as ListTodoIcon,
   FileCode2 as MarkdownIcon,
   Hammer as MidHammer,
   Pencil as PencilAltIcon,
@@ -34,12 +29,8 @@ import {
   Sparkles as SparklesIcon,
   BellOff as SubscribeIcon,
   Gauge as TachometerAltIcon,
-  Telescope as TelescopeIcon,
-  Layout as TemplateIcon,
   Database as TopicIcon,
-  Undo2 as UndoAltIcon,
   Users as UserFriendsIcon,
-  Webhook as WebhookIcon,
 } from "lucide-vue-next";
 
 import { AppLayout } from "~/layouts/app-layout";
@@ -214,33 +205,13 @@ export const routeForMenu: Array<RouteRecordRaw> = [
     component: () => import("../views/reader"),
   },
   {
-    path: "/says",
-    name: RouteName.ListSay,
-    meta: {
-      title: "说说",
-      icon: <CommentsIcon />,
-      query: { page: 1 },
-    },
-    component: () => import("../views/manage-says/list"),
-  },
-  {
     path: "/recently",
     name: RouteName.ListShortHand,
     meta: {
-      title: "速记",
+      title: "说说",
       icon: <PencilIcon />,
     },
     component: () => import("../views/shorthand"),
-  },
-  {
-    path: "/projects",
-    name: RouteName.ListProject,
-    meta: {
-      title: "项目",
-      icon: <FlaskIcon />,
-      query: { page: 1 },
-    },
-    component: () => import("../views/manage-project/index"),
   },
   {
     path: "/friends",
@@ -262,6 +233,7 @@ export const routeForMenu: Array<RouteRecordRaw> = [
     },
 
     redirect: "/ai/summary",
+    component: $RouterView,
     children: [
       {
         path: "summary",
@@ -271,15 +243,6 @@ export const routeForMenu: Array<RouteRecordRaw> = [
           icon: <FileTextIcon />,
         },
         component: () => import("../views/ai/summary"),
-      },
-      {
-        path: "insights",
-        name: RouteName.AiInsights,
-        meta: {
-          title: "精读",
-          icon: <TelescopeIcon />,
-        },
-        component: () => import("../views/ai/insights"),
       },
       {
         path: "translation",
@@ -298,24 +261,6 @@ export const routeForMenu: Array<RouteRecordRaw> = [
           icon: <BookIcon />,
         },
         component: () => import("../views/ai/translation-entries"),
-      },
-      {
-        path: "tasks",
-        name: RouteName.AiTasks,
-        meta: {
-          title: "任务队列",
-          icon: <ListTodoIcon />,
-        },
-        component: () => import("../views/ai/tasks"),
-      },
-      {
-        path: "slug-backfill",
-        name: RouteName.AiSlugBackfill,
-        meta: {
-          title: "Slug 回填",
-          icon: <LinkIcon />,
-        },
-        component: () => import("../views/ai/slug-backfill"),
       },
       {
         path: "time-capsule",
@@ -349,111 +294,6 @@ export const routeForMenu: Array<RouteRecordRaw> = [
     component: () => import("../views/setting"),
   },
 
-  {
-    path: "/extra-features",
-    name: RouteName.Other,
-    meta: { title: "附加功能", icon: <EllipsisHIcon /> },
-    component: $RouterView,
-    children: [
-      {
-        path: "snippets",
-        name: RouteName.Snippet,
-        meta: {
-          title: "配置与云函数",
-          icon: <FunctionIcon />,
-        },
-        component: () => import("../views/extra-features/snippets"),
-      },
-
-      {
-        path: "subscribe",
-        name: RouteName.Subscribe,
-        meta: {
-          title: "订阅",
-          icon: <SubscribeIcon />,
-        },
-        component: () => import("../views/extra-features/subscribe"),
-      },
-      {
-        path: "webhooks",
-        name: RouteName.Webhook,
-        meta: {
-          title: "Webhooks",
-          icon: <WebhookIcon />,
-        },
-        component: () => import("../views/extra-features/webhook"),
-      },
-
-      {
-        path: "assets/template",
-        name: RouteName.AssetTemplate,
-        meta: {
-          title: "模板编辑",
-          icon: <TemplateIcon />,
-        },
-        component: () => import("../views/extra-features/assets/template"),
-      },
-      {
-        path: "markdown",
-        name: RouteName.Markdown,
-        meta: {
-          title: "Markdown 导入导出",
-
-          icon: <MarkdownIcon />,
-        },
-        component: () => import("../views/extra-features/markdown-helper"),
-      },
-    ],
-  },
-  {
-    name: RouteName.Maintain,
-    path: "/maintenance",
-    component: $RouterView,
-    redirect: "/maintenance/cron",
-    meta: {
-      title: "维护",
-      icon: <MidHammer />,
-    },
-    children: [
-      {
-        path: "cron",
-        name: RouteName.Cron,
-        meta: {
-          title: "任务",
-          icon: <ClockIcon />,
-        },
-        component: () => import("../views/maintenance/cron"),
-      },
-      {
-        path: "backup",
-        name: RouteName.Backup,
-        meta: {
-          title: "备份",
-          icon: <UndoAltIcon />,
-        },
-        component: () => import("../views/maintenance/backup"),
-      },
-      {
-        path: "enrichment",
-        name: RouteName.Enrichment,
-        meta: {
-          title: "Enrichment 缓存",
-          icon: <EnrichmentIcon />,
-        },
-        component: () => import("../views/enrichment"),
-      },
-      {
-        path: "search-index",
-        name: RouteName.SearchIndex,
-        meta: {
-          title: "搜索索引",
-          icon: <SearchIndexIcon />,
-          query: { page: 1 },
-        },
-        component: () => import("../views/maintenance/search-index"),
-      },
-    ],
-  },
 ];
 
 export const routes: RouteRecordRaw[] = [

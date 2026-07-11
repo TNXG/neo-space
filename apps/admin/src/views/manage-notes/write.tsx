@@ -522,7 +522,6 @@ const NoteWriteView = defineComponent(() => {
         title="日记设定"
         data={data}
         show={drawerShow.value}
-        scope="note"
         onUpdateShow={(s) => {
           drawerShow.value = s;
         }}

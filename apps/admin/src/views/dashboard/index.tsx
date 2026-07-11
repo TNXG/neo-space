@@ -1,730 +1,187 @@
-import type { PropType, VNode } from "vue";
-import type { Stat } from "~/models/stat";
-import { Icon } from "@vicons/utils";
-import { useStorage } from "@vueuse/core";
+import type { DashboardContent, DashboardContentType } from "~/api/dashboard";
+import { useQuery } from "@tanstack/vue-query";
+import { format } from "date-fns";
 import {
-  Activity as ActivityIcon,
-  Link as AddLinkFilledIcon,
-  ChartScatter as BubbleChartFilledIcon,
-  MessageCircle as ChatbubblesSharpIcon,
-  Code as CodeIcon,
-  MessageSquare as CommentIcon,
-  MessagesSquare as CommentsIcon,
-  Puzzle as ExtensionIcon,
-  File as FileIcon,
-  UserRound as GuestIcon,
-  Heart as HeartIcon,
+  BookOpen as BookIcon,
+  FileText as FileTextIcon,
   Link as LinkIcon,
-  Menu as MenuIcon,
-  BookOpen as NotebookMinimalistic,
-  StickyNote as NoteIcon,
-  Radio as OnlinePredictionFilledIcon,
-  PanelLeftOpen,
+  MessageSquare as CommentIcon,
   Pencil as PencilIcon,
-  AlignLeft as PhAlignLeft,
-  RefreshCw as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
+  StickyNote as NoteIcon,
+  Users as UsersIcon,
 } from "lucide-vue-next";
-import { NButton, NElement, NGi, NGrid, NH1, NIcon, NP } from "naive-ui";
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watchEffect,
-} from "vue";
+import { NButton, NEmpty, NScrollbar, NSkeleton, NTag } from "naive-ui";
+import { defineComponent } from "vue";
+import { RouterLink, useRouter } from "vue-router";
 
-import { useRouter } from "vue-router";
-import { toast } from "vue-sonner";
-
-import { aggregateApi } from "~/api/aggregate";
-import { IpInfoPopover } from "~/components/ip-info";
-import { useShorthand } from "~/components/shorthand";
-import { useUpdateDetailModal } from "~/components/update-detail-modal";
-import { checkUpdateFromGitHub } from "~/external/api/github-check-update";
-import { usePortalElement } from "~/hooks/use-portal-element";
-import { useStoreRef } from "~/hooks/use-store-ref";
+import { dashboardApi } from "~/api/dashboard";
 import { useLayout } from "~/layouts/content";
 import { RouteName } from "~/router/name";
-import { AppStore } from "~/stores/app";
-import { UIStore } from "~/stores/ui";
-import { UserStore } from "~/stores/user";
-import { parseDate } from "~/utils";
-import { isNewerVersion } from "~/utils/version";
 
-import PKG from "../../../package.json";
-import { CategoryPie } from "./components/CategoryPie";
-import { CommentActivity } from "./components/CommentActivity";
-import { PublicationTrend } from "./components/PublicationTrend";
-import { SearchIndexRebuildCard } from "./components/SearchIndexRebuildCard";
-import { TagCloud } from "./components/TagCloud";
-import { TopArticles } from "./components/TopArticles";
-import { TrafficSource } from "./components/TrafficSource";
-import { UpdatePanel } from "./update-panel";
+const typeLabels: Record<DashboardContentType, string> = {
+  post: "文章",
+  note: "手记",
+  page: "页面",
+  recently: "说说",
+};
 
-const SectionTitle = defineComponent({
-  props: {
-    title: { type: String, required: true },
-    extra: { type: Object as PropType<VNode> },
-  },
-  setup(props, { slots }) {
-    return () => (
-      <div class="mb-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg text-neutral-700 font-medium dark:text-neutral-300">
-            {props.title}
-          </h3>
-          {slots.extra?.() || props.extra}
-        </div>
-        <div class="mt-2 bg-neutral-200 h-px dark:bg-neutral-700" />
-      </div>
-    );
-  },
-});
-
-const LiveStatItem = defineComponent({
-  props: {
-    label: { type: String, required: true },
-    value: { type: [Number, String], required: true },
-    icon: { type: Object as PropType<VNode>, required: true },
-    isLive: { type: Boolean, default: false },
-  },
-  setup(props) {
-    return () => (
-      <div class="p-4 rounded-lg bg-neutral-50 flex gap-4 items-center dark:bg-neutral-800/50">
-        <div class="shrink-0 relative">
-          {props.isLive && (
-            <span class="flex h-2.5 w-2.5 absolute -right-1 -top-1">
-              <span class="rounded-full bg-green-400 opacity-75 inline-flex h-full w-full absolute animate-ping" />
-              <span class="rounded-full bg-green-500 inline-flex h-2.5 w-2.5 relative" />
-            </span>
-          )}
-          <Icon class="text-xl text-neutral-400">{props.icon}</Icon>
-        </div>
-        <div>
-          <div class="text-xl font-semibold tabular-nums">
-            {typeof props.value === "number"
-              ? Intl.NumberFormat("en-us").format(props.value)
-              : props.value}
-          </div>
-          <div class="text-sm text-neutral-500">{props.label}</div>
-        </div>
-      </div>
-    );
-  },
-});
-
-const StatItem = defineComponent({
-  props: {
-    label: { type: String, required: true },
-    value: { type: [Number, String], required: true },
-    icon: { type: Object as PropType<VNode> },
-    onClick: { type: Function as PropType<() => void> },
-  },
-  setup(props) {
-    return () => (
-      <div
-        class={[
-          "flex items-center gap-3 rounded-md p-3 transition-colors",
-          props.onClick
-            ? "cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            : "",
-        ]}
-        onClick={props.onClick}
-      >
-        {props.icon && (
-          <Icon class="text-xl text-neutral-400 shrink-0">{props.icon}</Icon>
-        )}
-        <div class="flex-1 min-w-0">
-          <div class="text-sm text-neutral-500 truncate">{props.label}</div>
-          <div class="text-xl font-medium tabular-nums">
-            {typeof props.value === "number"
-              ? Intl.NumberFormat("en-us").format(props.value)
-              : props.value}
-          </div>
-        </div>
-      </div>
-    );
-  },
-});
-
-interface ActionItem {
-  name: string;
-  primary?: boolean;
-  onClick: () => void;
-}
-
-const ActionStatItem = defineComponent({
-  props: {
-    label: { type: String, required: true },
-    value: { type: [Number, String], required: true },
-    icon: { type: Object as PropType<VNode> },
-    actions: { type: Array as PropType<ActionItem[]>, default: () => [] },
-  },
-  setup(props) {
-    return () => (
-      <div class="p-3 rounded-md">
-        <div class="flex gap-2 items-start justify-between">
-          <div class="flex-1 min-w-0">
-            <div class="text-sm text-neutral-500">{props.label}</div>
-            <div class="text-xl font-semibold mt-1 tabular-nums">
-              {typeof props.value === "number"
-                ? Intl.NumberFormat("en-us").format(props.value)
-                : props.value}
-            </div>
-          </div>
-          {props.icon && (
-            <Icon class="text-xl text-neutral-400 mt-1 shrink-0">
-              {props.icon}
-            </Icon>
-          )}
-        </div>
-        {props.actions.length > 0 && (
-          <div class="mt-3 flex gap-2 items-center">
-            {props.actions.map((action, index) => (
-              <NButton
-                key={index}
-                size="small"
-                type={action.primary ? "primary" : "default"}
-                secondary={!action.primary}
-                onClick={action.onClick}
-              >
-                {action.name}
-              </NButton>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  },
-});
-
-const RedisIcon = () => (
-  <svg width="1em" height="1em" viewBox="0 0 24 24">
-    <path
-      fill="currentColor"
-      d="m10.5 2.661l.54.997l-1.797.644l2.409.218l.748 1.246l.467-1.121l2.077-.208l-1.61-.613l.426-1.017l-1.578.519zm6.905 2.077L13.76 6.182l3.292 1.298l.353-.146l3.293-1.298zm-10.51.312a2.97 1.153 0 0 0-2.97 1.152a2.97 1.153 0 0 0 2.97 1.153a2.97 1.153 0 0 0 2.97-1.153a2.97 1.153 0 0 0-2.97-1.152zM24 6.805s-8.983 4.278-10.395 4.953c-1.226.561-1.901.561-3.261.094C8.318 11.022 0 7.241 0 7.241v1.038c0 .24.332.499.966.8c1.277.613 8.34 3.677 9.45 4.206c1.112.53 1.9.54 3.313-.197c1.412-.738 8.049-3.905 9.326-4.57c.654-.342.945-.602.945-.84zm-10.042.602L8.39 8.26l3.884 1.61zM24 10.637s-8.983 4.279-10.395 4.954c-1.226.56-1.901.56-3.261.093C8.318 14.854 0 11.074 0 11.074v1.038c0 .238.332.498.966.8c1.277.612 8.34 3.676 9.45 4.205c1.112.53 1.9.54 3.313-.197c1.412-.737 8.049-3.905 9.326-4.57c.654-.332.945-.602.945-.84zm0 3.842l-10.395 4.954c-1.226.56-1.901.56-3.261.094C8.318 18.696 0 14.916 0 14.916v1.038c0 .239.332.499.966.8c1.277.613 8.34 3.676 9.45 4.206c1.112.53 1.9.54 3.313-.198c1.412-.737 8.049-3.904 9.326-4.569c.654-.343.945-.613.945-.841z"
-    />
-  </svg>
-);
+const editRoutes: Partial<Record<DashboardContentType, string>> = {
+  post: "/posts/edit",
+  note: "/notes/edit",
+  page: "/pages/edit",
+  recently: "/recently",
+};
 
 export const DashBoardView = defineComponent({
   name: "DashboardView",
-
   setup() {
     const { setHideHeader } = useLayout();
-    setHideHeader(true);
-
-    const ui = useStoreRef(UIStore);
-
-    const stat = ref(
-      new Proxy(
-        {},
-        {
-          get() {
-            return "N/A";
-          },
-        },
-      ) as Stat,
-    );
-    const statTime = ref(null as unknown as Date);
-    const fetchStat = async () => {
-      const counts = await aggregateApi.getStat();
-      stat.value = counts as any;
-      statTime.value = new Date();
-    };
-
-    const siteWordCount = ref(0);
-    const readAndLikeCounts = ref({
-      totalLikes: 0,
-      totalReads: 0,
-      siteLikeCount: 0,
-    });
-
-    onMounted(async () => {
-      const [wordCountRes, readLikeRes, siteLikeCount] = await Promise.all([
-        aggregateApi.countSiteWords(),
-        aggregateApi.countReadAndLike(),
-        aggregateApi.getSiteLikeCount(),
-      ]);
-
-      siteWordCount.value = wordCountRes.count;
-
-      readAndLikeCounts.value = {
-        totalLikes: readLikeRes.totalLikes,
-        totalReads: readLikeRes.totalReads,
-        siteLikeCount,
-      };
-    });
-
-    let timer: any;
-    onMounted(() => {
-      timer = setInterval(() => {
-        fetchStat();
-      }, 3000);
-    });
-    onBeforeUnmount(() => {
-      timer = clearTimeout(timer);
-    });
-
-    onBeforeMount(() => {
-      fetchStat();
-    });
-    const userStore = useStoreRef(UserStore);
+    setHideHeader(false);
     const router = useRouter();
 
-    const { create: createShortHand } = useShorthand();
+    const { data, isPending, isError, refetch } = useQuery({
+      queryKey: ["dashboard", "overview"],
+      queryFn: dashboardApi.getOverview,
+    });
 
-    const renderUserLoginStat = () => (
-      <div class="text-sm text-neutral-500 mt-8">
-        <p>
-          上次登录 IP:
-          {" "}
-          {userStore.user.value?.lastLoginIp
+    return () => (
+      <div class="mx-auto p-5 max-w-7xl space-y-8 md:p-8">
+        <header class="flex gap-4 items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold">仪表盘</h1>
+            <p class="text-sm text-neutral-500 mt-1">站点内容与社区概览</p>
+          </div>
+          <NButton onClick={() => refetch()} loading={isPending.value}>刷新</NButton>
+        </header>
+
+        {isPending.value
+          ? <DashboardSkeleton />
+          : isError.value || !data.value
             ? (
-                <IpInfoPopover
-                  trigger="hover"
-                  triggerEl={(
-                    <span class="text-neutral-700 dark:text-neutral-300">
-                      {userStore.user.value?.lastLoginIp}
-                    </span>
-                  )}
-                  ip={userStore.user.value?.lastLoginIp}
-                />
+                <NEmpty description="仪表盘数据加载失败">
+                  {{ extra: () => <NButton onClick={() => refetch()}>重试</NButton> }}
+                </NEmpty>
               )
             : (
-                "N/A"
+                <>
+                  <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Metric label="全部内容" value={data.value.stats.totalContent} icon={<FileTextIcon />} />
+                    <Metric label="评论" value={data.value.stats.comments} icon={<CommentIcon />} />
+                    <Metric label="读者" value={data.value.stats.readers} icon={<UsersIcon />} />
+                    <Metric label="友链" value={data.value.stats.links} icon={<LinkIcon />} />
+                  </section>
+
+                  <section class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div class="border border-neutral-200 rounded-lg p-5 dark:border-neutral-800">
+                      <div class="mb-4 flex items-center justify-between">
+                        <div>
+                          <h2 class="font-medium">内容构成</h2>
+                          <p class="text-xs text-neutral-500 mt-1">按当前数据库内容统计</p>
+                        </div>
+                        <RouterLink to="/analyze" class="text-sm text-blue-600 no-underline hover:underline">
+                          查看数据
+                        </RouterLink>
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
+                        <ContentMetric label="文章" value={data.value.stats.posts} icon={<PencilIcon />} />
+                        <ContentMetric label="手记" value={data.value.stats.notes} icon={<NoteIcon />} />
+                        <ContentMetric label="页面" value={data.value.stats.pages} icon={<FileTextIcon />} />
+                        <ContentMetric label="说说" value={data.value.stats.recently} icon={<BookIcon />} />
+                      </div>
+                    </div>
+
+                    <div class="border border-neutral-200 rounded-lg p-5 dark:border-neutral-800">
+                      <div class="mb-4">
+                        <h2 class="font-medium">快速操作</h2>
+                        <p class="text-xs text-neutral-500 mt-1">直接进入内容管理</p>
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
+                        <NButton type="primary" onClick={() => router.push({ name: RouteName.EditPost })}>写文章</NButton>
+                        <NButton onClick={() => router.push({ name: RouteName.EditNote })}>写手记</NButton>
+                        <NButton onClick={() => router.push({ name: RouteName.ListShortHand })}>管理说说</NButton>
+                        <NButton onClick={() => router.push({ name: RouteName.Friend })}>管理友链</NButton>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="border border-neutral-200 rounded-lg dark:border-neutral-800">
+                    <div class="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
+                      <h2 class="font-medium">最近内容</h2>
+                    </div>
+                    <NScrollbar class="max-h-96">
+                      <div class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        {data.value.recentContent.map(content => (
+                          <RecentContentItem key={content._id} content={content} />
+                        ))}
+                      </div>
+                    </NScrollbar>
+                  </section>
+                </>
               )}
-        </p>
-        <p class="mt-1">
-          上次登录时间:
-          {" "}
-          {userStore.user.value?.lastLoginTime
-            ? (
-                <time class="text-neutral-700 dark:text-neutral-300">
-                  {parseDate(
-                    userStore.user.value?.lastLoginTime,
-                    "yyyy 年 M 月 d 日 HH:mm:ss",
-                  )}
-                </time>
-              )
-            : (
-                "N/A"
-              )}
-        </p>
       </div>
     );
+  },
+});
 
-    const isMobile = computed(
-      () => ui.viewport.value.mobile || ui.viewport.value.pad,
-    );
-
+const Metric = defineComponent({
+  props: { label: String, value: Number, icon: Object },
+  setup(props) {
     return () => (
-      <>
-        <div class="mt-6 flex gap-3 items-center !mb-6">
-          {(isMobile.value || ui.sidebarCollapse.value) && (
-            <button
-              class="text-neutral-500 rounded flex h-9 w-9 transition-colors items-center justify-center dark:text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
-              onClick={() => (ui.sidebarCollapse.value = false)}
-              title={isMobile.value ? "打开菜单" : "展开侧边栏 (⌘B)"}
-            >
-              {isMobile.value
-                ? (
-                    <MenuIcon size={20} />
-                  )
-                : (
-                    <PanelLeftOpen size={20} />
-                  )}
-            </button>
-          )}
-          <NH1 class="font-light !mb-0 !mt-0">欢迎回来</NH1>
+      <div class="border border-neutral-200 rounded-lg p-4 dark:border-neutral-800">
+        <div class="text-neutral-500 flex items-center gap-2 text-sm">
+          {props.icon}
+          {props.label}
         </div>
-
-        <section class="mb-8">
-          <SectionTitle title="实时数据" />
-          <NGrid xGap={12} yGap={12} cols="1 500:3">
-            <NGi>
-              <LiveStatItem
-                label="当前在线访客"
-                value={stat.value.online}
-                icon={<OnlinePredictionFilledIcon />}
-                isLive
-              />
-            </NGi>
-            <NGi>
-              <LiveStatItem
-                label="今日访客"
-                value={stat.value.todayOnlineTotal}
-                icon={<GuestIcon />}
-              />
-            </NGi>
-            <NGi>
-              <LiveStatItem
-                label="今日最高在线"
-                value={stat.value.todayMaxOnline}
-                icon={<TrendingUpIcon />}
-              />
-            </NGi>
-          </NGrid>
-        </section>
-
-        <section class="mb-8">
-          <SectionTitle title="快速操作" />
-          <div class="gap-x-4 gap-y-1 grid grid-cols-2 sm:grid-cols-4">
-            <ActionStatItem
-              label="博文"
-              value={stat.value.posts}
-              icon={<CodeIcon />}
-              actions={[
-                {
-                  name: "撰写",
-                  primary: true,
-                  onClick: () => router.push({ name: RouteName.EditPost }),
-                },
-                {
-                  name: "管理",
-                  onClick: () =>
-                    router.push({
-                      name: RouteName.ViewPost,
-                      query: { page: 1 },
-                    }),
-                },
-              ]}
-            />
-            <ActionStatItem
-              label="日记"
-              value={stat.value.notes}
-              icon={<NoteIcon />}
-              actions={[
-                {
-                  name: "撰写",
-                  primary: true,
-                  onClick: () => router.push({ name: RouteName.EditNote }),
-                },
-                {
-                  name: "管理",
-                  onClick: () =>
-                    router.push({
-                      name: RouteName.ViewNote,
-                      query: { page: 1 },
-                    }),
-                },
-              ]}
-            />
-            <ActionStatItem
-              label="速记"
-              value={stat.value.recently}
-              icon={<PencilIcon />}
-              actions={[
-                {
-                  name: "新建速记",
-                  primary: true,
-                  onClick: () => createShortHand(),
-                },
-                {
-                  name: "管理",
-                  onClick: () =>
-                    router.push({
-                      name: RouteName.ListShortHand,
-                      query: { page: 1 },
-                    }),
-                },
-              ]}
-            />
-            <ActionStatItem
-              label="说说"
-              value={stat.value.says}
-              icon={<CommentsIcon />}
-              actions={[
-                {
-                  name: "发布说说",
-                  primary: true,
-                  onClick: () => router.push({ name: RouteName.ListSay }),
-                },
-                {
-                  name: "管理",
-                  onClick: () => router.push({ name: RouteName.ListSay }),
-                },
-              ]}
-            />
-          </div>
-        </section>
-
-        <section class="mb-8">
-          <SectionTitle
-            title="数据统计"
-            v-slots={{
-              extra: () => (
-                <div class="text-xs text-neutral-400 flex items-center">
-                  <span>
-                    更新于
-                    {" "}
-                    {statTime.value
-                      ? parseDate(statTime.value, "H:mm:ss a")
-                      : "--:--:--"}
-                  </span>
-                  <NButton text onClick={fetchStat} class="ml-2">
-                    <NIcon size={14}>
-                      <RefreshIcon />
-                    </NIcon>
-                  </NButton>
-                </div>
-              ),
-            }}
-          />
-          <div class="gap-x-4 gap-y-1 grid grid-cols-2 lg:grid-cols-6 md:grid-cols-4 sm:grid-cols-3">
-            <StatItem
-              label="页面"
-              value={stat.value.pages}
-              icon={<FileIcon />}
-              onClick={() =>
-                router.push({ name: RouteName.ListPage, query: { page: 1 } })}
-            />
-            <StatItem
-              label="分类"
-              value={stat.value.categories}
-              icon={<ExtensionIcon />}
-              onClick={() => router.push({ name: RouteName.EditCategory })}
-            />
-            <StatItem
-              label="全部评论"
-              value={stat.value.allComments}
-              icon={<CommentIcon />}
-              onClick={() =>
-                router.push({ name: RouteName.Comment, query: { state: 1 } })}
-            />
-            <StatItem
-              label="未读评论"
-              value={stat.value.unreadComments}
-              icon={<ChatbubblesSharpIcon />}
-              onClick={() =>
-                router.push({ name: RouteName.Comment, query: { state: 0 } })}
-            />
-            <StatItem
-              label="友链"
-              value={stat.value.links}
-              icon={<LinkIcon />}
-              onClick={() =>
-                router.push({ name: RouteName.Friend, query: { state: 0 } })}
-            />
-            <StatItem
-              label="友链申请"
-              value={stat.value.linkApply}
-              icon={<AddLinkFilledIcon />}
-              onClick={() =>
-                router.push({ name: RouteName.Friend, query: { state: 1 } })}
-            />
-            <StatItem
-              label="API 调用"
-              value={stat.value.callTime}
-              icon={<ActivityIcon />}
-              onClick={() => router.push({ name: RouteName.Analyze })}
-            />
-            <StatItem
-              label="今日 IP 访问"
-              value={stat.value.todayIpAccessCount}
-              icon={<BubbleChartFilledIcon />}
-              onClick={() => router.push({ name: RouteName.Analyze })}
-            />
-            <StatItem
-              label="全站字符数"
-              value={siteWordCount.value}
-              icon={<PhAlignLeft />}
-            />
-            <StatItem
-              label="总阅读量"
-              value={readAndLikeCounts.value.totalReads}
-              icon={<NotebookMinimalistic />}
-            />
-            <StatItem
-              label="文章点赞"
-              value={readAndLikeCounts.value.totalLikes}
-              icon={<HeartIcon />}
-            />
-            <StatItem
-              label="站点点赞"
-              value={readAndLikeCounts.value.siteLikeCount}
-              icon={<HeartIcon />}
-            />
-          </div>
-        </section>
-
-        <section class="mb-8">
-          <SectionTitle title="数据图表" />
-          <NGrid xGap={16} yGap={16} cols="1 800:2">
-            <NGi>
-              <PublicationTrend />
-            </NGi>
-            <NGi>
-              <CategoryPie />
-            </NGi>
-            <NGi>
-              <CommentActivity />
-            </NGi>
-            <NGi>
-              <TrafficSource />
-            </NGi>
-            <NGi>
-              <TopArticles />
-            </NGi>
-            <NGi>
-              <TagCloud />
-            </NGi>
-          </NGrid>
-        </section>
-
-        <section class="mb-8">
-          <SectionTitle title="系统操作" />
-          <div class="gap-x-4 gap-y-1 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
-            <ActionStatItem
-              label="缓存"
-              value="Redis"
-              icon={<RedisIcon />}
-              actions={[
-                {
-                  name: "清除 API 缓存",
-                  onClick: () => {
-                    aggregateApi.cleanCache().then(() => {
-                      toast.success("清除成功");
-                    });
-                  },
-                },
-                {
-                  name: "清除数据缓存",
-                  onClick: () => {
-                    aggregateApi.cleanRedis().then(() => {
-                      toast.success("清除成功");
-                    });
-                  },
-                },
-              ]}
-            />
-            <SearchIndexRebuildCard />
-          </div>
-        </section>
-
-        {renderUserLoginStat()}
-        <AppIF />
-      </>
+        <div class="text-3xl font-semibold mt-3 tabular-nums">{props.value?.toLocaleString()}</div>
+      </div>
     );
   },
 });
 
-const AppIF = defineComponent({
-  setup() {
-    const { app } = useStoreRef(AppStore);
-    const versionMap = ref({} as { admin: string; system: string });
-    const closedTips = useStorage("closed-tips", {
-      dashboard: null as string | null,
-      system: null as string | null,
-    });
-
-    const { openModal: openUpdateModal, Modal: UpdateDetailModal }
-      = useUpdateDetailModal();
-
-    const portal = usePortalElement();
-    const handleUpdate = () => {
-      portal(<UpdatePanel />);
-    };
-    onMounted(async () => {
-      if (__DEV__) {
-        return;
-      }
-      if (app.value?.version.startsWith("demo")) {
-        return;
-      }
-
-      const { dashboard, system } = await checkUpdateFromGitHub();
-
-      if (
-        isNewerVersion(PKG.version, dashboard)
-        && closedTips.value.dashboard !== dashboard
-      ) {
-        toast.info(`管理后台有新版本：${PKG.version} → ${dashboard}`, {
-          duration: 10000,
-          action: {
-            label: "更新",
-            onClick: () => {
-              handleUpdate();
-              closedTips.value.dashboard = dashboard;
-            },
-          },
-        });
-      }
-
-      versionMap.value = {
-        admin: dashboard,
-        system,
-      };
-    });
-
-    watchEffect(() => {
-      if (__DEV__) {
-        return;
-      }
-
-      if (app.value?.version.startsWith("demo")) {
-        toast.info("Demo Mode - 当前处于演示模式，部分功能可能受到限制");
-        return;
-      }
-
-      if (
-        app.value?.version
-        && app.value.version !== "dev"
-        && versionMap.value.system
-        && closedTips.value.system !== versionMap.value.system
-        && isNewerVersion(app.value.version, versionMap.value.system)
-      ) {
-        toast.info(
-          `系统有新版本：${app.value?.version || "N/A"} → ${versionMap.value.system}`,
-          {
-            duration: 10000,
-            action: {
-              label: "查看",
-              onClick: () => {
-                openUpdateModal({
-                  version: versionMap.value.system,
-                  repo: "mx-server",
-                  title: "[系统] 更新详情",
-                });
-                closedTips.value.system = versionMap.value.system;
-              },
-            },
-          },
-        );
-      }
-    });
-
+const ContentMetric = defineComponent({
+  props: { label: String, value: Number, icon: Object },
+  setup(props) {
     return () => (
-      <>
-        <NElement tag="footer" class="mt-12">
-          <NP
-            class="text-center"
-            style={{ color: "var(--text-color-3)" }}
-            depth="1"
-          >
-            <div class="inline-flex items-center">
-              面板版本:
-              {" "}
-              {__DEV__ ? "dev mode" : window.version || "N/A"}
-              <NButton text onClick={handleUpdate} size="small" class="ml-4">
-                <NIcon size={12}>
-                  <RefreshIcon />
-                </NIcon>
-              </NButton>
-            </div>
-            <br />
-            系统版本：
-            {app.value?.version || "N/A"}
-            <br />
-            页面来源：
-            {window.pageSource || ""}
-          </NP>
-        </NElement>
-        <UpdateDetailModal />
-      </>
+      <div class="rounded-md bg-neutral-50 p-3 dark:bg-neutral-800/50">
+        <div class="text-neutral-500 flex gap-2 items-center text-sm">{props.icon}{props.label}</div>
+        <div class="text-xl font-medium mt-2 tabular-nums">{props.value}</div>
+      </div>
     );
   },
 });
+
+const RecentContentItem = defineComponent({
+  props: {
+    content: { type: Object as () => DashboardContent, required: true },
+  },
+  setup(props) {
+    return () => {
+      const route = editRoutes[props.content.type];
+      const title = (
+        <div class="min-w-0">
+          <p class="text-sm font-medium truncate">{props.content.title}</p>
+          <div class="text-xs text-neutral-500 mt-1 flex gap-2 items-center">
+            <NTag size="tiny" bordered={false}>{typeLabels[props.content.type]}</NTag>
+            <time>{format(new Date(props.content.created), "yyyy-MM-dd HH:mm")}</time>
+          </div>
+        </div>
+      );
+      return (
+        <div class="px-5 py-3">
+          {route
+            ? <RouterLink to={`${route}${props.content.type === "recently" ? "" : `?id=${props.content._id}`}`} class="block text-inherit no-underline hover:text-blue-600">{title}</RouterLink>
+            : title}
+        </div>
+      );
+    };
+  },
+});
+
+const DashboardSkeleton = () => (
+  <div class="space-y-5">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, index) => <NSkeleton key={index} height="112px" />)}
+    </div>
+    <NSkeleton height="280px" />
+  </div>
+);

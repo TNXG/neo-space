@@ -6,7 +6,7 @@ import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { PageHero } from "@/components/common/PageHero";
 import { FriendsList } from "@/components/layouts/friends/FriendsList";
 import { LinkApplyForm } from "@/components/layouts/friends/LinkApplyForm";
-import { getLinks } from "@/lib/api-client";
+import { getLinks, getSiteConfig } from "@/lib/api-client";
 import { LinkType } from "@/types/api";
 
 interface FriendsPageProps {
@@ -55,7 +55,10 @@ async function getAllLinks(): Promise<Link[]> {
  */
 export default async function FriendsPage() {
   const t = await getTranslations();
-  const allLinks = await getAllLinks();
+  const [allLinks, siteConfig] = await Promise.all([
+    getAllLinks(),
+    getSiteConfig().catch(() => null),
+  ]);
 
   // 按类型分组
   const friends = allLinks.filter(link => link.type === LinkType.FRIEND);
@@ -72,8 +75,7 @@ export default async function FriendsPage() {
 
       <FriendsList friends={friends} collections={collections} />
 
-      {/* 友链申请表单 */}
-      <LinkApplyForm />
+      {siteConfig?.data.friend_link.allowApply && <LinkApplyForm />}
 
       {/* 评论区 */}
       <Suspense fallback={<CommentSkeleton />}>

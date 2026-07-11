@@ -18,7 +18,10 @@ export interface ReplyCommentData {
 }
 
 interface ApiResponse<T> {
-  data: T;
+  code: number;
+  status: "success" | "failed";
+  message: string;
+  data: T | null;
 }
 
 interface BackendPaginatedComments {
@@ -35,7 +38,6 @@ type BackendPagination = Partial<PaginateResult<CommentModel>["pagination"]> & {
 
 type BackendComment = Partial<Omit<CommentModel, "state" | "refType">> & {
   _id?: string;
-  id?: string;
   created?: string;
   createdAt?: string;
   ref?: string;
@@ -73,7 +75,11 @@ function unwrapApiResponse<T>(response: T | ApiResponse<T>): T {
     && "data" in response
     && "status" in response
   ) {
-    return (response as ApiResponse<T>).data;
+    const payload = (response as ApiResponse<T>).data;
+    if (payload === null) {
+      throw new Error((response as ApiResponse<T>).message || "评论数据为空");
+    }
+    return payload;
   }
 
   return response as T;
@@ -184,7 +190,7 @@ function generateAvatarFallback(comment: BackendComment) {
 }
 
 function normalizeComment(comment: BackendComment): CommentModel {
-  const commentId = comment._id ?? comment.id ?? "";
+  const commentId = comment._id ?? "";
   const ref = comment.ref ?? comment.refId ?? "";
 
   return {

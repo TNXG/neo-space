@@ -10,7 +10,6 @@ export enum SnippetType {
   Text = "text",
   YAML = "yaml",
 }
-
 export enum SnippetTypeToLanguage {
   json = "json",
   json5 = "plaintext",

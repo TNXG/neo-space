@@ -66,5 +66,5 @@ export interface FormDSL {
   title: string;
   description?: string;
   groups: FormGroup[];
-  defaults: Record<string, any>;
+  defaults: Record<string, unknown>;
 }

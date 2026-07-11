@@ -10,43 +10,44 @@ export enum LinkState {
   Audit,
   Outdate,
   Banned,
-  Reject,
+  Rejected,
 }
 
 export interface LinkModel {
-  id: string;
-  createdAt: string;
+  _id: string;
+  created: string;
   name: string;
   url: string;
   avatar: string;
   description?: string;
   type: LinkType;
   state: LinkState;
-  hide: boolean;
-  email: string;
+  email?: string | null;
+  rssurl?: string | null;
+  techstack?: string[] | null;
+  health?: LinkHealthStatus | null;
 }
 
 export type LinkResponse = PaginateResult<LinkModel>;
 
 export interface LinkHealthStatus {
-  linkId: string;
+  link_id: string;
   url: string;
-  isAlive: boolean;
-  statusCode?: number;
-  latencyMs?: number;
-  hostingProvider: string;
-  checkedAt: string;
-  errorMessage?: string;
-  isStale: boolean;
+  is_alive: boolean;
+  status_code?: number;
+  latency_ms?: number;
+  hosting_provider: string;
+  checked_at: string;
+  error_message?: string;
+  is_stale: boolean;
 }
 
 export interface LinkStateCount {
   audit: number;
-  collection: number;
-  friends: number;
+  pass: number;
   outdate: number;
   banned: number;
-  reject: number;
+  rejected: number;
 }
 
 export const LinkStateNameMap: Record<keyof typeof LinkState, string> = {
@@ -54,5 +55,5 @@ export const LinkStateNameMap: Record<keyof typeof LinkState, string> = {
   Pass: "通过",
   Outdate: "过时",
   Banned: "屏蔽",
-  Reject: "拒绝",
+  Rejected: "不通过",
 };

@@ -13,13 +13,13 @@ export interface RecentlyRefType {
 }
 
 export interface RecentlyModel {
-  id: string;
+  _id: string;
   content: string;
-  createdAt: string;
-  modifiedAt: string | null;
+  created: string;
+  modified?: string | null;
 
   ref?: RecentlyRefType & { [key: string]: any };
-  refId?: string;
+  ref_id?: string;
   refType?: RecentlyRefTypes;
 
   enrichments?: Record<string, EnrichmentResult>;

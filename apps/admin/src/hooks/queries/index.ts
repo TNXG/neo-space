@@ -2,7 +2,6 @@
 export * from "./keys";
 
 // Query Hooks
-export * from "./use-aggregate";
 export * from "./use-categories";
 export * from "./use-comments";
 export * from "./use-drafts";

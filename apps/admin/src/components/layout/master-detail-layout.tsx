@@ -1,5 +1,5 @@
 import type { PropType } from "vue";
-import { computed, defineComponent, watchEffect } from "vue";
+import { computed, defineComponent, onUnmounted, ref } from "vue";
 
 import { useStoreRef } from "~/hooks/use-store-ref";
 import { useLayout } from "~/layouts/content";
@@ -52,26 +52,33 @@ export const MasterDetailLayout = defineComponent({
     const ui = useStoreRef(UIStore);
     const layout = useStoreRef(LayoutStore);
     const { setHeaderClass } = useLayout();
+    const desktopSize = ref<number | string>(props.defaultSize);
+    const previousContentPadding = layout.contentPadding.value;
+    const previousContentMinHeight = layout.contentMinFullHeight.value;
+    const previousHeaderClass = layout.headerClass.value;
 
     const isMobile = computed(
       () => ui.viewport.value.mobile || ui.viewport.value.pad,
     );
 
-    watchEffect(() => {
-      layout.contentPadding.value = false;
-      layout.contentMinFullHeight.value = true;
-      setHeaderClass(
-        "md:px-4 border-b border-neutral-200 dark:border-neutral-800",
-      );
+    layout.contentPadding.value = false;
+    layout.contentMinFullHeight.value = true;
+    setHeaderClass("md:px-4 border-b border-neutral-200 dark:border-neutral-800");
+
+    onUnmounted(() => {
+      layout.contentPadding.value = previousContentPadding;
+      layout.contentMinFullHeight.value = previousContentMinHeight;
+      setHeaderClass(previousHeaderClass);
     });
 
     const DesktopLayout = () => (
       <div class="inset-0 absolute overflow-hidden">
         <SplitPanel
           direction="horizontal"
-          defaultSize={props.defaultSize}
+          size={desktopSize.value}
           min={props.min}
           max={props.max}
+          onUpdateSize={(size) => { desktopSize.value = size; }}
           class="h-full"
         >
           <div class={["h-full overflow-hidden", props.listBgClass]}>

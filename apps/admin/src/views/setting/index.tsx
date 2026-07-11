@@ -1,14 +1,8 @@
-import type { FormDSL } from "~/components/config-form/types";
-import { Save as SaveIcon, Settings as SettingsIcon } from "lucide-vue-next";
-import { NButton } from "naive-ui";
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  onUnmounted,
-  ref,
-  watchEffect,
-} from "vue";
+import type { OptionValue, SystemOptions } from "~/api/options";
+import { isEqual } from "es-toolkit/compat";
+import { RefreshCw as RefreshIcon, Settings as SettingsIcon } from "lucide-vue-next";
+import { NButton, NEmpty, NSkeleton } from "naive-ui";
+import { computed, defineComponent, onBeforeMount, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { optionsApi } from "~/api/options";
@@ -17,23 +11,16 @@ import { useLayout } from "~/hooks/use-layout";
 import { SettingsDetailPanel } from "~/layouts/settings-layout";
 
 import { SettingListPanel } from "./components/SettingListPanel";
-import { TabAccount } from "./tabs/account";
-import { TabMetaPresets } from "./tabs/meta-presets";
+import { getOptionMetadata } from "./option-metadata";
 import { TabSystem } from "./tabs/system";
 import { TabUser } from "./tabs/user";
 
-const staticGroupKeys = ["user", "account", "meta-preset"];
-
 const staticGroupTitles: Record<string, string> = {
-  "user": "用户",
-  "account": "账号安全",
-  "meta-preset": "Meta 预设",
+  user: "用户",
 };
 
 const staticComponentMap: Record<string, ReturnType<typeof defineComponent>> = {
-  "user": TabUser,
-  "account": TabAccount,
-  "meta-preset": TabMetaPresets,
+  user: TabUser,
 };
 
 export default defineComponent({
@@ -42,114 +29,66 @@ export default defineComponent({
     const router = useRouter();
     const { setActions } = useLayout();
     const { isMobile } = useMasterDetailLayout();
-
-    const systemSchema = ref<FormDSL | null>(null);
-    const systemTabRef = ref<any>(null);
-    const dirtyInfo = ref<{ isDirty: boolean; count: number }>({
-      isDirty: false,
-      count: 0,
-    });
+    const options = ref<SystemOptions | null>(null);
+    const isLoading = ref(false);
+    const loadError = ref("");
     const showDetailOnMobile = ref(false);
 
-    const activeGroupKey = computed(() => {
-      const queryGroup = route.query.group as string;
-      if (queryGroup) {
-        const isStaticGroup = staticGroupKeys.includes(queryGroup);
-        const isSystemGroup = systemSchema.value?.groups?.some(
-          g => g.key === queryGroup,
-        );
-        if (isStaticGroup || isSystemGroup) {
-          return queryGroup;
+    const loadOptions = async () => {
+      isLoading.value = true;
+      loadError.value = "";
+      try {
+        const nextOptions = await optionsApi.getAll();
+        if (!isEqual(options.value, nextOptions)) {
+          options.value = nextOptions;
         }
+      } catch (error: unknown) {
+        loadError.value = error instanceof Error ? error.message : "配置加载失败";
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    onBeforeMount(() => void loadOptions());
+
+    const activeGroupKey = computed(() => {
+      const groupKey = typeof route.query.group === "string" ? route.query.group : "user";
+      if (!options.value && groupKey !== "user") {
+        return groupKey;
+      }
+      if (groupKey in staticComponentMap || Object.hasOwn(options.value ?? {}, groupKey)) {
+        return groupKey;
       }
       return "user";
     });
 
-    onBeforeMount(async () => {
-      try {
-        systemSchema.value = await optionsApi.getFormSchema();
-      } catch (e) {
-        console.error("Failed to load system schema", e);
+    const isOptionGroup = computed(() => Boolean(options.value && activeGroupKey.value in options.value));
+    const activeTitle = computed(() => {
+      if (isOptionGroup.value) {
+        return getOptionMetadata(activeGroupKey.value).title;
       }
+      return staticGroupTitles[activeGroupKey.value] ?? "设置";
     });
 
     const handleGroupChange = (groupKey: string) => {
-      router.replace({
-        name: route.name as string,
-        query: { group: groupKey },
-      });
+      router.replace({ name: route.name as string, query: { group: groupKey } });
       if (isMobile.value) {
         showDetailOnMobile.value = true;
       }
     };
 
-    const handleMobileBack = () => {
-      showDetailOnMobile.value = false;
+    const handleOptionSaved = (value: OptionValue) => {
+      if (!options.value) {
+        return;
+      }
+      options.value = { ...options.value, [activeGroupKey.value]: value };
     };
 
-    const isSystemGroup = computed(() => {
-      return (
-        systemSchema.value?.groups?.some(
-          g => g.key === activeGroupKey.value,
-        ) ?? false
-      );
-    });
-
-    const activeGroup = computed(() => {
-      if (!systemSchema.value?.groups)
-        return null;
-      return systemSchema.value.groups.find(
-        g => g.key === activeGroupKey.value,
-      );
-    });
-
-    const activeGroupTitle = computed(() => {
-      if (staticGroupTitles[activeGroupKey.value]) {
-        return staticGroupTitles[activeGroupKey.value];
-      }
-      return activeGroup.value?.title ?? "设置";
-    });
-
-    const handleDirtyInfoUpdate = (info: {
-      isDirty: boolean;
-      count: number;
-    }) => {
-      dirtyInfo.value = info;
-    };
-
-    const handleSaveAll = async () => {
-      if (systemTabRef.value?.saveAll) {
-        await systemTabRef.value.saveAll();
-      }
-    };
-
-    watchEffect(() => {
-      const { isDirty, count } = dirtyInfo.value;
-
-      if (isSystemGroup.value && isDirty) {
-        setActions(
-          <div class="flex gap-3 items-center">
-            <span class="text-sm text-neutral-600 hidden dark:text-neutral-400 md:inline">
-              你有
-              {" "}
-              {count}
-              {" "}
-              项未保存的修改
-            </span>
-            <NButton
-              type="primary"
-              size="small"
-              onClick={handleSaveAll}
-              renderIcon={() => <SaveIcon size={16} />}
-            >
-              保存全部
-            </NButton>
-          </div>,
-        );
-      } else {
-        setActions(null);
-      }
-    });
+    setActions(
+      <NButton size="small" onClick={() => void loadOptions()} renderIcon={() => <RefreshIcon size={15} />}>
+        刷新配置
+      </NButton>,
+    );
 
     onUnmounted(() => {
       setActions(null);
@@ -160,65 +99,34 @@ export default defineComponent({
         <div class="mb-4 rounded-full bg-neutral-100 flex size-16 items-center justify-center dark:bg-neutral-800">
           <SettingsIcon class="text-neutral-400 size-8" />
         </div>
-        <h3 class="text-base text-neutral-900 font-medium mb-1 dark:text-neutral-100">
-          选择一个设置项
-        </h3>
-        <p class="text-sm text-neutral-500 dark:text-neutral-400">
-          从左侧列表选择查看详情
-        </p>
+        <h3 class="text-base text-neutral-900 font-medium mb-1 dark:text-neutral-100">选择一个设置项</h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">从左侧列表选择查看详情</p>
       </div>
     );
 
     const DetailContent = () => {
       const StaticComponent = staticComponentMap[activeGroupKey.value];
-
-      if (activeGroupKey.value === "account") {
-        return (
-          <div class="flex flex-col h-full">
-            <div class="px-4 border-b border-neutral-200 flex shrink-0 h-12 items-center dark:border-neutral-800">
-              <h2 class="text-sm text-neutral-900 font-medium dark:text-neutral-100">
-                {activeGroupTitle.value}
-              </h2>
-            </div>
-            <div class="flex-1 min-h-0">
-              <TabAccount />
-            </div>
-          </div>
-        );
-      }
-
       return (
-        <SettingsDetailPanel
-          title={activeGroupTitle.value}
-          onBack={handleMobileBack}
-        >
-          <TabSystem
-            ref={systemTabRef}
-            activeGroup={activeGroup.value}
-            schema={systemSchema.value}
-            style={{ display: isSystemGroup.value ? undefined : "none" }}
-            {...{ "onUpdate:dirty-info": handleDirtyInfoUpdate }}
-          />
-          {!isSystemGroup.value && StaticComponent && <StaticComponent />}
+        <SettingsDetailPanel title={activeTitle.value} onBack={() => { showDetailOnMobile.value = false; }}>
+          {isLoading.value && !options.value
+            ? <div class="py-8 space-y-6"><NSkeleton text repeat={2} /><NSkeleton height="220px" /><NSkeleton height="40px" width="180px" /></div>
+            : loadError.value && !options.value
+              ? (
+                  <NEmpty description={loadError.value}>
+                    {{ extra: () => <NButton onClick={() => void loadOptions()}>重新加载</NButton> }}
+                  </NEmpty>
+                )
+              : isOptionGroup.value && options.value
+                ? <TabSystem optionKey={activeGroupKey.value} value={options.value[activeGroupKey.value]} onSaved={handleOptionSaved} />
+                : StaticComponent && <StaticComponent />}
         </SettingsDetailPanel>
       );
     };
 
     return () => (
-      <MasterDetailLayout
-        showDetailOnMobile={showDetailOnMobile.value}
-        defaultSize="250px"
-        min="200px"
-        max="400px"
-      >
+      <MasterDetailLayout showDetailOnMobile={showDetailOnMobile.value} defaultSize="250px" min="200px" max="400px">
         {{
-          list: () => (
-            <SettingListPanel
-              activeGroupKey={activeGroupKey.value}
-              systemSchema={systemSchema.value}
-              onGroupChange={handleGroupChange}
-            />
-          ),
+          list: () => <SettingListPanel activeGroupKey={activeGroupKey.value} options={options.value} loading={isLoading.value} onGroupChange={handleGroupChange} />,
           detail: () => <DetailContent />,
           empty: () => <EmptyState />,
         }}
