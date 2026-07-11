@@ -4,7 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   target: 'esnext',
-  dts: true,
+  dts: false,
   sourcemap: true,
   clean: true,
   // CSS imports under @haklex/* are kept as-is, admin's vite resolves them.
