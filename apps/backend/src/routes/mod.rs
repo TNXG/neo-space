@@ -1,8 +1,8 @@
 //! Route definitions organized by feature module
 
 pub mod admin_comments;
+pub mod admin_dashboard;
 pub mod admin_links;
-pub mod admin_misc;
 pub mod admin_notes;
 pub mod admin_posts;
 pub mod ai_admin;

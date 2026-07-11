@@ -16,10 +16,7 @@ fn elapsed_millis_u64(start: std::time::Instant) -> u64 {
 
 /// Start the periodic link health check task
 pub fn start_link_health_task(state: SharedState) {
-    let check_interval_hours = std::env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(6);
+    let check_interval_hours = state.config.link_health_interval_hours;
 
     tokio::spawn(async move {
         let mut timer = interval(Duration::from_secs(check_interval_hours * 3600));
@@ -135,7 +132,8 @@ async fn check_links_concurrent(
     stream::iter(links)
         .map(|link| {
             let http_client = state.http_client.clone();
-            async move { perform_health_check(&link, &http_client).await }
+            let timeout_secs = state.config.link_health_timeout_secs;
+            async move { perform_health_check(&link, &http_client, timeout_secs).await }
         })
         .buffer_unordered(concurrency_limit)
         .collect()

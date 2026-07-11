@@ -1,16 +1,21 @@
 //! Admin handlers
 
 pub mod ai;
+pub mod ai_content_admin;
+pub mod ai_time_capsule_admin;
+pub mod ai_translation;
+pub mod ai_translation_admin;
+pub mod ai_translation_entries;
 pub mod categories;
 pub mod comment;
 pub mod comments_anchor;
 pub mod comments_batch;
 pub mod comments_data;
+pub mod dashboard;
 pub mod draft_history;
 pub mod drafts;
 pub mod files;
 pub mod links;
-pub mod misc;
 pub mod notes;
 pub mod options;
 pub mod pages;

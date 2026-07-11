@@ -27,6 +27,23 @@ where
     }
 }
 
+/// Deserialize Mongo `_id` values that may be stored as either ObjectId or String.
+pub fn deserialize_id_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let value = bson::Bson::deserialize(deserializer)?;
+    match value {
+        bson::Bson::ObjectId(oid) => Ok(oid.to_hex()),
+        bson::Bson::String(id) => Ok(id),
+        other => Err(Error::custom(format!(
+            "Unexpected BSON type for id: {other:?}"
+        ))),
+    }
+}
+
 /// Serialize `bson::DateTime` as ISO 8601 string
 pub fn serialize_datetime<S>(dt: &bson::DateTime, serializer: S) -> Result<S::Ok, S::Error>
 where

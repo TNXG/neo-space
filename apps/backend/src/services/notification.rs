@@ -175,15 +175,15 @@ impl NotificationService {
             .map_err(|_| AppError::Internal("Email config value missing".to_string()))?;
 
         let options = value
-            .get_document("options")
-            .map_err(|_| AppError::Internal("Email options missing".to_string()))?;
+            .get_document("smtp")
+            .map_err(|_| AppError::Internal("SMTP configuration missing".to_string()))?;
 
-        let user = value
+        let user = options
             .get_str("user")
             .map_err(|_| AppError::Internal("Email username not configured".to_string()))?
             .to_string();
         let from_email = value.get_str("from").unwrap_or(&user).to_string();
-        let password = value
+        let password = options
             .get_str("pass")
             .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
             .to_string();

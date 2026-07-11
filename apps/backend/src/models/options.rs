@@ -36,26 +36,12 @@ pub struct SeoOptions {
 /// URL configuration (safe to expose)
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct UrlOptions {
-    /// WebSocket URL
-    #[serde(rename = "wsUrl", default)]
-    pub ws_url: Option<String>,
-    /// 管理后台URL
-    #[serde(rename = "adminUrl", default)]
-    pub admin_url: Option<String>,
     /// 服务器URL
     #[serde(rename = "serverUrl", default)]
     pub server_url: Option<String>,
     /// 网站URL
     #[serde(rename = "webUrl", default)]
     pub web_url: Option<String>,
-}
-
-/// Feature list configuration (safe to expose)
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct FeatureListOptions {
-    /// 是否启用邮件订阅
-    #[serde(rename = "emailSubscribe", default)]
-    pub email_subscribe: bool,
 }
 
 /// Friend link options (safe to expose)
@@ -100,31 +86,6 @@ pub struct OAuthProvider {
     pub enabled: bool,
 }
 
-/// Algolia search options - only public fields (partial exposure)
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct AlgoliaPublicOptions {
-    /// 是否启用Algolia搜索
-    #[serde(default)]
-    pub enable: bool,
-    /// Algolia应用ID
-    #[serde(rename = "appId", default)]
-    pub app_id: Option<String>,
-    /// 索引名称
-    #[serde(rename = "indexName", default)]
-    pub index_name: Option<String>,
-}
-
-/// Admin extra - only safe fields (partial exposure)
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct AdminExtraPublic {
-    /// 管理后台标题
-    #[serde(default)]
-    pub title: Option<String>,
-    /// 背景图片
-    #[serde(default)]
-    pub background: Option<String>,
-}
-
 // ============================================================================
 // Aggregated Site Config (Safe for frontend)
 // ============================================================================
@@ -137,16 +98,10 @@ pub struct SiteConfig {
     pub seo: SeoOptions,
     /// URL配置
     pub url: UrlOptions,
-    /// 功能配置
-    pub features: FeatureListOptions,
     /// 友链配置
     pub friend_link: FriendLinkOptions,
     /// 评论配置
     pub comment: CommentOptionsPublic,
     /// OAuth配置
     pub oauth: OAuthPublicOptions,
-    /// Algolia搜索配置
-    pub algolia: AlgoliaPublicOptions,
-    /// 管理员额外配置
-    pub admin_extra: AdminExtraPublic,
 }

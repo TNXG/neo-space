@@ -1,4 +1,4 @@
-//! Extended content models: Say / Topic / Snippet / Project / Draft / Webhook / Subscribe
+//! Extended content models: Say / Topic / Snippet / Project / Draft
 //!
 //! 这些模型补齐 admin 管理面板所依赖的内容实体。命名与 mx-admin 保持一致以便前端对接。
 
@@ -185,83 +185,4 @@ pub struct Draft {
 
 fn default_draft_version() -> i32 {
     1
-}
-
-// ==================== Webhook ====================
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct Webhook {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
-    #[schema(value_type = String)]
-    pub id: ObjectId,
-    pub name: String,
-    pub url: String,
-    #[serde(default)]
-    pub events: Vec<String>,
-    #[serde(default)]
-    pub secret: Option<String>,
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(serialize_with = "serialize_datetime")]
-    #[schema(value_type = String)]
-    pub created: bson::DateTime,
-}
-
-// ==================== Subscribe ====================
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct Subscriber {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
-    #[schema(value_type = String)]
-    pub id: ObjectId,
-    pub email: String,
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(default)]
-    pub types: Vec<String>,
-    #[serde(serialize_with = "serialize_datetime")]
-    #[schema(value_type = String)]
-    pub created: bson::DateTime,
-}
-
-// ==================== Token ====================
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct ApiToken {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
-    #[schema(value_type = String)]
-    pub id: ObjectId,
-    pub name: String,
-    pub token: String,
-    #[serde(default, serialize_with = "serialize_optional_datetime")]
-    #[schema(value_type = Option<String>)]
-    pub expired: Option<bson::DateTime>,
-    #[serde(serialize_with = "serialize_datetime")]
-    #[schema(value_type = String)]
-    pub created: bson::DateTime,
-}
-
-// ==================== Cron Task ====================
-
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct CronTaskRecord {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
-    #[schema(value_type = String)]
-    pub id: ObjectId,
-    #[serde(rename = "type")]
-    pub task_type: String,
-    pub status: String,
-    #[serde(default)]
-    #[schema(value_type = Object)]
-    pub payload: Option<bson::Document>,
-    #[serde(default)]
-    pub progress: Option<i32>,
-    #[serde(rename = "progressMessage", default)]
-    pub progress_message: Option<String>,
-    #[serde(rename = "createdAt")]
-    pub created_at: i64,
-    #[serde(rename = "startedAt", default)]
-    pub started_at: Option<i64>,
-    #[serde(rename = "completedAt", default)]
-    pub completed_at: Option<i64>,
 }

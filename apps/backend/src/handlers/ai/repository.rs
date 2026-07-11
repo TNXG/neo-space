@@ -16,6 +16,7 @@ fn to_translation_ref_type(ref_type: &str) -> Option<&'static str> {
         "post" => Some("posts"),
         "note" => Some("notes"),
         "page" => Some("pages"),
+        "recently" => Some("recently"),
         _ => None,
     }
 }
@@ -62,6 +63,15 @@ pub(super) async fn fetch_content_text(
                 .map_err(|error| AppError::Database(error.to_string()))?
                 .ok_or_else(|| AppError::NotFound("Page not found".to_string()))?;
             format!("{}\n\n{}", page.title, page.text)
+        }
+        "recently" => {
+            let collection = state.db.collection::<Recently>("recently");
+            let recently = collection
+                .find_one(doc! { "_id": object_id })
+                .await
+                .map_err(|error| AppError::Database(error.to_string()))?
+                .ok_or_else(|| AppError::NotFound("Recently not found".to_string()))?;
+            recently.content
         }
         _ => {
             return Err(AppError::BadRequest(format!(

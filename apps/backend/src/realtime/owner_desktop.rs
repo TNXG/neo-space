@@ -126,7 +126,7 @@ fn verify_token(token: Option<String>) -> Result<(), String> {
 /// Handle owner desktop client message
 async fn handle_message(
     text: &str,
-    _state: &SharedState,
+    state: &SharedState,
 ) -> Result<Option<ServerToOwnerDesktopMessage>, String> {
     let desktop_msg: OwnerDesktopMessage =
         serde_json::from_str(text).map_err(|e| format!("Failed to parse message: {}", e))?;
@@ -162,7 +162,7 @@ async fn handle_message(
             );
             // Broadcast to WebSocket readers
             let now = chrono::Utc::now().timestamp();
-            let netease = _state.ncm_np_service.get_now_playing().await;
+            let netease = state.ncm_np_service.get_now_playing().await;
             tokio::spawn(async move {
                 broadcast_to_all_readers(ServerToReaderMessage::OwnerMediaPlayback {
                     metadata,
@@ -186,7 +186,14 @@ async fn handle_message(
                 mime_type
             );
 
-            match handle_artwork_upload(&content_item_identifier, artwork_data, &mime_type).await {
+            match handle_artwork_upload(
+                &content_item_identifier,
+                artwork_data,
+                &mime_type,
+                &state.config.backend_url,
+            )
+            .await
+            {
                 Ok(artwork_url) => Ok(Some(ServerToOwnerDesktopMessage::ArtworkUploaded {
                     content_item_identifier,
                     artwork_url,
@@ -214,6 +221,7 @@ async fn handle_artwork_upload(
     content_item_identifier: &str,
     artwork_data: Vec<u8>,
     mime_type: &str,
+    backend_url: &str,
 ) -> Result<String, String> {
     // Determine file extension from MIME type
     let ext = match mime_type {
@@ -257,8 +265,6 @@ async fn handle_artwork_upload(
     tracing::info!("Artwork saved: {}", filepath.display());
 
     // Generate full URL
-    let backend_url =
-        std::env::var("BACKEND_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
     let artwork_url = format!("{}/api/static/artworks/{}", backend_url, filename);
 
     Ok(artwork_url)

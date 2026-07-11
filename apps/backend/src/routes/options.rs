@@ -10,6 +10,8 @@ pub fn routes() -> Router<SharedState> {
         .route("/url", routing::get(options::get_url_options))
         .route(
             "/{key}",
-            routing::get(options::get_option).patch(options::upsert_option),
+            routing::get(options::get_option)
+                .patch(options::upsert_option)
+                .put(options::replace_option),
         )
 }

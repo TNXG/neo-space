@@ -25,17 +25,17 @@ pub(super) fn build_search_service(
 }
 
 async fn delete_documents_by_filter(
-    client: &reqwest::Client,
+    state: &SharedState,
     index: &str,
     filter: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let host = std::env::var("MEILISEARCH_URL")
-        .or_else(|_| std::env::var("MEILISEARCH_HOST"))
-        .unwrap_or_else(|_| "http://localhost:7700".to_string());
-    let api_key = std::env::var("MEILISEARCH_API_KEY").ok();
+    let host = &state.config.meilisearch_host;
+    let api_key =
+        (!state.config.meilisearch_api_key.is_empty()).then_some(&state.config.meilisearch_api_key);
 
     let url = format!("{host}/indexes/{index}/documents/delete");
-    let mut request = client
+    let mut request = state
+        .http_client
         .post(&url)
         .json(&serde_json::json!({ "filter": filter }));
 
@@ -80,12 +80,7 @@ pub(super) async fn replace_post_documents_for_ref(
         &translation_map,
     );
 
-    delete_documents_by_filter(
-        &state.http_client,
-        "posts",
-        &format!("ref_id = \"{post_id}\""),
-    )
-    .await?;
+    delete_documents_by_filter(state, "posts", &format!("ref_id = \"{post_id}\"")).await?;
     search_service
         .index_posts(docs)
         .await
@@ -102,12 +97,7 @@ pub(super) async fn replace_note_documents_for_ref(
     let translation_map = fetch_note_translation_map(state, std::slice::from_ref(&note_id)).await;
     let docs = build_note_documents(vec![note], &translation_map);
 
-    delete_documents_by_filter(
-        &state.http_client,
-        "notes",
-        &format!("ref_id = \"{note_id}\""),
-    )
-    .await?;
+    delete_documents_by_filter(state, "notes", &format!("ref_id = \"{note_id}\"")).await?;
     search_service
         .index_notes(docs)
         .await

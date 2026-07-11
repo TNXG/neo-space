@@ -1,10 +1,9 @@
 //! Link (Friend) model
 
-use bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::serializers::{serialize_datetime, serialize_object_id};
+use super::serializers::{deserialize_id_to_string, serialize_datetime};
 
 /// Link state constants
 /// - 0: Normal
@@ -27,9 +26,9 @@ impl LinkType {
 /// Link (Friend) model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Link {
-    #[serde(rename = "_id", serialize_with = "serialize_object_id")]
+    #[serde(rename = "_id", deserialize_with = "deserialize_id_to_string")]
     #[schema(value_type = String)]
-    pub id: ObjectId,
+    pub id: String,
     pub name: String,
     pub url: String,
     #[serde(default)]

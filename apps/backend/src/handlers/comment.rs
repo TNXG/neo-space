@@ -150,6 +150,20 @@ pub async fn create_comment(
     headers: HeaderMap,
     AppJson(payload): AppJson<CreateCommentRequest>,
 ) -> AppResult<Json<ApiResponse<CommentTree>>> {
+    if state.config.comments_disabled {
+        return Err(AppError::Forbidden);
+    }
+    if !state.config.comments_allow_no_chinese
+        && !payload
+            .text
+            .chars()
+            .any(|character| ('\u{4e00}'..='\u{9fff}').contains(&character))
+    {
+        return Err(AppError::BadRequest(
+            "Comment must contain Chinese characters".to_string(),
+        ));
+    }
+
     let normalized_ref_type = CommentService::normalize_ref_type(&payload.ref_type);
 
     // Convert ref string to Bson (ObjectId if valid, otherwise String)
@@ -201,9 +215,20 @@ pub async fn create_comment(
 
     // Extract client IP from headers
     let client_ip = extract_client_ip(&headers).or_else(|| Some(peer_addr.ip().to_string()));
+    if client_ip.as_ref().is_some_and(|ip| {
+        state
+            .config
+            .comments_blocked_ips
+            .iter()
+            .any(|blocked| blocked == ip)
+    }) {
+        return Err(AppError::Forbidden);
+    }
 
     // Get IP location asynchronously
-    let location = if let Some(ref ip) = client_ip {
+    let location = if state.config.comments_record_ip_location
+        && let Some(ref ip) = client_ip
+    {
         get_ip_location(ip, &state.http_client).await
     } else {
         None
@@ -326,10 +351,21 @@ pub async fn create_comment(
     });
 
     // Determine comment state based on user role
+    let contains_spam_keyword = state.config.comments_spam_keywords.iter().any(|keyword| {
+        !keyword.trim().is_empty()
+            && payload
+                .text
+                .to_lowercase()
+                .contains(&keyword.trim().to_lowercase())
+    });
     let state_value = if is_owner {
         CommentState::READ // Admin comments are automatically approved
+    } else if contains_spam_keyword {
+        CommentState::SPAM
+    } else if state.config.comments_require_audit {
+        CommentState::PENDING
     } else {
-        CommentState::PENDING // Normal users need approval
+        CommentState::UNREAD
     };
 
     let created_at = bson::DateTime::now();

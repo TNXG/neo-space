@@ -9,7 +9,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use bson::{doc, oid::ObjectId};
+use bson::{Bson, doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::Deserialize;
 
@@ -18,6 +18,15 @@ use serde::Deserialize;
 pub struct ListLinksParams {
     page: Option<u64>,
     size: Option<u64>,
+}
+
+fn link_id_filter(id: &str) -> bson::Document {
+    let mut candidates = vec![Bson::String(id.to_string())];
+    if let Ok(oid) = ObjectId::parse_str(id) {
+        candidates.push(Bson::ObjectId(oid));
+    }
+
+    doc! { "_id": { "$in": candidates } }
 }
 
 /// Send verification code to email
@@ -104,7 +113,7 @@ pub async fn list_links(
     // Wrap in LinkWithHealth and enrich with health data from cache
     let mut items = Vec::new();
     for link in links {
-        let cache_key = format!("link_health_{}", link.id.to_hex());
+        let cache_key = format!("link_health_{}", link.id);
         // Try to get from cache - returns None if not cached yet
         let health = state
             .link_health_cache
@@ -137,13 +146,10 @@ pub async fn get_link(
     State(state): State<SharedState>,
     Path(id): Path<String>,
 ) -> AppResult<Json<ApiResponse<Link>>> {
-    let object_id = ObjectId::parse_str(&id)
-        .map_err(|_| AppError::BadRequest("Invalid ID format".to_string()))?;
-
     let collection = state.db.collection::<Link>("links");
 
     let link = collection
-        .find_one(doc! { "_id": object_id })
+        .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(format!("Failed to find link: {}", e)))?
         .ok_or(AppError::NotFound("Link not found".to_string()))?;
@@ -157,10 +163,52 @@ pub async fn get_link(
 }
 
 /// Apply for a friend link
+async fn friend_link_policy(state: &SharedState) -> (bool, bool) {
+    let value = state
+        .db
+        .collection::<bson::Document>("options")
+        .find_one(doc! { "name": "friendLinkOptions" })
+        .await
+        .ok()
+        .flatten()
+        .and_then(|document| document.get_document("value").ok().cloned());
+
+    value.map_or(
+        (
+            state.config.friend_link_allow_apply,
+            state.config.friend_link_allow_sub_path,
+        ),
+        |value| {
+            (
+                value
+                    .get_bool("allowApply")
+                    .unwrap_or(state.config.friend_link_allow_apply),
+                value
+                    .get_bool("allowSubPath")
+                    .unwrap_or(state.config.friend_link_allow_sub_path),
+            )
+        },
+    )
+}
+
 pub async fn apply_link(
     State(state): State<SharedState>,
     AppJson(payload): AppJson<LinkApplyRequest>,
 ) -> AppResult<Json<ApiResponse<Link>>> {
+    let (allow_apply, allow_sub_path) = friend_link_policy(&state).await;
+    if !allow_apply {
+        return Err(AppError::Forbidden);
+    }
+    if !allow_sub_path {
+        let parsed_url = reqwest::Url::parse(&payload.url)
+            .map_err(|_| AppError::BadRequest("Invalid friend link URL".to_string()))?;
+        if parsed_url.path() != "/" && !parsed_url.path().is_empty() {
+            return Err(AppError::BadRequest(
+                "Friend link URL must point to the site root".to_string(),
+            ));
+        }
+    }
+
     let email_service = &state.email_service;
 
     // 1. Verify the verification code
@@ -185,7 +233,7 @@ pub async fn apply_link(
 
     // 3. Create new friend link with PENDING state
     let new_link = Link {
-        id: ObjectId::new(),
+        id: ObjectId::new().to_hex(),
         name: payload.name.clone(),
         url: payload.url.clone(),
         avatar: payload.avatar.clone(),
@@ -219,14 +267,10 @@ async fn get_site_name(state: &SharedState) -> Option<String> {
 
     let collection: mongodb::Collection<Document> = state.db.collection("options");
 
-    let option = collection
-        .find_one(doc! { "name": "siteConfig" })
-        .await
-        .ok()??;
+    let option = collection.find_one(doc! { "name": "seo" }).await.ok()??;
 
     let value = option.get_document("value").ok()?;
-    let seo = value.get_document("seo").ok()?;
-    let title = seo.get_str("title").ok()?;
+    let title = value.get_str("title").ok()?;
 
     if title.is_empty() {
         None

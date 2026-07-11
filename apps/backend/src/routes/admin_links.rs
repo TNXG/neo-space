@@ -7,6 +7,7 @@ use axum::{Router, routing};
 pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/", routing::post(links::create_link))
+        .route("/admin", routing::get(links::list_links))
         .route("/health", routing::get(links::check_link_health))
         .route("/state", routing::get(links::link_state_count))
         .route(

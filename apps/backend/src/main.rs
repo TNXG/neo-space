@@ -48,11 +48,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting Neo-Space Axum Backend...");
 
     // Load configuration
-    let config = AppConfig::from_env()?;
+    let mut config = AppConfig::from_env()?;
     info!("Configuration loaded successfully");
 
     // Initialize database
     let db = database::init_database(&config).await?;
+    config::runtime::migrate_options(&db, &config).await?;
+    config::runtime::apply_database_options(&db, &mut config).await;
 
     // Create application state
     let state = app::create_state(db, config.clone());
@@ -74,10 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Change Stream 监听任务已启动（后台任务）");
 
     // Start link health check task
-    let link_check_interval = std::env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(6);
+    let link_check_interval = state.config.link_health_interval_hours;
     info!("正在预热友链健康检查缓存...");
     tasks::run_link_health_check(&state).await;
     tasks::start_link_health_task(state.clone());

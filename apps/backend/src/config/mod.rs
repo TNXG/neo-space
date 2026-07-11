@@ -1,6 +1,7 @@
 //! Configuration management
 
 pub mod database;
+pub mod runtime;
 
 use std::env;
 
@@ -33,6 +34,26 @@ pub struct AppConfig {
     pub meilisearch_host: String,
     /// Meilisearch API key
     pub meilisearch_api_key: String,
+    /// Friend link health check interval in hours
+    pub link_health_interval_hours: u64,
+    /// Friend link request timeout in seconds
+    pub link_health_timeout_secs: u64,
+    /// Whether visitors may submit friend link applications
+    pub friend_link_allow_apply: bool,
+    /// Whether friend links may point to URL sub-paths
+    pub friend_link_allow_sub_path: bool,
+    /// Whether all comments are disabled
+    pub comments_disabled: bool,
+    /// Whether comments without Chinese characters are allowed
+    pub comments_allow_no_chinese: bool,
+    /// Whether non-owner comments require moderation
+    pub comments_require_audit: bool,
+    /// Whether IP geolocation is recorded
+    pub comments_record_ip_location: bool,
+    /// Blocked comment IP addresses
+    pub comments_blocked_ips: Vec<String>,
+    /// Keywords that immediately classify a comment as spam
+    pub comments_spam_keywords: Vec<String>,
     /// Whether to expose the embedded admin dashboard
     pub admin_dashboard_enabled: bool,
 }
@@ -105,6 +126,22 @@ impl AppConfig {
                 .or_else(|_| env::var("MEILISEARCH_HOST"))
                 .unwrap_or_else(|_| "http://localhost:7700".to_string()),
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
+            link_health_interval_hours: env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(6),
+            link_health_timeout_secs: env::var("LINK_HEALTH_TIMEOUT")
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(10),
+            friend_link_allow_apply: false,
+            friend_link_allow_sub_path: false,
+            comments_disabled: false,
+            comments_allow_no_chinese: true,
+            comments_require_audit: true,
+            comments_record_ip_location: true,
+            comments_blocked_ips: Vec::new(),
+            comments_spam_keywords: Vec::new(),
             admin_dashboard_enabled: env::var("ADMIN_DASHBOARD_ENABLED")
                 .ok()
                 .map(|v| {

@@ -31,6 +31,7 @@ pub struct LinkHealthStatus {
 pub async fn perform_health_check(
     link: &serde_json::Value,
     http_client: &reqwest::Client,
+    timeout_secs: u64,
 ) -> LinkHealthStatus {
     let start = std::time::Instant::now();
 
@@ -44,8 +45,6 @@ pub async fn perform_health_check(
                     .map(ToString::to_string)
             })
         })
-        .and_then(|value| bson::oid::ObjectId::parse_str(&value).ok())
-        .map(bson::oid::ObjectId::to_hex)
         .unwrap_or_else(|| "unknown".to_string());
 
     let url = link
@@ -72,7 +71,7 @@ pub async fn perform_health_check(
     match http_client
         .get(url)
         .header("User-Agent", user_agent)
-        .timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(timeout_secs.clamp(1, 120)))
         .send()
         .await
     {

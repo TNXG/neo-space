@@ -19,9 +19,10 @@ pub struct AiConfig {
     pub api_key: String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AiUsage {
     Summary,
+    Translation,
     CommentReview,
 }
 
@@ -34,9 +35,13 @@ struct AiOptionsValue {
     #[serde(default)]
     summary_model: Option<AiModelSelection>,
     #[serde(default)]
+    translation_model: Option<AiModelSelection>,
+    #[serde(default)]
     comment_review_model: Option<AiModelSelection>,
     #[serde(default)]
     enable_summary: bool,
+    #[serde(default)]
+    enable_translation: bool,
     #[serde(default)]
     open_ai_endpoint: String,
     #[serde(default)]
@@ -65,6 +70,8 @@ struct AiProvider {
 #[serde(rename_all = "camelCase")]
 struct AiModelSelection {
     provider_id: String,
+    #[serde(default)]
+    model: Option<String>,
 }
 
 /// Chat message role
@@ -118,6 +125,10 @@ fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Opti
             .summary_model
             .as_ref()
             .map(|model| model.provider_id.as_str()),
+        AiUsage::Translation => ai_options
+            .translation_model
+            .as_ref()
+            .map(|model| model.provider_id.as_str()),
         AiUsage::CommentReview => ai_options
             .comment_review_model
             .as_ref()
@@ -128,6 +139,14 @@ fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Opti
 fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, String> {
     if !ai_options.providers.is_empty() {
         let selected_provider_id = get_selected_provider_id(&ai_options, usage);
+        if usage == AiUsage::CommentReview && selected_provider_id.is_none() {
+            return Err("Comment review provider and model are not configured".to_string());
+        }
+        let selected_model = match usage {
+            AiUsage::Summary => ai_options.summary_model.as_ref(),
+            AiUsage::Translation => ai_options.translation_model.as_ref(),
+            AiUsage::CommentReview => ai_options.comment_review_model.as_ref(),
+        };
         let provider = selected_provider_id
             .and_then(|provider_id| {
                 ai_options
@@ -136,30 +155,54 @@ fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, 
                     .find(|provider| provider.id == provider_id)
             })
             .or_else(|| {
-                ai_options
-                    .providers
-                    .iter()
-                    .find(|provider| provider.enabled)
+                (usage != AiUsage::CommentReview)
+                    .then(|| {
+                        ai_options
+                            .providers
+                            .iter()
+                            .find(|provider| provider.enabled)
+                    })
+                    .flatten()
             })
             .ok_or_else(|| "No enabled AI provider found".to_string())?;
 
-        if provider.provider_type != "openai" {
+        if !matches!(
+            provider.provider_type.as_str(),
+            "openai" | "openai-compatible"
+        ) {
             return Err(format!(
                 "Unsupported AI provider type for current backend: {}",
                 provider.provider_type
             ));
         }
 
+        let model = selected_model
+            .and_then(|selection| selection.model.clone())
+            .filter(|model| !model.is_empty())
+            .unwrap_or_else(|| provider.default_model.clone());
+        if usage == AiUsage::CommentReview && model.is_empty() {
+            return Err("Comment review model is not configured".to_string());
+        }
+
         return Ok(AiConfig {
-            enabled: provider.enabled,
+            enabled: provider.enabled
+                && match usage {
+                    AiUsage::Summary => ai_options.enable_summary,
+                    AiUsage::Translation => ai_options.enable_translation,
+                    AiUsage::CommentReview => true,
+                },
             endpoint: provider.endpoint.clone(),
-            model: provider.default_model.clone(),
+            model,
             api_key: provider.api_key.clone(),
         });
     }
 
     Ok(AiConfig {
-        enabled: ai_options.enable_summary,
+        enabled: match usage {
+            AiUsage::Summary => ai_options.enable_summary,
+            AiUsage::Translation => ai_options.enable_translation,
+            AiUsage::CommentReview => true,
+        },
         endpoint: ai_options.open_ai_endpoint,
         model: ai_options.open_ai_preferred_model,
         api_key: ai_options.open_ai_key,

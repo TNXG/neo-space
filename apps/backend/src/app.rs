@@ -74,10 +74,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         CACHE_TTL_SECS
     );
 
-    let link_health_interval_hours = std::env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
-        .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .unwrap_or(6);
+    let link_health_interval_hours = config.link_health_interval_hours;
     let link_health_cache_ttl_secs = (link_health_interval_hours + 1) * 3600;
     let link_health_cache = Cache::builder()
         .max_capacity(CACHE_CAPACITY)
@@ -175,7 +172,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/owner", routes::owner::routes())
         .nest("/ai", routes::ai_admin::routes())
         .nest("/files", routes::files::routes())
-        .merge(routes::admin_misc::routes())
+        .merge(routes::admin_dashboard::routes())
         .merge(routes::misc::routes());
 
     // WebSocket routes

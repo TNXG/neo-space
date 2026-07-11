@@ -15,16 +15,7 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
     let mut config = SiteConfig::default();
 
     // Fetch all options we need
-    let names = vec![
-        "seo",
-        "url",
-        "featureList",
-        "friendLinkOptions",
-        "commentOptions",
-        "oauth",
-        "algoliaSearchOptions",
-        "adminExtra",
-    ];
+    let names = vec!["seo", "url", "friendLinkOptions", "commentOptions", "oauth"];
 
     let mut cursor = collection.find(doc! { "name": { "$in": &names } }).await?;
 
@@ -38,11 +29,6 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
             "url" => {
                 if let Ok(url) = bson::from_bson::<UrlOptions>(opt.value) {
                     config.url = url;
-                }
-            }
-            "featureList" => {
-                if let Ok(features) = bson::from_bson::<FeatureListOptions>(opt.value) {
-                    config.features = features;
                 }
             }
             "friendLinkOptions" => {
@@ -80,25 +66,6 @@ pub async fn get_site_config(database: &Database) -> Result<SiteConfig, mongodb:
                     }
 
                     config.oauth = oauth;
-                }
-            }
-            "algoliaSearchOptions" => {
-                // Only extract public fields (no apiKey)
-                if let bson::Bson::Document(doc) = opt.value {
-                    config.algolia = AlgoliaPublicOptions {
-                        enable: doc.get_bool("enable").unwrap_or(false),
-                        app_id: doc.get_str("appId").ok().map(String::from),
-                        index_name: doc.get_str("indexName").ok().map(String::from),
-                    };
-                }
-            }
-            "adminExtra" => {
-                // Only extract safe fields
-                if let bson::Bson::Document(doc) = opt.value {
-                    config.admin_extra = AdminExtraPublic {
-                        title: doc.get_str("title").ok().map(String::from),
-                        background: doc.get_str("background").ok().map(String::from),
-                    };
                 }
             }
             _ => {}
