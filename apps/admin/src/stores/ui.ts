@@ -25,8 +25,25 @@ export interface ViewportRecord {
   phone: boolean;
 }
 
+const readViewport = (): ViewportRecord => {
+  if (typeof window === "undefined") {
+    return { w: 1280, h: 800, mobile: false, pad: false, hpad: false, wider: true, widest: false, phone: false };
+  }
+  const width = document.documentElement.getBoundingClientRect().width;
+  return {
+    w: width,
+    h: window.innerHeight,
+    mobile: window.screen.width <= 568 || window.innerWidth <= 568,
+    pad: window.innerWidth <= 768 && window.innerWidth > 568,
+    hpad: window.innerWidth <= 1024 && window.innerWidth > 768,
+    wider: window.innerWidth > 1024 && window.innerWidth < 1920,
+    widest: window.innerWidth >= 1920,
+    phone: window.innerWidth <= 768,
+  };
+};
+
 export const useUIStore = defineStore("ui", () => {
-  const viewport = ref<ViewportRecord>({} as any);
+  const viewport = ref<ViewportRecord>(readViewport());
   const sidebarCollapse = ref(!!viewport.value.mobile);
 
   const themeMode = useStorage<ThemeMode>("theme-mode", "system");
@@ -64,8 +81,9 @@ export const useUIStore = defineStore("ui", () => {
     updateViewport();
   });
   const updateViewport = () => {
-    const innerHeight = window.innerHeight;
-    const width = document.documentElement.getBoundingClientRect().width;
+    const nextViewport = readViewport();
+    const innerHeight = nextViewport.h;
+    const width = nextViewport.w;
     const { hpad, pad, mobile } = viewport.value;
 
     // 忽略移动端浏览器 上下滚动 导致的视图大小变化
@@ -78,17 +96,7 @@ export const useUIStore = defineStore("ui", () => {
     ) {
       return;
     }
-    viewport.value = {
-      w: width,
-      h: innerHeight,
-      mobile: window.screen.width <= 568 || window.innerWidth <= 568,
-      pad: window.innerWidth <= 768 && window.innerWidth > 568,
-      hpad: window.innerWidth <= 1024 && window.innerWidth > 768,
-      wider: window.innerWidth > 1024 && window.innerWidth < 1920,
-      widest: window.innerWidth >= 1920,
-
-      phone: window.innerWidth <= 768,
-    };
+    viewport.value = nextViewport;
   };
 
   const contentWidth = computed(() => {
