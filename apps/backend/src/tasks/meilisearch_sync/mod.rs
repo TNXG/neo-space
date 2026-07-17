@@ -27,6 +27,19 @@ pub(crate) async fn sync_post_to_meilisearch(
     replace_post_documents_for_ref(state, &search_service, post).await
 }
 
+/// 删除文章对应的全部语言搜索文档。
+pub(crate) async fn remove_post_from_meilisearch(
+    state: &SharedState,
+    post_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let search_service = build_search_service(state)?;
+
+    search_service
+        .delete_post_documents_by_ref(post_id)
+        .await
+        .map_err(|error| format!("{error:?}").into())
+}
+
 /// Sync note to `Meilisearch`.
 pub(crate) async fn sync_note_to_meilisearch(
     state: &SharedState,
@@ -37,6 +50,19 @@ pub(crate) async fn sync_note_to_meilisearch(
     let search_service = build_search_service(state)?;
 
     replace_note_documents_for_ref(state, &search_service, note).await
+}
+
+/// 删除笔记对应的全部语言搜索文档。
+pub(crate) async fn remove_note_from_meilisearch(
+    state: &SharedState,
+    note_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let search_service = build_search_service(state)?;
+
+    search_service
+        .delete_note_documents_by_ref(note_id)
+        .await
+        .map_err(|error| format!("{error:?}").into())
 }
 
 /// Sync translation change to `Meilisearch` by rebuilding the owning content's locale documents.

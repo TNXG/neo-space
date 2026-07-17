@@ -3,7 +3,8 @@ use mongodb::{bson::Document, change_stream::event::ChangeStreamEvent};
 use crate::app::SharedState;
 use crate::tasks::isr::trigger_isr_revalidation;
 use crate::tasks::meilisearch_sync::{
-    sync_note_to_meilisearch, sync_post_to_meilisearch, sync_translation_to_meilisearch,
+    remove_note_from_meilisearch, remove_post_from_meilisearch, sync_note_to_meilisearch,
+    sync_post_to_meilisearch, sync_translation_to_meilisearch,
 };
 
 pub(super) async fn handle_translation_change(
@@ -67,9 +68,14 @@ pub(super) async fn handle_post_change(
         sync_post_to_meilisearch(state, event.full_document.as_ref())
             .await
             .map_err(|error| error.to_string())?;
+    } else if let Some(id) = post_id.as_deref() {
+        // 删除或取消发布时必须移除旧文档，否则搜索索引会残留不可见内容。
+        remove_post_from_meilisearch(state, id)
+            .await
+            .map_err(|error| error.to_string())?;
     } else {
         tracing::info!(
-            "Post change skipped Meilisearch sync because post is not published: id={:?}, slug={:?}",
+            "Post change skipped Meilisearch cleanup because document id is missing: id={:?}, slug={:?}",
             post_id,
             slug
         );
@@ -125,9 +131,14 @@ pub(super) async fn handle_note_change(
         sync_note_to_meilisearch(state, event.full_document.as_ref())
             .await
             .map_err(|error| error.to_string())?;
+    } else if let Some(id) = note_id.as_deref() {
+        // 删除或取消发布时必须移除旧文档，否则搜索索引会残留不可见内容。
+        remove_note_from_meilisearch(state, id)
+            .await
+            .map_err(|error| error.to_string())?;
     } else {
         tracing::info!(
-            "Note change skipped Meilisearch sync because note is not published: id={:?}, nid={:?}",
+            "Note change skipped Meilisearch cleanup because document id is missing: id={:?}, nid={:?}",
             note_id,
             nid
         );

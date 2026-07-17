@@ -1,4 +1,24 @@
 services:
+  meilisearch:
+    image: getmeili/meilisearch:${MEILISEARCH_VERSION:-v1.37}
+    container_name: neo-space-meilisearch
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7700:7700"
+    environment:
+      - MEILI_ENV=production
+      - MEILI_MASTER_KEY=${MEILISEARCH_MASTER_KEY:?MEILISEARCH_MASTER_KEY is required}
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - neo-space
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   mongodb:
     image: mongo:7
     container_name: neo-space-mongo
@@ -35,8 +55,13 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      meilisearch:
+        condition: service_healthy
     env_file:
       - .env
+    environment:
+      - MEILISEARCH_URL=http://meilisearch:7700
+      - MEILISEARCH_API_KEY=${MEILISEARCH_MASTER_KEY:?MEILISEARCH_MASTER_KEY is required}
     healthcheck:
       test: [CMD, wget, -q, --spider, "http://localhost:8000/health"]
       interval: 30s
@@ -46,6 +71,7 @@ services:
 volumes:
   mongo_data:
   backend_cache:
+  meilisearch_data:
 
 networks:
   neo-space:

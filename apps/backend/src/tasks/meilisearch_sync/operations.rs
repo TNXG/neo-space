@@ -24,36 +24,6 @@ pub(super) fn build_search_service(
         .map_err(|error| boxed_error(format!("{error:?}")))
 }
 
-async fn delete_documents_by_filter(
-    state: &SharedState,
-    index: &str,
-    filter: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let host = &state.config.meilisearch_host;
-    let api_key =
-        (!state.config.meilisearch_api_key.is_empty()).then_some(&state.config.meilisearch_api_key);
-
-    let url = format!("{host}/indexes/{index}/documents/delete");
-    let mut request = state
-        .http_client
-        .post(&url)
-        .json(&serde_json::json!({ "filter": filter }));
-
-    if let Some(key) = api_key {
-        request = request.header("Authorization", format!("Bearer {key}"));
-    }
-
-    let response = request.send().await?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(format!("Meilisearch delete by filter error: {status} - {body}").into());
-    }
-
-    Ok(())
-}
-
 pub(super) async fn replace_post_documents_for_ref(
     state: &SharedState,
     search_service: &SearchService,
@@ -80,7 +50,10 @@ pub(super) async fn replace_post_documents_for_ref(
         &translation_map,
     );
 
-    delete_documents_by_filter(state, "posts", &format!("ref_id = \"{post_id}\"")).await?;
+    search_service
+        .delete_post_documents_by_ref(&post_id)
+        .await
+        .map_err(|error| boxed_error(format!("{error:?}")))?;
     search_service
         .index_posts(docs)
         .await
@@ -97,7 +70,10 @@ pub(super) async fn replace_note_documents_for_ref(
     let translation_map = fetch_note_translation_map(state, std::slice::from_ref(&note_id)).await;
     let docs = build_note_documents(vec![note], &translation_map);
 
-    delete_documents_by_filter(state, "notes", &format!("ref_id = \"{note_id}\"")).await?;
+    search_service
+        .delete_note_documents_by_ref(&note_id)
+        .await
+        .map_err(|error| boxed_error(format!("{error:?}")))?;
     search_service
         .index_notes(docs)
         .await

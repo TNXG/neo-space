@@ -1,10 +1,14 @@
 //! Search service (Meilisearch)
 
-use meilisearch_sdk::{client::Client, indexes::Index, search::Selectors};
+use meilisearch_sdk::{
+    client::Client, documents::DocumentDeletionQuery, indexes::Index, search::Selectors,
+    task_info::TaskInfo,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::error::AppError;
 
@@ -101,6 +105,52 @@ impl SearchService {
         self.client.index("notes")
     }
 
+    /// 等待异步任务真正成功，避免把“已入队”误判为“已完成”。
+    async fn wait_for_task(&self, task: TaskInfo, operation: &str) -> Result<(), AppError> {
+        let task_uid = task.task_uid;
+        let completed_task = task
+            .wait_for_completion(
+                &self.client,
+                Some(Duration::from_millis(100)),
+                Some(Duration::from_secs(60)),
+            )
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!(
+                    "Meilisearch {operation}任务等待失败（task_uid={task_uid}）: {error}"
+                ))
+            })?;
+
+        if completed_task.is_failure() {
+            let failure = completed_task.unwrap_failure();
+            return Err(AppError::Internal(format!(
+                "Meilisearch {operation}任务执行失败（task_uid={task_uid}）: {failure}"
+            )));
+        }
+
+        if !completed_task.is_success() {
+            return Err(AppError::Internal(format!(
+                "Meilisearch {operation}任务状态异常（task_uid={task_uid}）"
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// 确保索引已创建，并等待创建任务落盘。
+    async fn ensure_index(&self, uid: &str) -> Result<(), AppError> {
+        if self.client.get_index(uid).await.is_ok() {
+            return Ok(());
+        }
+
+        let task = self
+            .client
+            .create_index(uid, Some("id"))
+            .await
+            .map_err(|error| AppError::Internal(format!("创建 {uid} 索引失败: {error}")))?;
+        self.wait_for_task(task, &format!("创建 {uid} 索引")).await
+    }
+
     /// Initialize Meilisearch indexes with proper settings
     pub async fn init_indexes(&self) -> Result<(), AppError> {
         tracing::info!("开始初始化 Meilisearch 索引...");
@@ -125,66 +175,46 @@ impl SearchService {
             }
         }
 
-        // Create posts index
-        match self.client.create_index("posts", Some("id")).await {
-            Ok(task) => {
-                tracing::info!("文章索引创建任务已提交: task_uid={}", task.task_uid);
-            }
-            Err(e) => {
-                let err_str = e.to_string();
-                if err_str.contains("index_already_exists") {
-                    tracing::debug!("文章索引已存在，跳过创建");
-                } else {
-                    tracing::warn!("创建文章索引失败: {}", e);
-                }
-            }
-        }
+        self.ensure_index("posts").await?;
 
         // Configure posts index
         let posts_index = self.posts_index();
-        posts_index
+        let task = posts_index
             .set_searchable_attributes(&["title", "text", "category_name", "tags"])
             .await
             .map_err(|e| AppError::Internal(format!("设置文章 searchable 属性失败: {}", e)))?;
-        posts_index
+        self.wait_for_task(task, "设置文章 searchable 属性").await?;
+        let task = posts_index
             .set_filterable_attributes(&["lang", "ref_id", "category", "tags", "created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置文章 filterable 属性失败: {}", e)))?;
-        posts_index
+        self.wait_for_task(task, "设置文章 filterable 属性").await?;
+        let task = posts_index
             .set_sortable_attributes(&["created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置文章 sortable 属性失败: {}", e)))?;
+        self.wait_for_task(task, "设置文章 sortable 属性").await?;
         tracing::info!("文章索引配置完成");
 
-        // Create notes index
-        match self.client.create_index("notes", Some("id")).await {
-            Ok(task) => {
-                tracing::info!("笔记索引创建任务已提交: task_uid={}", task.task_uid);
-            }
-            Err(e) => {
-                let err_str = e.to_string();
-                if err_str.contains("index_already_exists") {
-                    tracing::debug!("笔记索引已存在，跳过创建");
-                } else {
-                    tracing::warn!("创建笔记索引失败: {}", e);
-                }
-            }
-        }
+        self.ensure_index("notes").await?;
 
         // Configure notes index
         let notes_index = self.notes_index();
-        notes_index
+        let task = notes_index
             .set_searchable_attributes(&["title", "text"])
             .await
             .map_err(|e| AppError::Internal(format!("设置笔记 searchable 属性失败: {}", e)))?;
-        notes_index
+        self.wait_for_task(task, "设置笔记 searchable 属性").await?;
+        let task = notes_index
             .set_filterable_attributes(&["lang", "ref_id", "created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置笔记 filterable 属性失败: {}", e)))?;
-        notes_index
+        self.wait_for_task(task, "设置笔记 filterable 属性").await?;
+        let task = notes_index
             .set_sortable_attributes(&["created"])
             .await
             .map_err(|e| AppError::Internal(format!("设置笔记 sortable 属性失败: {}", e)))?;
+        self.wait_for_task(task, "设置笔记 sortable 属性").await?;
         tracing::info!("笔记索引配置完成");
 
         tracing::info!("Meilisearch 索引初始化完成");
@@ -193,14 +223,18 @@ impl SearchService {
 
     /// Clear all indexed documents before a full rebuild.
     pub async fn clear_indexes(&self) -> Result<(), AppError> {
-        self.posts_index()
+        let task = self
+            .posts_index()
             .delete_all_documents()
             .await
             .map_err(|e| AppError::Internal(format!("清空文章索引失败: {}", e)))?;
-        self.notes_index()
+        self.wait_for_task(task, "清空文章索引").await?;
+        let task = self
+            .notes_index()
             .delete_all_documents()
             .await
             .map_err(|e| AppError::Internal(format!("清空笔记索引失败: {}", e)))?;
+        self.wait_for_task(task, "清空笔记索引").await?;
         Ok(())
     }
 
@@ -211,11 +245,12 @@ impl SearchService {
             return Ok(());
         }
         let index = self.posts_index();
-        index
+        let task = index
             .add_documents(&docs, Some("id"))
             .await
             .map_err(|e| AppError::Internal(format!("批量索引文章失败: {}", e)))?;
-        tracing::info!("已提交 {} 篇文章到 Meilisearch", docs.len());
+        self.wait_for_task(task, "批量索引文章").await?;
+        tracing::info!("已成功索引 {} 篇文章到 Meilisearch", docs.len());
         Ok(())
     }
 
@@ -226,12 +261,42 @@ impl SearchService {
             return Ok(());
         }
         let index = self.notes_index();
-        index
+        let task = index
             .add_documents(&docs, Some("id"))
             .await
             .map_err(|e| AppError::Internal(format!("批量索引笔记失败: {}", e)))?;
-        tracing::info!("已提交 {} 篇笔记到 Meilisearch", docs.len());
+        self.wait_for_task(task, "批量索引笔记").await?;
+        tracing::info!("已成功索引 {} 篇笔记到 Meilisearch", docs.len());
         Ok(())
+    }
+
+    /// 删除指定文章的所有语言文档，并等待删除完成。
+    pub async fn delete_post_documents_by_ref(&self, ref_id: &str) -> Result<(), AppError> {
+        self.delete_documents_by_ref(self.posts_index(), ref_id, "删除文章旧索引")
+            .await
+    }
+
+    /// 删除指定笔记的所有语言文档，并等待删除完成。
+    pub async fn delete_note_documents_by_ref(&self, ref_id: &str) -> Result<(), AppError> {
+        self.delete_documents_by_ref(self.notes_index(), ref_id, "删除笔记旧索引")
+            .await
+    }
+
+    /// 按内容主键删除索引中的全部本地化文档。
+    async fn delete_documents_by_ref(
+        &self,
+        index: Index,
+        ref_id: &str,
+        operation: &str,
+    ) -> Result<(), AppError> {
+        let filter = format!("ref_id = \"{}\"", ref_id.replace('"', "\\\""));
+        let mut query = DocumentDeletionQuery::new(&index);
+        query.with_filter(&filter);
+        let task = index
+            .delete_documents_with(&query)
+            .await
+            .map_err(|error| AppError::Internal(format!("{operation}失败: {error}")))?;
+        self.wait_for_task(task, operation).await
     }
 
     /// Search posts with highlighting

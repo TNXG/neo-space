@@ -6,7 +6,8 @@ use crate::external::search::{NoteDocument, PostDocument};
 use crate::models::{AiTranslation, Category, Note, Post};
 
 fn build_search_document_id(ref_id: &str, lang: &str) -> String {
-    format!("{ref_id}:{lang}")
+    // Meilisearch 文档主键仅允许字母、数字、连字符和下划线，不能使用冒号分隔。
+    format!("{ref_id}_{lang}")
 }
 
 fn normalize_content_language(lang: &str) -> String {
@@ -126,4 +127,22 @@ pub(super) fn build_note_documents(
     }
 
     documents
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_search_document_id;
+
+    /// 验证复合文档主键符合 Meilisearch 的字符约束。
+    #[test]
+    fn builds_meilisearch_compatible_document_id() {
+        let document_id = build_search_document_id("507f1f77bcf86cd799439011", "zh-CN");
+
+        assert_eq!(document_id, "507f1f77bcf86cd799439011_zh-CN");
+        assert!(
+            document_id.chars().all(
+                |character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_')
+            )
+        );
+    }
 }
