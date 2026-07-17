@@ -7,6 +7,7 @@ pub mod content;
 pub mod extended;
 pub mod link;
 pub mod options;
+pub mod passkey;
 pub mod reader;
 pub mod realtime;
 pub mod serializers;
@@ -23,4 +24,5 @@ pub use extended::{Draft, DraftHistoryEntry, Project, Say, Snippet, Topic};
 pub use link::{
     Link, LinkApplyRequest, LinkHealthStatus, LinkState, LinkType, LinkWithHealth, SendCodeRequest,
 };
+pub use passkey::{PasskeySummary, StoredPasskey};
 pub use user::{Account, AccountResponse, GitHubUser, Reader, ReaderResponse, User, UserSocialIds};

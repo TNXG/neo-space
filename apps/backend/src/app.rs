@@ -12,6 +12,7 @@ use crate::external::email::EmailService;
 use crate::openapi::ApiDoc;
 use crate::routes;
 use crate::services::ncm_np::NeteaseNowPlayingService;
+use crate::services::passkey::PasskeyService;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -34,6 +35,8 @@ pub struct AppState {
     pub email_service: EmailService,
     /// NetEase Cloud Music now playing service
     pub ncm_np_service: NeteaseNowPlayingService,
+    /// Passkey 服务；仅在 BACKEND_URL 可作为合法 WebAuthn Origin 时启用
+    pub passkey_service: Option<PasskeyService>,
 }
 
 /// Real-time event types
@@ -118,6 +121,12 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
     let ncm_np_service = NeteaseNowPlayingService::new(db.clone());
     tracing::info!("网易云音乐服务初始化完成");
 
+    let passkey_service = PasskeyService::from_backend_url(&config.backend_url);
+    tracing::info!(
+        enabled = passkey_service.is_some(),
+        "Passkey 服务初始化完成"
+    );
+
     tracing::info!("所有应用服务初始化完成");
 
     Arc::new(AppState {
@@ -129,6 +138,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         http_client,
         email_service,
         ncm_np_service,
+        passkey_service,
     })
 }
 

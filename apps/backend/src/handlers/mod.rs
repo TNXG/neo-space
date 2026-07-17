@@ -12,6 +12,7 @@ pub mod note;
 pub mod oauth;
 pub mod owner;
 pub mod page;
+pub mod passkey;
 pub mod post;
 pub mod search;
 pub mod users;

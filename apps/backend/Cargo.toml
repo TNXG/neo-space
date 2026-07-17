@@ -87,6 +87,7 @@ serde_json = { version = "1.0.150", default-features = false, features = [ "std"
 
 # Auth
 jsonwebtoken = { version = "10.4.0", default-features = false, features = [ "rust_crypto" ] }
+webauthn-rs = { version = "0.5.4", default-features = false }
 rustls = { version = "0.23.40", default-features = false, features = [
   "ring",
   "logging",

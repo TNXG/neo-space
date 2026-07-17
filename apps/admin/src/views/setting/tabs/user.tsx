@@ -6,13 +6,14 @@ import {
   Camera as CameraIcon,
   CircleCheck as CheckCircleOutlinedIcon,
   Globe as GlobeIcon,
+  KeyRound as PasskeyIcon,
   Link as LinkIcon,
   Mail as MailIcon,
   Plus as PlusIcon,
   Trash2 as TrashIcon,
   User as UserIcon,
 } from "lucide-vue-next";
-import { NButton, NInput, NSelect, NSkeleton } from "naive-ui";
+import { NButton, NInput, NPopconfirm, NSelect, NSkeleton } from "naive-ui";
 import {
   computed,
   defineComponent,
@@ -26,6 +27,8 @@ import {
 import { toast } from "vue-sonner";
 
 import { userApi } from "~/api/user";
+import { passkeyApi } from "~/api/passkey";
+import type { PasskeySummary } from "~/api/passkey";
 import Avatar from "~/components/avatar";
 import { HeaderActionButton } from "~/components/button/header-action-button";
 import { IpInfoPopover } from "~/components/ip-info";
@@ -39,6 +42,9 @@ import { deepDiff } from "~/utils";
 export const TabUser = defineComponent(() => {
   const data = ref({} as UserModel);
   const loading = ref(true);
+  const passkeys = ref<PasskeySummary[]>([]);
+  const passkeyName = ref("");
+  const passkeyLoading = ref(false);
   let origin: UserModel;
 
   async function fetchOwner() {
@@ -49,9 +55,43 @@ export const TabUser = defineComponent(() => {
     loading.value = false;
   }
 
+  /** 刷新当前 Owner 已注册的 Passkey 列表。 */
+  async function fetchPasskeys() {
+    passkeys.value = await passkeyApi.list();
+  }
+
   onMounted(async () => {
-    await fetchOwner();
+    await Promise.all([fetchOwner(), fetchPasskeys()]);
   });
+
+  /** 注册一个新的 Passkey，并在完成后刷新列表。 */
+  const registerPasskey = async () => {
+    const name = passkeyName.value.trim();
+    if (!name || passkeyLoading.value)
+      return;
+    try {
+      passkeyLoading.value = true;
+      await passkeyApi.register(name);
+      passkeyName.value = "";
+      await fetchPasskeys();
+      toast.success("Passkey 添加成功");
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "NotAllowedError") {
+        toast.error("Passkey 注册已取消");
+      } else {
+        toast.error(error instanceof Error ? error.message : "Passkey 添加失败");
+      }
+    } finally {
+      passkeyLoading.value = false;
+    }
+  };
+
+  /** 删除指定 Passkey。 */
+  const deletePasskey = async (id: string) => {
+    await passkeyApi.delete(id);
+    await fetchPasskeys();
+    toast.success("Passkey 已删除");
+  };
   const diff = computed(() => deepDiff(origin, data.value));
   const hasChanges = computed(() => !isEmpty(diff.value));
 
@@ -307,6 +347,82 @@ export const TabUser = defineComponent(() => {
                   spellcheck: false,
                 }}
               />
+            </SettingsRow>
+          </SettingsSection>
+
+          <SettingsSection
+            title="登录方式"
+            description="Passkey 可用于无密码登录；QQ、GitHub 等 OAuth 登录在系统设置中启用"
+            icon={PasskeyIcon}
+          >
+            <SettingsRow
+              title="添加 Passkey"
+              description="建议使用设备名称，便于以后识别和移除"
+            >
+              <div class="flex gap-2 w-full">
+                <NInput
+                  value={passkeyName.value}
+                  onInput={value => (passkeyName.value = value)}
+                  placeholder="例如：MacBook Touch ID"
+                  disabled={passkeyLoading.value}
+                  onKeyup={(event: KeyboardEvent) => {
+                    if (event.key === "Enter")
+                      void registerPasskey();
+                  }}
+                />
+                <NButton
+                  type="primary"
+                  loading={passkeyLoading.value}
+                  disabled={!passkeyName.value.trim()}
+                  onClick={() => void registerPasskey()}
+                >
+                  添加
+                </NButton>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow title="已注册 Passkey">
+              <div class="divide-neutral-100 divide-y w-full dark:divide-neutral-800">
+                {passkeys.value.length === 0
+                  ? (
+                      <p class="text-sm text-neutral-400 py-3 m-0">
+                        尚未注册 Passkey
+                      </p>
+                    )
+                  : passkeys.value.map(passkey => (
+                      <div key={passkey._id} class="py-3 flex gap-3 items-center">
+                        <div class="rounded-md bg-neutral-100 flex shrink-0 size-8 items-center justify-center dark:bg-neutral-800">
+                          <PasskeyIcon class="text-neutral-500 size-4" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm text-neutral-900 font-medium m-0 truncate dark:text-neutral-100">
+                            {passkey.name}
+                          </p>
+                          <p class="text-xs text-neutral-400 mt-0.5 mb-0">
+                            添加于 <RelativeTime time={passkey.createdAt} />
+                            {passkey.lastUsedAt && (
+                              <> · 最近使用 <RelativeTime time={passkey.lastUsedAt} /></>
+                            )}
+                          </p>
+                        </div>
+                        <NPopconfirm
+                          onPositiveClick={() => void deletePasskey(passkey._id)}
+                          v-slots={{
+                            trigger: () => (
+                              <button
+                                type="button"
+                                aria-label={`删除 ${passkey.name}`}
+                                class="text-neutral-400 rounded-md flex shrink-0 size-8 cursor-pointer transition-colors items-center justify-center hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                              >
+                                <TrashIcon class="size-4" />
+                              </button>
+                            ),
+                            default: () => `确定删除 ${passkey.name}？`,
+                          }}
+                        />
+                      </div>
+                    ))}
+              </div>
             </SettingsRow>
           </SettingsSection>
 

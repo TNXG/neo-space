@@ -51,4 +51,29 @@ pub fn routes() -> axum::Router<SharedState> {
             "/avatar",
             axum::routing::put(handlers::auth::update_user_avatar),
         )
+        // Passkey 注册、管理与登录
+        .route(
+            "/passkeys",
+            axum::routing::get(handlers::passkey::list_passkeys),
+        )
+        .route(
+            "/passkeys/{id}",
+            axum::routing::delete(handlers::passkey::delete_passkey),
+        )
+        .route(
+            "/passkeys/register/start",
+            axum::routing::post(handlers::passkey::start_registration),
+        )
+        .route(
+            "/passkeys/register/finish",
+            axum::routing::post(handlers::passkey::finish_registration),
+        )
+        .route(
+            "/passkeys/authenticate/start",
+            axum::routing::post(handlers::passkey::start_authentication),
+        )
+        .route(
+            "/passkeys/authenticate/finish",
+            axum::routing::post(handlers::passkey::finish_authentication),
+        )
 }

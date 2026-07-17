@@ -1,10 +1,11 @@
-import type { PropType } from "vue";
+import type { Component, PropType } from "vue";
 import type { OptionValue } from "~/api/options";
 import { cloneDeep } from "es-toolkit/compat";
-import { Github as GithubIcon, MessageCircle as QQIcon } from "lucide-vue-next";
+import { Fingerprint as PasskeyIcon, Github as GithubIcon } from "lucide-vue-next";
 import { NInput, NSwitch } from "naive-ui";
 import { defineComponent } from "vue";
 
+import { QQIcon } from "~/components/icons/QQIcon";
 import { SettingsRow, SettingsSection } from "~/layouts/settings-layout";
 
 type OptionRecord = Record<string, OptionValue>;
@@ -13,18 +14,18 @@ interface ProviderDefinition {
   type: "github" | "qq";
   title: string;
   description: string;
-  publicLabel: string;
-  publicKey: "clientId" | "appId";
-  secretLabel: string;
-  secretKey: "clientSecret" | "appKey";
-  icon: typeof GithubIcon;
+  publicLabel?: string;
+  publicKey?: "clientId";
+  secretLabel?: string;
+  secretKey?: "clientSecret";
+  icon: Component;
 }
 
 const PROVIDERS: ProviderDefinition[] = [
   {
     type: "github",
     title: "GitHub",
-    description: "用于站点用户通过 GitHub 登录",
+    description: "用于站点用户及后台管理员通过 GitHub 登录",
     publicLabel: "Client ID",
     publicKey: "clientId",
     secretLabel: "Client Secret",
@@ -34,11 +35,7 @@ const PROVIDERS: ProviderDefinition[] = [
   {
     type: "qq",
     title: "QQ",
-    description: "用于站点用户通过 QQ 登录",
-    publicLabel: "App ID",
-    publicKey: "appId",
-    secretLabel: "App Key",
-    secretKey: "appKey",
+    description: "通过中转服务登录；回调地址由“站点地址 → 后端服务地址”配置",
     icon: QQIcon,
   },
 ];
@@ -68,8 +65,16 @@ const getNestedString = (
   providerType: string,
   field: string,
 ): string => {
-  const provider = asRecord(asRecord(asRecord(value)[section])[providerType]);
-  return typeof provider[field] === "string" ? provider[field] : "";
+  const root = asRecord(value);
+  const provider = asRecord(asRecord(root[section])[providerType]);
+  if (typeof provider[field] === "string") {
+    return provider[field];
+  }
+  if (section === "secrets") {
+    const legacyProvider = asRecord(asRecord(root.private)[providerType]);
+    return typeof legacyProvider[field] === "string" ? legacyProvider[field] : "";
+  }
+  return "";
 };
 
 export const OAuthConfigSection = defineComponent({
@@ -78,6 +83,13 @@ export const OAuthConfigSection = defineComponent({
     onUpdate: { type: Function as PropType<(value: OptionValue) => void>, required: true },
   },
   setup(props) {
+    /** 切换登录页 Passkey 条件式自动填充模式。 */
+    const updatePasskeyAutomatic = (enabled: boolean) => {
+      const nextValue = asRecord(cloneDeep(props.value));
+      nextValue.passkeyAutomatic = enabled;
+      props.onUpdate(nextValue);
+    };
+
     /** 更新单个提供商开关，同时保留数据库中的其他提供商字段。 */
     const updateEnabled = (providerType: string, enabled: boolean) => {
       const nextValue = asRecord(cloneDeep(props.value));
@@ -118,6 +130,18 @@ export const OAuthConfigSection = defineComponent({
 
     return () => (
       <>
+        <SettingsSection
+          title="Passkey 登录"
+          description="开启时进入登录页自动请求可用 Passkey；关闭时仅点击按钮后启用"
+          icon={PasskeyIcon}
+        >
+          <SettingsRow title="进入登录页自动启用">
+            <NSwitch
+              value={asRecord(props.value).passkeyAutomatic === true}
+              onUpdateValue={updatePasskeyAutomatic}
+            />
+          </SettingsRow>
+        </SettingsSection>
         {PROVIDERS.map((provider) => {
           const ProviderIcon = provider.icon;
           return (
@@ -133,22 +157,26 @@ export const OAuthConfigSection = defineComponent({
                   onUpdateValue={enabled => updateEnabled(provider.type, enabled)}
                 />
               </SettingsRow>
-              <SettingsRow title={provider.publicLabel}>
-                <NInput
-                  value={getNestedString(props.value, "public", provider.type, provider.publicKey)}
-                  placeholder={`请输入 ${provider.publicLabel}`}
-                  onUpdateValue={value => updateCredential("public", provider.type, provider.publicKey, value)}
-                />
-              </SettingsRow>
-              <SettingsRow title={provider.secretLabel}>
-                <NInput
-                  value={getNestedString(props.value, "secrets", provider.type, provider.secretKey)}
-                  type="password"
-                  showPasswordOn="click"
-                  placeholder={`请输入 ${provider.secretLabel}`}
-                  onUpdateValue={value => updateCredential("secrets", provider.type, provider.secretKey, value)}
-                />
-              </SettingsRow>
+              {provider.publicLabel && provider.publicKey && (
+                <SettingsRow title={provider.publicLabel}>
+                  <NInput
+                    value={getNestedString(props.value, "public", provider.type, provider.publicKey)}
+                    placeholder={`请输入 ${provider.publicLabel}`}
+                    onUpdateValue={value => updateCredential("public", provider.type, provider.publicKey!, value)}
+                  />
+                </SettingsRow>
+              )}
+              {provider.secretLabel && provider.secretKey && (
+                <SettingsRow title={provider.secretLabel}>
+                  <NInput
+                    value={getNestedString(props.value, "secrets", provider.type, provider.secretKey)}
+                    type="password"
+                    showPasswordOn="click"
+                    placeholder={`请输入 ${provider.secretLabel}`}
+                    onUpdateValue={value => updateCredential("secrets", provider.type, provider.secretKey!, value)}
+                  />
+                </SettingsRow>
+              )}
             </SettingsSection>
           );
         })}
