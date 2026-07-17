@@ -62,14 +62,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start background tasks
     info!("启动后台任务...");
 
-    // Start Meilisearch full sync (background task)
+    // 仅启动维护计划检查器；索引重建必须由管理员或已启用的计划触发。
+    tasks::search_maintenance::start_search_maintenance_scheduler(state.clone());
+    tasks::meilisearch_incremental::start_incremental_sync_worker(state.clone());
     {
-        let sync_state = state.clone();
+        let index_state = state.clone();
         tokio::spawn(async move {
-            tasks::full_sync(sync_state).await;
+            loop {
+                match tasks::search_maintenance::ensure_managed_indexes(&index_state).await {
+                    Ok(()) => break,
+                    Err(error) => {
+                        tracing::warn!(?error, "Meilisearch 受管索引初始化失败，30 秒后重试");
+                        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    }
+                }
+            }
         });
     }
-    info!("Meilisearch 全量同步任务已启动（后台任务）");
+    info!("Meilisearch 增量同步已启用，维护计划检查器已启动");
 
     // Start link health check task
     let link_check_interval = state.config.link_health_interval_hours;

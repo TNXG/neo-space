@@ -16,6 +16,8 @@ pub mod draft_history;
 pub mod drafts;
 pub mod files;
 pub mod links;
+pub mod meilisearch;
+pub mod meilisearch_maintenance;
 pub mod notes;
 pub mod options;
 pub mod pages;

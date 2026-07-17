@@ -7,6 +7,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    tasks::meilisearch_incremental::enqueue_category_posts,
 };
 use axum::{
     extract::{Path, State},
@@ -162,6 +163,7 @@ pub async fn update_category(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Category not found".into()))?;
+    enqueue_category_posts(&state, oid).await?;
     Ok(Json(ApiResponse::success(updated)))
 }
 

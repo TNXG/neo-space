@@ -181,6 +181,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/options", routes::options::routes())
         .nest("/owner", routes::owner::routes())
         .nest("/ai", routes::ai_admin::routes())
+        .nest("/admin/meilisearch", routes::meilisearch_admin::routes())
         .nest("/files", routes::files::routes())
         .merge(routes::admin_dashboard::routes())
         .merge(routes::misc::routes());

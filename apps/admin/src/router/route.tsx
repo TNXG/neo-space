@@ -26,6 +26,7 @@ import {
   Users as PhUsersThreeBold,
   Puzzle as PuzzlePieceIcon,
   SearchCheck as SearchIndexIcon,
+  Search as MeilisearchIcon,
   Sparkles as SparklesIcon,
   BellOff as SubscribeIcon,
   Gauge as TachometerAltIcon,
@@ -281,6 +282,15 @@ export const routeForMenu: Array<RouteRecordRaw> = [
       title: "数据",
       icon: <ChartLineIcon />,
       query: { page: 1 },
+    },
+  },
+  {
+    path: "/meilisearch",
+    name: RouteName.Meilisearch,
+    component: () => import("../views/meilisearch"),
+    meta: {
+      title: "搜索管理",
+      icon: <MeilisearchIcon />,
     },
   },
   {

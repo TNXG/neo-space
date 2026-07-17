@@ -13,6 +13,7 @@ pub mod drafts;
 pub mod files;
 pub mod health;
 pub mod link;
+pub mod meilisearch_admin;
 pub mod misc;
 pub mod note;
 pub mod options;

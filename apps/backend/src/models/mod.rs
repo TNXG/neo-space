@@ -10,6 +10,7 @@ pub mod options;
 pub mod passkey;
 pub mod reader;
 pub mod realtime;
+pub mod search_management;
 pub mod serializers;
 pub mod user;
 
@@ -25,4 +26,8 @@ pub use link::{
     Link, LinkApplyRequest, LinkHealthStatus, LinkState, LinkType, LinkWithHealth, SendCodeRequest,
 };
 pub use passkey::{PasskeySummary, StoredPasskey};
+pub use search_management::{
+    SearchMaintenanceSchedule, SearchMaintenanceTask, SearchSyncEvent,
+    UpdateSearchMaintenanceSchedule,
+};
 pub use user::{Account, AccountResponse, GitHubUser, Reader, ReaderResponse, User, UserSocialIds};

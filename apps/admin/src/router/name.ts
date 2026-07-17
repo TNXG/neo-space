@@ -34,4 +34,5 @@ export enum RouteName {
 
   Reader = "reader",
   Draft = "draft",
+  Meilisearch = "meilisearch",
 }

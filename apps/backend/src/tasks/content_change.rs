@@ -3,19 +3,12 @@
 use crate::app::SharedState;
 use crate::models::{AiTranslation, Link, Note, Page, Post};
 use crate::tasks::isr::trigger_isr_revalidation;
-use crate::tasks::meilisearch_sync::{
-    remove_note_from_meilisearch, remove_post_from_meilisearch, sync_note_to_meilisearch,
-    sync_post_to_meilisearch, sync_translation_to_meilisearch,
-};
+use crate::tasks::meilisearch_incremental::{enqueue_category_posts, enqueue_incremental_sync};
 
 /// 同步文章写入产生的派生状态；同步失败只记录日志，不影响已经提交的数据库写入。
 pub async fn notify_post_changed(state: &SharedState, post: &Post, previous_slug: Option<&str>) {
-    if post.is_published {
-        if let Err(error) = sync_post_to_meilisearch(state, post.clone()).await {
-            tracing::warn!(post_id = %post.id, %error, "文章已保存，但搜索索引同步失败");
-        }
-    } else if let Err(error) = remove_post_from_meilisearch(state, &post.id.to_hex()).await {
-        tracing::warn!(post_id = %post.id, %error, "文章已保存，但搜索索引清理失败");
+    if let Err(error) = enqueue_incremental_sync(state, "posts", &post.id.to_hex()).await {
+        tracing::warn!(post_id = %post.id, ?error, "文章已保存，但搜索增量事件入队失败");
     }
 
     invalidate_post_cache(state, &post.id.to_hex(), previous_slug).await;
@@ -26,8 +19,8 @@ pub async fn notify_post_changed(state: &SharedState, post: &Post, previous_slug
 /// 同步一批已删除文章的派生状态，并合并为一次 ISR 刷新。
 pub async fn notify_posts_deleted(state: &SharedState, posts: &[Post]) {
     for post in posts {
-        if let Err(error) = remove_post_from_meilisearch(state, &post.id.to_hex()).await {
-            tracing::warn!(post_id = %post.id, %error, "文章已删除，但搜索索引清理失败");
+        if let Err(error) = enqueue_incremental_sync(state, "posts", &post.id.to_hex()).await {
+            tracing::warn!(post_id = %post.id, ?error, "文章已删除，但搜索增量事件入队失败");
         }
         invalidate_post_cache(state, &post.id.to_hex(), Some(&post.slug)).await;
     }
@@ -39,12 +32,8 @@ pub async fn notify_posts_deleted(state: &SharedState, posts: &[Post]) {
 
 /// 同步手记写入产生的派生状态；同步失败只记录日志，不影响已经提交的数据库写入。
 pub async fn notify_note_changed(state: &SharedState, note: &Note) {
-    if note.is_published {
-        if let Err(error) = sync_note_to_meilisearch(state, note.clone()).await {
-            tracing::warn!(note_id = %note.id, %error, "手记已保存，但搜索索引同步失败");
-        }
-    } else if let Err(error) = remove_note_from_meilisearch(state, &note.id.to_hex()).await {
-        tracing::warn!(note_id = %note.id, %error, "手记已保存，但搜索索引清理失败");
+    if let Err(error) = enqueue_incremental_sync(state, "notes", &note.id.to_hex()).await {
+        tracing::warn!(note_id = %note.id, ?error, "手记已保存，但搜索增量事件入队失败");
     }
 
     invalidate_note_cache(state, &note.id.to_hex(), note.nid).await;
@@ -54,8 +43,8 @@ pub async fn notify_note_changed(state: &SharedState, note: &Note) {
 /// 同步一批已删除手记的派生状态，并合并为一次 ISR 刷新。
 pub async fn notify_notes_deleted(state: &SharedState, notes: &[Note]) {
     for note in notes {
-        if let Err(error) = remove_note_from_meilisearch(state, &note.id.to_hex()).await {
-            tracing::warn!(note_id = %note.id, %error, "手记已删除，但搜索索引清理失败");
+        if let Err(error) = enqueue_incremental_sync(state, "notes", &note.id.to_hex()).await {
+            tracing::warn!(note_id = %note.id, ?error, "手记已删除，但搜索增量事件入队失败");
         }
         invalidate_note_cache(state, &note.id.to_hex(), note.nid).await;
     }
@@ -102,8 +91,17 @@ pub async fn notify_link_deleted(state: &SharedState, link: &Link) {
 
 /// 根据翻译记录重建所属内容的多语言搜索文档。
 pub async fn notify_translation_changed(state: &SharedState, translation: &AiTranslation) {
-    if let Err(error) = sync_translation_to_meilisearch(state, translation.clone()).await {
-        tracing::warn!(translation_id = %translation.id, %error, "翻译已保存，但搜索索引同步失败");
+    if matches!(translation.ref_type.as_str(), "posts" | "notes")
+        && let Err(error) =
+            enqueue_incremental_sync(state, &translation.ref_type, &translation.ref_id).await
+    {
+        tracing::warn!(translation_id = %translation.id, ?error, "翻译已保存，但搜索增量事件入队失败");
+    }
+    if translation.ref_type == "categories"
+        && let Ok(category_id) = mongodb::bson::oid::ObjectId::parse_str(&translation.ref_id)
+        && let Err(error) = enqueue_category_posts(state, category_id).await
+    {
+        tracing::warn!(translation_id = %translation.id, ?error, "分类翻译已保存，但关联文章同步入队失败");
     }
 
     match translation.ref_type.as_str() {
