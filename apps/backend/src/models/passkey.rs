@@ -1,8 +1,8 @@
 //! Passkey 持久化模型与后台安全摘要。
 
 use bson::oid::ObjectId;
+use passkey_auth::PasskeyCredential;
 use serde::{Deserialize, Serialize};
-use webauthn_rs::prelude::Passkey;
 
 use super::serializers::{serialize_datetime, serialize_optional_datetime};
 
@@ -14,7 +14,7 @@ pub struct StoredPasskey {
     #[serde(rename = "userId")]
     pub user_id: ObjectId,
     pub name: String,
-    pub credential: Passkey,
+    pub credential: PasskeyCredential,
     #[serde(rename = "createdAt")]
     pub created_at: bson::DateTime,
     #[serde(rename = "lastUsedAt", default)]

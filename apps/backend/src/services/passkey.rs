@@ -4,22 +4,21 @@ use std::time::Duration;
 
 use bson::oid::ObjectId;
 use moka::future::Cache;
-use webauthn_rs::prelude::{
-    PasskeyAuthentication, PasskeyRegistration, Url, Webauthn, WebauthnBuilder,
-};
+use passkey_auth::{Attachment, AuthenticationState, RegistrationState, Webauthn};
+use reqwest::Url;
 
 /// 注册挑战对应的服务端状态。
 #[derive(Clone)]
 pub struct RegistrationChallenge {
     pub user_id: ObjectId,
-    pub state: PasskeyRegistration,
+    pub state: RegistrationState,
 }
 
 /// 登录挑战对应的服务端状态。
 #[derive(Clone)]
 pub struct AuthenticationChallenge {
     pub user_id: ObjectId,
-    pub state: PasskeyAuthentication,
+    pub state: AuthenticationState,
 }
 
 /// WebAuthn 实例及短期挑战缓存。
@@ -47,15 +46,12 @@ impl PasskeyService {
                 return None;
             }
         };
-        let webauthn = match WebauthnBuilder::new(relying_party_id, &origin)
-            .and_then(|builder| builder.rp_name("Neo Space Admin").build())
-        {
-            Ok(webauthn) => webauthn,
-            Err(error) => {
-                tracing::error!(%error, "WebAuthn 配置初始化失败，Passkey 已禁用");
-                return None;
-            }
-        };
+        // WebAuthn 校验的是浏览器 Origin，不包含路径和尾部斜杠。
+        let browser_origin = origin.origin().ascii_serialization();
+        let webauthn = Webauthn::new(relying_party_id, "Neo Space Admin", &browser_origin)
+            .require_user_verification(true)
+            .strict_base64(true)
+            .authenticator_attachment(Attachment::Any);
         let challenge_ttl = Duration::from_secs(300);
 
         Some(Self {

@@ -7,11 +7,12 @@ use axum::{
 };
 use bson::{doc, oid::ObjectId};
 use futures::TryStreamExt;
-use serde::{Deserialize, Serialize};
-use webauthn_rs::prelude::{
-    CreationChallengeResponse, CredentialID, PublicKeyCredential, RegisterPublicKeyCredential,
-    RequestChallengeResponse, Uuid,
+use passkey_auth::{
+    AuthenticationChallenge as PublicKeyAuthenticationOptions, AuthenticationResponse,
+    CredentialId, RegistrationChallenge as PublicKeyRegistrationOptions, RegistrationResponse,
 };
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{
     app::SharedState,
@@ -31,7 +32,13 @@ pub struct RegistrationStartRequest {
 pub struct RegistrationStartResponse {
     #[serde(rename = "challengeId")]
     challenge_id: String,
-    options: CreationChallengeResponse,
+    options: PublicKeyOptions<PublicKeyRegistrationOptions>,
+}
+
+#[derive(Debug, Serialize)]
+struct PublicKeyOptions<T> {
+    #[serde(rename = "publicKey")]
+    public_key: T,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,7 +46,23 @@ pub struct RegistrationFinishRequest {
     #[serde(rename = "challengeId")]
     challenge_id: String,
     name: String,
-    credential: RegisterPublicKeyCredential,
+    credential: RegistrationCredential,
+}
+
+#[derive(Debug, Deserialize)]
+struct RegistrationCredential {
+    id: String,
+    response: RegistrationCredentialResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct RegistrationCredentialResponse {
+    #[serde(rename = "attestationObject")]
+    attestation_object: String,
+    #[serde(rename = "clientDataJSON")]
+    client_data_json: String,
+    #[serde(default)]
+    transports: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -52,14 +75,31 @@ pub struct AuthenticationStartRequest {
 pub struct AuthenticationStartResponse {
     #[serde(rename = "challengeId")]
     challenge_id: String,
-    options: RequestChallengeResponse,
+    options: PublicKeyOptions<PublicKeyAuthenticationOptions>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct AuthenticationFinishRequest {
     #[serde(rename = "challengeId")]
     challenge_id: String,
-    credential: PublicKeyCredential,
+    credential: AuthenticationCredential,
+}
+
+#[derive(Debug, Deserialize)]
+struct AuthenticationCredential {
+    id: String,
+    response: AuthenticationCredentialResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct AuthenticationCredentialResponse {
+    #[serde(rename = "authenticatorData")]
+    authenticator_data: String,
+    #[serde(rename = "clientDataJSON")]
+    client_data_json: String,
+    signature: String,
+    #[serde(rename = "userHandle", default)]
+    user_handle: Option<String>,
 }
 
 /// 返回当前 Owner 已注册的 Passkey。
@@ -95,19 +135,14 @@ pub async fn start_registration(
     let existing = load_passkeys(&state, owner._user_id).await?;
     let excluded = existing
         .iter()
-        .map(|passkey| passkey.credential.cred_id().clone())
-        .collect::<Vec<CredentialID>>();
-    let (options, registration_state) = service
-        .webauthn
-        .start_passkey_registration(
-            object_id_to_uuid(owner._user_id),
-            &reader.handle,
-            &reader.name,
-            (!excluded.is_empty()).then_some(excluded),
-        )
-        .map_err(|error| {
-            AppError::Internal(format!("Failed to start passkey registration: {error}"))
-        })?;
+        .map(|passkey| passkey.credential.id.clone())
+        .collect::<Vec<CredentialId>>();
+    let (options, registration_state) = service.webauthn.start_registration(
+        &owner._user_id.bytes(),
+        &reader.handle,
+        &reader.name,
+        &excluded,
+    );
     let challenge_id = Uuid::new_v4().to_string();
     service
         .registration_challenges
@@ -122,7 +157,9 @@ pub async fn start_registration(
 
     Ok(Json(ApiResponse::success(RegistrationStartResponse {
         challenge_id,
-        options,
+        options: PublicKeyOptions {
+            public_key: options,
+        },
     })))
 }
 
@@ -146,11 +183,12 @@ pub async fn finish_registration(
         return Err(AppError::Forbidden);
     }
 
+    let registration_response = request.credential.into_response();
     let credential = service
         .webauthn
-        .finish_passkey_registration(&request.credential, &challenge.state)
+        .finish_registration(&challenge.state, &registration_response)
         .map_err(|error| AppError::BadRequest(format!("Passkey registration failed: {error}")))?;
-    ensure_credential_is_unique(&state, credential.cred_id()).await?;
+    ensure_credential_is_unique(&state, &credential.id).await?;
     let passkey = StoredPasskey {
         id: ObjectId::new(),
         user_id: owner._user_id,
@@ -219,10 +257,7 @@ pub async fn start_authentication(
         .collect::<Vec<_>>();
     let (options, authentication_state) = service
         .webauthn
-        .start_passkey_authentication(&credentials)
-        .map_err(|error| {
-            AppError::Internal(format!("Failed to start passkey authentication: {error}"))
-        })?;
+        .start_authentication_with_creds_for_user(&reader.id.bytes(), &credentials);
     let challenge_id = Uuid::new_v4().to_string();
     service
         .authentication_challenges
@@ -237,7 +272,9 @@ pub async fn start_authentication(
 
     Ok(Json(ApiResponse::success(AuthenticationStartResponse {
         challenge_id,
-        options,
+        options: PublicKeyOptions {
+            public_key: options,
+        },
     })))
 }
 
@@ -256,17 +293,23 @@ pub async fn finish_authentication(
         .authentication_challenges
         .invalidate(&request.challenge_id)
         .await;
-    let authentication_result = service
-        .webauthn
-        .finish_passkey_authentication(&request.credential, &challenge.state)
-        .map_err(|_error| AppError::Unauthorized)?;
-
     let mut passkeys = load_passkeys(&state, challenge.user_id).await?;
+    let authentication_response = request.credential.into_response();
+    let asserted_id = CredentialId::from_b64url(&authentication_response.id)
+        .map_err(|_error| AppError::Unauthorized)?;
     let matched = passkeys
         .iter_mut()
-        .find(|passkey| passkey.credential.cred_id() == authentication_result.cred_id())
+        .find(|passkey| passkey.credential.id == asserted_id)
         .ok_or(AppError::Unauthorized)?;
-    matched.credential.update_credential(&authentication_result);
+    let authentication_result = service
+        .webauthn
+        .finish_authentication(
+            &challenge.state,
+            &authentication_response,
+            &matched.credential,
+        )
+        .map_err(|_error| AppError::Unauthorized)?;
+    matched.credential.counter = authentication_result.new_counter;
     matched.last_used_at = Some(bson::DateTime::now());
     state
         .db
@@ -314,7 +357,7 @@ async fn load_reader(state: &SharedState, user_id: ObjectId) -> AppResult<Reader
 /// 保证同一个认证器凭据不会绑定到多个账号。
 async fn ensure_credential_is_unique(
     state: &SharedState,
-    credential_id: &CredentialID,
+    credential_id: &CredentialId,
 ) -> AppResult<()> {
     let mut cursor = state
         .db
@@ -327,7 +370,7 @@ async fn ensure_credential_is_unique(
         .await
         .map_err(|error| AppError::Database(error.to_string()))?
     {
-        if passkey.credential.cred_id() == credential_id {
+        if &passkey.credential.id == credential_id {
             return Err(AppError::BadRequest(
                 "This Passkey is already registered".to_string(),
             ));
@@ -336,9 +379,27 @@ async fn ensure_credential_is_unique(
     Ok(())
 }
 
-/// 将 MongoDB ObjectId 稳定映射为 WebAuthn 用户 UUID。
-fn object_id_to_uuid(object_id: ObjectId) -> Uuid {
-    let mut bytes = [0_u8; 16];
-    bytes[4..].copy_from_slice(&object_id.bytes());
-    Uuid::from_bytes(bytes)
+impl RegistrationCredential {
+    /// 将 SimpleWebAuthn 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
+    fn into_response(self) -> RegistrationResponse {
+        RegistrationResponse {
+            id: self.id,
+            transports: self.response.transports,
+            attestation_object: self.response.attestation_object,
+            client_data_json: self.response.client_data_json,
+        }
+    }
+}
+
+impl AuthenticationCredential {
+    /// 将 SimpleWebAuthn 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
+    fn into_response(self) -> AuthenticationResponse {
+        AuthenticationResponse {
+            id: self.id,
+            authenticator_data: self.response.authenticator_data,
+            signature: self.response.signature,
+            client_data_json: self.response.client_data_json,
+            user_handle: self.response.user_handle,
+        }
+    }
 }
