@@ -53,6 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize database
     let db = database::init_database(&config).await?;
+    tasks::search_management_migration::migrate_search_management_dates(&db).await?;
     config::runtime::migrate_options(&db, &config).await?;
     config::runtime::apply_database_options(&db, &mut config).await;
 

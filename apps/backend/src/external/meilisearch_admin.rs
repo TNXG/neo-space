@@ -3,7 +3,7 @@
 use reqwest::{Method, Response};
 use serde::Serialize;
 use serde_json::{Value, json};
-use tokio::time::{Duration, sleep};
+use tokio::time::{Duration, Instant, sleep};
 
 use crate::{app::SharedState, error::AppError};
 
@@ -88,7 +88,9 @@ impl MeilisearchAdminClient {
 
     /// 等待 Meilisearch 异步任务结束，并返回最终任务详情。
     pub async fn wait_for_task(&self, task_uid: u64) -> Result<Value, AppError> {
-        for _ in 0..600 {
+        // 外部向量服务可能让搜索索引全量重建持续十几分钟，短超时会误判失败并产生重复临时索引。
+        let deadline = Instant::now() + Duration::from_secs(30 * 60);
+        loop {
             let task = self
                 .request(Method::GET, &format!("/tasks/{task_uid}"))
                 .await?;
@@ -99,7 +101,8 @@ impl MeilisearchAdminClient {
                         "Meilisearch 任务 {task_uid} 未成功: {task}"
                     )));
                 }
-                _ => sleep(Duration::from_millis(200)).await,
+                _ if Instant::now() < deadline => sleep(Duration::from_millis(500)).await,
+                _ => break,
             }
         }
         Err(AppError::Internal(format!(
@@ -133,16 +136,48 @@ impl MeilisearchAdminClient {
         Ok(())
     }
 
+    /// 分页读取实例中的全部索引，避免固定 limit 遗漏索引。
+    pub async fn list_all_indexes(&self) -> Result<Vec<Value>, AppError> {
+        let mut indexes = Vec::new();
+        let mut offset = 0_usize;
+        loop {
+            let page = self
+                .request(Method::GET, &format!("/indexes?offset={offset}&limit=1000"))
+                .await?;
+            let mut results = page
+                .get("results")
+                .and_then(Value::as_array)
+                .cloned()
+                .ok_or_else(|| AppError::Internal("Meilisearch 索引列表格式无效".to_string()))?;
+            let page_count = results.len();
+            indexes.append(&mut results);
+            if page_count < 1000 {
+                return Ok(indexes);
+            }
+            offset += page_count;
+        }
+    }
+
     /// 删除索引；用于清理原子交换后的旧索引。
     pub async fn delete_index(&self, uid: &str) -> Result<(), AppError> {
-        let queued = self
-            .request(Method::DELETE, &format!("/indexes/{uid}"))
-            .await?;
+        let queued = self.enqueue_delete_index(uid).await?;
         let task_uid = queued
             .get("taskUid")
             .and_then(Value::as_u64)
             .ok_or_else(|| AppError::Internal("删除索引未返回 taskUid".to_string()))?;
         self.wait_for_task(task_uid).await?;
         Ok(())
+    }
+
+    /// 取消目标索引尚未结束的任务后提交删除，避免向量任务长期阻塞清理。
+    pub async fn enqueue_delete_index(&self, uid: &str) -> Result<Value, AppError> {
+        self.request_task(
+            Method::POST,
+            &format!("/tasks/cancel?indexUids={}", urlencoding::encode(uid)),
+            &json!({}),
+        )
+        .await?;
+        self.request(Method::DELETE, &format!("/indexes/{uid}"))
+            .await
     }
 }

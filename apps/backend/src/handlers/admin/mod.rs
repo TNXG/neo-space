@@ -18,6 +18,7 @@ pub mod files;
 pub mod links;
 pub mod meilisearch;
 pub mod meilisearch_maintenance;
+pub mod meilisearch_vector;
 pub mod notes;
 pub mod options;
 pub mod pages;

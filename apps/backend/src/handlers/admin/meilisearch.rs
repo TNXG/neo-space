@@ -1,5 +1,4 @@
 //! Meilisearch 索引、文档、配置与原生任务管理接口。
-
 use axum::{
     Json,
     extract::{Path, State},
@@ -14,8 +13,8 @@ use crate::{
     error::{AppError, AppJson, AppQuery, AppResult},
     external::meilisearch_admin::MeilisearchAdminClient,
     models::ApiResponse,
+    tasks::search_vector_config::{apply_vector_config_to_index, load_or_infer_vector_config},
 };
-
 /// 文档分页参数。
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,7 +23,6 @@ pub struct DocumentQuery {
     pub limit: Option<u64>,
     pub filter: Option<String>,
 }
-
 /// Meilisearch 原生任务筛选参数。
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,7 +33,6 @@ pub struct TaskQuery {
     pub types: Option<String>,
     pub index_uids: Option<String>,
 }
-
 /// 索引创建请求。
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -65,7 +62,16 @@ pub async fn list_indexes(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
 ) -> AppResult<Json<ApiResponse<Value>>> {
-    proxy_get(&state, "/indexes?limit=1000").await
+    let indexes = MeilisearchAdminClient::from_state(&state)
+        .list_all_indexes()
+        .await?;
+    let total = indexes.len();
+    Ok(Json(ApiResponse::success(json!({
+        "results": indexes,
+        "total": total,
+        "offset": 0,
+        "limit": total,
+    }))))
 }
 
 /// 创建索引。
@@ -76,7 +82,11 @@ pub async fn create_index(
 ) -> AppResult<Json<ApiResponse<Value>>> {
     validate_index_uid(&payload.uid)?;
     let body = json!({ "uid": payload.uid, "primaryKey": payload.primary_key });
-    proxy_json(&state, Method::POST, "/indexes", &body).await
+    let client = MeilisearchAdminClient::from_state(&state);
+    let task = client.request_task(Method::POST, "/indexes", &body).await?;
+    let config = load_or_infer_vector_config(&state.db, &client).await?;
+    apply_vector_config_to_index(&client, &payload.uid, &config).await?;
+    Ok(Json(ApiResponse::success(task)))
 }
 
 /// 删除指定索引。
@@ -87,7 +97,7 @@ pub async fn delete_index(
 ) -> AppResult<Json<ApiResponse<Value>>> {
     validate_index_uid(&index_uid)?;
     let value = MeilisearchAdminClient::from_state(&state)
-        .request(Method::DELETE, &format!("/indexes/{index_uid}"))
+        .enqueue_delete_index(&index_uid)
         .await?;
     Ok(Json(ApiResponse::success(value)))
 }
@@ -146,13 +156,17 @@ pub async fn upsert_documents(
             ));
         }
     };
-    proxy_json(
-        &state,
-        Method::POST,
-        &format!("/indexes/{index_uid}/documents"),
-        &normalized,
-    )
-    .await
+    let client = MeilisearchAdminClient::from_state(&state);
+    let config = load_or_infer_vector_config(&state.db, &client).await?;
+    apply_vector_config_to_index(&client, &index_uid, &config).await?;
+    let value = client
+        .request_json(
+            Method::POST,
+            &format!("/indexes/{index_uid}/documents"),
+            &normalized,
+        )
+        .await?;
+    Ok(Json(ApiResponse::success(value)))
 }
 
 /// 删除单个文档。
@@ -219,7 +233,14 @@ pub async fn get_settings(
     Path(index_uid): Path<String>,
 ) -> AppResult<Json<ApiResponse<Value>>> {
     validate_index_uid(&index_uid)?;
-    proxy_get(&state, &format!("/indexes/{index_uid}/settings")).await
+    let mut settings = MeilisearchAdminClient::from_state(&state)
+        .request(Method::GET, &format!("/indexes/{index_uid}/settings"))
+        .await?;
+    // 项目级 Embedder 可能包含 API Key，不通过单索引设置接口回传。
+    if let Some(settings) = settings.as_object_mut() {
+        settings.remove("embedders");
+    }
+    Ok(Json(ApiResponse::success(settings)))
 }
 
 /// 合并更新索引设置；完整 JSON 透传以兼容未来 Meilisearch 参数。
@@ -227,16 +248,23 @@ pub async fn update_settings(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
     Path(index_uid): Path<String>,
-    AppJson(settings): AppJson<Value>,
+    AppJson(mut settings): AppJson<Value>,
 ) -> AppResult<Json<ApiResponse<Value>>> {
     validate_index_uid(&index_uid)?;
-    proxy_json(
-        &state,
-        Method::PATCH,
-        &format!("/indexes/{index_uid}/settings"),
-        &settings,
-    )
-    .await
+    if let Some(settings) = settings.as_object_mut() {
+        settings.remove("embedders");
+    }
+    let client = MeilisearchAdminClient::from_state(&state);
+    let task = client
+        .request_task(
+            Method::PATCH,
+            &format!("/indexes/{index_uid}/settings"),
+            &settings,
+        )
+        .await?;
+    let config = load_or_infer_vector_config(&state.db, &client).await?;
+    apply_vector_config_to_index(&client, &index_uid, &config).await?;
+    Ok(Json(ApiResponse::success(task)))
 }
 
 /// 查询 Meilisearch 原生异步任务队列。

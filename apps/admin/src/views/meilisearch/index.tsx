@@ -1,4 +1,4 @@
-import { Database, Gauge, ListChecks, Wrench } from "lucide-vue-next";
+import { Bot, Database, Gauge, ListChecks, Wrench } from "lucide-vue-next";
 import { NTabPane, NTabs } from "naive-ui";
 import { defineComponent } from "vue";
 
@@ -6,6 +6,7 @@ import { MeilisearchIndexesPanel } from "./indexes-panel";
 import { MeilisearchMaintenancePanel } from "./maintenance-panel";
 import { MeilisearchOverviewPanel } from "./overview-panel";
 import { MeilisearchTasksPanel } from "./tasks-panel";
+import { MeilisearchVectorConfigPanel } from "./vector-config-panel";
 
 /** Meilisearch 管理功能入口页。 */
 export default defineComponent({
@@ -31,6 +32,12 @@ export default defineComponent({
             {{
               tab: () => <span class="flex items-center gap-2"><Database class="size-4" />索引与文档</span>,
               default: () => <MeilisearchIndexesPanel />,
+            }}
+          </NTabPane>
+          <NTabPane name="vector-config">
+            {{
+              tab: () => <span class="flex items-center gap-2"><Bot class="size-4" />项目向量配置</span>,
+              default: () => <MeilisearchVectorConfigPanel />,
             }}
           </NTabPane>
           <NTabPane name="tasks">

@@ -171,7 +171,7 @@ const IndexDetail = defineComponent({
               <NTabPane name="documents" tab="文档数据">
                 <MeilisearchDocumentsPanel indexUid={props.index.uid} primaryKey={props.index.primaryKey ?? "id"} />
               </NTabPane>
-              <NTabPane name="settings" tab="搜索与向量配置">
+              <NTabPane name="settings" tab="索引搜索配置">
                 <MeilisearchSettingsPanel indexUid={props.index.uid} />
               </NTabPane>
             </NTabs>

@@ -193,6 +193,24 @@ pub async fn get_url_options(
     Ok(Json(ApiResponse::success(value)))
 }
 
+/// PATCH /options/url — 静态兼容路由需要显式转发，否则不会匹配 /options/{key}。
+pub async fn upsert_url_option(
+    state: State<SharedState>,
+    owner: OwnerOnly,
+    payload: AppJson<Value>,
+) -> AppResult<Json<ApiResponse<Value>>> {
+    upsert_option(state, owner, Path("url".to_string()), payload).await
+}
+
+/// PUT /options/url — 完整替换 URL 配置。
+pub async fn replace_url_option(
+    state: State<SharedState>,
+    owner: OwnerOnly,
+    payload: AppJson<Value>,
+) -> AppResult<Json<ApiResponse<Value>>> {
+    replace_option(state, owner, Path("url".to_string()), payload).await
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;

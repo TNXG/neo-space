@@ -179,16 +179,16 @@ export const MeilisearchMaintenancePanel = defineComponent({
         <section class="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
           <NCard title="手动维护">
             <p class="text-sm opacity-60 mb-4">
-              重建会在临时索引中完成数据与配置写入，最后原子交换线上索引，正常搜索查询不会先被清空。
+              枚举全部正式 Meilisearch 索引，将各索引的设置与现有文档复制到临时索引并应用项目向量策略，最后统一原子交换。
             </p>
             <NPopconfirm onPositiveClick={() => rebuildMutation.mutate()}>
               {{
                 trigger: () => (
                   <NButton class="cursor-pointer" type="primary" loading={rebuildMutation.isPending.value}>
-                    {{ icon: () => <Play />, default: () => "启动完整重建" }}
+                    {{ icon: () => <Play />, default: () => "启动搜索索引全量重建" }}
                   </NButton>
                 ),
-                default: () => "确认创建完整索引重建任务？",
+                default: () => "确认全量重建当前全部 Meilisearch 正式索引？",
               }}
             </NPopconfirm>
           </NCard>

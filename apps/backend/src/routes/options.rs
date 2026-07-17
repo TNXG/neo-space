@@ -7,7 +7,12 @@ use axum::{Router, routing};
 pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/", routing::get(options::get_all_options))
-        .route("/url", routing::get(options::get_url_options))
+        .route(
+            "/url",
+            routing::get(options::get_url_options)
+                .patch(options::upsert_url_option)
+                .put(options::replace_url_option),
+        )
         .route(
             "/{key}",
             routing::get(options::get_option)

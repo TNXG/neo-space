@@ -86,6 +86,11 @@ pub fn event_collection(state: &SharedState) -> Collection<SearchSyncEvent> {
     state.db.collection(EVENT_COLLECTION)
 }
 
+/// 同时匹配新版 ObjectId 与旧版字符串主键。
+pub fn event_id_filter(event_id: ObjectId) -> bson::Document {
+    doc! { "_id": { "$in": [event_id, event_id.to_hex()] } }
+}
+
 /// 原子领取一个已到重试时间的事件。
 async fn claim_next_event(state: &SharedState) -> AppResult<Option<SearchSyncEvent>> {
     event_collection(state)
@@ -108,7 +113,7 @@ async fn process_event(state: &SharedState, event: SearchSyncEvent) {
         Ok(()) => {
             let _ = event_collection(state)
                 .update_one(
-                    doc! { "_id": event.id },
+                    event_id_filter(event.id),
                     doc! { "$set": {
                         "status": "succeeded",
                         "lastError": null,
@@ -125,7 +130,7 @@ async fn process_event(state: &SharedState, event: SearchSyncEvent) {
             let message = format!("{error:?}");
             let _ = event_collection(state)
                 .update_one(
-                    doc! { "_id": event.id },
+                    event_id_filter(event.id),
                     doc! { "$set": {
                         "status": "failed",
                         "attempts": attempts,

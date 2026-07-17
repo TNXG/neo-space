@@ -98,6 +98,26 @@ export interface SearchSyncEvent {
   updatedAt: string;
 }
 
+export interface SearchVectorConfig {
+  configured: boolean;
+  enabled: boolean;
+  apiUrl: string;
+  hasApiKey: boolean;
+  model: string;
+  dimensions: number;
+  documentTemplateMaxBytes: number;
+}
+
+export interface UpdateSearchVectorConfig {
+  enabled: boolean;
+  apiUrl: string;
+  apiKey?: string;
+  clearApiKey: boolean;
+  model: string;
+  dimensions: number;
+  documentTemplateMaxBytes: number;
+}
+
 /** 解包统一 API 响应。 */
 const unwrap = <T>(response: ApiResponse<T>): T => {
   if (response.data === null)
@@ -151,6 +171,13 @@ export const meilisearchApi = {
     unwrap(await request.post<ApiResponse<MeilisearchTask>, { uids: string }>(
       "/admin/meilisearch/tasks/cancel",
       { data: { uids }, bypassTransform: true },
+    )),
+  getVectorConfig: () =>
+    get<SearchVectorConfig>("/admin/meilisearch/vector-config"),
+  updateVectorConfig: async (config: UpdateSearchVectorConfig) =>
+    unwrap(await request.put<ApiResponse<SearchVectorConfig>, UpdateSearchVectorConfig>(
+      "/admin/meilisearch/vector-config",
+      { data: config, bypassTransform: true },
     )),
   getMaintenanceTasks: () =>
     get<SearchMaintenanceTask[]>("/admin/meilisearch/maintenance/tasks"),

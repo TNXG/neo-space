@@ -41,7 +41,6 @@ export const MeilisearchSettingsPanel = defineComponent({
     const rankingRules = ref<string[]>([]);
     const stopWords = ref<string[]>([]);
     const synonyms = ref("{}");
-    const embedders = ref("{}");
     const advancedSettings = ref("{}");
 
     const settingsQuery = useQuery({
@@ -57,7 +56,6 @@ export const MeilisearchSettingsPanel = defineComponent({
       rankingRules.value = [...(settings.rankingRules as string[] ?? [])];
       stopWords.value = [...(settings.stopWords as string[] ?? [])];
       synonyms.value = stringifySetting(settings.synonyms, {});
-      embedders.value = stringifySetting(settings.embedders, {});
       advancedSettings.value = stringifySetting(settings, {});
     };
 
@@ -87,7 +85,6 @@ export const MeilisearchSettingsPanel = defineComponent({
           rankingRules: rankingRules.value,
           stopWords: stopWords.value,
           synonyms: parseObject(synonyms.value, "同义词"),
-          embedders: parseObject(embedders.value, "Embedders"),
         });
       }
       catch (error) {
@@ -137,13 +134,6 @@ export const MeilisearchSettingsPanel = defineComponent({
                   <NInput value={synonyms.value} onUpdateValue={value => synonyms.value = value} type="textarea" autosize={{ minRows: 5, maxRows: 12 }} />
                 </NFormItem>
               </div>
-            </NCard>
-
-            <NCard title="向量化模型（Embedders）" size="small">
-              <p class="text-sm opacity-60 mb-3">
-                使用 Meilisearch 原生 Embedders 对象，可配置多个模型、文档模板和 API 来源。
-              </p>
-              <NInput value={embedders.value} onUpdateValue={value => embedders.value = value} type="textarea" autosize={{ minRows: 8, maxRows: 20 }} />
             </NCard>
 
             <div class="flex justify-end">

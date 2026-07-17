@@ -11,6 +11,7 @@ pub mod passkey;
 pub mod reader;
 pub mod realtime;
 pub mod search_management;
+pub mod search_vector;
 pub mod serializers;
 pub mod user;
 
@@ -27,7 +28,9 @@ pub use link::{
 };
 pub use passkey::{PasskeySummary, StoredPasskey};
 pub use search_management::{
-    SearchMaintenanceSchedule, SearchMaintenanceTask, SearchSyncEvent,
+    SearchMaintenanceSchedule, SearchMaintenanceScheduleResponse, SearchMaintenanceTask,
+    SearchMaintenanceTaskResponse, SearchSyncEvent, SearchSyncEventResponse,
     UpdateSearchMaintenanceSchedule,
 };
+pub use search_vector::{SearchVectorConfig, SearchVectorConfigResponse, UpdateSearchVectorConfig};
 pub use user::{Account, AccountResponse, GitHubUser, Reader, ReaderResponse, User, UserSocialIds};

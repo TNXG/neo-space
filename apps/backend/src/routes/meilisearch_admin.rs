@@ -4,7 +4,7 @@ use axum::{Router, routing};
 
 use crate::{
     app::SharedState,
-    handlers::admin::{meilisearch, meilisearch_maintenance},
+    handlers::admin::{meilisearch, meilisearch_maintenance, meilisearch_vector},
 };
 
 /// 构建 Meilisearch 管理路由。
@@ -37,6 +37,11 @@ pub fn routes() -> Router<SharedState> {
         )
         .route("/tasks", routing::get(meilisearch::list_tasks))
         .route("/tasks/cancel", routing::post(meilisearch::cancel_tasks))
+        .route(
+            "/vector-config",
+            routing::get(meilisearch_vector::get_vector_config)
+                .put(meilisearch_vector::update_vector_config),
+        )
         .route(
             "/maintenance/tasks",
             routing::get(meilisearch_maintenance::list_maintenance_tasks),
