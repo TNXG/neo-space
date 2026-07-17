@@ -335,9 +335,8 @@ export async function getRecently(limit = 10, page = 1): Promise<PaginatedRespon
  */
 export async function getUserProfile(): Promise<ApiResponse<User>> {
   return apiClient<ApiResponse<User>>("/user/profile", {
-    cache: "force-cache", // 永久缓存用户资料
     tags: ["user-profile"],
-    revalidate: process.env.NODE_ENV === "development" ? 0 : false, // 不自动重新验证
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false, // 开发环境实时拉取，生产环境永久缓存
   });
 }
 
@@ -377,7 +376,6 @@ export async function guessAbbreviation(text: string): Promise<NbnhhshResult[]> 
  */
 export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
   return apiClient<ApiResponse<SiteConfig>>("/config", {
-    cache: "force-cache",
     tags: ["site-config"],
     revalidate: 3600, // 1小时重新验证
     timeout: 8000, // 8秒超时

@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
@@ -32,6 +32,10 @@ import { Spoiler } from "../content/Spoiler";
 import { getHighlighter } from "./highlighter";
 import { remarkContainer } from "./plugins/container";
 import { remarkMathDelimiters } from "./plugins/math";
+import { getMediaCardUrlFromProps, remarkMediaCard } from "./plugins/media-card";
+import type { MediaCardData } from "./plugins/media-card";
+import { MediaCard } from "./plugins/media-card/MediaCard";
+import { resolveMediaCards } from "./plugins/media-card/media-card.server";
 import { remarkMermaid } from "./plugins/mermaid";
 import { rehypeFootnotes } from "./plugins/rehype-footnotes";
 
@@ -61,7 +65,8 @@ const isTextOnlyContent = (node: ReactNode): boolean => {
   return false;
 };
 
-const components: Components = {
+/** 为本次服务端渲染创建组件映射，并注入已预取的影视卡片数据。 */
+const createComponents = (mediaCards: Map<string, MediaCardData>): Components => ({
   h1: ({ children, id }) => (
     <EnhancedHeading
       id={id}
@@ -289,9 +294,14 @@ const components: Components = {
   hr: () => <DashedSeparator spacing="lg" />,
 
   div: ({ children, ...props }) => {
+    const mediaCardUrl = getMediaCardUrlFromProps(props);
     const containerType = (props as any)["data-container-type"];
     const containerParams = (props as any)["data-container-params"];
     const mermaidChart = (props as any)["data-mermaid-chart"];
+
+    if (mediaCardUrl) {
+      return <MediaCard key={mediaCardUrl} url={mediaCardUrl} initialData={mediaCards.get(mediaCardUrl)} />;
+    }
 
     if (containerType) {
       // 提取原始文本内容用于图片解析
@@ -380,7 +390,7 @@ const components: Components = {
     );
   },
 
-};
+});
 
 export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   // Check if content contains math formulas
@@ -393,7 +403,10 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
       usedLanguages.add(match[1].toLowerCase());
   }
 
-  const highlighter = await getHighlighter([...usedLanguages]);
+  const [highlighter, mediaCards] = await Promise.all([
+    getHighlighter([...usedLanguages]),
+    resolveMediaCards(content),
+  ]);
   const rehypePlugins: any[] = [
     rehypeRaw,
     rehypeInlineSyntax,
@@ -451,9 +464,9 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
       <FootnoteNavigator>
         <div className={`markdown-body ${className}`}>
           <ReactMarkdown
-            remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkMermaid, remarkContainer]}
+            remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMathDelimiters, remarkMath, remarkMermaid, remarkContainer, remarkMediaCard]}
             rehypePlugins={[...rehypePlugins, rehypeFootnotes]}
-            components={components}
+            components={createComponents(mediaCards)}
           >
             {content}
           </ReactMarkdown>

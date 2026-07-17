@@ -14,6 +14,8 @@ import { DashedSeparator } from "@/components/ui/separator";
 import { AnimatedLink } from "../content/AnimatedLink";
 import { Mark } from "../content/Mark";
 import { Spoiler } from "../content/Spoiler";
+import { getMediaCardUrlFromProps, remarkMediaCard } from "./plugins/media-card";
+import { MediaCard } from "./plugins/media-card/MediaCard";
 import { remarkSpoiler } from "./plugins/spoiler";
 
 // Static regex patterns to avoid re-compilation
@@ -148,6 +150,13 @@ const commentComponents: Components = {
 
   hr: () => <DashedSeparator spacing="sm" />,
 
+  div: ({ children, ...props }) => {
+    const mediaCardUrl = getMediaCardUrlFromProps(props);
+    return mediaCardUrl
+      ? <MediaCard key={mediaCardUrl} url={mediaCardUrl} />
+      : <div>{children}</div>;
+  },
+
   span: ({ className, children, ...props }) => {
     const { node: _node, ...rest } = props as any;
 
@@ -214,13 +223,17 @@ export function CommentMarkdown({ content, className = "" }: CommentMarkdownProp
     return {
       ...defaultSchema,
       tagNames: [...(defaultSchema.tagNames || []), "mark"],
+      attributes: {
+        ...defaultSchema.attributes,
+        div: [...(defaultSchema.attributes?.div || []), "data-media-card-url"],
+      },
     };
   }, []);
 
   return (
     <div className={`comment-markdown ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkSpoiler, remarkFlexibleMarkers, remarkGfm, remarkBreaks, remarkMediaCard]}
         rehypePlugins={[[rehypeSanitize, sanitizeSchema]]}
         components={commentComponents}
       >

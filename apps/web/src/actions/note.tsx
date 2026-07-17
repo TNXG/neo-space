@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { TOCItem } from "@/lib/toc";
 import { unstable_cache } from "next/cache";
-import { MarkdownRenderer } from "@/components/common/markdown";
+import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { unlockNoteByNid } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 

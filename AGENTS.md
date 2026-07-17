@@ -243,6 +243,15 @@
 - **Accent Scale（Teal 青绿）**：作为品牌色，负责行动点、强调元素、链接等交互元素，主色调 `--accent-600` (#0d9488)。
 - **语义化变量**：必须且唯一地使用 Shadcn UI 语义映射——`--background` / `--foreground`、`--card` / `--card-foreground`、`--primary` / `--primary-foreground`、`--secondary` / `--muted`、`--border` / `--ring`。
 
+### 10.2.1 禁止 hover 上浮位移与内部放大（translate-y / group-hover scale）
+
+- **永不使用 hover + 上浮位移**：**严禁**为任何卡片类组件添加 `hover:-translate-y-*` / `hover:translate-y-*` 这类 Z 轴位移类作为"上浮"反馈。
+- **永不使用 hover 内部缩放**：**严禁**在卡片内部图片 / 媒体元素上添加 `group-hover:scale-*` 之类的缩放反馈（例如海报、背景图）。
+- **永不使用 hover 阴影增强**：**严禁**在卡片 hover 时通过 `hover:shadow-xl` / `hover:shadow-lg` 放大阴影制造"浮起"感。
+- **允许的 hover 反馈**：仅限**颜色变化**（border / bg / text 随语义化命名变量切换）这类不改变元素几何与层级的微动效。
+- **适用范围**：所有卡片组件——包括 `MediaCard`（影视卡片）、文章卡片、笔记卡片、友链卡片等，无一例外。
+- **违反处置**：发现 `hover:-translate-y-*`、`group-hover:scale-*`、`hover:shadow-*` 立即移除，改用允许列表中的反馈形式。
+
 ### 10.3 圆角体系与视觉语言
 
 - **统一原则**：通过圆角的大小和样式，区分不同类型的元素。

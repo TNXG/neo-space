@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
-import { MarkdownRenderer } from "@/components/common/markdown";
+import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert, ProtectedNoteContent } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";

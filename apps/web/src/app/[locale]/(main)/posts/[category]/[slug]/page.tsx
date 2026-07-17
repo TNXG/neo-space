@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
-import { MarkdownRenderer } from "@/components/common/markdown";
+import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";

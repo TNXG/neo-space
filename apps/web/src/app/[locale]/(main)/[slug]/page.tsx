@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
-import { MarkdownRenderer } from "@/components/common/markdown";
+import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout } from "@/components/layouts/article";
 import { getPageBySlug } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
