@@ -288,10 +288,8 @@ export async function getCategories(lang?: string): Promise<ApiResponse<Category
  */
 export async function getLinks(page = 1, size = 50): Promise<ApiResponse<PaginatedData<Link>>> {
   return apiClient<ApiResponse<PaginatedData<Link>>>(`/links?page=${page}&size=${size}`, {
-    next: {
-      tags: ["links"],
-      revalidate: process.env.NODE_ENV === "development" ? 0 : false,
-    },
+    tags: ["links"],
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false,
   });
 }
 
@@ -338,10 +336,8 @@ export async function getRecently(limit = 10, page = 1): Promise<PaginatedRespon
 export async function getUserProfile(): Promise<ApiResponse<User>> {
   return apiClient<ApiResponse<User>>("/user/profile", {
     cache: "force-cache", // 永久缓存用户资料
-    next: {
-      tags: ["user-profile"],
-      revalidate: process.env.NODE_ENV === "development" ? 0 : false, // 不自动重新验证
-    },
+    tags: ["user-profile"],
+    revalidate: process.env.NODE_ENV === "development" ? 0 : false, // 不自动重新验证
   });
 }
 
@@ -382,10 +378,8 @@ export async function guessAbbreviation(text: string): Promise<NbnhhshResult[]> 
 export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
   return apiClient<ApiResponse<SiteConfig>>("/config", {
     cache: "force-cache",
-    next: {
-      tags: ["site-config"],
-      revalidate: 3600, // 1小时重新验证
-    },
+    tags: ["site-config"],
+    revalidate: 3600, // 1小时重新验证
     timeout: 8000, // 8秒超时
   });
 }
