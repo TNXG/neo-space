@@ -294,6 +294,15 @@ export const routeForMenu: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/markdown-export",
+    name: RouteName.MarkdownExport,
+    component: () => import("../views/markdown-export"),
+    meta: {
+      title: "Markdown 导出",
+      icon: <MarkdownIcon />,
+    },
+  },
+  {
     path: "/setting",
     name: RouteName.Setting,
     meta: {
