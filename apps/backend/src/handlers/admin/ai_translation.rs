@@ -11,6 +11,7 @@ use crate::{
     error::{AppError, AppJson, AppResult},
     external::ai::{AiService, AiUsage, ChatMessage, ChatRole},
     models::{AiTranslation, ApiResponse, Note, Page, Post, Recently},
+    tasks::content_change::notify_translation_changed,
 };
 
 #[derive(Debug, Deserialize)]
@@ -247,5 +248,8 @@ pub async fn generate_translations(
         translations.push(translation);
     }
 
+    if let Some(translation) = translations.last() {
+        notify_translation_changed(&state, translation).await;
+    }
     Ok(Json(ApiResponse::success(translations)))
 }

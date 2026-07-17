@@ -496,7 +496,7 @@
 - **`routes/`** — 仅承载 `Router::nest()` 与中间件挂载，不写业务逻辑。
 - **`services/`** — 业务规则、缓存读写、事件广播。
 - **`models/`** — Mongo 文档结构体（`#[derive(Serialize, Deserialize)]`）；主键字段命名必须为 `_id`，对应 Rust 字段加 `#[serde(rename = "_id")]`。
-- **`tasks/`** — `tokio::spawn` 调度的后台任务（友链健康检查、Change Stream 监听等）。
+- **`tasks/`** — 后台任务及写后派生状态同步（友链健康检查、ISR 刷新、搜索索引同步等）。
 - **`realtime/`** — WebSocket 与 `tokio::sync::broadcast` 事件总线。
 - **`middleware/` / `auth/` / `external/` / `config/`** — 中间件、认证、第三方集成、配置加载。
 

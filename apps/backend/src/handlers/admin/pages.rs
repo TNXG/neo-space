@@ -5,6 +5,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
     models::*,
+    tasks::content_change::{notify_page_changed, notify_page_deleted},
 };
 use axum::{
     extract::{Path, State},
@@ -131,6 +132,7 @@ pub async fn create_page(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Page not found after insert".into()))?;
+    notify_page_changed(&state, &inserted, None).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -142,6 +144,12 @@ pub async fn update_page(
     AppJson(req): AppJson<UpdatePageRequest>,
 ) -> AppResult<Json<ApiResponse<Page>>> {
     let oid = parse_oid(&id)?;
+    let collection = state.db.collection::<Page>("pages");
+    let previous = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Page not found".into()))?;
     let mut set_doc = doc! { "modified": bson::DateTime::now() };
     if let Some(v) = req.title {
         set_doc.insert("title", v);
@@ -161,7 +169,6 @@ pub async fn update_page(
     if let Some(meta) = req.meta {
         set_doc.insert("meta", meta);
     }
-    let collection = state.db.collection::<Page>("pages");
     let result = collection
         .update_one(doc! { "_id": oid }, doc! { "$set": set_doc })
         .await
@@ -174,6 +181,7 @@ pub async fn update_page(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Page not found".into()))?;
+    notify_page_changed(&state, &updated, Some(&previous.slug)).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -184,14 +192,19 @@ pub async fn delete_page(
     Path(id): Path<String>,
 ) -> AppResult<Json<ApiResponse<()>>> {
     let oid = parse_oid(&id)?;
-    let result = state
-        .db
-        .collection::<Page>("pages")
+    let collection = state.db.collection::<Page>("pages");
+    let page = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Page not found".into()))?;
+    let result = collection
         .delete_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Page not found".into()));
     }
+    notify_page_deleted(&state, &page).await;
     Ok(Json(ApiResponse::success(())))
 }

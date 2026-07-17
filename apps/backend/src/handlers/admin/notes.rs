@@ -7,6 +7,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
     models::*,
+    tasks::content_change::{notify_note_changed, notify_notes_deleted},
 };
 use axum::{
     extract::{Path, State},
@@ -136,6 +137,7 @@ pub async fn create_note(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Note not found after insert".into()))?;
 
+    notify_note_changed(&state, &inserted).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -195,6 +197,7 @@ pub async fn update_note(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Note not found".into()))?;
+    notify_note_changed(&state, &updated).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -206,6 +209,11 @@ pub async fn delete_note(
 ) -> AppResult<Json<ApiResponse<()>>> {
     let oid = parse_oid(&id)?;
     let collection = state.db.collection::<Note>("notes");
+    let note = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Note not found".into()))?;
     let result = collection
         .delete_one(doc! { "_id": oid })
         .await
@@ -213,6 +221,7 @@ pub async fn delete_note(
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Note not found".into()));
     }
+    notify_notes_deleted(&state, &[note]).await;
     Ok(Json(ApiResponse::success(())))
 }
 
@@ -226,12 +235,20 @@ pub async fn delete_notes_batch(
     for id in &req.ids {
         oids.push(parse_oid(id)?);
     }
-    let result = state
-        .db
-        .collection::<Note>("notes")
-        .delete_many(doc! { "_id": { "$in": oids } })
+    let collection = state.db.collection::<Note>("notes");
+    let filter = doc! { "_id": { "$in": &oids } };
+    let notes = collection
+        .find(filter.clone())
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_collect::<Vec<_>>()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    let result = collection
+        .delete_many(filter)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    notify_notes_deleted(&state, &notes).await;
     Ok(Json(ApiResponse::success(result.deleted_count)))
 }
 

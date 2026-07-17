@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PostsPageProps): Promise<Meta
   };
 }
 
-// ISR 配置：16小时过期，同时依赖 Change Stream 主动刷新
+// ISR 配置：16小时兜底过期，后台内容变更后会主动刷新
 export const revalidate = 57600;
 
 /**

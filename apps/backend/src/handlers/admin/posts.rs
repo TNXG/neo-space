@@ -8,12 +8,14 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
     models::*,
+    tasks::content_change::{notify_post_changed, notify_posts_deleted},
 };
 use axum::{
     extract::{Path, State},
     response::Json,
 };
 use bson::{doc, oid::ObjectId};
+use futures::TryStreamExt;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -185,6 +187,7 @@ pub async fn create_post(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Post not found after insert".into()))?;
 
+    notify_post_changed(&state, &inserted, None).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -196,6 +199,12 @@ pub async fn update_post(
     AppJson(req): AppJson<UpdatePostRequest>,
 ) -> AppResult<Json<ApiResponse<Post>>> {
     let oid = parse_oid(&id)?;
+    let collection = state.db.collection::<Post>("posts");
+    let previous = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Post not found".into()))?;
 
     let mut set_doc = doc! { "modified": now() };
     if let Some(v) = req.title {
@@ -242,7 +251,6 @@ pub async fn update_post(
     }
     let update_doc = doc! { "$set": set_doc };
 
-    let collection = state.db.collection::<Post>("posts");
     let result = collection
         .update_one(doc! { "_id": oid }, update_doc)
         .await
@@ -258,6 +266,7 @@ pub async fn update_post(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Post not found".into()))?;
 
+    notify_post_changed(&state, &updated, Some(&previous.slug)).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -269,6 +278,11 @@ pub async fn delete_post(
 ) -> AppResult<Json<ApiResponse<()>>> {
     let oid = parse_oid(&id)?;
     let collection = state.db.collection::<Post>("posts");
+    let post = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Post not found".into()))?;
     let result = collection
         .delete_one(doc! { "_id": oid })
         .await
@@ -276,6 +290,7 @@ pub async fn delete_post(
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Post not found".into()));
     }
+    notify_posts_deleted(&state, &[post]).await;
     Ok(Json(ApiResponse::success(())))
 }
 
@@ -290,9 +305,18 @@ pub async fn delete_posts_batch(
         oids.push(parse_oid(id)?);
     }
     let collection = state.db.collection::<Post>("posts");
-    let result = collection
-        .delete_many(doc! { "_id": { "$in": oids } })
+    let filter = doc! { "_id": { "$in": &oids } };
+    let posts = collection
+        .find(filter.clone())
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_collect::<Vec<_>>()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    let result = collection
+        .delete_many(filter)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    notify_posts_deleted(&state, &posts).await;
     Ok(Json(ApiResponse::success(result.deleted_count)))
 }

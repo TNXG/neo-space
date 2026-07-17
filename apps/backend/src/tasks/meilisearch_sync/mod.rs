@@ -5,7 +5,7 @@ mod full_sync;
 mod loaders;
 mod operations;
 
-use mongodb::bson::{Document, doc, oid::ObjectId};
+use mongodb::bson::{doc, oid::ObjectId};
 
 use crate::app::SharedState;
 use crate::models::{AiTranslation, Note, Post};
@@ -18,10 +18,8 @@ use operations::{
 /// Sync post to `Meilisearch`.
 pub(crate) async fn sync_post_to_meilisearch(
     state: &SharedState,
-    doc: Option<&Document>,
+    post: Post,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let document = doc.ok_or("Missing document")?;
-    let post: Post = mongodb::bson::from_document(document.clone())?;
     let search_service = build_search_service(state)?;
 
     replace_post_documents_for_ref(state, &search_service, post).await
@@ -43,10 +41,8 @@ pub(crate) async fn remove_post_from_meilisearch(
 /// Sync note to `Meilisearch`.
 pub(crate) async fn sync_note_to_meilisearch(
     state: &SharedState,
-    doc: Option<&Document>,
+    note: Note,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let document = doc.ok_or("Missing document")?;
-    let note: Note = mongodb::bson::from_document(document.clone())?;
     let search_service = build_search_service(state)?;
 
     replace_note_documents_for_ref(state, &search_service, note).await
@@ -68,10 +64,8 @@ pub(crate) async fn remove_note_from_meilisearch(
 /// Sync translation change to `Meilisearch` by rebuilding the owning content's locale documents.
 pub(crate) async fn sync_translation_to_meilisearch(
     state: &SharedState,
-    doc: Option<&Document>,
+    translation: AiTranslation,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let document = doc.ok_or("Missing document")?;
-    let translation: AiTranslation = mongodb::bson::from_document(document.clone())?;
     let search_service = build_search_service(state)?;
 
     match translation.ref_type.as_str() {

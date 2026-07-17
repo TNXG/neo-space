@@ -5,6 +5,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    tasks::content_change::{notify_link_changed, notify_link_deleted},
     tasks::link_health_check::perform_health_check,
 };
 use axum::{
@@ -163,6 +164,7 @@ pub async fn create_link(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Link not found after insert".into()))?;
+    notify_link_changed(&state, &link, None).await;
     Ok(Json(ApiResponse::success(link)))
 }
 
@@ -172,6 +174,12 @@ pub async fn update_link(
     Path(id): Path<String>,
     AppJson(req): AppJson<UpdateLinkRequest>,
 ) -> AppResult<Json<ApiResponse<Link>>> {
+    let collection = state.db.collection::<Link>("links");
+    let previous = collection
+        .find_one(link_id_filter(&id))
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Link not found".into()))?;
     let mut set_doc = doc! {};
     if let Some(v) = req.name {
         set_doc.insert("name", v);
@@ -209,19 +217,16 @@ pub async fn update_link(
             None => set_doc.insert("techstack", Bson::Null),
         };
     }
-    state
-        .db
-        .collection::<Link>("links")
+    collection
         .update_one(link_id_filter(&id), doc! { "$set": set_doc })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
-    let link = state
-        .db
-        .collection::<Link>("links")
+    let link = collection
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Link not found".into()))?;
+    notify_link_changed(&state, &link, Some(previous.state)).await;
     Ok(Json(ApiResponse::success(link)))
 }
 
@@ -230,15 +235,20 @@ pub async fn delete_link(
     _owner: OwnerOnly,
     Path(id): Path<String>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let r = state
-        .db
-        .collection::<Link>("links")
+    let collection = state.db.collection::<Link>("links");
+    let link = collection
+        .find_one(link_id_filter(&id))
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Link not found".into()))?;
+    let r = collection
         .delete_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     if r.deleted_count == 0 {
         return Err(AppError::NotFound("Link not found".into()));
     }
+    notify_link_deleted(&state, &link).await;
     Ok(Json(ApiResponse::success(())))
 }
 

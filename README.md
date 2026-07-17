@@ -253,7 +253,8 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 - **后台任务**：`tokio::spawn` 调度
   - 友链健康检查（定时）
   - 网易云音乐播放状态（轮询）
-  - MongoDB Change Stream（持久监听并广播事件）
+  - Meilisearch 启动时全量同步
+- **写后同步**：后台内容变更成功后，显式失效 Moka 缓存、同步 Meilisearch，并通知 Next.js 刷新 ISR
 - **OpenAPI**：通过 Utoipa 宏自动生成，Swagger UI 提供交互式文档
 
 ---
@@ -367,7 +368,7 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 
 ### 实现
 
-- 后端：`tokio::sync::broadcast` 维护全局事件通道，Change Stream 监听 DB 变更并发布
+- 后端：`tokio::sync::broadcast` 维护全局事件通道，由业务写入和健康检查任务发布事件
 - 前端：`useWebSocket` Hook 自动连接 / 重连，结合 SWR 自动刷新缓存与 Toast 通知
 
 ---

@@ -1,10 +1,6 @@
 //! Database connection initialization
 
-use mongodb::{
-    Client, Database,
-    bson::doc,
-    options::{Acknowledgment, ClientOptions, ReadConcern, WriteConcern},
-};
+use mongodb::{Client, Database, bson::doc, options::ClientOptions};
 
 use super::AppConfig;
 
@@ -22,21 +18,6 @@ pub async fn init_database(config: &AppConfig) -> Result<Database, mongodb::erro
 
     // Configure connection pool size
     client_options.max_pool_size = Some(config.mongodb_max_pool_size);
-
-    // For single-node replica sets, force direct_connection
-    if config.mongodb_uri.contains("directConnection=true") {
-        client_options.direct_connection = Some(true);
-
-        // Set write concern to w:1
-        client_options.write_concern =
-            Some(WriteConcern::builder().w(Acknowledgment::from(1)).build());
-
-        // Set read concern to local
-        client_options.read_concern = Some(ReadConcern::local());
-
-        // Disable server monitoring for direct connection
-        client_options.heartbeat_freq = Some(std::time::Duration::from_secs(60));
-    }
 
     let client = Client::with_options(client_options)?;
 

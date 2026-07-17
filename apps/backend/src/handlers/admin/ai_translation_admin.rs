@@ -5,6 +5,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    tasks::content_change::notify_translation_changed,
 };
 use axum::{
     extract::{Path, State},
@@ -325,6 +326,7 @@ pub async fn update_translation(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Translation not found".to_string()))?;
 
+    notify_translation_changed(&state, &translation).await;
     Ok(Json(ApiResponse::success(translation)))
 }
 
@@ -334,14 +336,19 @@ pub async fn delete_translation(
     Path(id): Path<String>,
 ) -> AppResult<Json<ApiResponse<()>>> {
     let oid = parse_oid(&id)?;
-    let result = state
-        .db
-        .collection::<AiTranslation>("ai_translations")
+    let collection = state.db.collection::<AiTranslation>("ai_translations");
+    let translation = collection
+        .find_one(doc! { "_id": oid })
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Translation not found".to_string()))?;
+    let result = collection
         .delete_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Translation not found".to_string()));
     }
+    notify_translation_changed(&state, &translation).await;
     Ok(Json(ApiResponse::success(())))
 }

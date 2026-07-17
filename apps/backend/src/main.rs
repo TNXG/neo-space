@@ -71,10 +71,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     info!("Meilisearch 全量同步任务已启动（后台任务）");
 
-    // Start MongoDB Change Stream monitoring
-    tasks::start_change_stream_task(state.clone());
-    info!("Change Stream 监听任务已启动（后台任务）");
-
     // Start link health check task
     let link_check_interval = state.config.link_health_interval_hours;
     info!("正在预热友链健康检查缓存...");
