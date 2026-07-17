@@ -13,7 +13,17 @@ fn generate_signature(tag: &str, path: &str, timestamp: i64) -> Result<String, S
         .map_err(|_| "REVALIDATION_SECRET not set".to_string())?;
 
     let salt = std::env::var("REVALIDATION_SALT").unwrap_or_else(|_| "default-salt".to_string());
+    sign_revalidation_request(&secret, &salt, tag, path, timestamp)
+}
 
+/// 使用与 Next.js Route Handler 一致的消息格式生成签名。
+fn sign_revalidation_request(
+    secret: &str,
+    salt: &str,
+    tag: &str,
+    path: &str,
+    timestamp: i64,
+) -> Result<String, String> {
     // Construct message: secret + timestamp + salt + tag + path
     let message = format!("{}{}{}{}{}", secret, timestamp, salt, tag, path);
 
@@ -29,6 +39,7 @@ fn generate_signature(tag: &str, path: &str, timestamp: i64) -> Result<String, S
 /// Trigger ISR revalidation for Next.js
 pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, path: Option<&str>) {
     let frontend_url = state.config().frontend_url.clone();
+    let frontend_url = frontend_url.trim_end_matches('/');
 
     // Check if REVALIDATION_SECRET is configured
     if std::env::var("REVALIDATION_SECRET").is_err() {
@@ -45,8 +56,9 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
         path
     );
 
-    // Revalidate by tag
-    let signature = match generate_signature(tag, "", timestamp) {
+    // 标签和路径使用同一个签名与请求，避免一次内容更新产生两次网络调用。
+    let path_value = path.unwrap_or_default();
+    let signature = match generate_signature(tag, path_value, timestamp) {
         Ok(sig) => sig,
         Err(e) => {
             tracing::error!("Failed to generate signature for tag: {}", e);
@@ -58,41 +70,24 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
         &state.http_client,
         &url,
         Some(tag),
-        None,
+        path,
         timestamp,
         &signature,
     )
     .await
     {
-        tracing::warn!("Failed to revalidate tag {}: {}", tag, e);
+        tracing::warn!(
+            "Failed to revalidate tag {} and path {:?}: {}",
+            tag,
+            path,
+            e
+        );
     } else {
-        tracing::info!("ISR revalidation triggered for tag: {}", tag);
-    }
-
-    // Revalidate specific path if provided
-    if let Some(p) = path {
-        let signature = match generate_signature("", p, timestamp) {
-            Ok(sig) => sig,
-            Err(e) => {
-                tracing::error!("Failed to generate signature for path: {}", e);
-                return;
-            }
-        };
-
-        if let Err(e) = send_revalidation_request(
-            &state.http_client,
-            &url,
-            None,
-            Some(p),
-            timestamp,
-            &signature,
-        )
-        .await
-        {
-            tracing::warn!("Failed to revalidate path {}: {}", p, e);
-        } else {
-            tracing::info!("ISR revalidation triggered for path: {}", p);
-        }
+        tracing::info!(
+            "ISR revalidation triggered for tag {} and path {:?}",
+            tag,
+            path
+        );
     }
 }
 
@@ -126,5 +121,39 @@ pub(crate) async fn send_revalidation_request(
         return Err(format!("Revalidation failed: {} - {}", status, body).into());
     }
 
+    let response_body: serde_json::Value = response.json().await?;
+    if response_body
+        .get("revalidated")
+        .and_then(serde_json::Value::as_bool)
+        != Some(true)
+    {
+        return Err(
+            format!("Revalidation endpoint returned an invalid response: {response_body}").into(),
+        );
+    }
+
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sign_revalidation_request;
+
+    /// 固定向量用于防止前后端签名字段顺序被单边修改。
+    #[test]
+    fn generates_frontend_compatible_signature() {
+        let signature = sign_revalidation_request(
+            "test-secret",
+            "test-salt",
+            "posts",
+            "/posts/example",
+            1_700_000_000,
+        )
+        .expect("signature should be generated");
+
+        assert_eq!(
+            signature,
+            "b845d676e876f561a4f82171be865b288735b9d5cb1ac6a280a6fd4a4ded62c1"
+        );
+    }
 }

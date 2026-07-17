@@ -18,6 +18,47 @@ import { NextResponse } from "next/server";
 const REVALIDATION_SECRET = process.env.REVALIDATION_SECRET;
 const REVALIDATION_SALT = process.env.REVALIDATION_SALT || "default-salt";
 const TIME_WINDOW_SECONDS = 300; // ±5分钟
+const SIGNATURE_PATTERN = /^[a-f\d]{64}$/i;
+const TAG_PATTERN = /^[a-z\d][a-z\d-]{0,127}$/;
+
+interface RevalidationRequest {
+  tag?: string;
+  path?: string;
+  timestamp: number;
+  signature: string;
+}
+
+/**
+ * 校验并收窄重验证请求，避免无效输入进入签名和缓存 API。
+ */
+function parseRevalidationRequest(value: unknown): RevalidationRequest | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const body = value as Record<string, unknown>;
+  const tag = typeof body.tag === "string" && body.tag.length > 0 ? body.tag : undefined;
+  const path = typeof body.path === "string" && body.path.length > 0 ? body.path : undefined;
+
+  if (
+    (!tag && !path)
+    || (tag && !TAG_PATTERN.test(tag))
+    || (path && (!path.startsWith("/") || path.length > 1024))
+    || typeof body.timestamp !== "number"
+    || !Number.isInteger(body.timestamp)
+    || typeof body.signature !== "string"
+    || !SIGNATURE_PATTERN.test(body.signature)
+  ) {
+    return null;
+  }
+
+  return {
+    tag,
+    path,
+    timestamp: body.timestamp,
+    signature: body.signature,
+  };
+}
 
 /**
  * 验证 HMAC 签名
@@ -94,23 +135,17 @@ function verifyTimestamp(timestamp: number): boolean {
 export async function POST(request: NextRequest) {
   try {
     // 1. 解析请求体
-    const body = await request.json();
-    const { tag, path, timestamp, signature } = body;
+    const body = parseRevalidationRequest(await request.json());
 
     // 2. 基础验证
-    if (!timestamp || !signature) {
+    if (!body) {
       return NextResponse.json(
-        { success: false, message: "缺少必需参数: timestamp 或 signature" },
+        { success: false, message: "请求参数格式无效" },
         { status: 400 },
       );
     }
 
-    if (!tag && !path) {
-      return NextResponse.json(
-        { success: false, message: "必须提供 tag 或 path 参数" },
-        { status: 400 },
-      );
-    }
+    const { tag, path, timestamp, signature } = body;
 
     // 3. 验证时间戳（防止重放攻击）
     if (!verifyTimestamp(timestamp)) {

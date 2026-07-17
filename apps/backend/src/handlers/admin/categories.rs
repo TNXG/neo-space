@@ -7,6 +7,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    tasks::isr::trigger_isr_revalidation,
     tasks::meilisearch_incremental::enqueue_category_posts,
 };
 use axum::{
@@ -129,6 +130,7 @@ pub async fn create_category(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Category not found after insert".into()))?;
+    trigger_isr_revalidation(&state, "categories", None).await;
     Ok(Json(ApiResponse::success(cat)))
 }
 
@@ -164,6 +166,9 @@ pub async fn update_category(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Category not found".into()))?;
     enqueue_category_posts(&state, oid).await?;
+    // 分类名称或 slug 会被文章列表与详情页消费，因此两个标签都需要失效。
+    trigger_isr_revalidation(&state, "categories", None).await;
+    trigger_isr_revalidation(&state, "posts", None).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -195,6 +200,7 @@ pub async fn delete_category(
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Category not found".into()));
     }
+    trigger_isr_revalidation(&state, "categories", None).await;
     Ok(Json(ApiResponse::success(())))
 }
 
