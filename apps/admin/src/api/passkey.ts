@@ -16,12 +16,16 @@ interface ApiEnvelope<T> {
 
 interface RegistrationStartResponse {
   challengeId: string;
-  options: Parameters<typeof startRegistration>[0]["optionsJSON"];
+  options: {
+    publicKey: Parameters<typeof startRegistration>[0]["optionsJSON"];
+  };
 }
 
 interface AuthenticationStartResponse {
   challengeId: string;
-  options: Parameters<typeof startAuthentication>[0]["optionsJSON"];
+  options: {
+    publicKey: Parameters<typeof startAuthentication>[0]["optionsJSON"];
+  };
 }
 
 export interface PasskeySummary {
@@ -38,7 +42,7 @@ const register = async (name: string): Promise<PasskeySummary> => {
     { data: { name }, bypassTransform: true },
   );
   const credential = await startRegistration({
-    optionsJSON: start.data.options,
+    optionsJSON: start.data.options.publicKey,
   });
   const finish = await request.post<ApiEnvelope<PasskeySummary>>(
     "/auth/passkeys/register/finish",
@@ -70,7 +74,7 @@ const authenticate = async (
     },
   );
   const credential = await startAuthentication({
-    optionsJSON: start.data.options,
+    optionsJSON: start.data.options.publicKey,
     useBrowserAutofill,
   });
   const finish = await request.post<ApiEnvelope<LoginResponse>>(

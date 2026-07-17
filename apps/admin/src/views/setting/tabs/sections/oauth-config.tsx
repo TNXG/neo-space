@@ -1,12 +1,14 @@
 import type { Component, PropType } from "vue";
 import type { OptionValue } from "~/api/options";
 import { cloneDeep } from "es-toolkit/compat";
-import { Fingerprint as PasskeyIcon, Github as GithubIcon } from "lucide-vue-next";
+import { Github as GithubIcon } from "lucide-vue-next";
 import { NInput, NSwitch } from "naive-ui";
 import { defineComponent } from "vue";
 
 import { QQIcon } from "~/components/icons/QQIcon";
 import { SettingsRow, SettingsSection } from "~/layouts/settings-layout";
+
+import { PasskeySecuritySection } from "./passkey-security";
 
 type OptionRecord = Record<string, OptionValue>;
 
@@ -83,7 +85,7 @@ export const OAuthConfigSection = defineComponent({
     onUpdate: { type: Function as PropType<(value: OptionValue) => void>, required: true },
   },
   setup(props) {
-    /** 切换登录页 Passkey 条件式自动填充模式。 */
+    /** 更新 Passkey 自动登录偏好，由外层统一保存 oauth 配置。 */
     const updatePasskeyAutomatic = (enabled: boolean) => {
       const nextValue = asRecord(cloneDeep(props.value));
       nextValue.passkeyAutomatic = enabled;
@@ -130,18 +132,10 @@ export const OAuthConfigSection = defineComponent({
 
     return () => (
       <>
-        <SettingsSection
-          title="Passkey 登录"
-          description="开启时进入登录页自动请求可用 Passkey；关闭时仅点击按钮后启用"
-          icon={PasskeyIcon}
-        >
-          <SettingsRow title="进入登录页自动启用">
-            <NSwitch
-              value={asRecord(props.value).passkeyAutomatic === true}
-              onUpdateValue={updatePasskeyAutomatic}
-            />
-          </SettingsRow>
-        </SettingsSection>
+        <PasskeySecuritySection
+          automatic={asRecord(props.value).passkeyAutomatic === true}
+          onUpdateAutomatic={updatePasskeyAutomatic}
+        />
         {PROVIDERS.map((provider) => {
           const ProviderIcon = provider.icon;
           return (

@@ -12,7 +12,7 @@ const OPTION_METADATA: Record<string, OptionMetadata> = {
   mailOptions: { title: "邮件", description: "邮件服务与发信配置", icon: "mail" },
   commentOptions: { title: "评论", description: "评论审核与交互策略", icon: "message-square" },
   ai: { title: "AI", description: "模型提供商与内容生成配置", icon: "sparkles" },
-  oauth: { title: "OAuth", description: "第三方登录提供商配置", icon: "shield" },
+  oauth: { title: "登录与安全", description: "Passkey 与第三方登录配置", icon: "shield" },
   friendLinkOptions: { title: "友链", description: "友链申请与校验策略", icon: "link" },
   searchOptions: { title: "全文搜索", description: "Meilisearch 服务配置", icon: "search" },
 };
