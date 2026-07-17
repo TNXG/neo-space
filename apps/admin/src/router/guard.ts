@@ -23,7 +23,7 @@ router.beforeEach(async (to) => {
   } else {
     const { ok } = await userApi.checkLogged();
     if (!ok) {
-      return `/login?from=${encodeURI(to.fullPath)}`;
+      return `/login?from=${encodeURIComponent(to.fullPath)}`;
     }
   }
 });

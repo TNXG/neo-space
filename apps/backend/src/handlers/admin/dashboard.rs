@@ -137,7 +137,7 @@ pub async fn dashboard_overview(
     contents.extend(load_content(&state, "notes", "note").await?);
     contents.extend(load_content(&state, "pages", "page").await?);
     contents.extend(load_content(&state, "recently", "recently").await?);
-    contents.sort_by(|left, right| right.created.cmp(&left.created));
+    contents.sort_by_key(|content| std::cmp::Reverse(content.created));
     let recent_content = contents.iter().take(8).cloned().collect();
 
     let today = Utc::now().date_naive();

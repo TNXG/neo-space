@@ -9,7 +9,7 @@ import {
 import { request } from "~/utils/request";
 
 export interface LoginData {
-  username: string;
+  identifier: string;
   password: string;
 }
 
@@ -40,10 +40,22 @@ export interface Session {
 export interface AllowLoginResponse {
   password: boolean;
   passkey: boolean;
+  passkeyAutomatic: boolean;
   github?: boolean;
   qq?: boolean;
   google?: boolean;
-  [key: string]: boolean | undefined;
+  [key: string]: boolean | string | undefined;
+}
+
+export interface OwnerLoginProfile {
+  name: string;
+  username: string;
+  avatar: string;
+}
+
+export interface IdentifyOwnerResponse {
+  matched: boolean;
+  profile: OwnerLoginProfile | null;
 }
 
 interface ApiEnvelope<T> {
@@ -74,7 +86,7 @@ export const userApi = {
       "/auth/tokens",
       {
         data: {
-          username: data.username,
+          identifier: data.identifier,
           password: data.password,
         },
       },
@@ -88,6 +100,15 @@ export const userApi = {
   getAllowLogin: async () => {
     const response
       = await request.get<ApiEnvelope<AllowLoginResponse>>("/owner/allow-login");
+    return response.data;
+  },
+
+  // 账号匹配成功后再读取登录页所需的最小公开资料
+  identifyOwner: async (identifier: string) => {
+    const response = await request.get<ApiEnvelope<IdentifyOwnerResponse>>(
+      "/owner/identify",
+      { query: { identifier } },
+    );
     return response.data;
   },
 

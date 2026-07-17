@@ -29,6 +29,12 @@ body a:hover {
   @apply text-primary-shallow;
 }
 
+/* 大圆角在管理界面会放大视觉噪音，容器统一收敛到 4px；头像和状态点继续使用圆形。 */
+.rounded-xl,
+.rounded-2xl {
+  border-radius: 4px !important;
+}
+
 /* 按钮样式重置 - 针对自定义按钮组件 */
 button:focus,
 button {
@@ -367,7 +373,7 @@ html.dark .sonner-cancel-button:hover {
 
 /* Light mode Dialog 阴影 */
 html:not(.dark) .n-dialog {
-  @apply !rounded-xl;
+  @apply !rounded-md;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.06),
     0 8px 24px rgba(0, 0, 0, 0.08),
@@ -376,7 +382,7 @@ html:not(.dark) .n-dialog {
 
 /* Dark mode Dialog 阴影 */
 html.dark .n-dialog {
-  @apply !rounded-xl;
+  @apply !rounded-md;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.5),
@@ -393,7 +399,7 @@ html.dark .n-dialog {
 
 /* Light mode Card 阴影 */
 html:not(.dark) .n-modal .n-card {
-  @apply !rounded-xl;
+  @apply !rounded-md;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.06),
     0 8px 24px rgba(0, 0, 0, 0.08),
@@ -402,7 +408,7 @@ html:not(.dark) .n-modal .n-card {
 
 /* Dark mode Card 阴影 */
 html.dark .n-modal .n-card {
-  @apply !rounded-xl;
+  @apply !rounded-md;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.5),

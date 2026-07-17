@@ -214,7 +214,11 @@ pub async fn list_translations_grouped(
         });
 
         match group_index {
-            Some(index) => groups[index].translations.push(translation),
+            Some(index) => {
+                if let Some(group) = groups.get_mut(index) {
+                    group.translations.push(translation);
+                }
+            }
             None => {
                 let article =
                     load_translation_article(&state, &translation.ref_id, &translation.ref_type)

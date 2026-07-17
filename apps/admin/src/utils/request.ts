@@ -66,9 +66,13 @@ export const $api = ofetch.create({
     const status = response.status;
 
     if (status === 401) {
-      router.push(
-        `/login?from=${encodeURIComponent(router.currentRoute.value.fullPath)}`,
-      );
+      const currentRoute = router.currentRoute.value;
+      // 登录页上的密码、Passkey 失败属于正常认证结果，不能再次嵌套登录路由。
+      if (!currentRoute.meta.isPublic && currentRoute.path !== "/login") {
+        router.push(
+          `/login?from=${encodeURIComponent(currentRoute.fullPath)}`,
+        );
+      }
       throw new SystemError("未授权，请重新登录", 401);
     }
 

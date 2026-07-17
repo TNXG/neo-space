@@ -196,7 +196,7 @@ pub async fn list_draft_history(
     let mut items = Vec::with_capacity(draft.history.len() + 1);
     items.push(current_history_item(&draft));
     items.extend(draft.history.iter().map(history_item));
-    items.sort_by(|a, b| b.version.cmp(&a.version));
+    items.sort_by_key(|item| std::cmp::Reverse(item.version));
 
     Ok(Json(ApiResponse::success(items)))
 }

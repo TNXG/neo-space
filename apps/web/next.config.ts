@@ -12,7 +12,6 @@ const withNextIntl = createNextIntlPlugin("./src/locales/index.ts");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  output: "standalone",
   compress: true,
   // monorepo 中显式指定追踪根，避免 Vercel/Next 误判 lockfile 位置
   outputFileTracingRoot: resolve(__dirname, "../../"),

@@ -17,7 +17,7 @@ import type { GlobalThemeOverrides, ThemeCommonVars } from "naive-ui";
 // neutral-950: #0a0a0a
 
 export const commonThemeVars: Partial<ThemeCommonVars> = {
-  borderRadius: "6px",
+  borderRadius: "4px",
 };
 
 // Light Mode: 深色主色调 + neutral 灰色系统

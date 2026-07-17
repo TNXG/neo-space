@@ -6,6 +6,7 @@ export * from "./debug";
 export * from "./dashboard";
 export * from "./drafts";
 export * from "./links";
+export * from "./meilisearch";
 export * from "./notes";
 export * from "./options";
 export * from "./pages";

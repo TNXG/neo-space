@@ -223,7 +223,14 @@ mod tests {
             json!({ "providers": [{ "type": "google", "enabled": true }] }),
         );
 
-        assert_eq!(current["providers"][0]["type"], "github");
-        assert_eq!(current["providers"][1]["enabled"], true);
+        assert_eq!(
+            current,
+            json!({
+                "providers": [
+                    { "type": "github", "enabled": true },
+                    { "type": "google", "enabled": true }
+                ]
+            })
+        );
     }
 }

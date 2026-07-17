@@ -164,7 +164,7 @@ pub async fn list_contents(
         let keyword = search.trim().to_lowercase();
         contents.retain(|content| content.title.to_lowercase().contains(&keyword));
     }
-    contents.sort_by(|left, right| right.created.cmp(&left.created));
+    contents.sort_by_key(|content| std::cmp::Reverse(content.created));
 
     let total = contents.len() as i64;
     let mut items: Vec<TimeCapsuleContent> = contents
