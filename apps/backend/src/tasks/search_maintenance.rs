@@ -23,6 +23,37 @@ mod scheduler;
 use cleanup::cleanup_temporary_indexes;
 pub use scheduler::{default_schedule, schedule_collection, start_search_maintenance_scheduler};
 
+/// 后端重启后收敛无法继续执行的旧任务，并异步清理历史临时索引。
+pub async fn recover_interrupted_rebuilds(state: &SharedState) -> AppResult<()> {
+    let now = DateTime::now();
+    let interruption_message = "后端进程已重启，原重建执行器无法恢复，任务已自动终止";
+    let result = task_collection(state)
+        .update_many(
+            doc! { "status": { "$in": ["queued", "running"] } },
+            doc! { "$set": {
+                "status": "failed",
+                "phase": "interrupted",
+                "error": interruption_message,
+                "updatedAt": now,
+                "finishedAt": now,
+            }, "$push": { "logs": interruption_message } },
+        )
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    if result.modified_count > 0 {
+        tracing::warn!(
+            interrupted_tasks = result.modified_count,
+            "已收敛后端重启前未结束的 Meilisearch 重建任务"
+        );
+    }
+    Ok(())
+}
+
+/// 清理所有不再属于当前执行器的重建临时索引。
+pub async fn cleanup_orphaned_rebuild_indexes(state: &SharedState) -> AppResult<usize> {
+    cleanup::cleanup_orphaned_temporary_indexes(state).await
+}
+
 /// 创建并异步执行索引重建任务。
 pub async fn enqueue_rebuild(
     state: SharedState,

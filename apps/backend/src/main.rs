@@ -60,6 +60,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create application state
     let state = app::create_state(db, config.clone());
 
+    // 重建执行器只存在于当前进程内；重启后旧任务不能续跑，必须先收敛状态。
+    if let Err(error) = tasks::search_maintenance::recover_interrupted_rebuilds(&state).await {
+        return Err(format!("恢复 Meilisearch 重建任务状态失败: {error:?}").into());
+    }
+
     // Start background tasks
     info!("启动后台任务...");
 
@@ -70,10 +75,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let index_state = state.clone();
         tokio::spawn(async move {
             loop {
-                match tasks::search_maintenance::ensure_managed_indexes(&index_state).await {
+                let initialization_result = async {
+                    let cleaned_indexes =
+                        tasks::search_maintenance::cleanup_orphaned_rebuild_indexes(&index_state)
+                            .await?;
+                    if cleaned_indexes > 0 {
+                        tracing::info!(cleaned_indexes, "已清理历史 Meilisearch 重建临时索引");
+                    }
+                    tasks::search_maintenance::ensure_managed_indexes(&index_state).await
+                }
+                .await;
+                match initialization_result {
                     Ok(()) => break,
                     Err(error) => {
-                        tracing::warn!(?error, "Meilisearch 受管索引初始化失败，30 秒后重试");
+                        tracing::warn!(
+                            ?error,
+                            "Meilisearch 初始化或历史临时索引清理失败，30 秒后重试"
+                        );
                         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
                     }
                 }
