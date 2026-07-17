@@ -61,7 +61,7 @@ export const TabSystem = defineComponent({
         originalValue.value = cloneDeep(savedValue);
         formData.value = { [props.optionKey]: cloneDeep(savedValue) };
         emit("saved", savedValue);
-        toast.success("配置已保存，重启后应用运行时配置");
+        toast.success("配置已保存并立即生效");
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : "保存失败，请重试");
       } finally {

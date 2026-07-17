@@ -150,10 +150,11 @@ pub async fn create_comment(
     headers: HeaderMap,
     AppJson(payload): AppJson<CreateCommentRequest>,
 ) -> AppResult<Json<ApiResponse<CommentTree>>> {
-    if state.config.comments_disabled {
+    let config = state.config();
+    if config.comments_disabled {
         return Err(AppError::Forbidden);
     }
-    if !state.config.comments_allow_no_chinese
+    if !config.comments_allow_no_chinese
         && !payload
             .text
             .chars()
@@ -216,8 +217,7 @@ pub async fn create_comment(
     // Extract client IP from headers
     let client_ip = extract_client_ip(&headers).or_else(|| Some(peer_addr.ip().to_string()));
     if client_ip.as_ref().is_some_and(|ip| {
-        state
-            .config
+        config
             .comments_blocked_ips
             .iter()
             .any(|blocked| blocked == ip)
@@ -226,7 +226,7 @@ pub async fn create_comment(
     }
 
     // Get IP location asynchronously
-    let location = if state.config.comments_record_ip_location
+    let location = if config.comments_record_ip_location
         && let Some(ref ip) = client_ip
     {
         get_ip_location(ip, &state.http_client).await
@@ -279,15 +279,15 @@ pub async fn create_comment(
 
         // Verify Turnstile token for anonymous users
         if let Some(ref token) = payload.turnstile_token {
-            let secret = &state.config.turnstile_secret;
+            let secret = &config.turnstile_secret;
             // Only verify if secret is configured (not the placeholder)
             if !secret.is_empty() && secret != "THISISTURNSTILEKEY" {
                 verify_turnstile(token, secret, &state.http_client)
                     .await
                     .map_err(|_| AppError::BadRequest("CAPTCHA verification failed".to_string()))?;
             }
-        } else if !state.config.turnstile_secret.is_empty()
-            && state.config.turnstile_secret != "THISISTURNSTILEKEY"
+        } else if !config.turnstile_secret.is_empty()
+            && config.turnstile_secret != "THISISTURNSTILEKEY"
         {
             return Err(AppError::BadRequest(
                 "CAPTCHA token required for anonymous comments".to_string(),
@@ -351,7 +351,7 @@ pub async fn create_comment(
     });
 
     // Determine comment state based on user role
-    let contains_spam_keyword = state.config.comments_spam_keywords.iter().any(|keyword| {
+    let contains_spam_keyword = config.comments_spam_keywords.iter().any(|keyword| {
         !keyword.trim().is_empty()
             && payload
                 .text
@@ -362,7 +362,7 @@ pub async fn create_comment(
         CommentState::READ // Admin comments are automatically approved
     } else if contains_spam_keyword {
         CommentState::SPAM
-    } else if state.config.comments_require_audit {
+    } else if config.comments_require_audit {
         CommentState::PENDING
     } else {
         CommentState::UNREAD

@@ -34,7 +34,7 @@ struct AdminAssets;
 ///
 /// 当配置中 `admin_dashboard_enabled = false` 时返回 `None`，调用方应跳过挂载。
 pub fn mounted_router(state: &SharedState) -> Option<Router<SharedState>> {
-    if !state.config.admin_dashboard_enabled {
+    if !state.config().admin_dashboard_enabled {
         return None;
     }
 

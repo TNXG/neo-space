@@ -53,6 +53,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize database
     let db = database::init_database(&config).await?;
+    if std::env::args().any(|argument| argument == "--sync-config") {
+        config::runtime::migrate_options(&db, &config).await?;
+        info!("环境变量配置已同步到数据库");
+        return Ok(());
+    }
     tasks::search_management_migration::migrate_search_management_dates(&db).await?;
     config::runtime::migrate_options(&db, &config).await?;
     config::runtime::apply_database_options(&db, &mut config).await;
@@ -101,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Meilisearch 增量同步已启用，维护计划检查器已启动");
 
     // Start link health check task
-    let link_check_interval = state.config.link_health_interval_hours;
+    let link_check_interval = state.config().link_health_interval_hours;
     info!("正在预热友链健康检查缓存...");
     tasks::run_link_health_check(&state).await;
     tasks::start_link_health_task(state.clone());

@@ -81,11 +81,12 @@ pub async fn search(
     AppQuery(params): AppQuery<SearchParams>,
 ) -> AppResult<Json<ApiResponse<SearchResults>>> {
     // Check if Meilisearch is configured
-    let search_host = state.config.meilisearch_host.clone();
-    let api_key = if state.config.meilisearch_api_key.is_empty() {
+    let config = state.config();
+    let search_host = config.meilisearch_host.clone();
+    let api_key = if config.meilisearch_api_key.is_empty() {
         None
     } else {
-        Some(state.config.meilisearch_api_key.clone())
+        Some(config.meilisearch_api_key.clone())
     };
 
     // Validate query parameter

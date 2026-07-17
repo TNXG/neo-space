@@ -179,16 +179,16 @@ export const MeilisearchMaintenancePanel = defineComponent({
         <section class="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
           <NCard title="手动维护">
             <p class="text-sm opacity-60 mb-4">
-              枚举全部正式 Meilisearch 索引，将各索引的设置与现有文档复制到临时索引并应用项目向量策略，最后统一原子交换。
+              从 MongoDB 重新读取全部已发布文章、手记及翻译，生成搜索文档并在临时索引中完成向量化；配置和内容全部成功后再统一原子交换。
             </p>
             <NPopconfirm onPositiveClick={() => rebuildMutation.mutate()}>
               {{
                 trigger: () => (
                   <NButton class="cursor-pointer" type="primary" loading={rebuildMutation.isPending.value}>
-                    {{ icon: () => <Play />, default: () => "启动搜索索引全量重建" }}
+                    {{ icon: () => <Play />, default: () => "同步数据库并重建搜索索引" }}
                   </NButton>
                 ),
-                default: () => "确认全量重建当前全部 Meilisearch 正式索引？",
+                default: () => "确认从 MongoDB 全量同步内容，并重新构建搜索与向量索引？",
               }}
             </NPopconfirm>
           </NCard>

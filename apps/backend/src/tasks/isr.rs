@@ -28,7 +28,7 @@ fn generate_signature(tag: &str, path: &str, timestamp: i64) -> Result<String, S
 
 /// Trigger ISR revalidation for Next.js
 pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, path: Option<&str>) {
-    let frontend_url = &state.config.frontend_url;
+    let frontend_url = state.config().frontend_url.clone();
 
     // Check if REVALIDATION_SECRET is configured
     if std::env::var("REVALIDATION_SECRET").is_err() {

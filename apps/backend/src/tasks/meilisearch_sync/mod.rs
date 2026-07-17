@@ -3,6 +3,7 @@
 mod builders;
 mod loaders;
 mod operations;
+pub(crate) mod rebuild_documents;
 
 use crate::app::SharedState;
 use crate::models::{Note, Post};

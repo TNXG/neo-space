@@ -130,6 +130,7 @@ md5 = { version = "0.8.0", default-features = false }
 
 # Cache
 moka = { version = "0.12.15", default-features = false, features = [ "future" ] }
+arc-swap = "1.7.1"
 
 # OpenAPI
 utoipa = { version = "5.5.0", features = [

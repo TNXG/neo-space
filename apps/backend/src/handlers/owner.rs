@@ -65,10 +65,10 @@ pub async fn allow_login(State(state): State<SharedState>) -> AppResult<Json<Api
         .await
         .map_err(|e| AppError::Database(format!("count passkey failed: {e}")))?
         > 0
-        && state.passkey_service.is_some();
+        && state.passkey_service().is_some();
 
     // GitHub 必须有真实 client id；QQ 始终使用中转服务。
-    let mut github = !state.config.github_client_id.trim().is_empty();
+    let mut github = !state.config().github_client_id.trim().is_empty();
     let mut qq = true;
     let mut passkey_automatic = false;
     let oauth_doc = state

@@ -37,7 +37,7 @@ pub async fn owner_desktop_ws(
 /// Handle WebSocket connection
 async fn handle_connection(mut socket: WebSocket, token: Option<String>, state: SharedState) {
     // Verify token
-    if let Err(error_msg) = verify_token(token) {
+    if let Err(error_msg) = verify_token(token, &state.config().owner_desktop_token) {
         tracing::warn!("Owner desktop WebSocket auth failed: {}", error_msg);
 
         let error = ServerToOwnerDesktopMessage::Error {
@@ -96,9 +96,10 @@ async fn handle_connection(mut socket: WebSocket, token: Option<String>, state: 
 }
 
 /// Verify owner desktop token
-fn verify_token(token: Option<String>) -> Result<(), String> {
-    let expected_token = std::env::var("OWNER_DESKTOP_TOKEN")
-        .map_err(|_| "Server config error: OWNER_DESKTOP_TOKEN not set".to_string())?;
+fn verify_token(token: Option<String>, expected_token: &str) -> Result<(), String> {
+    if expected_token.is_empty() {
+        return Err("Server config error: owner desktop token not set".to_string());
+    }
 
     let provided = token.unwrap_or_default();
 
@@ -190,7 +191,7 @@ async fn handle_message(
                 &content_item_identifier,
                 artwork_data,
                 &mime_type,
-                &state.config.backend_url,
+                &state.config().backend_url,
             )
             .await
             {

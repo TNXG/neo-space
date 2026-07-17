@@ -135,7 +135,7 @@ pub async fn bind_anonymous(
     let token = generate_jwt(
         anon_reader.id,
         anon_reader.is_owner,
-        &state.config.jwt_secret,
+        &state.config().jwt_secret,
     )
     .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
@@ -173,7 +173,7 @@ pub async fn skip_bind(
         .await
         .map_err(|e| AppError::Database(format!("Failed to query readers: {e}")))?
     {
-        let token = generate_jwt(existing.id, existing.is_owner, &state.config.jwt_secret)
+        let token = generate_jwt(existing.id, existing.is_owner, &state.config().jwt_secret)
             .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
         return Ok(Json(ApiResponse {
@@ -240,7 +240,7 @@ pub async fn skip_bind(
         .await
         .map_err(|e| AppError::Database(format!("Failed to update accounts: {e}")))?;
 
-    let token = generate_jwt(new_id, is_first, &state.config.jwt_secret)
+    let token = generate_jwt(new_id, is_first, &state.config().jwt_secret)
         .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
     tracing::info!(
@@ -341,7 +341,7 @@ async fn handle_oauth_callback(
         Err(_) => return build_oauth_error_redirect(state, &return_to, "Invalid user ID"),
     };
 
-    let token = match generate_jwt(object_id, is_owner, &state.config.jwt_secret) {
+    let token = match generate_jwt(object_id, is_owner, &state.config().jwt_secret) {
         Ok(token) => token,
         Err(error) => {
             return build_oauth_error_redirect(
@@ -413,10 +413,10 @@ fn callback_base_url(state: &SharedState, return_to: &OAuthReturnTo) -> String {
     match return_to {
         OAuthReturnTo::Admin => format!(
             "{}{}/#/auth/callback",
-            state.config.backend_url,
+            state.config().backend_url,
             crate::admin_dashboard::ADMIN_DASHBOARD_PROXY_PATH
         ),
-        OAuthReturnTo::Web => format!("{}/auth/callback", state.config.frontend_url),
+        OAuthReturnTo::Web => format!("{}/auth/callback", state.config().frontend_url),
     }
 }
 

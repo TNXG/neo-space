@@ -1,15 +1,19 @@
-//! 以 Meilisearch 自身为数据源的全索引蓝绿重建。
+//! 以 MongoDB 为受管内容事实源的 Meilisearch 蓝绿全量同步与重建。
 
 use bson::{DateTime, doc, oid::ObjectId};
 use reqwest::Method;
+use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::{
     app::SharedState,
     error::{AppError, AppResult},
     external::meilisearch_admin::MeilisearchAdminClient,
-    tasks::search_vector_config::{
-        is_rebuild_index, load_or_infer_vector_config, merge_vector_config_into_settings,
+    tasks::{
+        meilisearch_sync::rebuild_documents::{collect_note_documents, collect_post_documents},
+        search_vector_config::{
+            is_rebuild_index, load_or_infer_vector_config, merge_vector_config_into_settings,
+        },
     },
 };
 
@@ -58,15 +62,18 @@ pub(super) async fn run_rebuild(state: &SharedState, task_id: ObjectId) -> AppRe
         ensure_not_canceled(state, task_id).await?;
         create_temporary_index(&client, index).await?;
         copy_settings(&client, index, &vector_config).await?;
-        let document_count = copy_documents(&client, index).await?;
+        let document_count = rebuild_documents_from_source(state, &client, index).await?;
         let progress = 10 + i32::try_from(((position + 1) * 75) / indexes.len()).unwrap_or(75);
         update_task(
             state,
             task_id,
             "running",
-            "copying",
+            "indexing",
             progress,
-            &format!("已重建索引 {}，复制 {document_count} 条文档", index.uid),
+            &format!(
+                "已从事实源重建索引 {}，写入并向量化 {document_count} 条文档",
+                index.uid
+            ),
         )
         .await?;
     }
@@ -163,8 +170,50 @@ async fn copy_settings(
     Ok(())
 }
 
-/// 从正式索引分页读取全部文档并上传到临时索引。
-async fn copy_documents(client: &MeilisearchAdminClient, index: &RebuildIndex) -> AppResult<usize> {
+/// 按索引类型选择事实源；受管内容索引来自 MongoDB，其他索引保留原有文档。
+async fn rebuild_documents_from_source(
+    state: &SharedState,
+    client: &MeilisearchAdminClient,
+    index: &RebuildIndex,
+) -> AppResult<usize> {
+    match index.uid.as_str() {
+        "posts" => {
+            let documents = collect_post_documents(state).await?;
+            upload_documents(client, index, &documents).await?;
+            Ok(documents.len())
+        }
+        "notes" => {
+            let documents = collect_note_documents(state).await?;
+            upload_documents(client, index, &documents).await?;
+            Ok(documents.len())
+        }
+        _ => copy_existing_documents(client, index).await,
+    }
+}
+
+/// 分批写入搜索文档；等待 Meilisearch 完成任务也会等待 REST Embedder 向量化完成。
+async fn upload_documents<T: Serialize>(
+    client: &MeilisearchAdminClient,
+    index: &RebuildIndex,
+    documents: &[T],
+) -> AppResult<()> {
+    for batch in documents.chunks(1000) {
+        client
+            .request_task(
+                Method::POST,
+                &format!("/indexes/{}/documents", index.temporary_uid),
+                batch,
+            )
+            .await?;
+    }
+    Ok(())
+}
+
+/// 未映射到 MongoDB 内容实体的自定义索引继续以原正式索引为数据源。
+async fn copy_existing_documents(
+    client: &MeilisearchAdminClient,
+    index: &RebuildIndex,
+) -> AppResult<usize> {
     let mut offset = 0_usize;
     loop {
         let page = client

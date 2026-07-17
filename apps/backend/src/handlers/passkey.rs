@@ -323,10 +323,9 @@ pub async fn finish_authentication(
 }
 
 /// 获取已启用的 Passkey 服务。
-fn passkey_service(state: &SharedState) -> AppResult<&PasskeyService> {
+fn passkey_service(state: &SharedState) -> AppResult<PasskeyService> {
     state
-        .passkey_service
-        .as_ref()
+        .passkey_service()
         .ok_or_else(|| AppError::ConfigError("Passkey is not configured".to_string()))
 }
 

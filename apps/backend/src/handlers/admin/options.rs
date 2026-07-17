@@ -21,6 +21,7 @@ const MANAGED_OPTION_KEYS: &[&str] = &[
     "mailOptions",
     "oauth",
     "searchOptions",
+    "securityOptions",
     "seo",
     "url",
 ];
@@ -84,7 +85,30 @@ async fn write_option(
         .with_options(opts)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
-    Ok(Json(ApiResponse::success(value)))
+
+    // 环境变量是部署级最高优先级；保存后立即回写覆盖值并刷新运行时快照。
+    crate::config::runtime::synchronize_environment_options(&state.db)
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    state.reload_runtime_config().await;
+
+    if matches!(
+        key,
+        "seo" | "url" | "friendLinkOptions" | "commentOptions" | "oauth"
+    ) {
+        crate::tasks::isr::trigger_isr_revalidation(state, "site-config", None).await;
+    }
+
+    let effective_value = collection
+        .find_one(doc! { "name": key })
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?
+        .and_then(|document| document.get("value").cloned())
+        .map(bson::from_bson::<Value>)
+        .transpose()
+        .map_err(|error| AppError::Internal(format!("Bson decode: {error}")))?
+        .unwrap_or(value);
+    Ok(Json(ApiResponse::success(effective_value)))
 }
 
 /// GET /options
@@ -186,8 +210,8 @@ pub async fn get_url_options(
             bson::from_bson::<Value>(v).map_err(|e| AppError::Internal(format!("decode: {}", e)))?
         }
         None => serde_json::json!({
-            "webUrl": state.config.frontend_url,
-            "serverUrl": state.config.backend_url,
+            "webUrl": state.config().frontend_url,
+            "serverUrl": state.config().backend_url,
         }),
     };
     Ok(Json(ApiResponse::success(value)))

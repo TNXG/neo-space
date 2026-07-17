@@ -52,6 +52,8 @@ pub struct AppConfig {
     pub comments_spam_keywords: Vec<String>,
     /// Whether to expose the embedded admin dashboard
     pub admin_dashboard_enabled: bool,
+    /// Owner 桌面客户端 WebSocket 鉴权令牌
+    pub owner_desktop_token: String,
 }
 
 /// Configuration error types
@@ -121,6 +123,7 @@ impl AppConfig {
                 .unwrap_or_else(|_| "http://localhost:7700".to_string()),
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
             link_health_interval_hours: env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
+                .or_else(|_| env::var("LINK_HEALTH_CHECK_INTERVAL"))
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(6),
@@ -145,6 +148,15 @@ impl AppConfig {
                     )
                 })
                 .unwrap_or(true),
+            owner_desktop_token: env::var("OWNER_DESKTOP_TOKEN").unwrap_or_default(),
         })
     }
+}
+
+/// 解析常见的环境变量布尔值。
+pub(crate) fn parse_env_bool(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
 }

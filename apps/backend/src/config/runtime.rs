@@ -2,8 +2,9 @@
 
 use bson::{Bson, Document, doc};
 use mongodb::Database;
+use std::env;
 
-use super::AppConfig;
+use super::{AppConfig, parse_env_bool};
 
 const UNUSED_OPTIONS: &[&str] = &[
     "adminExtra",
@@ -43,6 +44,193 @@ async fn ensure_field(
         .update_one(filter, doc! { "$set": fields })
         .await?;
     Ok(())
+}
+
+async fn set_field(
+    database: &Database,
+    option_name: &str,
+    field_path: &str,
+    value: impl Into<Bson>,
+) -> Result<(), mongodb::error::Error> {
+    let full_path = format!("value.{field_path}");
+    let mut fields = Document::new();
+    fields.insert("name", option_name);
+    fields.insert(full_path, value.into());
+    database
+        .collection::<Document>("options")
+        .update_one(doc! { "name": option_name }, doc! { "$set": fields })
+        .upsert(true)
+        .await?;
+    Ok(())
+}
+
+fn first_environment_value(names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| env::var(name).ok())
+}
+
+fn environment_strings(name: &str) -> Option<Vec<String>> {
+    env::var(name).ok().map(|value| {
+        value
+            .split(',')
+            .map(str::trim)
+            .filter(|item| !item.is_empty())
+            .map(ToString::to_string)
+            .collect()
+    })
+}
+
+/// 把显式提供的环境变量写回数据库，保证管理面板展示的是最终生效值。
+pub async fn synchronize_environment_options(
+    database: &Database,
+) -> Result<(), mongodb::error::Error> {
+    if let Ok(value) = env::var("FRONTEND_URL") {
+        set_field(database, "url", "webUrl", value).await?;
+    }
+    if let Ok(value) = env::var("BACKEND_URL") {
+        set_field(database, "url", "serverUrl", value).await?;
+    }
+    if let Some(value) = first_environment_value(&["MEILISEARCH_URL", "MEILISEARCH_HOST"]) {
+        set_field(database, "searchOptions", "endpoint", value).await?;
+    }
+    if let Ok(value) = env::var("MEILISEARCH_API_KEY") {
+        set_field(database, "searchOptions", "apiKey", value).await?;
+    }
+    if let Some(value) = first_environment_value(&[
+        "LINK_HEALTH_CHECK_INTERVAL_HOURS",
+        "LINK_HEALTH_CHECK_INTERVAL",
+    ]) && let Ok(value) = value.parse::<i64>()
+    {
+        set_field(
+            database,
+            "friendLinkOptions",
+            "healthCheckIntervalHours",
+            value,
+        )
+        .await?;
+    }
+    if let Ok(value) = env::var("LINK_HEALTH_TIMEOUT")
+        && let Ok(value) = value.parse::<i64>()
+    {
+        set_field(
+            database,
+            "friendLinkOptions",
+            "healthCheckTimeoutSeconds",
+            value,
+        )
+        .await?;
+    }
+    for (environment_name, field_path) in [
+        ("FRIEND_LINK_ALLOW_APPLY", "allowApply"),
+        ("FRIEND_LINK_ALLOW_SUB_PATH", "allowSubPath"),
+    ] {
+        if let Ok(value) = env::var(environment_name) {
+            set_field(
+                database,
+                "friendLinkOptions",
+                field_path,
+                parse_env_bool(&value),
+            )
+            .await?;
+        }
+    }
+    for (environment_name, field_path) in [
+        ("COMMENTS_DISABLED", "disableComment"),
+        ("COMMENTS_ALLOW_NO_CHINESE", "disableNoChinese"),
+        ("COMMENTS_REQUIRE_AUDIT", "commentShouldAudit"),
+        ("COMMENTS_RECORD_IP_LOCATION", "recordIpLocation"),
+    ] {
+        if let Ok(value) = env::var(environment_name) {
+            set_field(
+                database,
+                "commentOptions",
+                field_path,
+                parse_env_bool(&value),
+            )
+            .await?;
+        }
+    }
+    if let Some(values) = environment_strings("COMMENTS_BLOCKED_IPS") {
+        set_field(database, "commentOptions", "blockIps", values).await?;
+    }
+    if let Some(values) = environment_strings("COMMENTS_SPAM_KEYWORDS") {
+        set_field(database, "commentOptions", "spamKeywords", values).await?;
+    }
+    if let Ok(value) = env::var("TURNSTILE_SECRET") {
+        set_field(database, "commentOptions", "turnstileSecret", value).await?;
+    }
+    if let Ok(value) = env::var("GITHUB_CLIENT_ID") {
+        set_field(database, "oauth", "public.github.clientId", value).await?;
+    }
+    if let Ok(value) = env::var("GITHUB_CLIENT_SECRET") {
+        set_field(database, "oauth", "secrets.github.clientSecret", value).await?;
+    }
+    if let Ok(value) = env::var("OWNER_DESKTOP_TOKEN") {
+        set_field(database, "securityOptions", "ownerDesktopToken", value).await?;
+    }
+    Ok(())
+}
+
+fn apply_environment_overrides(config: &mut AppConfig) {
+    if let Ok(value) = env::var("FRONTEND_URL") {
+        config.frontend_url = value;
+    }
+    if let Ok(value) = env::var("BACKEND_URL") {
+        config.backend_url = value;
+    }
+    if let Some(value) = first_environment_value(&["MEILISEARCH_URL", "MEILISEARCH_HOST"]) {
+        config.meilisearch_host = value;
+    }
+    if let Ok(value) = env::var("MEILISEARCH_API_KEY") {
+        config.meilisearch_api_key = value;
+    }
+    if let Some(value) = first_environment_value(&[
+        "LINK_HEALTH_CHECK_INTERVAL_HOURS",
+        "LINK_HEALTH_CHECK_INTERVAL",
+    ]) && let Ok(value) = value.parse()
+    {
+        config.link_health_interval_hours = value;
+    }
+    if let Ok(value) = env::var("LINK_HEALTH_TIMEOUT")
+        && let Ok(value) = value.parse()
+    {
+        config.link_health_timeout_secs = value;
+    }
+    if let Ok(value) = env::var("FRIEND_LINK_ALLOW_APPLY") {
+        config.friend_link_allow_apply = parse_env_bool(&value);
+    }
+    if let Ok(value) = env::var("FRIEND_LINK_ALLOW_SUB_PATH") {
+        config.friend_link_allow_sub_path = parse_env_bool(&value);
+    }
+    if let Ok(value) = env::var("COMMENTS_DISABLED") {
+        config.comments_disabled = parse_env_bool(&value);
+    }
+    if let Ok(value) = env::var("COMMENTS_ALLOW_NO_CHINESE") {
+        config.comments_allow_no_chinese = parse_env_bool(&value);
+    }
+    if let Ok(value) = env::var("COMMENTS_REQUIRE_AUDIT") {
+        config.comments_require_audit = parse_env_bool(&value);
+    }
+    if let Ok(value) = env::var("COMMENTS_RECORD_IP_LOCATION") {
+        config.comments_record_ip_location = parse_env_bool(&value);
+    }
+    if let Some(value) = environment_strings("COMMENTS_BLOCKED_IPS") {
+        config.comments_blocked_ips = value;
+    }
+    if let Some(value) = environment_strings("COMMENTS_SPAM_KEYWORDS") {
+        config.comments_spam_keywords = value;
+    }
+    if let Ok(value) = env::var("TURNSTILE_SECRET") {
+        config.turnstile_secret = value;
+    }
+    if let Ok(value) = env::var("GITHUB_CLIENT_ID") {
+        config.github_client_id = value;
+    }
+    if let Ok(value) = env::var("GITHUB_CLIENT_SECRET") {
+        config.github_client_secret = value;
+    }
+    if let Ok(value) = env::var("OWNER_DESKTOP_TOKEN") {
+        config.owner_desktop_token = value;
+    }
 }
 
 fn nested_string(document: &Document, path: &[&str]) -> Option<String> {
@@ -253,10 +441,11 @@ pub async fn migrate_options(
         )
         .upsert(true)
         .await?;
+    synchronize_environment_options(database).await?;
     Ok(())
 }
 
-/// 从数据库覆盖应用级配置；环境变量只作为首次迁移和缺失值回退。
+/// 从数据库加载应用级配置，再应用环境变量的最高优先级覆盖。
 pub async fn apply_database_options(database: &Database, config: &mut AppConfig) {
     if let Some(url) = option_value(database, "url").await {
         config.frontend_url =
@@ -303,4 +492,9 @@ pub async fn apply_database_options(database: &Database, config: &mut AppConfig)
         config.github_client_secret = nested_string(&oauth, &["secrets", "github", "clientSecret"])
             .unwrap_or(config.github_client_secret.clone());
     }
+    if let Some(security) = option_value(database, "securityOptions").await {
+        config.owner_desktop_token = nested_string(&security, &["ownerDesktopToken"])
+            .unwrap_or(config.owner_desktop_token.clone());
+    }
+    apply_environment_overrides(config);
 }

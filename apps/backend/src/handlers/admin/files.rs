@@ -117,7 +117,7 @@ pub async fn upload_file(
         .map_err(|e| AppError::Internal(format!("flush: {}", e)))?;
 
     let public_base = std::env::var("UPLOAD_PUBLIC_URL")
-        .unwrap_or_else(|_| format!("{}/api/static/uploads", state.config.backend_url));
+        .unwrap_or_else(|_| format!("{}/api/static/uploads", state.config().backend_url));
     let folder = if kind == "image" { "images" } else { "files" };
     let url = format!(
         "{}/{}/{}",

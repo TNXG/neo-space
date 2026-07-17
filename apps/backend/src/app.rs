@@ -1,9 +1,10 @@
 //! Application state and router assembly
 
+use arc_swap::ArcSwap;
 use moka::future::Cache;
 use mongodb::Database;
 use reqwest::Client;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tokio::sync::broadcast;
 
@@ -26,7 +27,9 @@ pub struct AppState {
     /// 友链健康状态刷新周期较长，需要独立缓存避免被通用短 TTL 提前清掉
     pub link_health_cache: Cache<String, Vec<u8>>,
     /// Application configuration
-    pub config: AppConfig,
+    pub config: Arc<ArcSwap<AppConfig>>,
+    /// 配置变更通知；后台任务可据此立即重建调度周期
+    pub config_events: broadcast::Sender<()>,
     /// Event bus for real-time updates
     pub event_bus: broadcast::Sender<Event>,
     /// HTTP client for external requests
@@ -36,7 +39,7 @@ pub struct AppState {
     /// NetEase Cloud Music now playing service
     pub ncm_np_service: NeteaseNowPlayingService,
     /// Passkey 服务；仅在 BACKEND_URL 可作为合法 WebAuthn Origin 时启用
-    pub passkey_service: Option<PasskeyService>,
+    pub passkey_service: Arc<RwLock<Option<PasskeyService>>>,
 }
 
 /// Real-time event types
@@ -59,6 +62,42 @@ pub enum Event {
 
 /// Shared state type alias for convenience
 pub type SharedState = Arc<AppState>;
+
+impl AppState {
+    /// 返回当前运行时配置的一致性快照。
+    pub fn config(&self) -> arc_swap::Guard<Arc<AppConfig>> {
+        self.config.load()
+    }
+
+    /// 从数据库重新加载配置，并应用环境变量的最高优先级覆盖。
+    pub async fn reload_runtime_config(&self) {
+        let previous = self.config.load_full();
+        let mut next = (*previous).clone();
+        crate::config::runtime::apply_database_options(&self.db, &mut next).await;
+
+        if previous.backend_url != next.backend_url {
+            let next_passkey_service = PasskeyService::from_backend_url(&next.backend_url);
+            match self.passkey_service.write() {
+                Ok(mut passkey_service) => *passkey_service = next_passkey_service,
+                Err(error) => tracing::error!(%error, "Passkey 配置锁已损坏，无法热更新"),
+            }
+        }
+
+        self.config.store(Arc::new(next));
+        let _ = self.config_events.send(());
+    }
+
+    /// 获取当前 Passkey 服务快照，避免在请求期间持有同步锁。
+    pub fn passkey_service(&self) -> Option<PasskeyService> {
+        self.passkey_service
+            .read()
+            .map(|passkey_service| passkey_service.clone())
+            .unwrap_or_else(|error| {
+                tracing::error!(%error, "Passkey 配置锁已损坏");
+                None
+            })
+    }
+}
 
 /// Create the application state with all dependencies
 pub fn create_state(db: Database, config: AppConfig) -> SharedState {
@@ -91,6 +130,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
 
     // Create event bus with channel size 100
     let (event_bus, _) = broadcast::channel(100);
+    let (config_events, _) = broadcast::channel(16);
     tracing::info!("EventBus 初始化完成 - 频道容量: 100");
 
     // Create HTTP client with default User-Agent
@@ -133,12 +173,13 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         db,
         cache,
         link_health_cache,
-        config,
+        config: Arc::new(ArcSwap::from_pointee(config)),
+        config_events,
         event_bus,
         http_client,
         email_service,
         ncm_np_service,
-        passkey_service,
+        passkey_service: Arc::new(RwLock::new(passkey_service)),
     })
 }
 
@@ -146,8 +187,11 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
 pub fn create_router(state: SharedState) -> axum::Router {
     use crate::middleware::cors::cors_layer;
 
-    let cors = cors_layer(&state.config.frontend_url, &state.config.backend_url);
-    tracing::info!("CORS 配置完成 - 允许来源: {}", state.config.frontend_url);
+    let cors = cors_layer(state.config.clone());
+    tracing::info!(
+        "CORS 动态配置完成 - 允许来源: {}",
+        state.config().frontend_url
+    );
 
     // Build API router with nested routes to avoid path conflicts
     let api_router = axum::Router::new()

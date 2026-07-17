@@ -60,7 +60,7 @@ pub(crate) fn issue_admin_session(
     state: &SharedState,
     reader: Reader,
 ) -> AppResult<(HeaderMap, Json<ApiResponse<TokenResponse>>)> {
-    let token = generate_jwt(reader.id, true, &state.config.jwt_secret)
+    let token = generate_jwt(reader.id, true, &state.config().jwt_secret)
         .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
     let mut headers = HeaderMap::new();

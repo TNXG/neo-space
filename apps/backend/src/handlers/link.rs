@@ -175,17 +175,17 @@ async fn friend_link_policy(state: &SharedState) -> (bool, bool) {
 
     value.map_or(
         (
-            state.config.friend_link_allow_apply,
-            state.config.friend_link_allow_sub_path,
+            state.config().friend_link_allow_apply,
+            state.config().friend_link_allow_sub_path,
         ),
         |value| {
             (
                 value
                     .get_bool("allowApply")
-                    .unwrap_or(state.config.friend_link_allow_apply),
+                    .unwrap_or(state.config().friend_link_allow_apply),
                 value
                     .get_bool("allowSubPath")
-                    .unwrap_or(state.config.friend_link_allow_sub_path),
+                    .unwrap_or(state.config().friend_link_allow_sub_path),
             )
         },
     )

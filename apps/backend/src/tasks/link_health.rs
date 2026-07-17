@@ -5,7 +5,6 @@ use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::Collection;
 use std::time::Duration;
-use tokio::time::interval;
 
 pub use super::link_health_check::LinkHealthStatus;
 use super::link_health_check::perform_health_check;
@@ -16,16 +15,24 @@ fn elapsed_millis_u64(start: std::time::Instant) -> u64 {
 
 /// Start the periodic link health check task
 pub fn start_link_health_task(state: SharedState) {
-    let check_interval_hours = state.config.link_health_interval_hours;
+    let mut config_events = state.config_events.subscribe();
 
     tokio::spawn(async move {
-        let mut timer = interval(Duration::from_secs(check_interval_hours * 3600));
-        // Initial health data is warmed during startup; consume the immediate tick so the loop waits for the real interval.
-        timer.tick().await;
-
         loop {
-            timer.tick().await;
-            run_link_health_check(&state).await;
+            let check_interval_hours = state.config().link_health_interval_hours.max(1);
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(check_interval_hours * 3600)) => {
+                    run_link_health_check(&state).await;
+                }
+                event = config_events.recv() => {
+                    match event {
+                        Ok(()) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            tracing::info!("友链健康检查周期已按最新配置重新调度");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
+                    }
+                }
+            }
         }
     });
 }
@@ -132,7 +139,7 @@ async fn check_links_concurrent(
     stream::iter(links)
         .map(|link| {
             let http_client = state.http_client.clone();
-            let timeout_secs = state.config.link_health_timeout_secs;
+            let timeout_secs = state.config().link_health_timeout_secs;
             async move { perform_health_check(&link, &http_client, timeout_secs).await }
         })
         .buffer_unordered(concurrency_limit)

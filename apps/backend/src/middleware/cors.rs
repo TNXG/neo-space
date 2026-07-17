@@ -1,28 +1,31 @@
 //! CORS middleware using tower-http
 
-use axum::http::{HeaderName, HeaderValue};
-use tower_http::cors::CorsLayer;
+use std::sync::Arc;
+
+use arc_swap::ArcSwap;
+use axum::http::{HeaderName, HeaderValue, request::Parts};
+use tower_http::cors::{AllowOrigin, CorsLayer};
+
+use crate::config::AppConfig;
 
 /// Create CORS layer for the application
-pub fn cors_layer(frontend_url: &str, backend_url: &str) -> CorsLayer {
-    let mut origins = vec![
-        HeaderValue::from_static("http://localhost:3000"),
-        HeaderValue::from_static("http://localhost:3001"),
-        HeaderValue::from_static("http://localhost:9528"),
-    ];
-
-    if let Ok(origin) = frontend_url.parse::<HeaderValue>() {
-        origins.push(origin);
-    }
-    if let Ok(origin) = backend_url.parse::<HeaderValue>() {
-        origins.push(origin);
-    }
-
-    // Deduplicate
-    origins.dedup();
+pub fn cors_layer(config: Arc<ArcSwap<AppConfig>>) -> CorsLayer {
+    let allow_origin = AllowOrigin::predicate(move |origin: &HeaderValue, _request: &Parts| {
+        const DEVELOPMENT_ORIGINS: &[&str] = &[
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:9528",
+        ];
+        let config = config.load();
+        DEVELOPMENT_ORIGINS
+            .iter()
+            .any(|allowed| origin.as_bytes() == allowed.as_bytes())
+            || origin.as_bytes() == config.frontend_url.as_bytes()
+            || origin.as_bytes() == config.backend_url.as_bytes()
+    });
 
     CorsLayer::new()
-        .allow_origin(origins)
+        .allow_origin(allow_origin)
         .allow_methods([
             axum::http::Method::GET,
             axum::http::Method::POST,

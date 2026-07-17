@@ -15,6 +15,7 @@ const OPTION_METADATA: Record<string, OptionMetadata> = {
   oauth: { title: "登录与安全", description: "Passkey 与第三方登录配置", icon: "shield" },
   friendLinkOptions: { title: "友链", description: "友链申请与校验策略", icon: "link" },
   searchOptions: { title: "全文搜索", description: "Meilisearch 服务配置", icon: "search" },
+  securityOptions: { title: "运行时安全", description: "桌面客户端等运行时鉴权配置", icon: "shield" },
 };
 
 const DISPLAY_ORDER = [
@@ -24,6 +25,7 @@ const DISPLAY_ORDER = [
   "commentOptions",
   "friendLinkOptions",
   "searchOptions",
+  "securityOptions",
   "oauth",
   "ai",
 ];

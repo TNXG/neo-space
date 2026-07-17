@@ -17,10 +17,11 @@ fn boxed_error(message: impl Into<String>) -> Box<dyn std::error::Error> {
 pub(super) fn build_search_service(
     state: &SharedState,
 ) -> Result<SearchService, Box<dyn std::error::Error>> {
-    let api_key = (!state.config.meilisearch_api_key.is_empty())
-        .then(|| state.config.meilisearch_api_key.clone());
+    let config = state.config();
+    let api_key =
+        (!config.meilisearch_api_key.is_empty()).then(|| config.meilisearch_api_key.clone());
 
-    SearchService::new(state.config.meilisearch_host.clone(), api_key)
+    SearchService::new(config.meilisearch_host.clone(), api_key)
         .map_err(|error| boxed_error(format!("{error:?}")))
 }
 

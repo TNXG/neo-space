@@ -308,7 +308,7 @@ pub async fn check_link_health(
     let results = stream::iter(links)
         .map(|link| {
             let http_client = state.http_client.clone();
-            let timeout_secs = state.config.link_health_timeout_secs;
+            let timeout_secs = state.config().link_health_timeout_secs;
             async move { perform_health_check(&link, &http_client, timeout_secs).await }
         })
         .buffer_unordered(concurrency_limit)

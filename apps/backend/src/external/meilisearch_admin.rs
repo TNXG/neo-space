@@ -18,14 +18,11 @@ pub struct MeilisearchAdminClient {
 impl MeilisearchAdminClient {
     /// 从应用运行时配置创建客户端。
     pub fn from_state(state: &SharedState) -> Self {
+        let config = state.config();
         Self {
-            base_url: state
-                .config
-                .meilisearch_host
-                .trim_end_matches('/')
-                .to_string(),
-            api_key: (!state.config.meilisearch_api_key.is_empty())
-                .then(|| state.config.meilisearch_api_key.clone()),
+            base_url: config.meilisearch_host.trim_end_matches('/').to_string(),
+            api_key: (!config.meilisearch_api_key.is_empty())
+                .then(|| config.meilisearch_api_key.clone()),
             http_client: state.http_client.clone(),
         }
     }

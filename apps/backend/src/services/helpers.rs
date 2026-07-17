@@ -14,12 +14,13 @@ use std::sync::Arc;
 /// Create an OAuthService from shared application state.
 /// Centralizes construction to avoid duplicating this in multiple handlers.
 pub fn make_oauth_service(state: &SharedState) -> OAuthService {
+    let config = state.config();
     OAuthService::new(
         state.db.clone(),
         Arc::new(state.http_client.clone()),
-        state.config.github_client_id.clone(),
-        state.config.github_client_secret.clone(),
-        state.config.backend_url.clone(),
+        config.github_client_id.clone(),
+        config.github_client_secret.clone(),
+        config.backend_url.clone(),
     )
 }
 
@@ -52,8 +53,11 @@ pub async fn is_owner_user_id(
 /// Create an OAuthService and backfill credentials from database options when
 /// deployment-time environment variables are unavailable.
 pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthService, AppError> {
-    let mut github_client_id = state.config.github_client_id.clone();
-    let mut github_client_secret = state.config.github_client_secret.clone();
+    let config = state.config();
+    let mut github_client_id = config.github_client_id.clone();
+    let mut github_client_secret = config.github_client_secret.clone();
+    let backend_url = config.backend_url.clone();
+    drop(config);
     let requires_database_fallback = github_client_id.is_empty() || github_client_secret.is_empty();
 
     if requires_database_fallback {
@@ -101,7 +105,7 @@ pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthServ
         Arc::new(state.http_client.clone()),
         github_client_id,
         github_client_secret,
-        state.config.backend_url.clone(),
+        backend_url,
     ))
 }
 

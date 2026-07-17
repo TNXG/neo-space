@@ -97,4 +97,17 @@ export const OPTION_FORM_SCHEMAS: Record<string, FormSection[]> = {
       field("apiKey", "API Key", "password"),
     ],
   }],
+  securityOptions: [{
+    key: "securityOptions",
+    title: "运行时安全",
+    description: "JWT Secret 仍只允许通过后端环境变量配置",
+    fields: [
+      field(
+        "ownerDesktopToken",
+        "桌面客户端令牌",
+        "password",
+        "用于 Owner 桌面客户端 WebSocket 鉴权，保存后立即生效",
+      ),
+    ],
+  }],
 };
