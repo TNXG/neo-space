@@ -20,8 +20,6 @@ pub fn make_oauth_service(state: &SharedState) -> OAuthService {
         state.config.github_client_id.clone(),
         state.config.github_client_secret.clone(),
         state.config.backend_url.clone(),
-        state.config.qq_app_id.clone(),
-        state.config.qq_app_key.clone(),
     )
 }
 
@@ -56,13 +54,7 @@ pub async fn is_owner_user_id(
 pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthService, AppError> {
     let mut github_client_id = state.config.github_client_id.clone();
     let mut github_client_secret = state.config.github_client_secret.clone();
-    let mut qq_app_id = state.config.qq_app_id.clone();
-    let mut qq_app_key = state.config.qq_app_key.clone();
-
-    let requires_database_fallback = github_client_id.is_empty()
-        || github_client_secret.is_empty()
-        || qq_app_id.is_empty()
-        || qq_app_key.is_empty();
+    let requires_database_fallback = github_client_id.is_empty() || github_client_secret.is_empty();
 
     if requires_database_fallback {
         let collection = state.db.collection::<RawOption>("options");
@@ -93,36 +85,10 @@ pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthServ
                     &document,
                     &[
                         &["github", "clientSecret"],
+                        &["secrets", "github", "clientSecret"],
                         &["private", "github", "clientSecret"],
                         &["github", "client_secret"],
                         &["github", "secret"],
-                    ],
-                )
-                .unwrap_or_default();
-            }
-
-            if qq_app_id.is_empty() {
-                qq_app_id = extract_first_string(
-                    &document,
-                    &[
-                        &["qq", "appId"],
-                        &["public", "qq", "appId"],
-                        &["qq", "clientId"],
-                        &["qq", "app_id"],
-                    ],
-                )
-                .unwrap_or_default();
-            }
-
-            if qq_app_key.is_empty() {
-                qq_app_key = extract_first_string(
-                    &document,
-                    &[
-                        &["qq", "appKey"],
-                        &["private", "qq", "appKey"],
-                        &["qq", "clientSecret"],
-                        &["qq", "appSecret"],
-                        &["qq", "app_key"],
                     ],
                 )
                 .unwrap_or_default();
@@ -136,8 +102,6 @@ pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthServ
         github_client_id,
         github_client_secret,
         state.config.backend_url.clone(),
-        qq_app_id,
-        qq_app_key,
     ))
 }
 

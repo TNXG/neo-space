@@ -14,10 +14,6 @@ pub struct AppConfig {
     pub github_client_id: String,
     /// GitHub OAuth client secret
     pub github_client_secret: String,
-    /// QQ OAuth app ID
-    pub qq_app_id: String,
-    /// QQ OAuth app key
-    pub qq_app_key: String,
     /// Frontend URL for redirects
     pub frontend_url: String,
     /// Backend URL for OAuth callbacks
@@ -111,8 +107,6 @@ impl AppConfig {
             jwt_secret,
             github_client_id: env::var("GITHUB_CLIENT_ID").unwrap_or_default(),
             github_client_secret: env::var("GITHUB_CLIENT_SECRET").unwrap_or_default(),
-            qq_app_id: env::var("QQ_APP_ID").unwrap_or_default(),
-            qq_app_key: env::var("QQ_APP_KEY").unwrap_or_default(),
             frontend_url: env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:3000".to_string()),
             backend_url: env::var("BACKEND_URL")

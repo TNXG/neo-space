@@ -26,8 +26,6 @@ pub struct OAuthService {
     pub(crate) github_client_id: String,
     pub(crate) github_client_secret: String,
     pub(crate) backend_url: String,
-    pub(crate) qq_app_id: String,
-    pub(crate) qq_app_key: String,
 }
 
 impl OAuthService {
@@ -38,8 +36,6 @@ impl OAuthService {
         github_client_id: String,
         github_client_secret: String,
         backend_url: String,
-        qq_app_id: String,
-        qq_app_key: String,
     ) -> Self {
         Self {
             db,
@@ -47,8 +43,6 @@ impl OAuthService {
             github_client_id,
             github_client_secret,
             backend_url,
-            qq_app_id,
-            qq_app_key,
         }
     }
 

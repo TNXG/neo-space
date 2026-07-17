@@ -36,7 +36,7 @@ pub fn generate_connection_id() -> ConnectionId {
 pub async fn broadcast_to_all_readers(message: ServerToReaderMessage) {
     let registry = get_reader_registry().clone();
     let reg = registry.read().await;
-    for (_id, conn) in reg.iter() {
+    for conn in reg.values() {
         let _ = conn.tx.send(message.clone());
     }
 }

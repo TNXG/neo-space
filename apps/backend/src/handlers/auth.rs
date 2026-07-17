@@ -22,7 +22,8 @@ const ADMIN_AUTH_COOKIE: &str = "admin-auth-token";
 /// Request body for issuing an admin JWT.
 #[derive(Debug, Deserialize)]
 pub struct CreateTokenRequest {
-    pub username: String,
+    #[serde(alias = "username")]
+    pub identifier: String,
     pub password: String,
 }
 
@@ -43,7 +44,7 @@ pub async fn create_token(
     State(state): State<SharedState>,
     AppJson(payload): AppJson<CreateTokenRequest>,
 ) -> AppResult<(HeaderMap, Json<ApiResponse<TokenResponse>>)> {
-    let (reader, account) = find_owner_credential_account(&state, &payload.username).await?;
+    let (reader, account) = find_owner_credential_account(&state, &payload.identifier).await?;
     let stored_hash = account_password_hash(&account)?;
 
     let password_matches = bcrypt::verify(&payload.password, stored_hash).unwrap_or(false);
@@ -51,6 +52,14 @@ pub async fn create_token(
         return Err(AppError::Unauthorized);
     }
 
+    issue_admin_session(&state, reader)
+}
+
+/// 为已完成强认证的 Owner 签发统一的后台 JWT 与 HttpOnly Cookie。
+pub(crate) fn issue_admin_session(
+    state: &SharedState,
+    reader: Reader,
+) -> AppResult<(HeaderMap, Json<ApiResponse<TokenResponse>>)> {
     let token = generate_jwt(reader.id, true, &state.config.jwt_secret)
         .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
@@ -183,7 +192,9 @@ async fn find_owner_credential_account(
 ) -> AppResult<(Reader, Document)> {
     let username = username.trim();
     if username.is_empty() {
-        return Err(AppError::BadRequest("Username is required".to_string()));
+        return Err(AppError::BadRequest(
+            "Email or username is required".to_string(),
+        ));
     }
 
     let reader = find_owner_reader(state, username).await?;
@@ -205,13 +216,12 @@ async fn find_owner_credential_account(
     Ok((reader, account))
 }
 
-async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Reader> {
+pub(crate) async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Reader> {
     let readers = state.db.collection::<Reader>("readers");
     if let Some(reader) = readers
         .find_one(doc! {
             "$or": [
                 { "handle": username },
-                { "name": username },
                 { "email": username }
             ]
         })
@@ -226,25 +236,37 @@ async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Rea
         }
     }
 
+    let reader = load_owner_reader(state).await?;
+    (reader.handle == username || reader.email == username)
+        .then_some(reader)
+        .ok_or(AppError::Unauthorized)
+}
+
+/// 读取站点 Owner 对应的 Reader，不依赖用户输入。
+pub(crate) async fn load_owner_reader(state: &SharedState) -> AppResult<Reader> {
+    let readers = state.db.collection::<Reader>("readers");
     let owner_profiles = state.db.collection::<Document>("owner_profiles");
     let owner_profile = owner_profiles
         .find_one(doc! {})
         .await
-        .map_err(|e| AppError::Database(format!("Failed to load owner profile: {e}")))?
-        .ok_or(AppError::Unauthorized)?;
+        .map_err(|e| AppError::Database(format!("Failed to load owner profile: {e}")))?;
 
-    let reader_id = owner_profile
-        .get_object_id("readerId")
-        .or_else(|_| owner_profile.get_object_id("reader_id"))
-        .map_err(|_| AppError::Unauthorized)?;
+    if let Some(owner_profile) = owner_profile
+        && let Ok(reader_id) = owner_profile
+            .get_object_id("readerId")
+            .or_else(|_| owner_profile.get_object_id("reader_id"))
+        && let Some(reader) = readers
+            .find_one(doc! { "_id": reader_id })
+            .await
+            .map_err(|e| AppError::Database(format!("Failed to load owner reader: {e}")))?
+    {
+        return Ok(reader);
+    }
 
     readers
-        .find_one(doc! { "_id": reader_id })
+        .find_one(doc! { "isOwner": true })
         .await
         .map_err(|e| AppError::Database(format!("Failed to load owner reader: {e}")))?
-        .filter(|reader| {
-            reader.handle == username || reader.name == username || reader.email == username
-        })
         .ok_or(AppError::Unauthorized)
 }
 

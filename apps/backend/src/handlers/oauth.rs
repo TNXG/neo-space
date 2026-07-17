@@ -82,14 +82,11 @@ pub async fn get_bindable_identities(
         });
     }
 
-    // Add QQ identity if configured
-    let qq_app_id = oauth_service.qq_app_id();
-    if !qq_app_id.is_empty() {
-        identities.push(BindableIdentity {
-            provider: "qq".to_string(),
-            name: "QQ".to_string(),
-        });
-    }
+    // QQ 始终通过中转服务提供，不依赖本地 App ID / App Key。
+    identities.push(BindableIdentity {
+        provider: "qq".to_string(),
+        name: "QQ".to_string(),
+    });
 
     Ok(Json(identities))
 }

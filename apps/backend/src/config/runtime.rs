@@ -244,24 +244,6 @@ pub async fn migrate_options(
         )
         .await?;
     }
-    if !config.qq_app_id.is_empty() {
-        ensure_field(
-            database,
-            "oauth",
-            "public.qq.appId",
-            config.qq_app_id.clone(),
-        )
-        .await?;
-    }
-    if !config.qq_app_key.is_empty() {
-        ensure_field(
-            database,
-            "oauth",
-            "secrets.qq.appKey",
-            config.qq_app_key.clone(),
-        )
-        .await?;
-    }
 
     database
         .collection::<Document>("system_migrations")
@@ -320,9 +302,5 @@ pub async fn apply_database_options(database: &Database, config: &mut AppConfig)
             .unwrap_or(config.github_client_id.clone());
         config.github_client_secret = nested_string(&oauth, &["secrets", "github", "clientSecret"])
             .unwrap_or(config.github_client_secret.clone());
-        config.qq_app_id =
-            nested_string(&oauth, &["public", "qq", "appId"]).unwrap_or(config.qq_app_id.clone());
-        config.qq_app_key = nested_string(&oauth, &["secrets", "qq", "appKey"])
-            .unwrap_or(config.qq_app_key.clone());
     }
 }
