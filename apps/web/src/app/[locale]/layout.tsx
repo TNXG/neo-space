@@ -120,6 +120,18 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           font-sans
         `}
       >
+        {/*
+         * 防主题闪烁脚本：在 body 解析时同步执行，早于 React 水合，
+         * 避免 next-themes 接管前出现亮/暗模式闪屏。
+         * 逻辑与 next-themes 默认配置对齐（attribute=class, storageKey=theme,
+         * defaultTheme=system, enableSystem, themes=[light,dark]）。
+         */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement;var n=localStorage.getItem('theme')||'system';var t=n==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):n;d.classList.remove('light','dark');d.classList.add(t);d.style.colorScheme=t;}catch(e){}})();`,
+          }}
+        />
         <JsonLd data={jsonLdData} />
         {" "}
         <ThemeProvider

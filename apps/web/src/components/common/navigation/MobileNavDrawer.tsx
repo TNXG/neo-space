@@ -79,8 +79,8 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
             })}
           </div>
 
-          <div className="mt-6 border-t border-border/60 pt-4">
-            <LanguageSwitch onLocaleChange={() => onOpenChange(false)} />
+          <div className="mt-2 border-t border-border/60 pt-2">
+            <LanguageSwitch inline onLocaleChange={() => onOpenChange(false)} />
           </div>
         </DrawerBody>
         <div className="h-6" />

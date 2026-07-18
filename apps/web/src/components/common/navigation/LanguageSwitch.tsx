@@ -25,7 +25,10 @@ import { usePathname, useRouter } from "@/locales/navigation";
 
 interface LanguageSwitchProps {
   className?: string;
+  /** 紧凑下拉样式，用于桌面顶栏 */
   compact?: boolean;
+  /** 行内分段样式，用于移动端抽屉，与导航项视觉语言保持一致 */
+  inline?: boolean;
   onLocaleChange?: () => void;
   tooltipSideOffset?: number;
 }
@@ -33,6 +36,7 @@ interface LanguageSwitchProps {
 export function LanguageSwitch({
   className,
   compact = false,
+  inline = false,
   onLocaleChange,
   tooltipSideOffset = 12,
 }: LanguageSwitchProps) {
@@ -57,6 +61,46 @@ export function LanguageSwitch({
     setOpen(false);
     onLocaleChange?.();
   };
+
+  if (inline) {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-4 rounded-2xl p-3 transition-colors duration-200",
+          className,
+        )}
+        role="group"
+        aria-label={t("nav.language")}
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground">
+          <Icon icon="mingcute:translate-2-line" className="h-5 w-5" />
+        </div>
+        <span className="text-base font-medium text-foreground">{t("nav.language")}</span>
+        <div className="ml-auto flex items-center gap-1 rounded-full bg-secondary/50 p-1">
+          {localeOptions.map((option) => {
+            const isActive = option === locale;
+
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => handleLocaleChange(option)}
+                aria-pressed={isActive}
+                className={cn(
+                  "h-7 cursor-pointer rounded-full px-2.5 text-xs font-semibold transition-colors duration-200",
+                  isActive
+                    ? "bg-accent-500 text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   if (compact) {
     return (
