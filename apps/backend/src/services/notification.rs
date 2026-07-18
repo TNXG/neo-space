@@ -1,8 +1,9 @@
 //! Notification service for comment notifications
 
 use crate::error::AppError;
+use crate::services::notification_recipients;
 use crate::services::notification_templates::{
-    build_html_email, build_text_email, generate_notification_url,
+    build_html_email, build_subject, build_text_email, generate_notification_url,
 };
 use bson::doc;
 use futures::TryStreamExt;
@@ -12,11 +13,13 @@ use std::time::Duration;
 /// Comment notification data
 #[derive(Debug, Clone)]
 pub struct CommentNotification {
+    /// 新评论的 _id（ObjectId hex），用于日志
+    pub comment_id: String,
     /// Comment author
     pub author: String,
     /// Comment text
     pub text: String,
-    /// Comment author email
+    /// Comment author email（用于自回复去重——绝不给该邮箱发送提醒）
     pub email: String,
     /// Reference type (post/note)
     pub ref_type: String,
@@ -28,8 +31,12 @@ pub struct CommentNotification {
     pub created: bson::DateTime,
     /// Is a reply to another comment
     pub is_reply: bool,
+    /// 直接父级评论的 _id（hex）——邮件深链与前端滚动定位都指向它，而非根评论
+    pub parent_comment_id: Option<String>,
     /// Parent comment author (if reply)
     pub parent_author: Option<String>,
+    /// 直接父级评论作者邮箱——回复提醒精准投递给该邮箱
+    pub parent_author_email: Option<String>,
     /// User agent (browser info)
     pub ua: Option<String>,
     /// IP location
@@ -131,28 +138,14 @@ impl NotificationService {
         })
     }
 
-    /// Send comment notification email
-    pub async fn send_comment_notification(
-        &self,
-        notification: &CommentNotification,
-    ) -> Result<(), AppError> {
-        use lettre::{
-            AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
-            message::{Mailbox, MultiPart, SinglePart, header::ContentType},
-            transport::smtp::authentication::Credentials,
-        };
-
-        // Get admin configuration
-        let config = self.get_admin_config().await?;
-
-        // Load email SMTP configuration
+    /// 解析 SMTP 配置；邮件未启用时返回 Ok(None)。
+    async fn load_smtp_config(&self) -> Result<Option<SmtpConfig>, AppError> {
         let options_collection: mongodb::Collection<bson::Document> = self.db.collection("options");
         let mail_options = options_collection
             .find_one(doc! { "name": "mailOptions" })
             .await
             .map_err(|e| AppError::Database(format!("Failed to load email config: {}", e)))?;
 
-        // Check if email is enabled
         let email_enabled = match mail_options.as_ref() {
             Some(doc) => doc
                 .get_document("value")
@@ -161,19 +154,16 @@ impl NotificationService {
                 .unwrap_or(false),
             None => false,
         };
-
         if !email_enabled {
             tracing::info!("Email service is disabled, skipping notification");
-            return Ok(());
+            return Ok(None);
         }
 
         let mail_doc = mail_options
             .ok_or_else(|| AppError::Internal("Invalid email config format".to_string()))?;
-
         let value = mail_doc
             .get_document("value")
             .map_err(|_| AppError::Internal("Email config value missing".to_string()))?;
-
         let options = value
             .get_document("smtp")
             .map_err(|_| AppError::Internal("SMTP configuration missing".to_string()))?;
@@ -187,90 +177,122 @@ impl NotificationService {
             .get_str("pass")
             .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
             .to_string();
-
         let host = options
             .get_str("host")
             .map_err(|_| AppError::Internal("SMTP host not configured".to_string()))?
             .to_string();
-
         let port = u16::try_from(options.get_i32("port").unwrap_or(587))
             .map_err(|_| AppError::Internal("Invalid email port".to_string()))?;
 
-        // Get ref title and generate URL
-        let ref_title = notification.ref_title.as_deref();
+        Ok(Some(SmtpConfig { user, from_email, password, host, port }))
+    }
+
+    /// 发送评论通知——按收件人 fan-out，已做自回复去重与多身份合并。
+    ///
+    /// 规则参见 `notification_recipients::build_recipients`：
+    /// - 回复精准投递给「直接父级评论作者」而非根评论作者；
+    /// - 评论作者本人绝不收到提醒；
+    /// - 同一邮箱既是文章作者又是直接父级评论作者时合并为一条高优先级通知。
+    pub async fn send_comment_notification(
+        &self,
+        notification: &CommentNotification,
+    ) -> Result<(), AppError> {
+        use lettre::{
+            AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
+            message::{Mailbox, MultiPart, SinglePart, header::ContentType},
+            transport::smtp::authentication::Credentials,
+        };
+
+        let config = self.get_admin_config().await?;
+        let Some(smtp) = self.load_smtp_config().await? else {
+            return Ok(());
+        };
+
+        // 解析收件人（已去重 / 自回复过滤 / 优先级标注）
+        let recipients = notification_recipients::build_recipients(notification, &config.email);
+        if recipients.is_empty() {
+            tracing::info!(
+                "No notification recipients for comment {} (self-reply or self-comment), skipping",
+                notification.comment_id
+            );
+            return Ok(());
+        }
+
+        // 回复深链指向「直接父级评论」，前端据此滚动定位 + 展开回复输入框
         let notification_url = generate_notification_url(
             &config.site_url,
             &notification.ref_type,
             &notification.ref_id,
-            ref_title,
+            notification.ref_title.as_deref(),
+            notification.parent_comment_id.as_deref(),
         );
-
-        // Build email content
-        let html_body = build_html_email(notification, &config, &notification_url);
-        let text_body = build_text_email(notification, &config, &notification_url);
-
-        let subject = if notification.is_reply {
-            format!("[{}] 新回复: {}", config.site_name, notification.author)
-        } else {
-            format!("[{}] 新评论: {}", config.site_name, notification.author)
-        };
 
         let from_mailbox = Mailbox::new(
             Some(format!("{} Notifications", config.site_name)),
-            from_email.parse().map_err(|_| {
-                AppError::Internal(format!("Invalid from_email format: {}", from_email))
+            smtp.from_email.parse().map_err(|_| {
+                AppError::Internal(format!("Invalid from_email format: {}", smtp.from_email))
             })?,
         );
 
-        let to_mailbox = Mailbox::new(
-            None,
-            config
-                .email
-                .parse()
-                .map_err(|_| AppError::BadRequest("Invalid admin email format".to_string()))?,
-        );
-
-        let email = Message::builder()
-            .from(from_mailbox)
-            .to(to_mailbox)
-            .subject(subject)
-            .multipart(
-                MultiPart::alternative()
-                    .singlepart(SinglePart::plain(text_body))
-                    .singlepart(
-                        SinglePart::builder()
-                            .header(ContentType::TEXT_HTML)
-                            .body(html_body),
-                    ),
-            )
-            .map_err(|e| AppError::Internal(format!("Failed to build email: {}", e)))?;
-
-        let creds = Credentials::new(user.clone(), password);
-
-        // Create SMTP transport
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&host)
+        let creds = Credentials::new(smtp.user.clone(), smtp.password.clone());
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&smtp.host)
             .map_err(|e| AppError::Internal(format!("Failed to create mailer: {}", e)))?
-            .port(port)
+            .port(smtp.port)
             .credentials(creds)
             .timeout(Some(Duration::from_secs(30)))
             .build();
 
-        tracing::info!(
-            "Sending comment notification email to {} for {} by {}",
-            config.email,
-            notification.ref_type,
-            notification.author
-        );
+        for recipient in &recipients {
+            let to_mailbox = Mailbox::new(None, recipient.email.parse().map_err(|_| {
+                AppError::Internal(format!("Invalid recipient email: {}", recipient.email))
+            })?);
 
-        mailer.send(email).await.map_err(|e| {
-            tracing::error!("Failed to send notification email: {:?}", e);
-            AppError::Internal(format!("Failed to send notification email: {}", e))
-        })?;
+            let subject = build_subject(notification, &config, recipient);
+            let html_body = build_html_email(notification, &config, &notification_url, recipient);
+            let text_body = build_text_email(notification, &config, &notification_url, recipient);
+
+            let email = Message::builder()
+                .from(from_mailbox.clone())
+                .to(to_mailbox)
+                .subject(subject)
+                .multipart(
+                    MultiPart::alternative()
+                        .singlepart(SinglePart::plain(text_body))
+                        .singlepart(
+                            SinglePart::builder()
+                                .header(ContentType::TEXT_HTML)
+                                .body(html_body),
+                        ),
+                )
+                .map_err(|e| AppError::Internal(format!("Failed to build email: {}", e)))?;
+
+            tracing::info!(
+                "Sending comment notification to {} (priority={:?}) for comment {} by {}",
+                recipient.email,
+                recipient.priority,
+                notification.comment_id,
+                notification.author,
+            );
+
+            if let Err(e) = mailer.send(email).await {
+                tracing::error!("Failed to send notification to {}: {:?}", recipient.email, e);
+            }
+        }
 
         tracing::info!(
-            "Comment notification email sent successfully to: {}",
-            config.email
+            "Comment notification dispatched to {} recipient(s) for comment {}",
+            recipients.len(),
+            notification.comment_id,
         );
         Ok(())
     }
+}
+
+/// SMTP 配置（由 `mailOptions` 解析而来）。
+struct SmtpConfig {
+    user: String,
+    from_email: String,
+    password: String,
+    host: String,
+    port: u16,
 }

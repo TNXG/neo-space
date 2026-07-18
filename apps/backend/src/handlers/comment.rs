@@ -482,23 +482,28 @@ pub async fn create_comment(
     let comment_tree = find_comment_by_id(&comment_trees, &new_id.to_hex())
         .ok_or_else(|| AppError::Internal("Failed to build inserted comment tree".to_string()))?;
 
-    // Send notification to admin for new comment
+    // 发送评论通知（后台异步 fan-out：admin + 直接父级评论作者，已做自回复去重与多身份合并）
     let notification_svc = NotificationService::new(state.db.clone());
     let notification = CommentNotification {
+        comment_id: new_id.to_hex(),
         author: inserted_comment.author.clone(),
         text: inserted_comment.text.clone(),
         email: inserted_comment.mail.clone(),
         ref_type: normalized_ref_type,
         ref_id: payload.r#ref.clone(),
-        ref_title: None, // Will be fetched by notification service
+        ref_title: None, // 由通知服务按需解析
         created: inserted_comment.created,
         is_reply: parent_oid.is_some(),
+        // 直接父级评论 id —— 邮件深链与前端滚动定位都指向它，而非根评论
+        parent_comment_id: parent_oid.map(|oid| oid.to_hex()),
         parent_author: parent_author.clone(),
+        // 直接父级评论作者邮箱 —— 回复提醒精准投递给该邮箱
+        parent_author_email: parent_oid.is_some().then(|| parent_comment.mail.clone()),
         ua: ua_string,
         location: inserted_comment.location.clone(),
     };
 
-    // Spawn notification task in background (don't block response)
+    // 后台异步发送，不阻塞响应
     tokio::spawn(async move {
         if let Err(e) = notification_svc
             .send_comment_notification(&notification)
