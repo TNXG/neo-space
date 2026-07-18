@@ -3,7 +3,7 @@
 import type { Comment } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CommentMarkdown } from "@/components/common/markdown";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ export function CommentItem({
   const [editView, setEditView] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const itemRef = useRef<HTMLDivElement>(null);
+  const didConsumePendingRef = useRef(false);
 
   const canNest = depth < MAX_DEPTH;
   const showLine = canNest;
@@ -47,20 +48,32 @@ export function CommentItem({
   const { user: authUser, isAuthenticated, token } = useAuthStore();
   const isOwnComment = isAuthenticated && authUser && comment.author === authUser.name;
   const isCurrentUserAdmin = isAuthenticated && authUser?.isOwner;
-  const { highlightedId, triggerHighlight } = useCommentHighlight();
+  const { highlightedId, triggerReplyTarget, pendingReplyId, clearPendingReply } = useCommentHighlight();
   const isHighlighting = highlightedId === comment._id;
+  // 邮件深链 / @ 回复跳转：当 pendingReplyId 命中本评论时，展开并聚焦回复输入框，
+  // 引导用户针对「直接父级评论」完成回复闭环。仅消费一次，避免重复展开。
+  useEffect(() => {
+    if (pendingReplyId !== comment._id || didConsumePendingRef.current) {
+      return;
+    }
+    didConsumePendingRef.current = true;
+    setEditView(false);
+    setReplyView(true);
+    clearPendingReply();
+  }, [pendingReplyId, comment._id, clearPendingReply]);
 
-  // 处理点击 @ 回复对象
+  // 处理点击 @ 回复对象：跳转 + 高亮 + 在该父级评论下方展开回复输入框，
+  // 引导用户完成针对上一级评论的回复闭环（而非仅做高亮滚动）。
   const handleReplyClick = () => {
     if (!parentId)
       return;
-    triggerHighlight(parentId);
+    triggerReplyTarget(parentId);
   };
 
   return (
     <motion.div
+      id={`comment-${comment._id}`}
       ref={itemRef}
-      id={comment._id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}

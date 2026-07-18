@@ -55,7 +55,13 @@ export function useCommentHighlight() {
   if (!context) {
     throw new Error("useCommentHighlight must be used within a CommentProvider");
   }
-  return context;
+  return {
+    highlightedId: context.highlightedId,
+    triggerHighlight: context.triggerHighlight,
+    triggerReplyTarget: context.triggerReplyTarget,
+    pendingReplyId: context.pendingReplyId,
+    clearPendingReply: context.clearPendingReply,
+  };
 }
 
 /**
