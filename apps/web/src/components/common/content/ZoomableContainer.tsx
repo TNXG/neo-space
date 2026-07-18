@@ -17,6 +17,13 @@ interface ZoomableContainerProps {
   maxZoom?: number;
   /** 初始缩放比例 */
   initialZoom?: number;
+  /**
+   * 视口容器（不参与缩放的外框）className
+   *
+   * 用于渲染固定边框/圆角/背景/内边距，避免这些装饰随内容一起被 scale 放大。
+   * 该 className 应用在 overflow-hidden 的视口 div 上，仅包裹被缩放的 children。
+   */
+  viewportClassName?: string;
 }
 
 /**
@@ -27,8 +34,9 @@ export function ZoomableContainer({
   children,
   className = "",
   minZoom = 0.5,
-  maxZoom = 3,
+  maxZoom = 5,
   initialZoom = 1,
+  viewportClassName = "",
 }: ZoomableContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -334,7 +342,7 @@ export function ZoomableContainer({
       {/* 可缩放内容容器 */}
       <div
         ref={containerRef}
-        className="overflow-hidden select-none"
+        className={cn("overflow-hidden select-none", viewportClassName)}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

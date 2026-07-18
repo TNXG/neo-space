@@ -60,10 +60,15 @@ export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
   }
 
   return (
-    <ZoomableContainer className={`my-8 ${className}`}>
+    <ZoomableContainer
+      className={`my-8 ${className}`}
+      // 框架（边框/圆角/背景/内边距/阴影）放在不参与缩放的视口上，
+      // 只让内部的 SVG 内容随缩放变大变小，边框保持固定粗细
+      viewportClassName="flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm"
+    >
       <div
         ref={containerRef}
-        className="flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm"
+        className="flex justify-center items-center"
         // 可信内容
         // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
         dangerouslySetInnerHTML={{ __html: svg }}
