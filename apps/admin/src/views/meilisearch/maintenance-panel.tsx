@@ -1,7 +1,7 @@
 import type { SearchMaintenanceTask, SearchSyncEvent } from "~/api/meilisearch";
 import type { DataTableColumns } from "naive-ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { Ban, Eye, Play, RotateCcw, Save } from "lucide-vue-next";
+import { Ban, Eye, Play, RotateCcw, Save, Trash2 } from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -88,6 +88,20 @@ export const MeilisearchMaintenancePanel = defineComponent({
         refreshTasks();
       },
     });
+    const deleteTaskMutation = useMutation({
+      mutationFn: meilisearchApi.deleteRebuildTask,
+      onSuccess: () => {
+        toast.success("重建任务记录已删除");
+        refreshTasks();
+      },
+    });
+    const clearFinishedMutation = useMutation({
+      mutationFn: meilisearchApi.clearFinishedRebuildTasks,
+      onSuccess: (count) => {
+        toast.success(`已清理 ${count} 条已结束的重建任务记录`);
+        refreshTasks();
+      },
+    });
     const scheduleMutation = useMutation({
       mutationFn: () => meilisearchApi.updateSchedule(scheduleEnabled.value, intervalHours.value),
       onSuccess: (schedule) => {
@@ -129,7 +143,7 @@ export const MeilisearchMaintenancePanel = defineComponent({
       {
         title: "操作",
         key: "actions",
-        width: 150,
+        width: 190,
         render: row => h(NSpace, { size: 4 }, {
           default: () => [
             h(NButton, { quaternary: true, size: "small", class: "cursor-pointer", onClick: () => showLogs(row) }, { icon: () => h(Eye) }),
@@ -138,6 +152,12 @@ export const MeilisearchMaintenancePanel = defineComponent({
               : []),
             ...(row.status === "queued" || row.status === "running"
               ? [h(NButton, { quaternary: true, size: "small", type: "warning", class: "cursor-pointer", onClick: () => cancelMutation.mutate(row._id) }, { icon: () => h(Ban) })]
+              : []),
+            ...(row.status !== "queued" && row.status !== "running"
+              ? [h(NPopconfirm, { onPositiveClick: () => deleteTaskMutation.mutate(row._id) }, {
+                  trigger: () => h(NButton, { quaternary: true, size: "small", type: "error", class: "cursor-pointer" }, { icon: () => h(Trash2) }),
+                  default: () => "确认删除该重建任务记录？",
+                })]
               : []),
           ],
         }),
@@ -221,6 +241,18 @@ export const MeilisearchMaintenancePanel = defineComponent({
         </section>
 
         <NCard title="重建任务与日志">
+          <div class="flex justify-end mb-3">
+            <NPopconfirm onPositiveClick={() => clearFinishedMutation.mutate()}>
+              {{
+                trigger: () => (
+                  <NButton class="cursor-pointer" secondary type="error" loading={clearFinishedMutation.isPending.value}>
+                    {{ icon: () => <Trash2 />, default: () => "清理已结束记录" }}
+                  </NButton>
+                ),
+                default: () => "确认清理全部成功、失败、已取消的重建任务记录？运行中的任务会保留。",
+              }}
+            </NPopconfirm>
+          </div>
           <NDataTable
             loading={tasksQuery.isPending.value}
             columns={columns}

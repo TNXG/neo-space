@@ -203,6 +203,16 @@ export const meilisearchApi = {
       `/admin/meilisearch/maintenance/tasks/${taskId}/cancel`,
       { bypassTransform: true },
     )),
+  deleteRebuildTask: async (taskId: string) =>
+    unwrap(await request.delete<ApiResponse<number>>(
+      `/admin/meilisearch/maintenance/tasks/${taskId}`,
+      { bypassTransform: true },
+    )),
+  clearFinishedRebuildTasks: async () =>
+    unwrap(await request.delete<ApiResponse<number>>(
+      "/admin/meilisearch/maintenance/tasks/clear-finished",
+      { bypassTransform: true },
+    )),
   getSchedule: () =>
     get<SearchMaintenanceSchedule>("/admin/meilisearch/maintenance/schedule"),
   updateSchedule: async (enabled: boolean, intervalHours: number) =>
