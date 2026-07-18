@@ -85,8 +85,9 @@ impl MeilisearchAdminClient {
 
     /// 等待 Meilisearch 异步任务结束，并返回最终任务详情。
     pub async fn wait_for_task(&self, task_uid: u64) -> Result<Value, AppError> {
-        // 外部向量服务可能让搜索索引全量重建持续十几分钟，短超时会误判失败并产生重复临时索引。
-        let deadline = Instant::now() + Duration::from_secs(30 * 60);
+        // 外部向量服务可能让单批次向量化持续十几分钟（Meilisearch 自身 embedding 超时约 13 分钟），
+        // 20 分钟足以覆盖；超过则判定 Meilisearch 任务卡死，避免重建执行器被无限挂起。
+        let deadline = Instant::now() + Duration::from_secs(20 * 60);
         loop {
             let task = self
                 .request(Method::GET, &format!("/tasks/{task_uid}"))

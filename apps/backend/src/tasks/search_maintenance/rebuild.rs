@@ -4,6 +4,8 @@ use bson::{DateTime, doc, oid::ObjectId};
 use reqwest::Method;
 use serde::Serialize;
 use serde_json::{Value, json};
+use std::time::Duration;
+use tokio::time::sleep;
 
 use crate::{
     app::SharedState,
@@ -16,9 +18,8 @@ use crate::{
         },
     },
 };
-
 use super::{
-    cleanup::{cleanup_orphaned_temporary_indexes, cleanup_temporary_indexes},
+    cleanup::{append_log, cleanup_orphaned_temporary_indexes, cleanup_temporary_indexes},
     ensure_not_canceled, task_collection, task_id_filter, update_task,
 };
 
@@ -62,7 +63,7 @@ pub(super) async fn run_rebuild(state: &SharedState, task_id: ObjectId) -> AppRe
         ensure_not_canceled(state, task_id).await?;
         create_temporary_index(&client, index).await?;
         copy_settings(&client, index, &vector_config).await?;
-        let document_count = rebuild_documents_from_source(state, &client, index).await?;
+        let document_count = rebuild_documents_from_source(state, task_id, &client, index).await?;
         let progress = 10 + i32::try_from(((position + 1) * 75) / indexes.len()).unwrap_or(75);
         update_task(
             state,
@@ -169,53 +170,139 @@ async fn copy_settings(
         .await?;
     Ok(())
 }
-
 /// 按索引类型选择事实源；受管内容索引来自 MongoDB，其他索引保留原有文档。
+///
+/// 返回实际成功写入的文档数；向量化失败的文档会被跳过但不中断整体重建。
 async fn rebuild_documents_from_source(
     state: &SharedState,
+    task_id: ObjectId,
     client: &MeilisearchAdminClient,
     index: &RebuildIndex,
 ) -> AppResult<usize> {
     match index.uid.as_str() {
         "posts" => {
             let documents = collect_post_documents(state).await?;
-            upload_documents(client, index, &documents).await?;
-            Ok(documents.len())
+            upload_documents(state, task_id, client, index, &documents).await
         }
         "notes" => {
             let documents = collect_note_documents(state).await?;
-            upload_documents(client, index, &documents).await?;
-            Ok(documents.len())
+            upload_documents(state, task_id, client, index, &documents).await
         }
-        _ => copy_existing_documents(client, index).await,
+        _ => copy_existing_documents(state, task_id, client, index).await,
     }
 }
 
-/// 分批写入搜索文档；等待 Meilisearch 完成任务也会等待 REST Embedder 向量化完成。
+/// 单文档向量化失败时的最大重试次数。
+const MAX_DOC_RETRIES: u32 = 3;
+/// 批量上传的批次大小；过大会触发 embedding 服务对 input 数组的参数限制。
+const UPLOAD_BATCH_SIZE: usize = 50;
+
+/// 分批写入搜索文档；批失败时降级到单文档逐条重试，3 次仍失败则跳过该文档继续下一篇。
+///
+/// 这样单篇文档的向量化错误（如内容过长、embedding 服务参数拒绝）不会让整个重建失败，
+/// 只损失问题文档本身，其余文档仍能正常索引。
 async fn upload_documents<T: Serialize>(
+    state: &SharedState,
+    task_id: ObjectId,
     client: &MeilisearchAdminClient,
     index: &RebuildIndex,
     documents: &[T],
-) -> AppResult<()> {
-    for batch in documents.chunks(1000) {
-        client
+) -> AppResult<usize> {
+    let mut succeeded = 0usize;
+    let mut skipped = 0usize;
+
+    for batch in documents.chunks(UPLOAD_BATCH_SIZE) {
+        ensure_not_canceled(state, task_id).await?;
+        match client
             .request_task(
                 Method::POST,
                 &format!("/indexes/{}/documents", index.temporary_uid),
                 batch,
             )
-            .await?;
+            .await
+        {
+            Ok(_) => succeeded += batch.len(),
+            Err(batch_error) => {
+                tracing::warn!(
+                    error = ?batch_error,
+                    batch_size = batch.len(),
+                    index_uid = %index.uid,
+                    "批量上传失败，降级到单文档逐条重试",
+                );
+                append_log(
+                    state,
+                    task_id,
+                    &format!(
+                        "索引 {} 批量上传 {} 条失败（{:?}），降级到单文档逐条重试",
+                        index.uid,
+                        batch.len(),
+                        batch_error
+                    ),
+                )
+                .await;
+                for document in batch {
+                    ensure_not_canceled(state, task_id).await?;
+                    let mut last_error: Option<AppError> = None;
+                    let mut doc_ok = false;
+                    for attempt in 1..=MAX_DOC_RETRIES {
+                        match client
+                            .request_task(
+                                Method::POST,
+                                &format!("/indexes/{}/documents", index.temporary_uid),
+                                std::slice::from_ref(document),
+                            )
+                            .await
+                        {
+                            Ok(_) => {
+                                doc_ok = true;
+                                break;
+                            }
+                            Err(error) => {
+                                last_error = Some(error);
+                                if attempt < MAX_DOC_RETRIES {
+                                    sleep(Duration::from_millis(500 * (1 << (attempt - 1)))).await;
+                                }
+                            }
+                        }
+                    }
+                    if doc_ok {
+                        succeeded += 1;
+                    } else {
+                        skipped += 1;
+                        let message = format!(
+                            "索引 {} 单文档 3 次重试均失败，已跳过：{}",
+                            index.uid,
+                            last_error.as_ref().map(|e| format!("{e:?}")).unwrap_or_default(),
+                        );
+                        tracing::warn!(index_uid = %index.uid, %message, "跳过向量化失败文档");
+                        append_log(state, task_id, &message).await;
+                    }
+                }
+            }
+        }
     }
-    Ok(())
+
+    if skipped > 0 {
+        append_log(
+            state,
+            task_id,
+            &format!("索引 {} 重建完成：成功 {succeeded} 条，跳过 {skipped} 条向量化失败文档", index.uid),
+        )
+        .await;
+    }
+    Ok(succeeded)
 }
 
 /// 未映射到 MongoDB 内容实体的自定义索引继续以原正式索引为数据源。
 async fn copy_existing_documents(
+    state: &SharedState,
+    task_id: ObjectId,
     client: &MeilisearchAdminClient,
     index: &RebuildIndex,
 ) -> AppResult<usize> {
     let mut offset = 0_usize;
     loop {
+        ensure_not_canceled(state, task_id).await?;
         let page = client
             .request(
                 Method::GET,

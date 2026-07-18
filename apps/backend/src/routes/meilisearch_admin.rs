@@ -59,12 +59,20 @@ pub fn routes() -> Router<SharedState> {
             routing::post(meilisearch_maintenance::create_rebuild),
         )
         .route(
+            "/maintenance/tasks/clear-finished",
+            routing::delete(meilisearch_maintenance::clear_finished_rebuild_tasks),
+        )
+        .route(
             "/maintenance/tasks/{task_id}/retry",
             routing::post(meilisearch_maintenance::retry_rebuild),
         )
         .route(
             "/maintenance/tasks/{task_id}/cancel",
             routing::post(meilisearch_maintenance::cancel_rebuild),
+        )
+        .route(
+            "/maintenance/tasks/{task_id}",
+            routing::delete(meilisearch_maintenance::delete_rebuild_task),
         )
         .route(
             "/maintenance/schedule",
