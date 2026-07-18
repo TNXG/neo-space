@@ -34,7 +34,7 @@
     "exifreader": "^4.41.0",
     "github-slugger": "^2.0.0",
     "input-otp": "^1.4.2",
-    "katex": "^0.17.0",
+    "katex": "^0.18.0",
     "motion": "^12.42.2",
     "next": "16.3.0-canary.88",
     "next-intl": "^4.13.1",

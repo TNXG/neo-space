@@ -96,3 +96,4 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-arm64-msvc@16.3.0-canary.88'
   - '@next/swc-win32-x64-msvc@16.3.0-canary.88'
   - next@16.3.0-canary.88
+  - katex@0.18.0
