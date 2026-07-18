@@ -7,7 +7,6 @@ import remarkBreaks from "remark-breaks";
 import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 
-import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { Mark } from "../content/Mark";
 import { truncateText } from "./utils";
 
@@ -20,7 +19,7 @@ const LANGUAGE_CLASS_REGEX = /language-(\w+)/;
  */
 function createPreviewComponents(t: Awaited<ReturnType<typeof getTranslations>>): Components {
   return {
-    p: ({ children }) => (<p><AbbreviationText>{children}</AbbreviationText></p>),
+    p: ({ children }) => <p>{children}</p>,
     h1: ({ children }) => <span>{children}</span>,
     h2: ({ children }) => <span>{children}</span>,
     h3: ({ children }) => <span>{children}</span>,

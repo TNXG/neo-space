@@ -1,8 +1,8 @@
-//! External service handlers (nbnhhsh, nav aggregation)
+//! External service handlers (nav aggregation)
 
 use crate::{
     app::SharedState,
-    error::{AppError, AppJson, AppQuery, AppResult},
+    error::{AppError, AppQuery, AppResult},
     models::*,
     services::helpers::{
         get_ai_translation, get_category_name_translation_map, localize_category_names,
@@ -12,46 +12,6 @@ use axum::{Json, extract::State};
 use bson::{doc, oid::ObjectId};
 use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
-
-/// NBNHHSH guess request
-#[derive(Debug, Deserialize, Serialize)]
-pub struct NbnhhshGuessRequest {
-    pub text: String,
-}
-
-/// NBNHHSH guess result
-#[derive(Debug, Deserialize, Serialize)]
-pub struct NbnhhshGuessResult {
-    pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trans: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub inputting: Option<Vec<String>>,
-}
-
-/// Proxy endpoint for nbnhhsh guess API (Chinese pinyin guessing)
-pub async fn nbnhhsh_guess(
-    State(state): State<SharedState>,
-    AppJson(request): AppJson<NbnhhshGuessRequest>,
-) -> Json<Vec<NbnhhshGuessResult>> {
-    let result = state
-        .http_client
-        .post("https://lab.magiconch.com/api/nbnhhsh/guess")
-        .json(&serde_json::json!({ "text": request.text }))
-        .send()
-        .await;
-
-    match result {
-        Ok(response) => {
-            if let Ok(data) = response.json::<Vec<NbnhhshGuessResult>>().await {
-                Json(data)
-            } else {
-                Json(vec![])
-            }
-        }
-        Err(_) => Json(vec![]),
-    }
-}
 
 // ============================================================
 //  Aggregate Nav — single endpoint for nav hover dropdowns

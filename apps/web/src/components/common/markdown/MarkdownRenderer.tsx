@@ -9,7 +9,6 @@ import remarkBreaks from "remark-breaks";
 import remarkFlexibleMarkers from "remark-flexible-markers";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import { AbbreviationText } from "@/components/common/nbnhhsh";
 
 import { DashedSeparator } from "@/components/ui/separator";
 
@@ -53,17 +52,6 @@ interface MarkdownRendererProps {
   className?: string;
   hasScript?: boolean;
 }
-
-// 辅助函数：检测是否为纯文本内容
-const isTextOnlyContent = (node: ReactNode): boolean => {
-  if (node === null || node === undefined || typeof node === "boolean")
-    return true;
-  if (typeof node === "string" || typeof node === "number")
-    return true;
-  if (Array.isArray(node))
-    return node.every(child => isTextOnlyContent(child));
-  return false;
-};
 
 /** 为本次服务端渲染创建组件映射，并注入已预取的影视卡片数据。 */
 const createComponents = (mediaCards: Map<string, MediaCardData>): Components => ({
@@ -381,11 +369,9 @@ const createComponents = (mediaCards: Map<string, MediaCardData>): Components =>
       );
     }
 
-    const isTextOnly = isTextOnlyContent(children);
-
     return (
       <p className="text-[15px] md:text-lg leading-relaxed text-primary-700 mb-5 md:mb-6 last:mb-0 wrap-break-word">
-        {isTextOnly ? <AbbreviationText>{children}</AbbreviationText> : children}
+        {children}
       </p>
     );
   },

@@ -13,10 +13,6 @@ pub fn routes() -> axum::Router<SharedState> {
             axum::routing::get(handlers::misc::list_recentlies),
         )
         .route(
-            "/nbnhhsh/guess",
-            axum::routing::post(handlers::misc::nbnhhsh_guess),
-        )
-        .route(
             "/crates/{name}",
             axum::routing::get(handlers::misc::get_crate_info),
         )

@@ -4,7 +4,6 @@ import type { User } from "@/types/api";
 
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SocialLink } from "@/components/ui/SocialLink";
 import { useReaderWS } from "@/hooks/use-reader-ws";
 
@@ -87,7 +86,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
 
           {/* 简介 */}
           <p className="text-base lg:text-lg leading-relaxed text-secondary-foreground mt-2">
-            <AbbreviationText>{profile.introduce}</AbbreviationText>
+            {profile.introduce}
           </p>
 
           {/* 社交链接 */}
@@ -146,7 +145,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         </div>
 
         <p className="text-sm leading-relaxed text-secondary-foreground">
-          <AbbreviationText>{profile.introduce}</AbbreviationText>
+          {profile.introduce}
         </p>
 
         <div className="flex flex-wrap items-center gap-3">

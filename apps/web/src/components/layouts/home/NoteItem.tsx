@@ -1,5 +1,4 @@
 import type { Note } from "@/types/api";
-import { AbbreviationText } from "@/components/common/nbnhhsh";
 import { SmartDate } from "@/components/common/smart-date";
 import { Link } from "@/locales/navigation";
 
@@ -18,7 +17,7 @@ export function NoteItem({ note }: NoteItemProps) {
       <div className="flex gap-2.5 md:gap-3 items-center min-w-0 flex-1">
         <div className="rounded-full bg-muted-foreground/30 h-1.5 w-1.5 transition-colors duration-150 group-hover:bg-accent-600 shrink-0" />
         <span className="text-sm md:text-base transition-colors duration-150 text-foreground/70 group-hover:text-accent-600 truncate">
-          <AbbreviationText>{note.title}</AbbreviationText>
+          {note.title}
         </span>
       </div>
       {note.created && (

@@ -349,29 +349,6 @@ export async function getReaderById(id: string): Promise<ApiResponse<Reader>> {
 }
 
 /**
- * Nbnhhsh API - 能不能好好说话缩写翻译
- */
-export interface NbnhhshResult {
-  name: string;
-  trans?: string[] | null;
-  inputting?: string[];
-}
-
-export async function guessAbbreviation(text: string): Promise<NbnhhshResult[]> {
-  const response = await fetch(`${API_BASE_URL}/nbnhhsh/guess`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-
-  if (!response.ok) {
-    return [];
-  }
-
-  return response.json();
-}
-
-/**
  * Site Config API
  */
 export async function getSiteConfig(): Promise<ApiResponse<SiteConfig>> {
