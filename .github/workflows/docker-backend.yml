@@ -31,6 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -46,36 +51,46 @@ jobs:
       - name: Build admin dashboard
         run: pnpm build:admin
 
+      - name: Install musl build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools nasm
+
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/backend -> target
           cache-on-failure: true
 
-      - name: Build musl binary in Alpine
+      - name: Export Alpine ONNX Runtime libraries
         run: |
-          mkdir -p "$HOME/.cargo/registry" "$HOME/.cargo/git"
-          build_status=0
+          onnxruntime_lib_path="$RUNNER_TEMP/onnxruntime-musl"
+          mkdir -p "$onnxruntime_lib_path"
           docker run --rm \
-            --volume "${{ github.workspace }}:/workspace" \
-            --volume "$HOME/.cargo/registry:/usr/local/cargo/registry" \
-            --volume "$HOME/.cargo/git:/usr/local/cargo/git" \
-            --workdir /workspace/apps/backend \
-            rust:1.97.1-alpine3.23 \
+            --volume "$onnxruntime_lib_path:/export" \
+            alpine:3.23 \
             sh -euxc '
-              apk add --no-cache build-base nasm onnxruntime-dev pkgconf
-              cargo build --locked --release
-            ' || build_status=$?
-          sudo chown -R "$(id -u):$(id -g)" \
-            apps/backend/target \
-            "$HOME/.cargo/registry" \
-            "$HOME/.cargo/git"
-          exit "$build_status"
+              apk add --no-cache onnxruntime-dev
+              cp -a /usr/lib/. /export/
+            '
+          sudo chown -R "$(id -u):$(id -g)" "$onnxruntime_lib_path"
+          echo "ORT_LIB_PATH=$onnxruntime_lib_path" >> "$GITHUB_ENV"
+
+      - name: Build binary
+        working-directory: apps/backend
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+          CARGO_PROFILE_RELEASE_LTO: "false"
+          ORT_PREFER_DYNAMIC_LINK: "1"
+        run: |
+          export RUSTFLAGS="-C target-feature=-crt-static -C link-arg=-Wl,-rpath-link=$ORT_LIB_PATH"
+          cargo build --locked --release --target x86_64-unknown-linux-musl
 
       - name: Prepare artifacts
         run: |
           mkdir -p dist
-          cp apps/backend/target/release/${{ env.BINARY_NAME }} dist/
+          cp apps/backend/target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }} dist/
           chmod +x dist/${{ env.BINARY_NAME }}
 
       - name: Upload binary artifact
