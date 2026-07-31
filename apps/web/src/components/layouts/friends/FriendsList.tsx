@@ -156,13 +156,17 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
           {/* 1. Identity & Browser Header */}
           <DetailCard className="p-0 border-0 bg-transparent overflow-visible">
             <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
-              {/* 模拟浏览器头部 */}
-              <div className="h-24 w-full bg-secondary/30 relative overflow-hidden">
+              {/* 将氛围背景延伸到内容区，避免在浏览器头部底边出现色阶断层。 */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-40 overflow-hidden bg-linear-to-b from-secondary/30 via-secondary/15 to-card">
                 <div
-                  className="absolute inset-0 opacity-30 bg-cover bg-center blur-2xl scale-125 saturate-150"
+                  className="absolute inset-0 scale-125 bg-cover bg-center opacity-30 blur-2xl saturate-150"
                   style={{ backgroundImage: `url(${activeItem.avatar})` }}
                 />
-                <div className="absolute inset-0 bg-linear-to-b from-transparent to-card" />
+                <div className="absolute inset-0 bg-linear-to-b from-transparent via-card/20 to-card" />
+              </div>
+
+              {/* 模拟浏览器头部 */}
+              <div className="relative h-24 w-full">
                 <div className="absolute top-3 left-3 flex gap-1.5 z-10 opacity-70">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
