@@ -262,7 +262,7 @@ pub async fn apply_link(
 }
 
 /// Helper function to get site name from database
-async fn get_site_name(state: &SharedState) -> Option<String> {
+pub(super) async fn get_site_name(state: &SharedState) -> Option<String> {
     use bson::Document;
 
     let collection: mongodb::Collection<Document> = state.db.collection("options");

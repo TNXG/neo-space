@@ -59,6 +59,12 @@ pub struct UpdateLinkRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct SendLinkNotificationRequest {
+    pub subject: String,
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct ListAdminLinksQuery {
     pub page: Option<u64>,
     pub size: Option<u64>,
@@ -252,6 +258,77 @@ pub async fn delete_link(
     Ok(Json(ApiResponse::success(())))
 }
 
+/// 仅在博主明确提交邮件内容后，向友链联系人发送一次通知。
+pub async fn send_link_notification(
+    State(state): State<SharedState>,
+    _owner: OwnerOnly,
+    Path(id): Path<String>,
+    AppJson(req): AppJson<SendLinkNotificationRequest>,
+) -> AppResult<Json<ApiResponse<()>>> {
+    let subject = req.subject.trim();
+    let content = req.content.trim();
+    validate_link_notification(subject, content)?;
+
+    let link = state
+        .db
+        .collection::<Link>("links")
+        .find_one(link_id_filter(&id))
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?
+        .ok_or(AppError::NotFound("Link not found".into()))?;
+    let recipient = link
+        .email
+        .as_deref()
+        .map(str::trim)
+        .filter(|email| !email.is_empty())
+        .ok_or_else(|| AppError::BadRequest("Link contact email is not configured".into()))?;
+    let site_name = super::super::link::get_site_name(&state)
+        .await
+        .unwrap_or_else(|| "Neo Space".to_string());
+
+    state
+        .email_service
+        .send_owner_email(recipient, subject, content, &site_name)
+        .await?;
+
+    tracing::info!(
+        link_id = %link.id,
+        recipient,
+        "Owner sent a friend-link notification"
+    );
+    Ok(Json(ApiResponse::success(())))
+}
+
+/// 校验博主手动撰写的邮件，避免空内容及异常长度进入 SMTP。
+fn validate_link_notification(subject: &str, content: &str) -> AppResult<()> {
+    let subject = subject.trim();
+    let content = content.trim();
+
+    if subject.is_empty() {
+        return Err(AppError::BadRequest("Email subject is required".into()));
+    }
+    if subject.contains(['\r', '\n']) {
+        return Err(AppError::BadRequest(
+            "Email subject must use a single line".into(),
+        ));
+    }
+    if subject.chars().count() > 200 {
+        return Err(AppError::BadRequest(
+            "Email subject must not exceed 200 characters".into(),
+        ));
+    }
+    if content.is_empty() {
+        return Err(AppError::BadRequest("Email content is required".into()));
+    }
+    if content.chars().count() > 10_000 {
+        return Err(AppError::BadRequest(
+            "Email content must not exceed 10000 characters".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 pub async fn link_state_count(
     State(state): State<SharedState>,
 ) -> AppResult<Json<ApiResponse<LinkStateCount>>> {
@@ -343,4 +420,21 @@ pub async fn check_link_health(
     }
 
     Ok(Json(ApiResponse::success(response)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_link_notification;
+
+    #[test]
+    fn rejects_empty_owner_notification() {
+        assert!(validate_link_notification("", "content").is_err());
+        assert!(validate_link_notification("subject", "  ").is_err());
+        assert!(validate_link_notification("subject\ninjection", "content").is_err());
+    }
+
+    #[test]
+    fn accepts_reviewed_owner_notification() {
+        assert!(validate_link_notification("友链沟通", "这是一封由博主确认的邮件。").is_ok());
+    }
 }

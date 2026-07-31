@@ -222,6 +222,71 @@ impl EmailService {
         Ok(())
     }
 
+    /// 发送由博主明确撰写并确认的纯文本邮件。
+    pub async fn send_owner_email(
+        &self,
+        to_email: &str,
+        subject: &str,
+        content: &str,
+        site_name: &str,
+    ) -> Result<(), AppError> {
+        let config = self.get_config().await?;
+        let from_mailbox = Mailbox::new(
+            Some(site_name.to_string()),
+            config.from_email.parse().map_err(|_| {
+                AppError::Internal(format!("Invalid from_email format: {}", config.from_email))
+            })?,
+        );
+        let to_mailbox = Mailbox::new(
+            None,
+            to_email
+                .parse()
+                .map_err(|_| AppError::BadRequest("Invalid recipient email format".to_string()))?,
+        );
+        let email = Message::builder()
+            .from(from_mailbox)
+            .to(to_mailbox)
+            .subject(subject)
+            .body(content.to_string())
+            .map_err(|error| AppError::BadRequest(format!("Invalid email content: {error}")))?;
+        let credentials = Credentials::new(config.user.clone(), config.password.clone());
+        let mailer = match config.encryption {
+            SmtpEncryption::Tls => AsyncSmtpTransport::<Tokio1Executor>::relay(&config.host)
+                .map_err(|error| {
+                    AppError::Internal(format!("Failed to create TLS mailer: {error}"))
+                })?
+                .port(config.port)
+                .credentials(credentials)
+                .timeout(Some(Duration::from_secs(30)))
+                .build(),
+            SmtpEncryption::StartTls => {
+                AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.host)
+                    .map_err(|error| {
+                        AppError::Internal(format!("Failed to create STARTTLS mailer: {error}"))
+                    })?
+                    .port(config.port)
+                    .credentials(credentials)
+                    .timeout(Some(Duration::from_secs(30)))
+                    .build()
+            }
+            SmtpEncryption::None => {
+                AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&config.host)
+                    .port(config.port)
+                    .credentials(credentials)
+                    .timeout(Some(Duration::from_secs(30)))
+                    .build()
+            }
+        };
+
+        tracing::info!("Owner confirmed an email to {}", to_email);
+        mailer.send(email).await.map_err(|error| {
+            tracing::error!("Owner email delivery failed: {:?}", error);
+            AppError::Internal(format!("SMTP send failed: {error}"))
+        })?;
+
+        Ok(())
+    }
+
     /// Generate a 6-digit verification code
     fn generate_code() -> String {
         let mut rng = rand::rng();

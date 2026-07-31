@@ -1,9 +1,10 @@
-import type { LinkHealthStatus, LinkModel, LinkStateCount } from "~/models/link";
+import type {
+  LinkHealthStatus,
+  LinkModel,
+  LinkStateCount,
+} from "~/models/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import {
-  Check as CheckIcon,
-  Plus,
-} from "lucide-vue-next";
+import { Check as CheckIcon, Mail as MailIcon, Plus } from "lucide-vue-next";
 import {
   NButton,
   NCard,
@@ -35,6 +36,10 @@ import { LinkState, LinkStateNameMap, LinkType } from "~/models/link";
 import { RouteName } from "~/router/name";
 
 import { Avatar } from "./components/avatar";
+import {
+  LinkNotificationModal,
+  type LinkNotificationContent,
+} from "./components/notification-modal";
 import { UrlComponent } from "./url-components";
 
 type LinkFormData = Pick<
@@ -69,9 +74,9 @@ export default defineComponent({
       isLoading: loading,
       refresh,
     } = useDataTable<LinkModel>({
-      queryKey: params =>
+      queryKey: (params) =>
         queryKeys.links.list({ ...params, state: params.filters?.state }),
-      queryFn: params =>
+      queryFn: (params) =>
         linksApi.getList({
           page: params.page,
           size: params.size,
@@ -113,6 +118,8 @@ export default defineComponent({
     };
     const editDialogShow = ref(false);
     const editDialogData = ref(resetEditData());
+    const notificationDialogShow = ref(false);
+    const notificationLink = ref<LinkModel | null>(null);
 
     const { data: stateCountData, refetch: refetchStateCount } = useQuery({
       queryKey: queryKeys.links.stateCount(),
@@ -163,7 +170,7 @@ export default defineComponent({
     const auditPassMutation = useMutation({
       mutationFn: linksApi.auditPass,
       onSuccess: (_, id) => {
-        const item = data.value.find(i => i._id === id);
+        const item = data.value.find((i) => i._id === id);
         toast.success(`通过了来自${item?.name || ""}的友链邀请`);
         queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
         refetchStateCount();
@@ -173,12 +180,35 @@ export default defineComponent({
     const rejectMutation = useMutation({
       mutationFn: (id: string) => linksApi.updateState(id, LinkState.Rejected),
       onSuccess: (_, id) => {
-        const item = data.value.find(i => i._id === id);
+        const item = data.value.find((i) => i._id === id);
         toast.success(`已将「${item?.name || ""}」标记为不通过`);
         queryClient.invalidateQueries({ queryKey: queryKeys.links.all });
         refetchStateCount();
       },
     });
+
+    const notificationMutation = useMutation({
+      mutationFn: ({
+        linkId,
+        notification,
+      }: {
+        linkId: string;
+        notification: LinkNotificationContent;
+      }) => linksApi.sendNotification(linkId, notification),
+      onSuccess: () => {
+        toast.success("邮件已发送");
+        notificationDialogShow.value = false;
+        notificationLink.value = null;
+      },
+    });
+
+    /**
+     * 打开独立邮件草稿，不修改友链状态，也不从管理操作推断是否需要通知。
+     */
+    const openNotificationDialog = (link: LinkModel) => {
+      notificationLink.value = link;
+      notificationDialogShow.value = true;
+    };
 
     const onSubmit = () => {
       saveMutation.mutate(editDialogData.value);
@@ -219,7 +249,6 @@ export default defineComponent({
             onClick={handleCheck}
             name="检查友链可用性"
           />
-
         </Fragment>,
       );
     });
@@ -335,16 +364,18 @@ export default defineComponent({
                 key: "url",
                 render(row) {
                   const urlHealth = row.health;
-                  const healthErrorMessage = urlHealth && !urlHealth.is_alive
-                    ? urlHealth.error_message ?? "HTTP 状态异常"
-                    : undefined;
+                  const healthErrorMessage =
+                    urlHealth && !urlHealth.is_alive
+                      ? (urlHealth.error_message ?? "HTTP 状态异常")
+                      : undefined;
                   return (
                     <UrlComponent
                       url={row.url}
                       errorMessage={healthErrorMessage}
                       status={
                         urlHealth
-                          ? urlHealth.status_code ?? (urlHealth.is_alive ? 200 : "ERR")
+                          ? (urlHealth.status_code ??
+                            (urlHealth.is_alive ? 200 : "ERR"))
                           : undefined
                       }
                     />
@@ -423,6 +454,20 @@ export default defineComponent({
                       >
                         编辑
                       </NButton>
+                      {row.email && (
+                        <NButton
+                          class="cursor-pointer"
+                          quaternary
+                          size="tiny"
+                          type="info"
+                          onClick={() => openNotificationDialog(row)}
+                        >
+                          {{
+                            icon: () => <MailIcon />,
+                            default: () => "发邮件",
+                          }}
+                        </NButton>
+                      )}
                       <NPopconfirm
                         positiveText="取消"
                         negativeText="删除"
@@ -437,11 +482,7 @@ export default defineComponent({
 
                           default: () => (
                             <span class="max-w-48">
-                              确定要删除友链
-                              {" "}
-                              {row.name}
-                              {" "}
-                              ?
+                              确定要删除友链 {row.name} ?
                             </span>
                           ),
                         }}
@@ -459,7 +500,7 @@ export default defineComponent({
         <NModal
           transformOrigin="center"
           show={editDialogShow.value}
-          onUpdateShow={e => void (editDialogShow.value = e)}
+          onUpdateShow={(e) => void (editDialogShow.value = e)}
         >
           <NCard
             style="width: 500px;max-width: 90vw"
@@ -475,19 +516,24 @@ export default defineComponent({
                 <NFormItem label="检测状态">
                   <NSpace align="center" size={8}>
                     <NTag
-                      type={editDialogData.value.health.is_alive ? "success" : "error"}
+                      type={
+                        editDialogData.value.health.is_alive
+                          ? "success"
+                          : "error"
+                      }
                       size="small"
                     >
-                      {editDialogData.value.health.is_alive ? "可访问" : "不可访问"}
+                      {editDialogData.value.health.is_alive
+                        ? "可访问"
+                        : "不可访问"}
                     </NTag>
                     {editDialogData.value.health.status_code && (
                       <NTag size="small">
-                        HTTP
-                        {" "}
-                        {editDialogData.value.health.status_code}
+                        HTTP {editDialogData.value.health.status_code}
                       </NTag>
                     )}
-                    {typeof editDialogData.value.health.latency_ms === "number" && (
+                    {typeof editDialogData.value.health.latency_ms ===
+                      "number" && (
                       <NTag size="small">
                         {editDialogData.value.health.latency_ms}
                         ms
@@ -506,7 +552,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.name}
-                  onInput={e => void (editDialogData.value.name = e)}
+                  onInput={(e) => void (editDialogData.value.name = e)}
                 />
               </NFormItem>
 
@@ -514,7 +560,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.avatar}
-                  onInput={e => void (editDialogData.value.avatar = e)}
+                  onInput={(e) => void (editDialogData.value.avatar = e)}
                 />
               </NFormItem>
 
@@ -522,7 +568,7 @@ export default defineComponent({
                 <NInput
                   autofocus
                   value={editDialogData.value.url}
-                  onInput={e => void (editDialogData.value.url = e)}
+                  onInput={(e) => void (editDialogData.value.url = e)}
                 />
               </NFormItem>
 
@@ -530,29 +576,30 @@ export default defineComponent({
                 <NInput
                   type="textarea"
                   value={editDialogData.value.description}
-                  onInput={e => void (editDialogData.value.description = e)}
+                  onInput={(e) => void (editDialogData.value.description = e)}
                 />
               </NFormItem>
 
               <NFormItem label="邮箱">
                 <NInput
                   value={editDialogData.value.email ?? ""}
-                  onInput={e => void (editDialogData.value.email = e)}
+                  onInput={(e) => void (editDialogData.value.email = e)}
                 />
               </NFormItem>
 
               <NFormItem label="RSS">
                 <NInput
                   value={editDialogData.value.rssurl ?? ""}
-                  onInput={e => void (editDialogData.value.rssurl = e)}
+                  onInput={(e) => void (editDialogData.value.rssurl = e)}
                 />
               </NFormItem>
 
               <NFormItem label="技术栈">
                 <NDynamicTags
                   value={editDialogData.value.techstack ?? []}
-                  onUpdateValue={e =>
-                    void (editDialogData.value.techstack = e)}
+                  onUpdateValue={(e) =>
+                    void (editDialogData.value.techstack = e)
+                  }
                 />
               </NFormItem>
 
@@ -564,8 +611,9 @@ export default defineComponent({
                     { label: "收藏", value: LinkType.Collection },
                   ]}
                   value={editDialogData.value.type}
-                  onUpdateValue={e =>
-                    void (editDialogData.value.type = e | 0)}
+                  onUpdateValue={(e) =>
+                    void (editDialogData.value.type = e | 0)
+                  }
                 />
               </NFormItem>
               {editDialogData.value._id && (
@@ -577,8 +625,9 @@ export default defineComponent({
                       value: LinkState[k],
                     }))}
                     value={editDialogData.value.state}
-                    onUpdateValue={e =>
-                      void (editDialogData.value.state = e | 0)}
+                    onUpdateValue={(e) =>
+                      void (editDialogData.value.state = e | 0)
+                    }
                   />
                 </NFormItem>
               )}
@@ -602,6 +651,27 @@ export default defineComponent({
             </div>
           </NCard>
         </NModal>
+
+        <LinkNotificationModal
+          show={notificationDialogShow.value}
+          link={notificationLink.value}
+          loading={notificationMutation.isPending.value}
+          onUpdateShow={(show) => {
+            notificationDialogShow.value = show;
+            if (!show) {
+              notificationLink.value = null;
+            }
+          }}
+          onSend={(notification) => {
+            if (!notificationLink.value) {
+              return;
+            }
+            notificationMutation.mutate({
+              linkId: notificationLink.value._id,
+              notification,
+            });
+          }}
+        />
       </>
     );
   },

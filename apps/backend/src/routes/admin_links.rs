@@ -11,6 +11,10 @@ pub fn routes() -> Router<SharedState> {
         .route("/health", routing::get(links::check_link_health))
         .route("/state", routing::get(links::link_state_count))
         .route(
+            "/{id}/notification",
+            routing::post(links::send_link_notification),
+        )
+        .route(
             "/{id}",
             routing::patch(links::update_link).delete(links::delete_link),
         )

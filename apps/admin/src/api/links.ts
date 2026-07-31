@@ -27,6 +27,11 @@ export interface CreateLinkData {
 
 export interface UpdateLinkData extends Partial<CreateLinkData> {}
 
+export interface SendLinkNotificationData {
+  subject: string;
+  content: string;
+}
+
 interface ApiResponse<T> {
   code: number;
   status: "success" | "failed";
@@ -50,7 +55,9 @@ function unwrapApiResponse<T>(response: ApiResponse<T>): T {
   return response.data;
 }
 
-function normalizeLinkList(response: ApiResponse<BackendPaginatedData<LinkModel>>): LinkResponse {
+function normalizeLinkList(
+  response: ApiResponse<BackendPaginatedData<LinkModel>>,
+): LinkResponse {
   const payload = unwrapApiResponse(response);
   return {
     data: payload.items,
@@ -68,18 +75,20 @@ function normalizeLinkList(response: ApiResponse<BackendPaginatedData<LinkModel>
 export const linksApi = {
   // 获取友链列表
   getList: async (params?: GetLinksParams) => {
-    const response = await request.get<ApiResponse<BackendPaginatedData<LinkModel>>>(
-      "/links/admin",
-      { params, bypassTransform: true },
-    );
+    const response = await request.get<
+      ApiResponse<BackendPaginatedData<LinkModel>>
+    >("/links/admin", { params, bypassTransform: true });
     return normalizeLinkList(response);
   },
 
   // 获取状态计数
   getStateCount: async () => {
-    const response = await request.get<ApiResponse<LinkStateCount>>("/links/state", {
-      bypassTransform: true,
-    });
+    const response = await request.get<ApiResponse<LinkStateCount>>(
+      "/links/state",
+      {
+        bypassTransform: true,
+      },
+    );
     return unwrapApiResponse(response);
   },
 
@@ -102,10 +111,13 @@ export const linksApi = {
 
   // 更新友链
   update: async (id: string, data: UpdateLinkData) => {
-    const response = await request.patch<ApiResponse<LinkModel>>(`/links/${id}`, {
-      data,
-      bypassTransform: true,
-    });
+    const response = await request.patch<ApiResponse<LinkModel>>(
+      `/links/${id}`,
+      {
+        data,
+        bypassTransform: true,
+      },
+    );
     return unwrapApiResponse(response);
   },
 
@@ -118,15 +130,25 @@ export const linksApi = {
   },
 
   // 更新友链状态
-  updateState: (id: string, state: number) =>
-    linksApi.update(id, { state }),
+  updateState: (id: string, state: number) => linksApi.update(id, { state }),
+
+  // 发送由博主审核确认的友链通知
+  sendNotification: async (id: string, data: SendLinkNotificationData) => {
+    const response = await request.post<ApiResponse<void>>(
+      `/links/${id}/notification`,
+      {
+        data,
+        bypassTransform: true,
+      },
+    );
+    return unwrapApiResponse(response);
+  },
 
   // 检查友链健康状态
   checkHealth: async (options?: { timeout?: number }) => {
-    const response = await request.get<ApiResponse<Record<string, LinkHealthStatus>>>(
-      "/links/health",
-      { timeout: options?.timeout, bypassTransform: true },
-    );
+    const response = await request.get<
+      ApiResponse<Record<string, LinkHealthStatus>>
+    >("/links/health", { timeout: options?.timeout, bypassTransform: true });
 
     return unwrapApiResponse(response);
   },
