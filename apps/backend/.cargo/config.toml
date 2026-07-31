@@ -23,3 +23,7 @@ rustflags = [
   "-C", "link-arg=-Wl,-ld_new",
   "-C", "link-arg=-Wl,-dead_strip_dylibs",
 ]
+
+# Alpine 的 ONNX Runtime 仅提供动态库，因此 musl 产物不能启用默认的静态 CRT 链接。
+[target.x86_64-unknown-linux-musl]
+rustflags = ["-C", "target-feature=-crt-static"]
