@@ -23,10 +23,14 @@ import { getNavigationTransitionType, NAV_ITEMS } from "./nav-config";
 import styles from "./nav-menu.module.scss";
 import { dropdownPanelMap } from "./NavDropdownPanels";
 
+const GLASS_FILTER_CLASS
+  = "backdrop-blur-2xl backdrop-saturate-150 reduced-transparency:backdrop-blur-none reduced-transparency:backdrop-saturate-100";
+
 const ACTION_BTN_CLASS = cn(
   "w-10 h-10 rounded-full flex items-center justify-center cursor-pointer",
-  "bg-popover/60 backdrop-blur-md shadow-lg shadow-neutral-900/5 ring-1 ring-neutral-900/5 !duration-200",
-  "text-neutral-600 hover:text-accent-600 hover:bg-background/90",
+  styles.liquidGlassControl,
+  GLASS_FILTER_CLASS,
+  "text-muted-foreground hover:text-accent-600",
   "active:scale-95 will-change-transform",
 );
 
@@ -114,8 +118,9 @@ export function TopNav({
             className={cn(
               "pointer-events-auto relative flex items-center",
               "h-12 rounded-full",
-              "bg-linear-to-b from-background/70 to-background/90",
-              "shadow-lg shadow-neutral-900/5 ring-1 ring-neutral-900/5 backdrop-blur-md will-change-transform",
+              styles.liquidGlassNav,
+              GLASS_FILTER_CLASS,
+              "will-change-transform",
               "group",
               navAnimClass,
             )}
@@ -129,7 +134,7 @@ export function TopNav({
             />
 
             {/* Navigation items (desktop) */}
-            <NavigationMenu.List className="flex items-center h-full list-none px-2 gap-1 font-medium text-neutral-700">
+            <NavigationMenu.List className="relative z-10 flex h-full list-none items-center gap-1 px-2 font-medium text-foreground/80">
               {NAV_ITEMS.map((item) => {
                 const isActive
                   = item.href === "/" ? isHomePage : pathname.startsWith(item.href);
@@ -235,9 +240,9 @@ export function TopNav({
                 <NavigationMenu.Popup
                   className={cn(
                     styles.popup,
+                    styles.liquidGlassPopup,
+                    GLASS_FILTER_CLASS,
                     "select-none rounded-2xl outline-hidden",
-                    "bg-popover/90 backdrop-blur-xl",
-                    "border border-border/60 shadow-lg shadow-neutral-900/5",
                   )}
                 >
                   <NavigationMenu.Viewport className={styles.viewport} />
@@ -266,7 +271,12 @@ export function TopNav({
 
           <LanguageSwitch
             compact
-            className={cn("pointer-events-auto", navAnimClass)}
+            className={cn(
+              "pointer-events-auto",
+              styles.liquidGlassControl,
+              GLASS_FILTER_CLASS,
+              navAnimClass,
+            )}
           />
 
           {/* Theme toggle */}
