@@ -8,8 +8,8 @@ RUN apk add --no-cache ca-certificates onnxruntime tzdata && \
 
 COPY neo-space-backend-axum /app/neo-space-backend-axum
 RUN chmod +x /app/neo-space-backend-axum && \
-    mkdir -p /app/cache/artworks && \
-    chown -R appuser:appgroup /app/cache
+    mkdir -p /app/.cache/artworks /app/.cache/cargo && \
+    chown -R appuser:appgroup /app/.cache
 
 USER appuser
 

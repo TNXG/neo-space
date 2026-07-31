@@ -249,7 +249,7 @@ async fn handle_artwork_upload(
     let filename = format!("{:x}.{}", hasher.finish(), ext);
 
     // Ensure directory exists
-    let artwork_dir = Path::new("./cache/artworks");
+    let artwork_dir = Path::new("./.cache/artworks");
     if !artwork_dir.exists() {
         tokio::fs::create_dir_all(artwork_dir)
             .await

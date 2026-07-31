@@ -21,7 +21,7 @@ pub async fn serve_artwork(Path(filename): Path<String>) -> AppResult<Response<B
         return Err(AppError::BadRequest("Unsupported file type".to_string()));
     }
 
-    let filepath = format!("./cache/artworks/{}", filename);
+    let filepath = format!("./.cache/artworks/{}", filename);
 
     let mut file = tokio::fs::File::open(&filepath)
         .await

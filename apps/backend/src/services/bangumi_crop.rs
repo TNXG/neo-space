@@ -159,7 +159,7 @@ fn validate_image_url(image_url: &str) -> AppResult<()> {
 fn model_cache_root() -> PathBuf {
     env::var_os("BANGUMI_MODEL_CACHE_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("./cache/models/bangumi"))
+        .unwrap_or_else(|| PathBuf::from("./.cache/models/bangumi"))
 }
 
 /// 将模型或图片下载到缓存；临时文件写完后再原子替换，避免并发读到半文件。

@@ -64,7 +64,7 @@ services:
       - MEILISEARCH_URL=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILISEARCH_MASTER_KEY:?MEILISEARCH_MASTER_KEY is required}
     volumes:
-      - backend_cache:/app/cache
+      - backend_dot_cache:/app/.cache
     networks:
       - neo-space
     depends_on:
@@ -97,7 +97,7 @@ services:
 
 volumes:
   mongo_data:
-  backend_cache:
+  backend_dot_cache:
   meilisearch_data:
 
 networks:
