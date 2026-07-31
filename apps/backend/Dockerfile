@@ -1,9 +1,9 @@
 # Neo Space Backend (Axum) - 仅复制预构建产物
-FROM alpine:3.21
+FROM alpine:3.23
 
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates tzdata wget && \
+RUN apk add --no-cache ca-certificates onnxruntime tzdata && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY neo-space-backend-axum /app/neo-space-backend-axum
