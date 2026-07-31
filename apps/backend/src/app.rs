@@ -197,6 +197,7 @@ pub fn create_router(state: SharedState) -> axum::Router {
     let api_router = axum::Router::new()
         .route("/", axum::routing::get(crate::handlers::app_info::app_info))
         .nest("/auth", routes::auth::routes())
+        .nest("/bangumi", routes::bangumi::routes())
         .nest(
             "/posts",
             routes::post::routes().merge(routes::admin_posts::routes()),

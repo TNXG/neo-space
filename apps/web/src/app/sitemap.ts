@@ -46,6 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...createLocalizedEntries("/friends", 0.7, now),
       ...createLocalizedEntries("/categories", 0.7, now),
       ...createLocalizedEntries("/thinking", 0.7, now),
+      ...createLocalizedEntries("/bangumi", 0.7, now),
     ];
 
     return [...staticPages, ...postEntries, ...noteEntries];

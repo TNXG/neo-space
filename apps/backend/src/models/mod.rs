@@ -1,6 +1,7 @@
 //! Data models
 
 pub mod account;
+pub mod bangumi;
 pub mod comment;
 pub mod common;
 pub mod content;
@@ -16,6 +17,7 @@ pub mod serializers;
 pub mod user;
 
 // Re-export commonly used types
+pub use bangumi::{BangumiImageCrop, DetectBangumiImageCrop, UpsertBangumiImageCrop};
 pub use comment::{Comment, CommentState, CommentTree, UpdateCommentRequest};
 pub use common::{ApiResponse, PaginatedData, Pagination, ResponseStatus};
 pub use content::{

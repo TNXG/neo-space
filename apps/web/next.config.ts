@@ -14,10 +14,19 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   compress: true,
   outputFileTracingRoot: resolve(__dirname, "../../"),
-  allowedDevOrigins: ['192.168.3.3'],
+  allowedDevOrigins: ["192.168.3.3"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lain.bgm.tv",
+      },
+    ],
+  },
   experimental: {
     useTypeScriptCli: true,
-  }
+    viewTransition: true,
+  },
 };
 
 export default withNextIntl(nextConfig);

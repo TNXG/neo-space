@@ -1,5 +1,6 @@
 //! Business logic services
 
+pub mod bangumi_crop;
 pub mod comment;
 pub mod helpers;
 pub mod ncm_np;

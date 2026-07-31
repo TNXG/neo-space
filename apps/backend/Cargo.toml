@@ -128,6 +128,10 @@ rand = { version = "0.10.1", default-features = false, features = [
 ] }
 md5 = { version = "0.8.0", default-features = false }
 
+# Bangumi 动漫头像检测；关闭绘图和桌面预览，仅保留 ONNX 推理核心。
+ultralytics-inference = { version = "0.0.33", default-features = false }
+image = { version = "0.25.10", default-features = false, features = [ "jpeg", "png", "webp" ] }
+
 # Cache
 moka = { version = "0.12.15", default-features = false, features = [ "future" ] }
 arc-swap = "1.7.1"

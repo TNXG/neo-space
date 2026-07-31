@@ -5,6 +5,7 @@ pub mod ai;
 pub mod app_info;
 pub mod artwork;
 pub mod auth;
+pub mod bangumi;
 pub mod comment;
 pub mod link;
 pub mod misc;
