@@ -273,7 +273,7 @@ export function ZoomableContainer({
           }}
           disabled={scale >= maxZoom}
           className={cn(
-            "w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-all flex items-center justify-center cursor-pointer",
+            "w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] flex items-center justify-center cursor-pointer",
             scale >= maxZoom && "opacity-50 cursor-not-allowed",
             isAtBoundary && scale >= maxZoom && "animate-bounce",
           )}
@@ -293,7 +293,7 @@ export function ZoomableContainer({
           }}
           disabled={scale <= minZoom}
           className={cn(
-            "w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-all flex items-center justify-center cursor-pointer",
+            "w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] flex items-center justify-center cursor-pointer",
             scale <= minZoom && "opacity-50 cursor-not-allowed",
             isAtBoundary && scale <= minZoom && "animate-bounce",
           )}
@@ -306,7 +306,7 @@ export function ZoomableContainer({
           <button
             type="button"
             onClick={handleReset}
-            className="w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-all flex items-center justify-center cursor-pointer animate-in fade-in duration-200"
+            className="w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] flex items-center justify-center cursor-pointer animate-in fade-in duration-200"
             title="恢复原始大小"
             aria-label="恢复原始大小"
           >
@@ -317,7 +317,7 @@ export function ZoomableContainer({
           <button
             type="button"
             onClick={handleResetPosition}
-            className="w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-all flex items-center justify-center cursor-pointer animate-in fade-in duration-200"
+            className="w-8 h-8 rounded-lg bg-bg-glass backdrop-blur-sm border border-primary-200 hover:bg-primary-100 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] flex items-center justify-center cursor-pointer animate-in fade-in duration-200"
             title="重置位置"
             aria-label="重置位置"
           >
@@ -330,7 +330,7 @@ export function ZoomableContainer({
       {scale !== initialZoom && (
         <div
           className={cn(
-            "absolute bottom-2 right-2 z-10 px-3 py-1 rounded-full bg-bg-glass backdrop-blur-sm border border-primary-200 text-xs text-text-primary transition-all",
+            "absolute bottom-2 right-2 z-10 px-3 py-1 rounded-full bg-bg-glass backdrop-blur-sm border border-primary-200 text-xs text-text-primary transition-[color,background-color,border-color,box-shadow,opacity,transform,filter]",
             isAtBoundary && "scale-110 border-accent-300",
           )}
         >
@@ -382,7 +382,7 @@ export function ZoomableContainer({
 
       {/* 移动端提示 */}
       {isMobile && showHint && (
-        <div className="mt-2 text-xs text-muted-foreground/80 text-center animate-in fade-in slide-in-from-bottom-2 duration-300 flex items-center justify-center gap-2 bg-bg-glass backdrop-blur-sm px-3 py-2 rounded-lg border border-primary-200 mx-auto w-fit">
+        <div className="mt-2 text-xs text-muted-foreground/80 text-center animate-in fade-in slide-in-from-bottom-2 duration-200 flex items-center justify-center gap-2 bg-bg-glass backdrop-blur-sm px-3 py-2 rounded-lg border border-primary-200 mx-auto w-fit">
           <Icon icon="mingcute:finger-tap-line" width={16} height={16} />
           <span>双指捏合缩放</span>
           {scale > 1 && <span>• 拖拽移动</span>}

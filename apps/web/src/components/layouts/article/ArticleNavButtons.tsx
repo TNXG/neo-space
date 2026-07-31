@@ -30,7 +30,7 @@ export function ArticleNavButtons({
     if (window.history.length > 1) {
       router.back();
     } else {
-      router.push("/");
+      router.push("/", { transitionTypes: ["nav-back"] });
     }
   };
 
@@ -51,6 +51,7 @@ export function ArticleNavButtons({
           <span className="text-border/60">/</span>
           <Link
             href="/"
+            transitionTypes={["nav-back"]}
             className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             <Icon icon="mingcute:home-2-line" className="text-[15px]" />
@@ -65,6 +66,7 @@ export function ArticleNavButtons({
             {prevLink && (
               <Link
                 href={prevLink}
+                transitionTypes={["nav-back"]}
                 className="group flex flex-col items-start gap-1.5 w-full cursor-pointer"
               >
                 <div className="text-xs text-muted-foreground">
@@ -82,6 +84,7 @@ export function ArticleNavButtons({
             {nextLink && (
               <Link
                 href={nextLink}
+                transitionTypes={["nav-forward"]}
                 className="group flex flex-col items-start sm:items-end gap-1.5 w-full cursor-pointer"
               >
                 <div className="text-xs text-muted-foreground">

@@ -21,13 +21,13 @@ export default function NotFound() {
       {/* 背景氛围：深邃的星光感 */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* 左上角 - 主色光晕 (移动端缩小尺寸) */}
-        <div className="absolute top-0 left-0 w-70 h-70 sm:w-125 sm:h-125 bg-primary-200/30 rounded-full blur-[80px] sm:blur-[120px] -translate-x-1/3 -translate-y-1/3 mix-blend-multiply transition-all duration-1000" />
+        <div className="absolute top-0 left-0 w-70 h-70 sm:w-125 sm:h-125 bg-primary-200/30 rounded-full blur-[80px] sm:blur-[120px] -translate-x-1/3 -translate-y-1/3 mix-blend-multiply" />
         {/* 右下角 - 强调色光晕 (移动端缩小尺寸) */}
-        <div className="absolute bottom-0 right-0 w-70 h-70 sm:w-125 sm:h-125 bg-accent-200/20 rounded-full blur-[80px] sm:blur-[120px] translate-x-1/4 translate-y-1/4 mix-blend-multiply transition-all duration-1000" />
+        <div className="absolute bottom-0 right-0 w-70 h-70 sm:w-125 sm:h-125 bg-accent-200/20 rounded-full blur-[80px] sm:blur-[120px] translate-x-1/4 translate-y-1/4 mix-blend-multiply" />
       </div>
 
       <main
-        className={`glass-card relative w-full max-w-85 sm:max-w-130 transition-all duration-700 ease-out border border-white/20 shadow-glass flex flex-col ${
+        className={`glass-card relative w-full max-w-85 sm:max-w-130 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-[250ms] ease-out border border-white/20 shadow-glass flex flex-col ${
           mounted
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-8"
@@ -40,7 +40,7 @@ export default function NotFound() {
         <div className="flex flex-col items-center text-center px-5 py-8 sm:px-8 sm:py-10 grow justify-center">
           {/* 404 数字：移动端显著缩小，避免挤占空间 */}
           <div className="relative mb-6 sm:mb-8 select-none">
-            <h1 className="text-7xl sm:text-8xl md:text-9xl font-bold tracking-tighter leading-none text-primary-200/50 blur-[1px] transition-all duration-500">
+            <h1 className="text-7xl sm:text-8xl md:text-9xl font-bold tracking-tighter leading-none text-primary-200/50 blur-[1px] transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200">
               404
             </h1>
             <div className="absolute inset-0 flex items-center justify-center">
@@ -78,25 +78,22 @@ export default function NotFound() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full sm:w-auto">
             <Link
               href="/"
-              className="group relative flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 w-full sm:w-auto rounded-lg bg-accent-600 text-white font-medium transition-all duration-300
-              hover:bg-accent-700 hover:shadow-lg hover:shadow-accent-500/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+              className="group relative flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 w-full sm:w-auto rounded-lg bg-accent-600 text-white font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200
+              hover:bg-accent-700 active:scale-[0.98]
               cursor-pointer select-none text-sm sm:text-base"
             >
-              <div className="absolute inset-0 rounded-lg overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
-              </div>
-              <Icon icon="mingcute:home-3-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              <Icon icon="mingcute:home-3-line" className="w-4 h-4" />
               <span>{t("notFound.home")}</span>
             </Link>
 
             <button
               onClick={() => window.history.back()}
               type="button"
-              className="group flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 w-full sm:w-auto rounded-lg border border-border bg-transparent text-foreground font-medium transition-all duration-300
-              hover:bg-secondary hover:border-primary-300 hover:text-accent-700 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+              className="group flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 w-full sm:w-auto rounded-lg border border-border bg-transparent text-foreground font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200
+              hover:bg-secondary hover:border-primary-300 hover:text-accent-700 active:scale-[0.98]
               cursor-pointer select-none text-sm sm:text-base"
             >
-              <Icon icon="mingcute:arrow-left-line" className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              <Icon icon="mingcute:arrow-left-line" className="w-4 h-4" />
               <span>{t("notFound.back")}</span>
             </button>
           </div>

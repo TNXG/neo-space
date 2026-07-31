@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/locales/navigation";
 
 import { LanguageSwitch } from "./LanguageSwitch";
-import { NAV_ITEMS } from "./nav-config";
+import { getNavigationTransitionType, NAV_ITEMS } from "./nav-config";
 
 interface MobileNavDrawerProps {
   open: boolean;
@@ -29,7 +29,9 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
 
   const handleLinkClick = (href: string) => {
     onOpenChange(false);
-    router.push(href);
+    router.push(href, {
+      transitionTypes: [getNavigationTransitionType(pathname, href)],
+    });
   };
 
   return (
@@ -48,7 +50,7 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
                   key={item.id}
                   onClick={() => handleLinkClick(item.href)}
                   className={cn(
-                    "flex items-center gap-4 p-3 rounded-2xl transition-all duration-200 text-left group",
+                    "flex items-center gap-4 p-3 rounded-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 text-left group",
                     isActive
                       ? "bg-accent-50 text-accent-900"
                       : "hover:bg-secondary/50 text-foreground",

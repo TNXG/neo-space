@@ -257,9 +257,9 @@ function AuthCallbackContent() {
 
       <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, type: "spring" }}
+        transition={{ duration: 0.24, type: "spring" }}
         className={cn(
           "glass-card w-full max-w-105 overflow-hidden shadow-glass relative",
           "bg-card text-card-foreground border-border/50",
@@ -329,7 +329,7 @@ function AuthCallbackContent() {
                         onChange={e => setName(e.target.value)}
                         placeholder={t("authCallback.bind.namePlaceholder")}
                         disabled={isBinding}
-                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-all duration-200"
+                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200"
                       />
                     </div>
 
@@ -344,7 +344,7 @@ function AuthCallbackContent() {
                         onChange={e => setEmail(e.target.value)}
                         placeholder={t("authCallback.bind.emailPlaceholder")}
                         disabled={isBinding}
-                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-all duration-200"
+                        className="w-full h-11 pl-11 pr-4 rounded-xl bg-secondary/30 border border-transparent text-sm text-foreground placeholder:text-muted-foreground/70 focus:bg-background focus:border-accent-300 focus:ring-4 focus:ring-accent-100/50 outline-none transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200"
                       />
                     </div>
                   </div>
@@ -362,7 +362,7 @@ function AuthCallbackContent() {
                         type="button"
                         onClick={handleSkip}
                         disabled={isBinding || isSkipping}
-                        className="flex-1 h-11 inline-flex items-center justify-center rounded-xl border border-border bg-transparent text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground hover:border-accent-200 focus:ring-2 focus:ring-offset-1 focus:ring-border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 h-11 inline-flex items-center justify-center rounded-xl border border-border bg-transparent text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground hover:border-accent-200 focus:ring-2 focus:ring-offset-1 focus:ring-border transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSkipping
                           ? (
@@ -378,7 +378,7 @@ function AuthCallbackContent() {
                       onClick={handleBind}
                       disabled={isBinding || isSkipping}
                       className={cn(
-                        "h-11 inline-flex items-center justify-center rounded-xl bg-accent-600 text-white text-sm font-semibold shadow-lg shadow-accent-600/20 hover:bg-accent-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed",
+                        "h-11 inline-flex items-center justify-center rounded-xl bg-accent-600 text-white text-sm font-semibold shadow-lg shadow-accent-600/20 hover:bg-accent-700 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] disabled:opacity-70 disabled:cursor-not-allowed",
                         skipBindingAllowed ? "flex-1" : "w-full",
                       )}
                     >
@@ -410,9 +410,9 @@ function AuthCallbackContent() {
                 className="flex flex-col items-center justify-center py-6"
               >
                 <motion.div
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", duration: 0.6, bounce: 0.5 }}
+                  initial={{ opacity: 0, scale: 0.94, rotate: -12 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", duration: 0.24, bounce: 0.2 }}
                   className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 ring-8 ring-emerald-50"
                 >
                   <Icon icon="mingcute:check-fill" className="w-10 h-10" />

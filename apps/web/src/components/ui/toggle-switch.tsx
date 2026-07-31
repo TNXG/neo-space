@@ -133,7 +133,7 @@ export function VerticalSlider({
       {/* 垂直轨道线 */}
       <div
         className={cn(
-          "absolute h-full rounded-full transition-colors duration-300 track",
+          "absolute h-full rounded-full transition-colors duration-200 track",
           track,
           checked 
             ? "bg-primary/50" 

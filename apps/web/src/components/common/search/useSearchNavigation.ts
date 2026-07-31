@@ -19,10 +19,14 @@ export function useSearchNavigation({ onOpenChange }: UseSearchNavigationProps) 
     if (item.type === "post") {
       const post = item.data as SearchPostResult;
       const category = post.category?.slug ?? "uncategorized";
-      router.push(`/posts/${category}/${post.slug}`);
+      router.push(`/posts/${category}/${post.slug}`, {
+        transitionTypes: ["nav-forward"],
+      });
     } else {
       const note = item.data as SearchNoteResult;
-      router.push(`/notes/${note.nid}`);
+      router.push(`/notes/${note.nid}`, {
+        transitionTypes: ["nav-forward"],
+      });
     }
   }, [onOpenChange, router]);
 

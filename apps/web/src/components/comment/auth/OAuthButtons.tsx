@@ -195,7 +195,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
           type="button"
           onClick={handleGitHubLogin}
           disabled={isLoading}
-          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-800 px-4 py-2 text-sm text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-800 px-4 py-2 text-sm text-primary-50 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
           aria-label={t("comment.githubLogin")}
         >
           {isLoading
@@ -212,7 +212,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
           type="button"
           onClick={handleQQLogin}
           disabled={isLoading}
-          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
           aria-label={t("comment.qqLogin")}
         >
           {isLoading
@@ -235,7 +235,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
         type="button"
         onClick={handleGitHubLogin}
         disabled={isLoading}
-        className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary-800 px-6 py-3 text-primary-50 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
+        className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-primary-800 px-6 py-3 text-primary-50 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 border border-primary-700"
         aria-label={t("comment.githubLogin")}
       >
         {isLoading
@@ -254,7 +254,7 @@ export function OAuthButtons({ variant = "default", className = "" }: OAuthButto
         type="button"
         onClick={handleQQLogin}
         disabled={isLoading}
-        className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-accent-600 px-6 py-3 text-white transition-all hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
+        className="flex cursor-pointer items-center justify-center gap-3 rounded-xl bg-accent-600 px-6 py-3 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50 border border-accent-500"
         aria-label={t("comment.qqLogin")}
       >
         {isLoading

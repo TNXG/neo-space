@@ -117,7 +117,7 @@ export function ArticleTOCWrapper({ children, breadcrumbs }: ArticleTOCWrapperPr
   return (
     <aside
       ref={wrapperRef}
-      className="hidden xl:block w-56 fixed top-24 transition-opacity duration-300"
+      className="hidden xl:block w-56 fixed top-24 transition-opacity duration-200"
       style={{
         left: "calc(50% + 400px + 2rem)",
         opacity: isVisible ? 1 : 0,

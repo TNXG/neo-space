@@ -25,7 +25,7 @@ export function HomePage({ profile, articles, notes, recently }: HomePageProps) 
   const characterOpacity = useTransform(scrollYProgress, [0, 0.25, 0.35], [1, 1, 0]);
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-background font-sans text-foreground antialiased transition-colors duration-300">
+    <div className="relative isolate min-h-screen overflow-hidden bg-background font-sans text-foreground antialiased transition-colors duration-200">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-y-0 right-0 z-0 hidden w-[max(0px,calc((100vw-42.5rem)/2-1.5rem))] items-center justify-end overflow-hidden min-[90rem]:flex"

@@ -47,7 +47,7 @@ export function OwnerStatus({ ownerStatus, isConnected, className }: OwnerStatus
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
               className={`overflow-hidden flex items-center ${className}`}
             >
               <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">

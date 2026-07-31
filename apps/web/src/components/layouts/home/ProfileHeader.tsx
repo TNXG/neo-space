@@ -67,7 +67,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             <div className="rounded-full flex h-4 w-4 items-center bottom-2 right-2 justify-center absolute bg-background border border-border">
               <span className="relative flex h-2.5 w-2.5">
                 <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isOwnerOnline ? "animate-ping bg-accent-500" : "hidden"}`} />
-                <span className={`relative inline-flex rounded-full h-full w-full transition-colors duration-300 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
+                <span className={`relative inline-flex rounded-full h-full w-full transition-colors duration-200 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
               </span>
             </div>
           </div>
@@ -128,7 +128,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             <div className="rounded-full flex h-3 w-3 items-center bottom-0 right-0 justify-center absolute bg-background border border-border">
               <span className="relative flex h-2 w-2">
                 <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isOwnerOnline ? "animate-ping bg-accent-500" : "hidden"}`} />
-                <span className={`relative inline-flex rounded-full h-full w-full transition-colors duration-300 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
+                <span className={`relative inline-flex rounded-full h-full w-full transition-colors duration-200 ${isOwnerOnline ? "bg-accent-500" : "bg-neutral-400"}`} />
               </span>
             </div>
           </div>
@@ -175,7 +175,7 @@ function AlbumCover({ cover, songName, artistName }: {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         className="flex items-center gap-3 mt-2"
       >
         <div className="h-10 w-10 rounded-lg overflow-hidden shadow-sm border border-border/50 shrink-0">

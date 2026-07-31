@@ -23,7 +23,7 @@ export function ThemeToggle({ className, iconClassName }: { className?: string; 
     return (
       <button
         type="button"
-        className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200", className)}
+        className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200", className)}
         aria-label="切换主题"
       >
         <Icon icon="mingcute:sun-line" className={cn("text-lg sm:text-lg", iconClassName)} />
@@ -67,7 +67,7 @@ export function ThemeToggle({ className, iconClassName }: { className?: string; 
         <button
           type="button"
           onClick={toggleTheme}
-          className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-all duration-200", className)}
+          className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer text-neutral-500 hover:text-accent-600 hover:bg-accent-500/10 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200", className)}
           aria-label={`当前: ${themeConfig.label}`}
         >
           <Icon icon={themeConfig.icon} className={cn("text-lg sm:text-lg", iconClassName)} />

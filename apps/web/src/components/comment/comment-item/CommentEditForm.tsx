@@ -116,10 +116,10 @@ export function CommentEditForm({
     <div className="relative mt-2 w-full min-w-0">
       <fieldset className="group relative flex flex-col gap-0 border-none p-0 m-0 w-full min-w-0">
         {/* === 四角点线动画 (The Four Corners) === */}
-        <span className="absolute z-10 top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tl-sm" />
-        <span className="absolute z-10 top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tr-sm" />
-        <span className="absolute z-10 bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-bl-sm" />
-        <span className="absolute z-10 bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-border/60 transition-all duration-500 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-br-sm" />
+        <span className="absolute z-10 top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tl-sm" />
+        <span className="absolute z-10 top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-tr-sm" />
+        <span className="absolute z-10 bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-bl-sm" />
+        <span className="absolute z-10 bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-border/60 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out group-focus-within:w-1/2 group-focus-within:h-1/2 group-focus-within:border-accent-500 pointer-events-none rounded-br-sm" />
 
         {/* 编辑区 */}
         <div className="flex flex-col min-h-16 sm:min-h-20 py-2.5 sm:py-3 px-3 sm:px-4 relative z-0 w-full min-w-0">
@@ -230,7 +230,7 @@ export function CommentEditForm({
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={isEditing || !editContent.trim() || editContent.trim() === originalText.trim() || editContent.length > 1000}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-sm h-7 sm:h-8 cursor-pointer bg-accent-600 text-white hover:bg-accent-500 hover:shadow-accent-500/20 active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] shadow-sm h-7 sm:h-8 cursor-pointer bg-accent-600 text-white hover:bg-accent-500 hover:shadow-accent-500/20 active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isEditing
                   ? (
@@ -246,7 +246,7 @@ export function CommentEditForm({
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={isEditing}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-sm h-7 sm:h-8 cursor-pointer bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] shadow-sm h-7 sm:h-8 cursor-pointer bg-muted text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
               >
                 <Icon icon="mingcute:close-line" className="size-3.5 sm:size-4" />
                 <span className="hidden sm:inline">{t("comment.cancel")}</span>

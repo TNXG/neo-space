@@ -16,10 +16,10 @@ import {
 } from "@/components/ui/tooltip";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
-import { Link, usePathname, useRouter } from "@/locales/navigation";
+import { Link, usePathname } from "@/locales/navigation";
 
 import { LanguageSwitch } from "./LanguageSwitch";
-import { NAV_ITEMS } from "./nav-config";
+import { getNavigationTransitionType, NAV_ITEMS } from "./nav-config";
 import styles from "./nav-menu.module.scss";
 import { dropdownPanelMap } from "./NavDropdownPanels";
 
@@ -52,8 +52,6 @@ export function TopNav({
   const t = useTranslations();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const router = useRouter();
-
   const [menuValue, setMenuValue] = useState<string | null>(null);
 
   // Spotlight mouse-tracking
@@ -73,28 +71,23 @@ export function TopNav({
 
   const handleNavClick = useCallback(
     (e: React.MouseEvent, item: NavItem) => {
-      if (item.id === "home") {
-        e.preventDefault();
-        router.push("/");
-        return;
-      }
       if (item.href.startsWith("/#") && isHomePage) {
         e.preventDefault();
         document.querySelector(item.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
       }
     },
-    [isHomePage, router],
+    [isHomePage],
   );
 
   const navAnimClass = cn(
-    "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+    "transition-[opacity,transform,filter] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
     isNavVisible
       ? "translate-y-0 opacity-100"
       : "-translate-y-12 opacity-0 pointer-events-none blur-sm",
   );
 
   return (
-    <div className="fixed top-0 inset-x-0 z-50 pointer-events-none pt-4 h-18">
+    <div className="view-transition-navigation fixed top-0 inset-x-0 z-50 pointer-events-none pt-4 h-18">
       <div className="relative mx-auto flex h-full w-full max-w-[calc(100vw-2rem)] md:max-w-7xl items-center justify-between">
         {/* Left (Mobile trigger) */}
         <div className="flex flex-1 items-center justify-start pointer-events-none">
@@ -131,7 +124,7 @@ export function TopNav({
             {/* Spotlight overlay */}
             <motion.div
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-px rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-15"
+              className="pointer-events-none absolute -inset-px rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-15"
               style={{ background: spotlightBg }}
             />
 
@@ -153,6 +146,7 @@ export function TopNav({
                         render={(
                           <Link
                             href={item.href}
+                            transitionTypes={[getNavigationTransitionType(pathname, item.href)]}
                             onClick={e => handleNavClick(e, item)}
                           />
                         )}
@@ -199,6 +193,7 @@ export function TopNav({
                       render={(
                         <Link
                           href={item.href}
+                          transitionTypes={[getNavigationTransitionType(pathname, item.href)]}
                           onClick={e => handleNavClick(e, item)}
                         />
                       )}

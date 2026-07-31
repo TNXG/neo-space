@@ -249,7 +249,7 @@ export const PostsDropdown: FC<DropdownPanelProps> = () => {
                       <motion.div
                         layoutId="active-category-bg"
                         className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
-                        transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                        transition={{ type: "spring", bounce: 0, duration: 0.22 }}
                       />
                     )}
                     <span className="truncate">{cat.name}</span>
@@ -369,7 +369,7 @@ export const NotesDropdown: FC<DropdownPanelProps> = () => {
                         <motion.div
                           layoutId="active-mood-bg"
                           className="absolute inset-0 bg-accent-500/10 rounded-lg -z-10"
-                          transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                          transition={{ type: "spring", bounce: 0, duration: 0.22 }}
                         />
                       )}
                       <span>{mood}</span>

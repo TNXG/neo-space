@@ -194,7 +194,7 @@ export function CopyrightCard({
               type="button"
               onClick={handleCopy}
               className={`
-                shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer
+                shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] cursor-pointer
                 ${
     copied
       ? "bg-accent-600 border-accent-600 text-white"
@@ -225,7 +225,7 @@ export function CopyrightCard({
                     key={atom}
                     onMouseEnter={() => setHoveredAtom(atom)}
                     className={`
-                      relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 cursor-help
+                      relative flex items-center justify-center w-9 h-9 rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 cursor-help
                       ${
                   isActive
                     ? "bg-accent-100 text-accent-700 scale-110 shadow-sm z-20"

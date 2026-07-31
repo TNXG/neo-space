@@ -71,7 +71,7 @@ function InputOTPSlot({
         "border border-border/60 rounded-xl",
         "shadow-sm",
         // 过渡
-        "transition-all duration-200",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
         // Focus 状态 - 使用 accent 色
         "data-[active=true]:border-accent-400 data-[active=true]:ring-2 data-[active=true]:ring-accent-400/50",
         "data-[active=true]:z-10",

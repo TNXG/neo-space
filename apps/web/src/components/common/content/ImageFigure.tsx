@@ -176,7 +176,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
             setIsError(true);
             setIsLoaded(true);
           }}
-          className={`rounded-md mx-1 max-w-full h-auto transition-opacity duration-300 ${
+          className={`rounded-md mx-1 max-w-full h-auto transition-opacity duration-200 ${
             isLoaded && !isError ? "opacity-100" : "opacity-0"
           }`}
           title={alt}
@@ -217,7 +217,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
         className={`group relative flex flex-col items-center justify-center gap-3 ${className || "my-8"}`}
       >
         <WrapperTag
-          className={`relative max-w-full overflow-hidden rounded-xl border border-primary-200 shadow-sm transition-all duration-300 ${wrapperClassExtra} ${
+          className={`relative max-w-full overflow-hidden rounded-xl border border-primary-200 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ${wrapperClassExtra} ${
             isLoaded && !isError
               ? "bg-transparent w-fit"
               : isBlock
@@ -236,7 +236,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
                 setIsError(true);
                 setIsLoaded(true);
               }}
-              className={`block h-auto w-auto max-w-full max-h-150 object-contain transition-opacity duration-500 ${
+              className={`block h-auto w-auto max-w-full max-h-150 object-contain transition-opacity duration-200 ${
                 isLoaded ? "opacity-100" : "opacity-0"
               }`}
               loading="lazy"
@@ -264,7 +264,7 @@ export function ImageFigure({ src, alt, className = "", isBlock = true }: ImageF
             />
           )}
           {exif && !isError && (
-            <span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-300">
+            <span className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-mono bg-black/40 text-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none block animate-in fade-in duration-200">
               EXIF
             </span>
           )}
@@ -548,7 +548,7 @@ function LightboxPortal({
       </div>
 
       <div
-        className="absolute bottom-8 md:bottom-12 left-0 right-0 flex flex-col items-center gap-2 md:gap-3 animate-in slide-in-from-bottom-4 duration-500 pointer-events-auto z-50 px-4"
+        className="absolute bottom-8 md:bottom-12 left-0 right-0 flex flex-col items-center gap-2 md:gap-3 animate-in slide-in-from-bottom-4 duration-200 pointer-events-auto z-50 px-4"
         onClick={e => e.stopPropagation()}
       >
         {/* 缩放提示 - 移动端显示捏合，桌面端显示滚轮 */}

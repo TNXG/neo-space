@@ -18,8 +18,8 @@ const buttonVariants = cva(
     "rounded-xl",
     // 字体
     "text-sm font-medium",
-    // 过渡动画 (300ms)
-    "transition-all duration-300",
+    // 仅过渡可控视觉属性，避免 transition-all 意外触发布局动画
+    "transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
     // 交互指针
     "cursor-pointer",
     // 禁用状态
@@ -38,7 +38,7 @@ const buttonVariants = cva(
         // 主按钮 - 青绿强调色
         default: [
           "bg-accent-600 text-white",
-          "hover:bg-accent-500 hover:shadow-lg hover:shadow-accent-500/25",
+          "hover:bg-accent-500",
           "active:scale-95",
         ].join(" "),
         // 破坏性操作

@@ -157,7 +157,6 @@ export function CommentActions({
             setEditView(false);
         }}
         disabled={editView}
-        whileHover={{ scale: editView ? 1 : 1.05 }}
         whileTap={{ scale: editView ? 1 : 0.95 }}
         className={cn(
           "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
@@ -179,7 +178,6 @@ export function CommentActions({
             type="button"
             onClick={handleEdit}
             disabled={editView}
-            whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
               "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
@@ -196,7 +194,6 @@ export function CommentActions({
             type="button"
             onClick={handleDelete}
             disabled={isDeleting || editView}
-            whileHover={{ scale: (isDeleting || editView) ? 1 : 1.05 }}
             whileTap={{ scale: (isDeleting || editView) ? 1 : 0.95 }}
             className={cn(
               "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors min-h-[32px] sm:min-h-0 px-1",
@@ -218,7 +215,6 @@ export function CommentActions({
             type="button"
             onClick={handleToggleHidden}
             disabled={editView}
-            whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
               "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",
@@ -237,7 +233,6 @@ export function CommentActions({
             type="button"
             onClick={handleTogglePin}
             disabled={editView}
-            whileHover={{ scale: editView ? 1 : 1.05 }}
             whileTap={{ scale: editView ? 1 : 0.95 }}
             className={cn(
               "flex items-center gap-1.5 text-xs sm:text-xs font-medium transition-colors cursor-pointer min-h-[32px] sm:min-h-0 px-1",

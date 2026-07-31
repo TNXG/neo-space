@@ -44,7 +44,7 @@ function DrawerOverlay({
         "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        "transition-all duration-300",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
         className
       )}
       {...props}
@@ -89,7 +89,7 @@ function DrawerContent({
           "data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r",
           "data-[vaul-drawer-direction=left]:rounded-r-3xl data-[vaul-drawer-direction=left]:sm:max-w-sm",
           // 动画效果
-          "transition-all duration-300",
+          "transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
           className
         )}
         {...props}

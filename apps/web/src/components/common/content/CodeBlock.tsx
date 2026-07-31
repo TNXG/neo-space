@@ -76,7 +76,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
           type="button"
           onClick={handleCopy}
           className={cn(
-            "relative flex h-6 md:h-7 items-center justify-center rounded-md px-1.5 md:px-2 transition-all duration-200 cursor-pointer shrink-0",
+            "relative flex h-6 md:h-7 items-center justify-center rounded-md px-1.5 md:px-2 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 cursor-pointer shrink-0",
             "text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900 dark:text-primary-500 dark:hover:bg-primary-300/50 dark:hover:text-primary-900",
             "",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-primary-400",
@@ -87,14 +87,14 @@ export function CodeBlock({ children, className, language = "text", filename, st
             <Icon
               icon="mingcute:copy-2-line"
               className={cn(
-                "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 transition-all duration-300",
+                "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
                 copied ? "scale-0 opacity-0" : "scale-100 opacity-100",
               )}
             />
             <Icon
               icon="mingcute:check-line"
               className={cn(
-                "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-500 transition-all duration-300",
+                "absolute inset-0 h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
                 copied ? "scale-100 opacity-100" : "scale-0 opacity-0",
               )}
             />

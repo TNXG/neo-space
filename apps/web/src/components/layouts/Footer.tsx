@@ -14,7 +14,7 @@ export function Footer({ user }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-background text-foreground pt-12 pb-8">
+    <footer className="view-transition-footer bg-background text-foreground pt-12 pb-8">
       <div className="mx-auto px-6 max-w-170">
         {/* 分隔线 */}
         <div className="h-px bg-linear-to-r from-transparent via-neutral-300 to-transparent mb-10" />

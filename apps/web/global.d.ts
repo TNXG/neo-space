@@ -1,3 +1,5 @@
+/// <reference types="react/canary" />
+
 declare module "*.scss"
 
 declare module "*.css";

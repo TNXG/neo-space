@@ -49,7 +49,7 @@ export function AuthenticatedUser({
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1.5 sm:gap-2 pl-0.5 sm:pl-1 pr-2 sm:pr-3 py-0.5 sm:py-1 rounded-full border transition-all cursor-pointer",
+            "flex items-center gap-1.5 sm:gap-2 pl-0.5 sm:pl-1 pr-2 sm:pr-3 py-0.5 sm:py-1 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] cursor-pointer",
             isProfileOpen
               ? "bg-accent-50 border-accent-200 ring-1 ring-accent-100"
               : "bg-transparent border-transparent hover:bg-primary-50 hover:border-primary-200",

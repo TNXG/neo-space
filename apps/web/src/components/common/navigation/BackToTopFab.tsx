@@ -17,7 +17,7 @@ const FAB_BTN_CLASS = cn(
   "w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center cursor-pointer",
   "bg-background/80 backdrop-blur-lg shadow-lg shadow-neutral-900/5 border border-border/50",
   "text-neutral-600 hover:text-accent-600 hover:bg-background/90",
-  "active:scale-95 transition-all duration-200 outline-none focus:outline-none",
+  "active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 outline-none focus:outline-none",
 );
 
 interface BackToTopFabProps {

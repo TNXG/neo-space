@@ -173,7 +173,7 @@ export function LanguageSwitch({
               onClick={() => handleLocaleChange(option)}
               aria-pressed={isActive}
               className={cn(
-                "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200",
+                "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
                 isActive
                   ? "border-accent-500 bg-accent-50 text-accent-900"
                   : "border-border/70 bg-background/70 text-foreground hover:border-accent-300 hover:bg-accent-50/60",

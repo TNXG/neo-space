@@ -76,7 +76,7 @@ export function CommentItem({
       ref={itemRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.24, ease: [0.25, 0.1, 0.25, 1] }}
       className={cn(
         "relative group/item rounded-lg overflow-visible",
         showLine && "before:absolute before:content-[''] before:top-10 sm:before:top-12 before:left-3 sm:before:left-4 before:h-[calc(100%-1.5rem)] sm:before:h-[calc(100%-2rem)] before:w-0.5 before:bg-linear-to-b before:from-border before:to-transparent",
@@ -92,7 +92,7 @@ export function CommentItem({
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 1, 1, 0] }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 3, times: [0, 0.05, 0.4, 1], ease: "easeInOut" }}
+              transition={{ duration: 3, times: [0, 0.05, 0.4, 1], ease: [0.77, 0, 0.175, 1] }}
               className="absolute -inset-1.5 sm:-inset-2 rounded-lg pointer-events-none bg-primary/20 shadow-[0_0_0_4px_rgba(45,212,191,0.25)]"
             />
           )}
@@ -107,11 +107,10 @@ export function CommentItem({
             <motion.button
               type="button"
               onClick={handleReplyClick}
-              whileHover={{ x: 2 }}
               whileTap={{ scale: 0.98 }}
               className="flex items-center gap-1 mb-1.5 sm:mb-1 text-xs sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group/reply"
             >
-              <Icon icon="mingcute:share-forward-line" className="group-hover/reply:translate-x-0.5 transition-transform size-3.5 sm:size-3.5" />
+              <Icon icon="mingcute:share-forward-line" className="size-3.5 sm:size-3.5" />
               <span>{t("comment.reply")}</span>
               <span className="font-bold text-foreground group-hover/reply:text-primary truncate max-w-20 sm:max-w-none">
                 @
@@ -162,7 +161,7 @@ export function CommentItem({
               initial={{ opacity: 0, height: 0, y: -10 }}
               animate={{ opacity: 1, height: "auto", y: 0 }}
               exit={{ opacity: 0, height: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.22, ease: [0.77, 0, 0.175, 1] }}
               className="mb-3 sm:mb-4 mt-1.5 sm:mt-2 overflow-visible"
             >
               <CommentForm

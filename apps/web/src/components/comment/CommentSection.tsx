@@ -80,7 +80,7 @@ function CommentSectionContent({
           <button
             type="button"
             onClick={() => setSortBy("newest")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-all cursor-pointer ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] cursor-pointer ${
               sortBy === "newest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
             }`}
           >
@@ -89,7 +89,7 @@ function CommentSectionContent({
           <button
             type="button"
             onClick={() => setSortBy("oldest")}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-all cursor-pointer ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] cursor-pointer ${
               sortBy === "oldest" ? "bg-background text-primary-900 shadow-xs" : "text-primary-500 hover:text-primary-900"
             }`}
           >

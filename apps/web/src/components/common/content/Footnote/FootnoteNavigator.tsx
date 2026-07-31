@@ -103,7 +103,7 @@ export function FootnoteNavigator({ children }: FootnoteNavigatorProps) {
         "[&_ol.footnote-list]:list-[upper-roman] [&_ol.footnote-list]:list-outside [&_ol.footnote-list]:ml-5 md:[&_ol.footnote-list]:ml-6 [&_ol.footnote-list]:space-y-3 [&_ol.footnote-list]:text-sm md:[&_ol.footnote-list]:text-base",
         "[&_ol.footnote-list]:marker:text-accent-500 [&_ol.footnote-list]:marker:font-medium",
         // 脚注条目
-        "[&_li[data-footnote-item]]:scroll-mt-28 [&_li[data-footnote-item]]:rounded-xl [&_li[data-footnote-item]]:px-3 [&_li[data-footnote-item]]:py-2.5 [&_li[data-footnote-item]]:transition-all [&_li[data-footnote-item]]:duration-300 [&_li[data-footnote-item]]:leading-relaxed [&_li[data-footnote-item]]:text-primary-700",
+        "[&_li[data-footnote-item]]:scroll-mt-28 [&_li[data-footnote-item]]:rounded-xl [&_li[data-footnote-item]]:px-3 [&_li[data-footnote-item]]:py-2.5 [&_li[data-footnote-item]]:transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] [&_li[data-footnote-item]]:duration-200 [&_li[data-footnote-item]]:leading-relaxed [&_li[data-footnote-item]]:text-primary-700",
         // 脚注条目 active 高亮
         "[&_li[data-footnote-item][data-footnote-state=active]]:bg-accent-100/60 dark:[&_li[data-footnote-item][data-footnote-state=active]]:bg-accent-100/20 [&_li[data-footnote-item][data-footnote-state=active]]:ring-1 [&_li[data-footnote-item][data-footnote-state=active]]:ring-accent-400/40 dark:[&_li[data-footnote-item][data-footnote-state=active]]:ring-accent-500/30",
         // 正文脚注引用徽标 (极简，类似维基百科)

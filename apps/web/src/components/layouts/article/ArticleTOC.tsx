@@ -235,7 +235,7 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
                             : 1,
                       opacity: isRead && !isActive ? 0.5 : (!isActive && !isActiveParent && !inActiveSection ? 0.6 : 1),
                     }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
                   >
 
                     {/* 左侧已读指示条 */}

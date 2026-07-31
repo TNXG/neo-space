@@ -215,18 +215,23 @@ export function LinkApplyForm() {
                 scale: isActive ? 1.1 : 1,
               }}
               className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 shadow-sm",
+                "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm",
                 isActive && "ring-4 ring-accent-100",
               )}
             >
               <Icon icon={isCompleted ? "mingcute:check-fill" : step.icon} className="w-5 h-5" />
             </motion.div>
-            <span className={cn("text-xs mt-2 font-medium transition-colors duration-300", isActive ? "text-accent-600" : "text-muted-foreground")}>
+            <span className={cn("text-xs mt-2 font-medium transition-colors duration-200", isActive ? "text-accent-600" : "text-muted-foreground")}>
               {step.title}
             </span>
             {index < steps.length - 1 && (
               <div className="absolute left-[calc(50%+20px)] top-5 w-[calc(100vw/4-40px)] sm:w-22.5 h-0.5 -z-10 bg-secondary">
-                <motion.div initial={{ width: "0%" }} animate={{ width: isCompleted ? "100%" : "0%" }} className="h-full bg-accent-500 transition-all duration-500" />
+                <motion.div
+                  initial={false}
+                  animate={{ transform: `scaleX(${isCompleted ? 1 : 0})` }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="h-full origin-left bg-accent-500"
+                />
               </div>
             )}
           </div>
@@ -347,9 +352,9 @@ export function LinkApplyForm() {
       <div className="mt-12 flex justify-center pb-20">
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl transition-colors duration-300 cursor-pointer"
+          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl transition-colors duration-200 cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-300">
+          <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-200">
             <Icon icon="mingcute:add-line" className="w-5 h-5" />
           </div>
           <div className="text-left">

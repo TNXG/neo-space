@@ -37,7 +37,7 @@ export function LoginPopover({ open: externalOpen, onOpenChange: externalOnOpenC
         <button
           type="button"
           className={cn(
-            "p-1 sm:p-1.5 rounded-full transition-all cursor-pointer",
+            "p-1 sm:p-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] cursor-pointer",
             open
               ? "text-accent-600 bg-accent-50"
               : "text-muted-foreground hover:text-accent-600 hover:bg-primary-50/50",

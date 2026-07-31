@@ -20,13 +20,13 @@ export function GuestInputs({ user, onChange }: GuestInputsProps) {
         value={user.name}
         onChange={e => onChange({ ...user, name: e.target.value })}
         placeholder={t("comment.nicknamePlaceholder")}
-        className="flex-1 sm:flex-initial sm:w-24 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center min-w-0"
+        className="flex-1 sm:flex-initial sm:w-24 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] placeholder:text-muted-foreground/50 text-center min-w-0"
       />
       <input
         value={user.email}
         onChange={e => onChange({ ...user, email: e.target.value })}
         placeholder={t("comment.emailPlaceholder")}
-        className="flex-1 sm:flex-initial sm:w-32 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-all placeholder:text-muted-foreground/50 text-center min-w-0"
+        className="flex-1 sm:flex-initial sm:w-32 bg-transparent border-b border-border/50 focus:border-accent-500 rounded-none px-2 py-1.5 text-xs sm:text-xs outline-none transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] placeholder:text-muted-foreground/50 text-center min-w-0"
       />
     </div>
   );

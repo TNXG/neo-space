@@ -59,7 +59,7 @@ export default async function DonatePage() {
               <div className="h-px w-8 bg-emerald-500/40" />
             </div>
 
-            <div className="w-fit p-3.5 bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10 ring-1 ring-black/5 ring-offset-8 ring-offset-background dark:ring-white/10 group-hover:ring-emerald-500/20 transition-all duration-700">
+            <div className="w-fit p-3.5 bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10 ring-1 ring-black/5 ring-offset-8 ring-offset-background dark:ring-white/10 group-hover:ring-emerald-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-[250ms]">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(wechatQR)}`}
                 alt="WeChat Pay QR"
@@ -83,7 +83,7 @@ export default async function DonatePage() {
               <div className="h-px w-8 bg-sky-500/40" />
             </div>
 
-            <div className="w-fit p-3.5 bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10 ring-1 ring-black/5 ring-offset-8 ring-offset-background dark:ring-white/10 group-hover:ring-sky-500/20 transition-all duration-700">
+            <div className="w-fit p-3.5 bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10 ring-1 ring-black/5 ring-offset-8 ring-offset-background dark:ring-white/10 group-hover:ring-sky-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-[250ms]">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(alipayQR)}`}
                 alt="Alipay QR"
@@ -115,7 +115,7 @@ export default async function DonatePage() {
                 className="mt-1 text-sm font-medium text-foreground hover:text-[#9373ee] transition-colors inline-flex items-center justify-center lg:justify-start gap-1 group w-fit"
               >
                 {t("donate.method.afdianAction")}
-                <Icon icon="mingcute:arrow-right-up-line" className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <Icon icon="mingcute:arrow-right-up-line" />
               </a>
             </div>
 

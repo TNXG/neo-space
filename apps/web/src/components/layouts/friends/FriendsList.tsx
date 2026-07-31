@@ -70,7 +70,7 @@ const DetailCard = ({
     initial={{ opacity: 0, y: 15, scale: 0.95, filter: "blur(4px)" }}
     animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
     exit={{ opacity: 0, y: 10, filter: "blur(4px)" }}
-    transition={{ duration: 0.4, delay, ease: [0.2, 0.65, 0.3, 0.9] }}
+    transition={{ duration: 0.24, delay, ease: [0.2, 0.65, 0.3, 0.9] }}
     className={cn(
       "relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-4 backdrop-blur-xl",
       className,
@@ -219,10 +219,10 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
               className="group relative flex min-h-14 cursor-pointer items-center justify-between rounded-2xl border border-border/50 bg-secondary/10 px-4 py-3 overflow-hidden"
             >
               <div
-                className="absolute inset-0 opacity-40 bg-cover bg-center blur-xl scale-125 saturate-200 transition-opacity duration-300 group-hover:opacity-60"
+                className="absolute inset-0 opacity-40 bg-cover bg-center blur-xl scale-125 saturate-200 transition-opacity duration-200 group-hover:opacity-60"
                 style={{ backgroundImage: `url(${activeItem.avatar})` }}
               />
-              <div className="absolute inset-0 bg-card/80 transition-colors duration-300 group-hover:bg-card/60" />
+              <div className="absolute inset-0 bg-card/80 transition-colors duration-200 group-hover:bg-card/60" />
               <div className="relative z-10 flex min-w-0 flex-col">
                 <span className="text-sm font-semibold leading-tight text-foreground drop-shadow-xs">
                   访问站点
@@ -409,7 +409,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
               key={tab}
               onClick={() => handleTabChange(tab)}
               className={cn(
-                "relative px-8 py-2.5 text-sm font-medium rounded-full transition-all duration-300 ease-out",
+                "relative px-8 py-2.5 text-sm font-medium rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out",
                 activeTab === tab
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground/70",
@@ -419,7 +419,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                 <motion.div
                   layoutId="activeTabBg"
                   className="absolute inset-0 bg-background shadow-md rounded-full border border-border/20"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.24 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-2">
@@ -475,7 +475,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                       onMouseEnter={() => !isMobile && setSelectedId(item._id)}
                       variant={selectedId === item._id && !isMobile ? "accent" : "default"}
                       className={cn(
-                        "group relative flex items-start gap-3 p-4 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden",
+                        "group relative flex items-start gap-3 p-4 rounded-2xl border transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 cursor-pointer overflow-hidden",
                         // Active state style improvement for dark mode:
                         // 使用渐变背景消除断层感
                         selectedId === item._id && !isMobile

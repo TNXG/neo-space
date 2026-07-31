@@ -5,6 +5,7 @@ import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/common/theme";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import { generateWebsiteJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteConfig } from "@/lib/api-client";
@@ -140,13 +141,14 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           enableSystem
           disableTransitionOnChange={false}
         >
-          <NextIntlClientProvider messages={messages}>
-
-            <TooltipProvider>
-              {children}
-              <Toaster richColors position="top-center" />
-            </TooltipProvider>
-          </NextIntlClientProvider>
+          <MotionProvider>
+            <NextIntlClientProvider messages={messages}>
+              <TooltipProvider>
+                {children}
+                <Toaster richColors position="top-center" />
+              </TooltipProvider>
+            </NextIntlClientProvider>
+          </MotionProvider>
         </ThemeProvider>
       </body>
     </html>

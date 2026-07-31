@@ -21,6 +21,7 @@ export function SectionHeader({ title, icon, linkText, linkHref }: SectionHeader
       {linkText && linkHref && (
         <Link
           href={linkHref}
+          transitionTypes={["nav-forward"]}
           className="group text-sm flex gap-1 transition-colors duration-150 items-center text-muted-foreground hover:text-foreground"
         >
           {linkText}

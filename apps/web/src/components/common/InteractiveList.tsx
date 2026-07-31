@@ -213,7 +213,7 @@ export function InteractiveList<T>({
             {isLeftPreview && (
               <div
                 ref={indicatorRef}
-                className="hidden lg:block absolute left-0 w-0.75 bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-all duration-200 ease-out"
+                className="hidden lg:block absolute left-0 w-0.75 bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out"
                 style={{
                   top: "var(--indicator-top, 0)",
                   height: "var(--indicator-height, 0)",
@@ -275,7 +275,7 @@ export function InteractiveList<T>({
                 <div ref={loadMoreRef} className="absolute bottom-0 left-0 w-full h-24 pointer-events-none opacity-0 z-[-1]" />
                 <div className="relative w-full flex justify-center items-center">
                   <div className={cn(
-                    "flex items-center gap-2 text-sm text-muted-foreground transition-all duration-300 absolute",
+                    "flex items-center gap-2 text-sm text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 absolute",
                     mounted && isValidating ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-2 invisible",
                   )}
                   >
@@ -283,7 +283,7 @@ export function InteractiveList<T>({
                     <span>{t("interactive.loading")}</span>
                   </div>
                   <div className={cn(
-                    "text-sm text-muted-foreground/50 transition-all duration-300",
+                    "text-sm text-muted-foreground/50 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200",
                     mounted && isValidating ? "opacity-0 invisible delay-0" : "opacity-100 visible delay-300",
                   )}
                   >
@@ -328,7 +328,7 @@ function TitleDateListItem({ title, created, modified, isActive }: {
   isActive: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
+    <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6">
       <h3 className={cn(
         "text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
         isActive ? "text-accent-600 font-semibold" : "text-foreground/80 font-medium",
@@ -358,7 +358,7 @@ function PostPreview({ post }: { post: Post }) {
       initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
       animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
       className="space-y-6"
     >
       <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
@@ -427,7 +427,7 @@ function NotePreview({ note }: { note: Note }) {
       initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
       animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
       className="space-y-6"
     >
       <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">
@@ -588,7 +588,7 @@ export function CategoryInteractiveList({
       renderListItem={(category, { isActive }) => {
         const count = countMap[category.slug] || 0;
         return (
-          <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6 transition-transform duration-200 group-hover:translate-x-1">
+          <div className="flex items-baseline justify-between gap-3 md:gap-6 py-3 md:py-2 pl-3 md:pl-6">
             <h2 className={cn(
               "text-base md:text-lg min-w-0 flex-1 truncate transition-colors duration-200",
               isActive ? "text-accent-600 font-semibold" : "text-foreground/80 font-medium",
@@ -618,7 +618,7 @@ export function CategoryInteractiveList({
             initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, x: 10, filter: "blur(4px)" }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="space-y-6"
           >
             <div className="flex flex-col items-start gap-1 text-sm font-mono text-muted-foreground">

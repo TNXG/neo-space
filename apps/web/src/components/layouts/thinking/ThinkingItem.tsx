@@ -27,11 +27,11 @@ export async function ThinkingItem({ item }: ThinkingItemProps) {
       className={cn(
         "relative group",
         "border-l-2 border-primary-200 pl-6 pb-2",
-        "hover:border-accent-400 transition-colors duration-300",
+        "hover:border-accent-400 transition-colors duration-200",
       )}
     >
       {/* 时间线节点 */}
-      <div className="absolute left-0 top-6 -translate-x-1/2 w-4 h-4 rounded-full bg-primary-200 group-hover:bg-accent-400 transition-colors duration-300 shadow-sm" />
+      <div className="absolute left-0 top-6 -translate-x-1/2 w-4 h-4 rounded-full bg-primary-200 group-hover:bg-accent-400 transition-colors duration-200 shadow-sm" />
 
       {/* 元信息 */}
       <div className="flex items-center gap-3 mb-4 text-sm text-muted-foreground">

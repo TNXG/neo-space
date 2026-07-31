@@ -100,6 +100,14 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
 
+  /* 全站动效令牌：快速响应，避免组件各自定义互相冲突的节奏 */
+  --motion-duration-press: 140ms;
+  --motion-duration-fast: 180ms;
+  --motion-duration-page: 260ms;
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
   /* 图表颜色 (适配青绿/石色) */
   --chart-1: var(--accent-600);
   --chart-2: var(--primary-600);
@@ -366,8 +374,8 @@
   body {
     @apply bg-background text-foreground font-sans;
     transition:
-      background-color 300ms ease,
-      color 300ms ease;
+      background-color var(--motion-duration-fast) var(--motion-ease-out),
+      color var(--motion-duration-fast) var(--motion-ease-out);
   }
 
   html {
@@ -408,6 +416,121 @@
   h5,
   h6 {
     text-wrap: balance;
+  }
+}
+
+/* ===================================
+   Native View Transitions
+   =================================== */
+
+.view-transition-navigation {
+  view-transition-name: site-navigation;
+}
+
+.view-transition-footer {
+  view-transition-name: site-footer;
+}
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(site-navigation),
+::view-transition-group(site-footer) {
+  animation: none;
+}
+
+::view-transition-group(site-navigation) {
+  z-index: 100;
+}
+
+::view-transition-old(site-navigation),
+::view-transition-old(site-footer) {
+  display: none;
+}
+
+::view-transition-new(site-navigation),
+::view-transition-new(site-footer) {
+  animation: none;
+}
+
+::view-transition-image-pair(.page-transition),
+::view-transition-image-pair(.nav-forward),
+::view-transition-image-pair(.nav-back) {
+  isolation: isolate;
+}
+
+::view-transition-old(.page-transition) {
+  animation: view-transition-page-out var(--motion-duration-fast) var(--motion-ease-out) both;
+}
+
+::view-transition-new(.page-transition) {
+  animation: view-transition-page-in var(--motion-duration-page) var(--motion-ease-out) both;
+}
+
+@keyframes view-transition-page-out {
+  to {
+    opacity: 0;
+    filter: blur(3px);
+    transform: scale(0.985);
+  }
+}
+
+@keyframes view-transition-page-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(1rem) scale(0.985);
+  }
+}
+
+::view-transition-old(.nav-forward) {
+  --page-slide-offset: -2.5rem;
+  animation:
+    view-transition-directional-out var(--motion-duration-fast) var(--motion-ease-out) both,
+    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) reverse both;
+}
+
+::view-transition-new(.nav-forward) {
+  --page-slide-offset: 2.5rem;
+  animation:
+    view-transition-directional-in var(--motion-duration-page) var(--motion-ease-out) both,
+    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) both;
+}
+
+::view-transition-old(.nav-back) {
+  --page-slide-offset: 2.5rem;
+  animation:
+    view-transition-directional-out var(--motion-duration-fast) var(--motion-ease-out) both,
+    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) reverse both;
+}
+
+::view-transition-new(.nav-back) {
+  --page-slide-offset: -2.5rem;
+  animation:
+    view-transition-directional-in var(--motion-duration-page) var(--motion-ease-out) both,
+    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) both;
+}
+
+@keyframes view-transition-directional-out {
+  to {
+    opacity: 0.2;
+    filter: blur(3px);
+  }
+}
+
+@keyframes view-transition-directional-in {
+  from {
+    opacity: 0.2;
+    filter: blur(4px);
+  }
+}
+
+@keyframes view-transition-slide {
+  from {
+    transform: translate3d(var(--page-slide-offset), 0, 0) scale(0.985);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -500,7 +623,68 @@
   @apply placeholder:text-muted-foreground/50;
   @apply focus:outline-none focus:ring-2 focus:ring-accent-400/50 focus:border-accent-400;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
-  @apply transition-all duration-200;
+  @apply transition-[color,background-color,border-color,box-shadow,opacity] duration-200;
+}
+
+/* 高频 hover 只使用材质透明度反馈，避免卡片持续追逐指针。 */
+.motion-hover-surface::before {
+  opacity: 0;
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-hover-surface:hover::before {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(.page-transition),
+  ::view-transition-new(.page-transition),
+  ::view-transition-old(.nav-forward),
+  ::view-transition-new(.nav-forward),
+  ::view-transition-old(.nav-back),
+  ::view-transition-new(.nav-back) {
+    animation: view-transition-fade var(--motion-duration-fast) var(--motion-ease-out) both !important;
+  }
+
+  ::view-transition-group(.nav-forward),
+  ::view-transition-group(.nav-back) {
+    animation: none !important;
+  }
+
+  .animate-pulse-ring,
+  .animate-pulse-ring-delayed,
+  .animate-bounce,
+  .animate-ping {
+    animation: none !important;
+  }
+}
+
+@keyframes view-transition-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-card,
+  .glass-nav {
+    background: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 html.dark .shiki,

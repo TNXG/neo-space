@@ -46,7 +46,7 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
       className="relative group"
       initial={false}
       animate={{ x: isActive ? 6 : 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
     >
       {/* 左侧激活色条 */}
       <AnimatePresence>
@@ -56,7 +56,7 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
             initial={{ opacity: 0, scaleY: 0 }}
             animate={{ opacity: 1, scaleY: 1 }}
             exit={{ opacity: 0, scaleY: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.22 }}
             className="absolute -left-4 top-0 w-1 bg-accent-600 rounded-full origin-top"
             style={{ height: "100%" }}
           />
@@ -68,7 +68,7 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
           <span className="flex items-center gap-3">
             <span>{children}</span>
             <span
-              className={`text-[10px] font-mono tracking-wider transition-colors duration-300 ${isActive ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+              className={`text-[10px] font-mono tracking-wider transition-colors duration-200 ${isActive ? "text-muted-foreground" : "text-muted-foreground/40"}`}
             >
               {levelLabels[level]}
             </span>
@@ -78,7 +78,7 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
           <a
             href={`#${id}`}
             onClick={handleClick}
-            className={`text-base font-sans font-bold transition-all duration-300 shrink-0 ${
+            className={`text-base font-sans font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 shrink-0 ${
               isActive
                 ? "text-accent-600 hover:text-accent-700"
                 : "text-muted-foreground/30 hover:text-muted-foreground/60"

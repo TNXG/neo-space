@@ -21,7 +21,7 @@ function Checkbox({
       data-slot="checkbox"
       className={cn(
         // 基础样式 - 方形
-        "size-5 shrink-0 rounded-md border-2 transition-all duration-200 cursor-pointer",
+        "size-5 shrink-0 rounded-md border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 cursor-pointer",
         // 未选中状态 - Glassmorphism
         "border-border/60 bg-background/50 backdrop-blur-sm",
         // 选中状态 - accent 色系
