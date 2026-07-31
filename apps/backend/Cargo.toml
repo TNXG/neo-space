@@ -129,7 +129,11 @@ rand = { version = "0.10.1", default-features = false, features = [
 md5 = { version = "0.8.0", default-features = false }
 
 # Bangumi 动漫头像检测；关闭绘图和桌面预览，仅保留 ONNX 推理核心。
-ultralytics-inference = { version = "0.0.33", default-features = false }
+ultralytics-inference = {
+  git = "https://github.com/TNXGLab/inference",
+  rev = "9b581834645776b16deec994cc3490bce72f7d47",
+  default-features = false
+}
 # Alpine 通过 pkg-config 链接原生 musl ONNX Runtime，避免 ort 尝试下载不存在的 musl 预构建包。
 ort = { version = "=2.0.0-rc.13", default-features = false, features = [ "pkg-config" ] }
 image = { version = "0.25.10", default-features = false, features = [ "jpeg", "png", "webp" ] }
