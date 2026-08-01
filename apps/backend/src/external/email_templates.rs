@@ -1,6 +1,125 @@
 //! 站点品牌邮件模板
 
 use chrono::Datelike;
+use mongodb::bson::Document;
+
+/// 后台可配置的邮件品牌与分类文案。
+#[derive(Debug, Clone)]
+pub struct EmailTemplateConfig {
+    pub logo_text: String,
+    pub footer_text: String,
+    pub verification_category: String,
+    pub verification_subject: String,
+    pub verification_title: String,
+    pub verification_intro: String,
+    pub comment_category: String,
+    pub comment_subject: String,
+    pub reply_subject: String,
+    pub comment_title: String,
+    pub reply_title: String,
+    pub comment_intro: String,
+    pub reply_intro: String,
+    pub owner_category: String,
+}
+
+impl Default for EmailTemplateConfig {
+    /// 返回与站点设计系统一致的默认邮件配置。
+    fn default() -> Self {
+        Self {
+            logo_text: "N".to_string(),
+            footer_text: "Powered by Neo Space".to_string(),
+            verification_category: "安全验证".to_string(),
+            verification_subject: "[{{site_name}}] 邮箱验证码".to_string(),
+            verification_title: "验证你的邮箱".to_string(),
+            verification_intro: "感谢你访问 {{site_name}}。请使用下方验证码完成身份验证。"
+                .to_string(),
+            comment_category: "评论通知".to_string(),
+            comment_subject: "[{{site_name}}] 新{{comment_type}}：{{author}}".to_string(),
+            reply_subject: "[{{site_name}}] {{author}} 回复了你的评论".to_string(),
+            comment_title: "新{{comment_type}}：{{author}}".to_string(),
+            reply_title: "{{author}} 回复了你的评论".to_string(),
+            comment_intro: "{{author}} 在{{ref_type}}中留下了新的{{comment_type}}。".to_string(),
+            reply_intro: "{{author}} 回复了你在{{ref_type}}中的评论。".to_string(),
+            owner_category: "站点来信".to_string(),
+        }
+    }
+}
+
+impl EmailTemplateConfig {
+    /// 从 `mailOptions.templates` 读取配置，缺失字段自动回退默认值。
+    pub fn from_mail_options(mail_options: &Document) -> Self {
+        let mut config = Self::default();
+        let Ok(templates) = mail_options.get_document("templates") else {
+            return config;
+        };
+
+        apply_value(templates, "brand", "logoText", &mut config.logo_text);
+        apply_value(templates, "brand", "footerText", &mut config.footer_text);
+        apply_value(
+            templates,
+            "verification",
+            "category",
+            &mut config.verification_category,
+        );
+        apply_value(
+            templates,
+            "verification",
+            "subject",
+            &mut config.verification_subject,
+        );
+        apply_value(
+            templates,
+            "verification",
+            "title",
+            &mut config.verification_title,
+        );
+        apply_value(
+            templates,
+            "verification",
+            "intro",
+            &mut config.verification_intro,
+        );
+        apply_value(
+            templates,
+            "comment",
+            "category",
+            &mut config.comment_category,
+        );
+        apply_value(templates, "comment", "subject", &mut config.comment_subject);
+        apply_value(
+            templates,
+            "comment",
+            "replySubject",
+            &mut config.reply_subject,
+        );
+        apply_value(templates, "comment", "title", &mut config.comment_title);
+        apply_value(templates, "comment", "replyTitle", &mut config.reply_title);
+        apply_value(templates, "comment", "intro", &mut config.comment_intro);
+        apply_value(templates, "comment", "replyIntro", &mut config.reply_intro);
+        apply_value(templates, "owner", "category", &mut config.owner_category);
+        config
+    }
+}
+
+/// 读取非空模板字段，避免空字符串覆盖可用的默认配置。
+fn apply_value(templates: &Document, group: &str, key: &str, destination: &mut String) {
+    if let Ok(value) = templates
+        .get_document(group)
+        .and_then(|group| group.get_str(key))
+        && !value.trim().is_empty()
+    {
+        *destination = value.trim().to_string();
+    }
+}
+
+/// 替换邮件模板中允许使用的变量。
+pub fn render_template(template: &str, variables: &[(&str, &str)]) -> String {
+    variables
+        .iter()
+        .fold(template.to_string(), |rendered, (key, value)| {
+            rendered.replace(&format!("{{{{{key}}}}}"), value)
+        })
+}
 
 /// 品牌邮件骨架所需的展示内容。
 pub(crate) struct BrandedEmailTemplate<'a> {
@@ -11,6 +130,7 @@ pub(crate) struct BrandedEmailTemplate<'a> {
     /// 调用方必须先转义所有用户输入，仅允许传入受控 HTML。
     pub content_html: &'a str,
     pub accent_opacity: &'a str,
+    pub config: &'a EmailTemplateConfig,
 }
 
 /// 构建兼容主流邮件客户端的品牌 HTML 外壳。
@@ -21,6 +141,8 @@ pub(crate) fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
     let category = html_escape::encode_text(template.category);
     let title = html_escape::encode_text(template.title);
     let preheader = html_escape::encode_text(template.preheader);
+    let logo_text = html_escape::encode_text(&template.config.logo_text);
+    let footer_text = html_escape::encode_text(&template.config.footer_text);
     let year = chrono::Utc::now().year();
 
     format!(
@@ -56,7 +178,7 @@ pub(crate) fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 <tr>
                   <td width="42" valign="middle" style="width:42px;">
-                    <div style="width:34px;height:34px;line-height:34px;text-align:center;border-radius:10px;background-color:#0d9488;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;">N</div>
+                    <div style="width:34px;height:34px;line-height:34px;text-align:center;border-radius:10px;background-color:#0d9488;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;">{logo_text}</div>
                   </td>
                   <td valign="middle" style="font-size:12px;line-height:18px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0d9488;">{site_name}<br><span style="font-weight:500;color:#78716c;letter-spacing:0.06em;">{category}</span></td>
                 </tr>
@@ -72,7 +194,7 @@ pub(crate) fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
           <tr>
             <td style="padding:20px 32px;border-top:1px solid #e7e5e4;text-align:center;color:#78716c;font-size:12px;line-height:1.6;">
               © {year} {site_name}<br>
-              <span style="color:#a8a29e;">Powered by Neo Space</span>
+              <span style="color:#a8a29e;">{footer_text}</span>
             </td>
           </tr>
         </table>
@@ -87,10 +209,15 @@ pub(crate) fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
 }
 
 /// 构建验证码邮件的 HTML 内容。
-pub fn build_verification_html(code: &str, site_name: &str) -> String {
+pub fn build_verification_html(
+    code: &str,
+    site_name: &str,
+    config: &EmailTemplateConfig,
+) -> String {
     let escaped_code = html_escape::encode_text(code);
+    let intro = render_template(&config.verification_intro, &[("site_name", site_name)]);
     let content_html = format!(
-        r#"<p style="margin:0 0 20px;">你好，感谢你访问 <strong style="color:#1c1917;font-weight:600;">{site_name}</strong>。请使用下方验证码完成身份验证。</p>
+        r#"<p style="margin:0 0 20px;">{intro}</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:separate;background-color:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;">
   <tr>
     <td align="center" style="padding:24px 16px 12px;color:#0d9488;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;line-height:1.2;font-weight:700;letter-spacing:0.18em;">{escaped_code}</td>
@@ -100,21 +227,27 @@ pub fn build_verification_html(code: &str, site_name: &str) -> String {
   </tr>
 </table>
 <p style="margin:20px 0 0;padding:12px 14px;background-color:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;color:#57534e;font-size:13px;line-height:1.6;">如果这不是你的操作，可以安全地忽略此邮件。请勿将验证码转发给他人。</p>"#,
-        site_name = html_escape::encode_text(site_name),
+        intro = html_escape::encode_text(&intro),
     );
 
     build_branded_html(BrandedEmailTemplate {
         site_name,
-        category: "安全验证",
-        title: "验证你的邮箱",
+        category: &config.verification_category,
+        title: &config.verification_title,
         preheader: "使用邮件中的 6 位验证码完成身份验证，有效期 10 分钟。",
         content_html: &content_html,
         accent_opacity: "1",
+        config,
     })
 }
 
 /// 构建博主手动邮件的 HTML 内容，并安全保留纯文本换行。
-pub fn build_owner_html(subject: &str, content: &str, site_name: &str) -> String {
+pub fn build_owner_html(
+    subject: &str,
+    content: &str,
+    site_name: &str,
+    config: &EmailTemplateConfig,
+) -> String {
     let normalized_content = content.replace("\r\n", "\n").replace('\r', "\n");
     let escaped_content = html_escape::encode_text(&normalized_content).replace('\n', "<br>");
     let preheader = content
@@ -132,11 +265,12 @@ pub fn build_owner_html(subject: &str, content: &str, site_name: &str) -> String
 
     build_branded_html(BrandedEmailTemplate {
         site_name,
-        category: "站点来信",
+        category: &config.owner_category,
         title: subject,
         preheader: &preheader,
         content_html: &content_html,
         accent_opacity: "0.72",
+        config,
     })
 }
 
@@ -154,7 +288,7 @@ mod tests {
 
     #[test]
     fn verification_html_uses_brand_tokens_and_email_safe_layout() {
-        let html = build_verification_html("123456", "Neo Space");
+        let html = build_verification_html("123456", "Neo Space", &EmailTemplateConfig::default());
 
         assert!(html.contains("#f5f5f4"));
         assert!(html.contains("#0d9488"));
@@ -169,10 +303,31 @@ mod tests {
             "友链申请结果",
             "你好\n<script>alert(1)</script>",
             "Neo Space",
+            &EmailTemplateConfig::default(),
         );
 
         assert!(html.contains("友链申请结果"));
         assert!(html.contains("你好<br>&lt;script&gt;alert(1)&lt;/script&gt;"));
         assert!(!html.contains("<script>alert(1)</script>"));
+    }
+
+    #[test]
+    fn configuration_overrides_brand_and_verification_copy() {
+        let mail_options = mongodb::bson::doc! {
+            "templates": {
+                "brand": { "logoText": "天", "footerText": "来自天翔的博客" },
+                "verification": {
+                    "title": "确认邮箱地址",
+                    "intro": "欢迎来到 {{site_name}}，请输入验证码。"
+                }
+            }
+        };
+        let config = EmailTemplateConfig::from_mail_options(&mail_options);
+        let html = build_verification_html("654321", "Neo Space", &config);
+
+        assert!(html.contains("确认邮箱地址"));
+        assert!(html.contains("欢迎来到 Neo Space，请输入验证码。"));
+        assert!(html.contains("来自天翔的博客"));
+        assert!(html.contains(">天</div>"));
     }
 }

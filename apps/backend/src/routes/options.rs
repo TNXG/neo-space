@@ -7,6 +7,7 @@ use axum::{Router, routing};
 pub fn routes() -> Router<SharedState> {
     Router::new()
         .route("/", routing::get(options::get_all_options))
+        .route("/mailOptions/test", routing::post(options::send_test_email))
         .route(
             "/url",
             routing::get(options::get_url_options)

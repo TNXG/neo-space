@@ -16,6 +16,7 @@ use serde_json::Value;
 
 const MANAGED_OPTION_KEYS: &[&str] = &[
     "ai",
+    "bangumiOptions",
     "commentOptions",
     "friendLinkOptions",
     "mailOptions",
@@ -97,6 +98,9 @@ async fn write_option(
         "seo" | "url" | "friendLinkOptions" | "commentOptions" | "oauth"
     ) {
         crate::tasks::isr::trigger_isr_revalidation(state, "site-config", None).await;
+    }
+    if key == "bangumiOptions" {
+        crate::tasks::isr::trigger_isr_revalidation(state, "bangumi", None).await;
     }
 
     let effective_value = collection
@@ -233,6 +237,28 @@ pub async fn replace_url_option(
     payload: AppJson<Value>,
 ) -> AppResult<Json<ApiResponse<Value>>> {
     replace_option(state, owner, Path("url".to_string()), payload).await
+}
+
+/// POST /options/mailOptions/test — 向站长邮箱发送真实的品牌 HTML 测试邮件。
+pub async fn send_test_email(
+    State(state): State<SharedState>,
+    _owner: OwnerOnly,
+) -> AppResult<Json<ApiResponse<()>>> {
+    let notification_service =
+        crate::services::notification::NotificationService::new(state.db.clone());
+    let admin_config = notification_service.get_admin_config().await?;
+
+    state
+        .email_service
+        .send_owner_email(
+            &admin_config.email,
+            "邮件 UI 测试",
+            "如果你看到这张带有站点标识、青绿色品牌条和统一页脚的卡片，说明 HTML 邮件模板已经生效。",
+            &admin_config.site_name,
+        )
+        .await?;
+
+    Ok(Json(ApiResponse::success(())))
 }
 
 #[cfg(test)]

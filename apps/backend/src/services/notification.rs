@@ -1,6 +1,7 @@
 //! Notification service for comment notifications
 
 use crate::error::AppError;
+use crate::external::email_templates::EmailTemplateConfig;
 use crate::services::notification_recipients;
 use crate::services::notification_templates::{
     build_html_email, build_subject, build_text_email, generate_notification_url,
@@ -49,6 +50,7 @@ pub struct AdminEmailConfig {
     pub email: String,
     pub site_name: String,
     pub site_url: String,
+    pub email_templates: EmailTemplateConfig,
 }
 
 /// Notification service
@@ -68,7 +70,7 @@ impl NotificationService {
         let collection: mongodb::Collection<bson::Document> = self.db.collection("options");
 
         let option_docs = collection
-            .find(doc! { "name": { "$in": ["seo", "url"] } })
+            .find(doc! { "name": { "$in": ["seo", "url", "mailOptions"] } })
             .await
             .map_err(|e| AppError::Database(format!("Failed to load site options: {}", e)))?;
 
@@ -79,6 +81,7 @@ impl NotificationService {
 
         let mut site_name = "Neo Space".to_string();
         let mut site_url = "https://example.com".to_string();
+        let mut email_templates = EmailTemplateConfig::default();
 
         for doc in option_docs {
             let name = doc.get_str("name").unwrap_or_default();
@@ -101,6 +104,9 @@ impl NotificationService {
                     {
                         site_url = url.trim().to_string();
                     }
+                }
+                "mailOptions" => {
+                    email_templates = EmailTemplateConfig::from_mail_options(value);
                 }
                 _ => {}
             }
@@ -135,6 +141,7 @@ impl NotificationService {
             email: admin_email,
             site_name,
             site_url,
+            email_templates,
         })
     }
 
@@ -173,6 +180,7 @@ impl NotificationService {
             .map_err(|_| AppError::Internal("Email username not configured".to_string()))?
             .to_string();
         let from_email = value.get_str("from").unwrap_or(&user).to_string();
+        let from_name = value.get_str("fromName").unwrap_or("Neo Space").to_string();
         let password = options
             .get_str("pass")
             .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
@@ -184,7 +192,14 @@ impl NotificationService {
         let port = u16::try_from(options.get_i32("port").unwrap_or(587))
             .map_err(|_| AppError::Internal("Invalid email port".to_string()))?;
 
-        Ok(Some(SmtpConfig { user, from_email, password, host, port }))
+        Ok(Some(SmtpConfig {
+            user,
+            from_name,
+            from_email,
+            password,
+            host,
+            port,
+        }))
     }
 
     /// 发送评论通知——按收件人 fan-out，已做自回复去重与多身份合并。
@@ -228,7 +243,7 @@ impl NotificationService {
         );
 
         let from_mailbox = Mailbox::new(
-            Some(format!("{} Notifications", config.site_name)),
+            Some(smtp.from_name.clone()),
             smtp.from_email.parse().map_err(|_| {
                 AppError::Internal(format!("Invalid from_email format: {}", smtp.from_email))
             })?,
@@ -243,9 +258,12 @@ impl NotificationService {
             .build();
 
         for recipient in &recipients {
-            let to_mailbox = Mailbox::new(None, recipient.email.parse().map_err(|_| {
-                AppError::Internal(format!("Invalid recipient email: {}", recipient.email))
-            })?);
+            let to_mailbox = Mailbox::new(
+                None,
+                recipient.email.parse().map_err(|_| {
+                    AppError::Internal(format!("Invalid recipient email: {}", recipient.email))
+                })?,
+            );
 
             let subject = build_subject(notification, &config, recipient);
             let html_body = build_html_email(notification, &config, &notification_url, recipient);
@@ -275,7 +293,11 @@ impl NotificationService {
             );
 
             if let Err(e) = mailer.send(email).await {
-                tracing::error!("Failed to send notification to {}: {:?}", recipient.email, e);
+                tracing::error!(
+                    "Failed to send notification to {}: {:?}",
+                    recipient.email,
+                    e
+                );
             }
         }
 
@@ -291,6 +313,7 @@ impl NotificationService {
 /// SMTP 配置（由 `mailOptions` 解析而来）。
 struct SmtpConfig {
     user: String,
+    from_name: String,
     from_email: String,
     password: String,
     host: String,

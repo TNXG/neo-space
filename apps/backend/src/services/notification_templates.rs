@@ -2,7 +2,7 @@
 
 use super::notification::{AdminEmailConfig, CommentNotification};
 use super::notification_recipients::{NotificationRecipient, NotificationRole};
-use crate::external::email_templates::{BrandedEmailTemplate, build_branded_html};
+use crate::external::email_templates::{BrandedEmailTemplate, build_branded_html, render_template};
 use chrono::Datelike;
 
 /// 生成评论通知跳转 URL。
@@ -66,6 +66,8 @@ fn ref_type_name(ref_type: &str) -> &'static str {
 struct EmailView {
     /// 邮件标题（不含站点前缀，由调用方拼接）
     subject: String,
+    /// 邮件客户端显示的 Subject。
+    mail_subject: String,
     /// HTML 引导语段
     intro_html: String,
     /// 纯文本引导语
@@ -78,19 +80,27 @@ struct EmailView {
 
 fn build_email_view(
     notification: &CommentNotification,
+    config: &AdminEmailConfig,
     recipient: &NotificationRecipient,
 ) -> EmailView {
     let is_parent_author = recipient.roles.contains(&NotificationRole::ParentAuthor);
     let high_priority = recipient.is_high_priority();
 
     if is_parent_author {
-        // 被回复者视角：精准指向直接父级评论
-        let subject = format!("{} 回复了你的评论", notification.author);
-        let intro_html = format!(
-            "<strong>{author}</strong> 回复了你在 <strong>{ref}</strong> 中的评论：",
-            author = html_escape::encode_text(&notification.author),
-            ref = ref_type_name(&notification.ref_type),
-        );
+        // 被回复者视角：精准指向直接父级评论。
+        let variables = [
+            ("site_name", config.site_name.as_str()),
+            ("author", notification.author.as_str()),
+            ("ref_type", ref_type_name(&notification.ref_type)),
+            ("comment_type", "回复"),
+        ];
+        let subject = render_template(&config.email_templates.reply_title, &variables);
+        let mail_subject = render_template(&config.email_templates.reply_subject, &variables);
+        let intro_html = html_escape::encode_text(&render_template(
+            &config.email_templates.reply_intro,
+            &variables,
+        ))
+        .into_owned();
         let intro_text = format!(
             "{} 回复了你在 {} 中的评论：\n\n",
             notification.author,
@@ -98,6 +108,7 @@ fn build_email_view(
         );
         return EmailView {
             subject,
+            mail_subject,
             intro_html,
             intro_text,
             cta: "查看并回复".to_string(),
@@ -111,14 +122,20 @@ fn build_email_view(
     } else {
         "评论"
     };
+    let variables = [
+        ("site_name", config.site_name.as_str()),
+        ("author", notification.author.as_str()),
+        ("ref_type", ref_type_name(&notification.ref_type)),
+        ("comment_type", comment_type),
+    ];
     EmailView {
-        subject: format!("新{}: {}", comment_type, notification.author),
-        intro_html: format!(
-            "<strong>{author}</strong> 在 <strong>{ref}</strong> 中留下了新的{ct}：",
-            author = html_escape::encode_text(&notification.author),
-            ref = ref_type_name(&notification.ref_type),
-            ct = comment_type,
-        ),
+        subject: render_template(&config.email_templates.comment_title, &variables),
+        mail_subject: render_template(&config.email_templates.comment_subject, &variables),
+        intro_html: html_escape::encode_text(&render_template(
+            &config.email_templates.comment_intro,
+            &variables,
+        ))
+        .into_owned(),
         intro_text: format!(
             "{} 在 {} 中留下了新的{}：\n\n",
             notification.author,
@@ -137,7 +154,7 @@ pub fn build_html_email(
     notification_url: &str,
     recipient: &NotificationRecipient,
 ) -> String {
-    let view = build_email_view(notification, recipient);
+    let view = build_email_view(notification, config, recipient);
     // 回复对象信息使用站点风格的轻量胶囊，避免抢夺正文层级。
     let parent_info = notification.parent_author.as_ref().map_or(String::new(), |parent| {
         format!(
@@ -212,11 +229,12 @@ pub fn build_html_email(
 
     build_branded_html(BrandedEmailTemplate {
         site_name: &config.site_name,
-        category: "评论通知",
+        category: &config.email_templates.comment_category,
         title: &view.subject,
         preheader: &preheader,
         content_html: &content_html,
         accent_opacity: accent_bar_opacity,
+        config: &config.email_templates,
     })
 }
 
@@ -227,7 +245,7 @@ pub fn build_text_email(
     notification_url: &str,
     recipient: &NotificationRecipient,
 ) -> String {
-    let view = build_email_view(notification, recipient);
+    let view = build_email_view(notification, config, recipient);
     let parent_info = notification
         .parent_author
         .as_ref()
@@ -277,11 +295,11 @@ pub fn build_subject(
     config: &AdminEmailConfig,
     recipient: &NotificationRecipient,
 ) -> String {
-    let view = build_email_view(notification, recipient);
+    let view = build_email_view(notification, config, recipient);
     if view.high_priority {
-        format!("[{}] 【重要】{}", config.site_name, view.subject)
+        format!("【重要】{}", view.mail_subject)
     } else {
-        format!("[{}] {}", config.site_name, view.subject)
+        view.mail_subject
     }
 }
 
@@ -315,6 +333,7 @@ mod tests {
             email: "admin@x.com".to_string(),
             site_name: "Neo Space".to_string(),
             site_url: "https://example.com".to_string(),
+            email_templates: crate::external::email_templates::EmailTemplateConfig::default(),
         }
     }
 
@@ -422,6 +441,25 @@ mod tests {
         assert!(
             html.contains("opacity:0.6"),
             "normal accent bar must be at 60% opacity"
+        );
+    }
+
+    #[test]
+    fn configured_subject_and_title_are_rendered() {
+        let notification = sample_notification(false);
+        let mut config = admin_config();
+        config.email_templates.comment_subject =
+            "{{site_name}} 有来自 {{author}} 的{{comment_type}}".to_string();
+        config.email_templates.comment_title = "收到一条{{comment_type}}".to_string();
+        let recipient = recipient(&[NotificationRole::Admin]);
+
+        assert_eq!(
+            build_subject(&notification, &config, &recipient),
+            "Neo Space 有来自 tester 的评论"
+        );
+        assert!(
+            build_html_email(&notification, &config, "https://example.com", &recipient)
+                .contains("收到一条评论")
         );
     }
 }

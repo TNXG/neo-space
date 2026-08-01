@@ -55,9 +55,11 @@ export const OPTION_FORM_SCHEMAS: Record<string, FormSection[]> = {
   mailOptions: [{
     key: "mailOptions",
     title: "邮件服务",
+    description: "SMTP 投递与网站品牌邮件外观，模板变量请保留双花括号格式",
     fields: [
       field("enable", "启用邮件", "switch"),
       field("from", "发件人地址", "input"),
+      field("fromName", "发件人名称", "input", "显示在收件箱的发件人位置"),
       nested("smtp", "SMTP", [
         field("host", "服务器", "input"),
         field("port", "端口", "number"),
@@ -65,6 +67,34 @@ export const OPTION_FORM_SCHEMAS: Record<string, FormSection[]> = {
         field("pass", "密码", "password"),
         field("secure", "使用 TLS", "switch"),
       ]),
+      nested("templates", "邮件 UI", [
+        nested("brand", "品牌", [
+          field("logoText", "标识文字", "input", "显示在邮件左上角的短文字，建议使用 1–2 个字符"),
+          field("footerText", "页脚署名", "input"),
+        ]),
+        nested("verification", "验证码邮件", [
+          field("category", "分类标签", "input"),
+          field("subject", "邮件标题", "input", "可用变量：`{{site_name}}`"),
+          field("title", "卡片标题", "input"),
+          field("intro", "引导文案", "textarea", "可用变量：`{{site_name}}`"),
+        ]),
+        nested("comment", "评论邮件", [
+          field("category", "分类标签", "input"),
+          field("subject", "新评论邮件标题", "input", "可用变量：`{{site_name}}`、`{{author}}`、`{{comment_type}}`"),
+          field("replySubject", "回复邮件标题", "input", "可用变量：`{{site_name}}`、`{{author}}`"),
+          field("title", "新评论卡片标题", "input", "可用变量：`{{author}}`、`{{comment_type}}`"),
+          field("replyTitle", "回复卡片标题", "input", "可用变量：`{{author}}`"),
+          field("intro", "新评论引导文案", "textarea", "可用变量：`{{author}}`、`{{ref_type}}`、`{{comment_type}}`"),
+          field("replyIntro", "回复引导文案", "textarea", "可用变量：`{{author}}`、`{{ref_type}}`"),
+        ]),
+        nested("owner", "管理员来信", [
+          field("category", "分类标签", "input", "友链通知等手动邮件使用此标签"),
+        ]),
+      ], "使用网站 Stone + Teal 视觉体系，并针对邮件客户端采用兼容布局"),
+      field("testEmail", "测试邮件", "action", "保存配置后，将真实 HTML 邮件发送到站长邮箱", {
+        actionId: "send-test-email",
+        actionLabel: "发送测试邮件",
+      }),
     ],
   }],
   commentOptions: [{

@@ -66,4 +66,10 @@ export const optionsApi = {
         bypassTransform: true,
       }),
     ),
+
+  /** 向站长邮箱发送使用当前配置渲染的 HTML 测试邮件。 */
+  sendTestEmail: () =>
+    request.post<ApiResponse<null>>("/options/mailOptions/test", {
+      bypassTransform: true,
+    }),
 };

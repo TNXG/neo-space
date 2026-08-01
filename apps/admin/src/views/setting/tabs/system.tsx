@@ -69,6 +69,23 @@ export const TabSystem = defineComponent({
       }
     };
 
+    /** 执行设置表单中的服务端动作。 */
+    const handleAction = async (actionId: string) => {
+      if (actionId !== "send-test-email") {
+        return;
+      }
+      if (isDirty.value) {
+        toast.warning("请先保存邮件配置，再发送测试邮件");
+        return;
+      }
+      try {
+        await optionsApi.sendTestEmail();
+        toast.success("HTML 测试邮件已发送到站长邮箱");
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : "测试邮件发送失败");
+      }
+    };
+
     return () => (
       <div class="space-y-6">
         {props.optionKey === "ai"
@@ -92,6 +109,7 @@ export const TabSystem = defineComponent({
                     fields={section.fields}
                     formData={formData}
                     dataKeyPrefix={section.key}
+                    onAction={actionId => void handleAction(actionId)}
                   />
                 </SettingsSection>
               ))

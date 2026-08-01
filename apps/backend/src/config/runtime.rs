@@ -404,6 +404,43 @@ pub async fn migrate_options(
         i64::try_from(config.link_health_interval_hours).unwrap_or(6),
     )
     .await?;
+    for (field_path, value) in [
+        ("fromName", "Neo Space"),
+        ("templates.brand.logoText", "N"),
+        ("templates.brand.footerText", "Powered by Neo Space"),
+        ("templates.verification.category", "安全验证"),
+        (
+            "templates.verification.subject",
+            "[{{site_name}}] 邮箱验证码",
+        ),
+        ("templates.verification.title", "验证你的邮箱"),
+        (
+            "templates.verification.intro",
+            "感谢你访问 {{site_name}}。请使用下方验证码完成身份验证。",
+        ),
+        ("templates.comment.category", "评论通知"),
+        (
+            "templates.comment.subject",
+            "[{{site_name}}] 新{{comment_type}}：{{author}}",
+        ),
+        (
+            "templates.comment.replySubject",
+            "[{{site_name}}] {{author}} 回复了你的评论",
+        ),
+        ("templates.comment.title", "新{{comment_type}}：{{author}}"),
+        ("templates.comment.replyTitle", "{{author}} 回复了你的评论"),
+        (
+            "templates.comment.intro",
+            "{{author}} 在{{ref_type}}中留下了新的{{comment_type}}。",
+        ),
+        (
+            "templates.comment.replyIntro",
+            "{{author}} 回复了你在{{ref_type}}中的评论。",
+        ),
+        ("templates.owner.category", "站点来信"),
+    ] {
+        ensure_field(database, "mailOptions", field_path, value).await?;
+    }
     ensure_field(
         database,
         "friendLinkOptions",

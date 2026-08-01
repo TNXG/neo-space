@@ -35,6 +35,7 @@ pub struct EmailConfig {
     pub from_name: String,
     pub from_email: String,
     pub encryption: SmtpEncryption,
+    pub templates: email_templates::EmailTemplateConfig,
 }
 
 /// Verification code data
@@ -128,9 +129,10 @@ impl EmailService {
                 .get_str("pass")
                 .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
                 .to_string(),
-            from_name: "Neo Space".to_string(),
+            from_name: value.get_str("fromName").unwrap_or("Neo Space").to_string(),
             from_email,
             encryption,
+            templates: email_templates::EmailTemplateConfig::from_mail_options(value),
         })
     }
 
@@ -144,8 +146,13 @@ impl EmailService {
         let config = self.get_config().await?;
 
         // Build email body from templates
-        let html_body = email_templates::build_verification_html(code, site_name);
+        let html_body =
+            email_templates::build_verification_html(code, site_name, &config.templates);
         let text_body = email_templates::build_verification_text(code, site_name);
+        let subject = email_templates::render_template(
+            &config.templates.verification_subject,
+            &[("site_name", site_name)],
+        );
 
         let from_mailbox = Mailbox::new(
             Some(config.from_name.clone()),
@@ -164,7 +171,7 @@ impl EmailService {
         let email = Message::builder()
             .from(from_mailbox)
             .to(to_mailbox)
-            .subject(format!("[{site_name}] 验证码", site_name = site_name))
+            .subject(subject)
             .multipart(
                 MultiPart::alternative()
                     .singlepart(SinglePart::plain(text_body))
@@ -232,7 +239,7 @@ impl EmailService {
     ) -> Result<(), AppError> {
         let config = self.get_config().await?;
         let from_mailbox = Mailbox::new(
-            Some(site_name.to_string()),
+            Some(config.from_name.clone()),
             config.from_email.parse().map_err(|_| {
                 AppError::Internal(format!("Invalid from_email format: {}", config.from_email))
             })?,
@@ -243,7 +250,8 @@ impl EmailService {
                 .parse()
                 .map_err(|_| AppError::BadRequest("Invalid recipient email format".to_string()))?,
         );
-        let html_body = email_templates::build_owner_html(subject, content, site_name);
+        let html_body =
+            email_templates::build_owner_html(subject, content, site_name, &config.templates);
         let email = Message::builder()
             .from(from_mailbox)
             .to(to_mailbox)
