@@ -4,7 +4,7 @@ import type { NavItem } from "./nav-config";
 import type { User } from "@/types/api";
 
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
-import { motion, useMotionTemplate, useMotionValue } from "motion/react";
+import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 
@@ -23,13 +23,13 @@ import { getNavigationTransitionType, NAV_ITEMS } from "./nav-config";
 import styles from "./nav-menu.module.scss";
 import { dropdownPanelMap } from "./NavDropdownPanels";
 
-const GLASS_FILTER_CLASS
-  = "backdrop-blur-2xl backdrop-saturate-150 reduced-transparency:backdrop-blur-none reduced-transparency:backdrop-saturate-100";
+const FROSTED_FILTER_CLASS
+  = "backdrop-blur-lg reduced-transparency:backdrop-blur-none";
 
 const ACTION_BTN_CLASS = cn(
   "w-10 h-10 rounded-full flex items-center justify-center cursor-pointer",
-  styles.liquidGlassControl,
-  GLASS_FILTER_CLASS,
+  styles.frostedControl,
+  FROSTED_FILTER_CLASS,
   "text-muted-foreground hover:text-accent-600",
   "active:scale-95 will-change-transform",
 );
@@ -57,21 +57,6 @@ export function TopNav({
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const [menuValue, setMenuValue] = useState<string | null>(null);
-
-  // Spotlight mouse-tracking
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const radius = useMotionValue(0);
-  const handleMouseMove = useCallback(
-    ({ clientX, clientY, currentTarget }: React.MouseEvent) => {
-      const bounds = currentTarget.getBoundingClientRect();
-      mouseX.set(clientX - bounds.left);
-      mouseY.set(clientY - bounds.top);
-      radius.set(Math.hypot(bounds.width, bounds.height) / 2.5);
-    },
-    [mouseX, mouseY, radius],
-  );
-  const spotlightBg = useMotionTemplate`radial-gradient(${radius}px circle at ${mouseX}px ${mouseY}px, var(--color-accent-500) 0%, transparent 65%)`;
 
   const handleNavClick = useCallback(
     (e: React.MouseEvent, item: NavItem) => {
@@ -118,23 +103,14 @@ export function TopNav({
             className={cn(
               "pointer-events-auto relative flex items-center",
               "h-12 rounded-full",
-              styles.liquidGlassNav,
-              GLASS_FILTER_CLASS,
+              styles.frostedNav,
+              FROSTED_FILTER_CLASS,
               "will-change-transform",
-              "group",
               navAnimClass,
             )}
-            onMouseMove={handleMouseMove}
           >
-            {/* Spotlight overlay */}
-            <motion.div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-px rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-15"
-              style={{ background: spotlightBg }}
-            />
-
             {/* Navigation items (desktop) */}
-            <NavigationMenu.List className="relative z-10 flex h-full list-none items-center gap-1 px-2 font-medium text-foreground/80">
+            <NavigationMenu.List className="flex h-full list-none items-center gap-1 px-2 font-medium text-foreground/80">
               {NAV_ITEMS.map((item) => {
                 const isActive
                   = item.href === "/" ? isHomePage : pathname.startsWith(item.href);
@@ -240,8 +216,8 @@ export function TopNav({
                 <NavigationMenu.Popup
                   className={cn(
                     styles.popup,
-                    styles.liquidGlassPopup,
-                    GLASS_FILTER_CLASS,
+                    styles.frostedPopup,
+                    FROSTED_FILTER_CLASS,
                     "select-none rounded-2xl outline-hidden",
                   )}
                 >
@@ -273,8 +249,8 @@ export function TopNav({
             compact
             className={cn(
               "pointer-events-auto",
-              styles.liquidGlassControl,
-              GLASS_FILTER_CLASS,
+              styles.frostedControl,
+              FROSTED_FILTER_CLASS,
               navAnimClass,
             )}
           />
