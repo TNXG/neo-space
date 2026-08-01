@@ -35,7 +35,12 @@ pub async fn prepare_bangumi_models(http_client: &reqwest::Client) -> AppResult<
     let cache_root = model_cache_root();
     tokio::fs::create_dir_all(&cache_root)
         .await
-        .map_err(|error| AppError::Internal(format!("Failed to create model cache: {error}")))?;
+        .map_err(|error| {
+            AppError::Internal(format!(
+                "Failed to create model cache at {}: {error}",
+                cache_root.display(),
+            ))
+        })?;
 
     let anime_model_path = cache_root.join(ANIME_MODEL_FILE_NAME);
     ensure_cached_file(
