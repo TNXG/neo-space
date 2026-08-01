@@ -40,6 +40,7 @@ interface TopNavProps {
   setIsNavVisible: (visible: boolean) => void;
   setIsDrawerOpen: (open: boolean) => void;
   setIsSearchOpen: (open: boolean) => void;
+  setIsSettingsOpen: (open: boolean) => void;
   isConnected: boolean;
   onlineCount: number;
 }
@@ -50,6 +51,7 @@ export function TopNav({
   setIsNavVisible: _setIsNavVisible,
   setIsDrawerOpen,
   setIsSearchOpen,
+  setIsSettingsOpen,
   isConnected,
   onlineCount,
 }: TopNavProps) {
@@ -60,7 +62,7 @@ export function TopNav({
 
   const handleNavClick = useCallback(
     (e: React.MouseEvent, item: NavItem) => {
-      if (item.href.startsWith("/#") && isHomePage) {
+      if (item.href?.startsWith("/#") && isHomePage) {
         e.preventDefault();
         document.querySelector(item.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
       }
@@ -113,7 +115,11 @@ export function TopNav({
             <NavigationMenu.List className="flex h-full list-none items-center gap-1 px-2 font-medium text-foreground/80">
               {NAV_ITEMS.map((item) => {
                 const isActive
-                  = item.href === "/" ? isHomePage : pathname.startsWith(item.href);
+                  = item.href === "/"
+                    ? isHomePage
+                    : (item.href ? pathname.startsWith(item.href) : false)
+                      || item.children?.some(child => child.href && pathname.startsWith(child.href))
+                      || false;
                 const itemTitle = t(`nav.${item.id}`);
                 const DropdownPanel = item.dropdownType
                   ? dropdownPanelMap[item.dropdownType]
@@ -123,14 +129,16 @@ export function TopNav({
                   return (
                     <NavigationMenu.Item key={item.id} value={item.id}>
                       <NavigationMenu.Trigger
-                        nativeButton={false}
-                        render={(
-                          <Link
-                            href={item.href}
-                            transitionTypes={[getNavigationTransitionType(pathname, item.href)]}
-                            onClick={e => handleNavClick(e, item)}
-                          />
-                        )}
+                        nativeButton={!item.href}
+                        render={item.href
+                          ? (
+                              <Link
+                                href={item.href}
+                                transitionTypes={[getNavigationTransitionType(pathname, item.href)]}
+                                onClick={e => handleNavClick(e, item)}
+                              />
+                            )
+                          : undefined}
                         className={cn(
                           "relative inline-flex items-center whitespace-nowrap border-none bg-transparent px-3 py-2 text-sm cursor-pointer transition duration-200",
                           isActive ? "text-accent-600" : "hover:text-accent-600/80",
@@ -160,6 +168,10 @@ export function TopNav({
                           user={user}
                           isConnected={isConnected}
                           onlineCount={onlineCount}
+                          onOpenSettings={() => {
+                            setMenuValue(null);
+                            setIsSettingsOpen(true);
+                          }}
                         />
                       </NavigationMenu.Content>
                     </NavigationMenu.Item>
@@ -167,6 +179,9 @@ export function TopNav({
                 }
 
                 // Simple link (no dropdown)
+                if (!item.href)
+                  return null;
+
                 return (
                   <NavigationMenu.Item key={item.id}>
                     <NavigationMenu.Link

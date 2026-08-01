@@ -20,6 +20,7 @@ export interface DropdownPanelProps {
   user?: User;
   isConnected?: boolean;
   onlineCount?: number;
+  onOpenSettings?: () => void;
 }
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -68,8 +69,9 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
     { revalidateOnFocus: false },
   );
   const recentItems = data?.data?.recent ?? [];
+  const visibleRecentItems = recentItems.slice(0, 3);
   return (
-    <div className="w-70 p-3">
+    <div className="w-96 p-3">
       {/* Owner card */}
       <NavigationMenu.Link
         closeOnClick
@@ -111,36 +113,32 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
         <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {t("nav.latestActivity")}
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-3 gap-1">
           {isLoading
             ? (
                 RECENT_ACTIVITY_SKELETON_KEYS.map(skeletonKey => (
-                  <div key={skeletonKey} className="rounded-xl px-2.5 py-2">
-                    <div className="flex items-center justify-between gap-1 mb-1.5">
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-3 w-8" />
-                    </div>
-                    <Skeleton className="h-3 w-16" />
+                  <div key={skeletonKey} className="min-w-0 rounded-lg px-2 py-1.5">
+                    <Skeleton className="h-3.5 w-full" />
+                    <Skeleton className="mt-1 h-2.5 w-1/2" />
                   </div>
                 ))
               )
-            : recentItems.length > 0
+            : visibleRecentItems.length > 0
               ? (
-                  recentItems.map(item => (
+                  visibleRecentItems.map(item => (
                     <NavigationMenu.Link
                       key={item.id}
                       closeOnClick
                       render={<Link href={navItemHref(item)} />}
-                      className="rounded-xl bg-secondary/40 px-2.5 py-2 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+                      className="min-w-0 overflow-hidden rounded-lg bg-secondary/40 px-2 py-1.5 transition-colors hover:bg-accent-500/10 hover:text-accent-600"
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="min-w-0 truncate text-[13px] leading-snug">{item.title}</div>
-                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                      <div className="truncate text-[11px] leading-snug">{item.title}</div>
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[9px] text-muted-foreground">
+                        <span className="shrink-0">
                           {item.type === "post" ? t("nav.postLabel") : t("nav.noteLabel")}
                         </span>
-                      </div>
-                      <div className="mt-0.5 text-[10px] text-muted-foreground">
-                        {getRelativeTime(item.created)}
+                        <span aria-hidden className="shrink-0">·</span>
+                        <span className="truncate">{getRelativeTime(item.created)}</span>
                       </div>
                     </NavigationMenu.Link>
                   ))
@@ -161,13 +159,6 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
           </NavigationMenu.Link>
           <NavigationMenu.Link
             closeOnClick
-            render={<Link href="/donate" />}
-            className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
-          >
-            {t("nav.donate")}
-          </NavigationMenu.Link>
-          <NavigationMenu.Link
-            closeOnClick
             render={<Link href="/about-me" />}
             className="rounded-full bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:bg-accent-500/10 hover:text-accent-600"
           >
@@ -182,6 +173,45 @@ export const HomeDropdown: FC<DropdownPanelProps> = ({ user, isConnected }) => {
           </NavigationMenu.Link>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ============================================================
+//  More Dropdown — 次级页面入口
+// ============================================================
+
+/** 集中展示不需要长期占据顶栏空间的次级页面。 */
+export const MoreDropdown: FC<DropdownPanelProps> = ({ onOpenSettings }) => {
+  const t = useTranslations();
+  const moreItems = [
+    { id: "donate", href: "/donate", icon: "mingcute:heart-line" },
+    { id: "bangumi", href: "/bangumi", icon: "mingcute:planet-line" },
+  ] as const;
+
+  return (
+    <div className="grid w-64 grid-cols-3 gap-1 p-2">
+      {moreItems.map(item => (
+        <NavigationMenu.Link
+          key={item.id}
+          closeOnClick
+          render={<Link href={item.href} />}
+          className="flex min-w-0 cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+        >
+          <Icon icon={item.icon} className="text-base" />
+          <span className="truncate">{t(`nav.${item.id}`)}</span>
+        </NavigationMenu.Link>
+      ))}
+      <NavigationMenu.Link
+        closeOnClick
+        render={(
+          <button type="button" onClick={onOpenSettings} />
+        )}
+        className="flex min-w-0 cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent-500/10 hover:text-accent-600"
+      >
+        <Icon icon="mingcute:settings-3-line" className="text-base" />
+        <span className="truncate">{t("nav.settings")}</span>
+      </NavigationMenu.Link>
     </div>
   );
 };
@@ -495,4 +525,5 @@ export const dropdownPanelMap: Record<string, FC<DropdownPanelProps>> = {
   home: HomeDropdown,
   posts: PostsDropdown,
   notes: NotesDropdown,
+  more: MoreDropdown,
 };

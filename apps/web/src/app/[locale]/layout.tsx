@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/common/theme";
 import { MotionProvider } from "@/components/providers/MotionProvider";
+import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { generateWebsiteJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteConfig } from "@/lib/api-client";
@@ -144,6 +145,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <MotionProvider>
             <NextIntlClientProvider messages={messages}>
               <TooltipProvider>
+                <ServiceWorkerProvider />
                 {children}
                 <Toaster richColors position="top-center" />
               </TooltipProvider>
