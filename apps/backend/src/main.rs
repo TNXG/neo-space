@@ -21,7 +21,7 @@ use axum::Router;
 use config::{AppConfig, database};
 use std::net::SocketAddr;
 use tokio::signal;
-use tracing::info;
+use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -64,6 +64,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create application state
     let state = app::create_state(db, config.clone());
+
+    info!("正在准备 Bangumi 图像检测模型...");
+    if let Err(error) = services::bangumi_crop::prepare_bangumi_models(&state.http_client).await {
+        // 模型只服务于后台裁切检测；下载失败不应阻断博客主体，实际使用时仍会再次尝试。
+        warn!(?error, "Bangumi 图像检测模型预下载失败，已保留按需重试");
+    } else {
+        info!("Bangumi 图像检测模型准备完成");
+    }
 
     // 重建执行器只存在于当前进程内；重启后旧任务不能续跑，必须先收敛状态。
     if let Err(error) = tasks::search_maintenance::recover_interrupted_rebuilds(&state).await {

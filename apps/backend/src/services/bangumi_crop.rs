@@ -23,9 +23,42 @@ const PERSON_MODEL_FILE_NAME: &str = "yolo11n-pose.onnx";
 const PERSON_DETECTOR_VERSION: &str = "ultralytics/yolo11n-pose@v8.4.0+portrait-4x5-v5";
 const MAX_IMAGE_BYTES: u64 = 15 * 1024 * 1024;
 const PORTRAIT_ASPECT_RATIO: f64 = 4.0 / 5.0;
+const DOWNLOAD_PROGRESS_BAR_WIDTH: usize = 20;
+const DOWNLOAD_PROGRESS_STEP_PERCENT: u64 = 5;
+const UNKNOWN_DOWNLOAD_PROGRESS_STEP_BYTES: u64 = 1024 * 1024;
 
 static ANIME_HEAD_MODEL: OnceLock<Mutex<Option<YOLOModel>>> = OnceLock::new();
 static PERSON_POSE_MODEL: OnceLock<Mutex<Option<YOLOModel>>> = OnceLock::new();
+
+/// 在后端开始监听端口前准备人物裁切所需的两个 ONNX 模型。
+pub async fn prepare_bangumi_models(http_client: &reqwest::Client) -> AppResult<()> {
+    let cache_root = model_cache_root();
+    tokio::fs::create_dir_all(&cache_root)
+        .await
+        .map_err(|error| AppError::Internal(format!("Failed to create model cache: {error}")))?;
+
+    let anime_model_path = cache_root.join(ANIME_MODEL_FILE_NAME);
+    ensure_cached_file(
+        http_client,
+        ANIME_MODEL_URL,
+        &anime_model_path,
+        None,
+        Some("Bangumi 动漫头部模型"),
+    )
+    .await?;
+    ensure_channels_metadata(&anime_model_path).await?;
+
+    let person_model_path = cache_root.join(PERSON_MODEL_FILE_NAME);
+    ensure_cached_file(
+        http_client,
+        PERSON_MODEL_URL,
+        &person_model_path,
+        None,
+        Some("Bangumi 人体姿态模型"),
+    )
+    .await?;
+    Ok(())
+}
 
 /// 模型检测后得到的归一化裁切参数。
 #[derive(Debug, Clone)]
@@ -60,13 +93,27 @@ pub async fn detect_anime_upper_body(
         .map_err(|error| AppError::Internal(format!("Failed to create model cache: {error}")))?;
 
     let model_path = cache_root.join(ANIME_MODEL_FILE_NAME);
-    ensure_cached_file(http_client, ANIME_MODEL_URL, &model_path, None).await?;
+    ensure_cached_file(
+        http_client,
+        ANIME_MODEL_URL,
+        &model_path,
+        None,
+        Some("Bangumi 动漫头部模型"),
+    )
+    .await?;
     ensure_channels_metadata(&model_path).await?;
 
     let image_url_hash = image_url_hash(image_url);
     let image_extension = trusted_image_extension(image_url);
     let image_path = cache_root.join(format!("bangumi-image-{image_url_hash}.{image_extension}"));
-    ensure_cached_file(http_client, image_url, &image_path, Some(MAX_IMAGE_BYTES)).await?;
+    ensure_cached_file(
+        http_client,
+        image_url,
+        &image_path,
+        Some(MAX_IMAGE_BYTES),
+        None,
+    )
+    .await?;
 
     tokio::task::spawn_blocking(move || {
         detect_anime_from_file(&model_path, &image_path, image_url_hash)
@@ -114,12 +161,26 @@ pub async fn detect_person_upper_body(
         .map_err(|error| AppError::Internal(format!("Failed to create model cache: {error}")))?;
 
     let model_path = cache_root.join(PERSON_MODEL_FILE_NAME);
-    ensure_cached_file(http_client, PERSON_MODEL_URL, &model_path, None).await?;
+    ensure_cached_file(
+        http_client,
+        PERSON_MODEL_URL,
+        &model_path,
+        None,
+        Some("Bangumi 人体姿态模型"),
+    )
+    .await?;
 
     let image_url_hash = image_url_hash(image_url);
     let image_extension = trusted_image_extension(image_url);
     let image_path = cache_root.join(format!("bangumi-image-{image_url_hash}.{image_extension}"));
-    ensure_cached_file(http_client, image_url, &image_path, Some(MAX_IMAGE_BYTES)).await?;
+    ensure_cached_file(
+        http_client,
+        image_url,
+        &image_path,
+        Some(MAX_IMAGE_BYTES),
+        None,
+    )
+    .await?;
 
     tokio::task::spawn_blocking(move || {
         detect_person_from_file(&model_path, &image_path, image_url_hash)
@@ -169,8 +230,12 @@ async fn ensure_cached_file(
     url: &str,
     destination: &Path,
     max_bytes: Option<u64>,
+    progress_label: Option<&str>,
 ) -> AppResult<()> {
     if tokio::fs::try_exists(destination).await.unwrap_or(false) {
+        if let Some(label) = progress_label {
+            tracing::info!(model = label, path = %destination.display(), "模型缓存已就绪");
+        }
         return Ok(());
     }
 
@@ -191,7 +256,12 @@ async fn ensure_cached_file(
     let mut temporary_file = tokio::fs::File::create(&temporary_path)
         .await
         .map_err(|error| AppError::Internal(format!("Failed to create Bangumi cache: {error}")))?;
+    let total_bytes = response.content_length();
     let mut downloaded_bytes = 0_u64;
+    let mut next_progress = 0_u64;
+    if let Some(label) = progress_label {
+        report_download_progress(label, downloaded_bytes, total_bytes, &mut next_progress);
+    }
 
     while let Some(chunk) = response
         .chunk()
@@ -209,6 +279,9 @@ async fn ensure_cached_file(
         temporary_file.write_all(&chunk).await.map_err(|error| {
             AppError::Internal(format!("Failed to cache Bangumi asset: {error}"))
         })?;
+        if let Some(label) = progress_label {
+            report_download_progress(label, downloaded_bytes, total_bytes, &mut next_progress);
+        }
     }
     temporary_file
         .flush()
@@ -220,7 +293,78 @@ async fn ensure_cached_file(
         .map_err(|error| {
             AppError::Internal(format!("Failed to finalize Bangumi cache: {error}"))
         })?;
+    if let Some(label) = progress_label {
+        tracing::info!(
+            model = label,
+            size = %format_bytes(downloaded_bytes),
+            path = %destination.display(),
+            "模型下载完成"
+        );
+    }
     Ok(())
+}
+
+/// 以固定宽度文本条输出下载进度，兼容 Docker 等非交互式日志环境。
+fn report_download_progress(
+    label: &str,
+    downloaded_bytes: u64,
+    total_bytes: Option<u64>,
+    next_progress: &mut u64,
+) {
+    if let Some(total_bytes) = total_bytes.filter(|total| *total > 0) {
+        let percentage = downloaded_bytes
+            .saturating_mul(100)
+            .checked_div(total_bytes)
+            .unwrap_or_default()
+            .min(100);
+        if percentage < *next_progress && downloaded_bytes < total_bytes {
+            return;
+        }
+        tracing::info!(
+            "{label} {} {:>3}% ({}/{})",
+            render_progress_bar(percentage),
+            percentage,
+            format_bytes(downloaded_bytes),
+            format_bytes(total_bytes),
+        );
+        *next_progress = percentage
+            .saturating_div(DOWNLOAD_PROGRESS_STEP_PERCENT)
+            .saturating_add(1)
+            .saturating_mul(DOWNLOAD_PROGRESS_STEP_PERCENT);
+        return;
+    }
+
+    if downloaded_bytes >= *next_progress {
+        tracing::info!("{label} {} downloaded", format_bytes(downloaded_bytes),);
+        *next_progress = downloaded_bytes.saturating_add(UNKNOWN_DOWNLOAD_PROGRESS_STEP_BYTES);
+    }
+}
+
+/// 将百分比转换为适合日志输出的固定宽度进度条。
+fn render_progress_bar(percentage: u64) -> String {
+    let filled_width = usize::try_from(percentage.min(100))
+        .unwrap_or(100)
+        .saturating_mul(DOWNLOAD_PROGRESS_BAR_WIDTH)
+        / 100;
+    format!(
+        "[{}{}]",
+        "#".repeat(filled_width),
+        "-".repeat(DOWNLOAD_PROGRESS_BAR_WIDTH.saturating_sub(filled_width)),
+    )
+}
+
+/// 使用紧凑的二进制单位展示当前下载字节数。
+fn format_bytes(bytes: u64) -> String {
+    const KIB: f64 = 1024.0;
+    const MIB: f64 = KIB * 1024.0;
+    let bytes = bytes as f64;
+    if bytes >= MIB {
+        format!("{:.1} MiB", bytes / MIB)
+    } else if bytes >= KIB {
+        format!("{:.1} KiB", bytes / KIB)
+    } else {
+        format!("{bytes:.0} B")
+    }
 }
 
 /// 选择画面中最主要的动漫头部，并由头框向下推导上半身取景区域。
@@ -506,4 +650,23 @@ struct PortraitCrop {
     center_x: f64,
     center_y: f64,
     scale: f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{format_bytes, render_progress_bar};
+
+    #[test]
+    fn renders_bounded_download_progress_bar() {
+        assert_eq!(render_progress_bar(0), "[--------------------]");
+        assert_eq!(render_progress_bar(50), "[##########----------]");
+        assert_eq!(render_progress_bar(120), "[####################]");
+    }
+
+    #[test]
+    fn formats_downloaded_bytes_compactly() {
+        assert_eq!(format_bytes(512), "512 B");
+        assert_eq!(format_bytes(1536), "1.5 KiB");
+        assert_eq!(format_bytes(2 * 1024 * 1024), "2.0 MiB");
+    }
 }
