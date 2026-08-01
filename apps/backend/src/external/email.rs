@@ -222,7 +222,7 @@ impl EmailService {
         Ok(())
     }
 
-    /// 发送由博主明确撰写并确认的纯文本邮件。
+    /// 发送由博主明确撰写并确认的邮件，同时提供品牌 HTML 与纯文本降级内容。
     pub async fn send_owner_email(
         &self,
         to_email: &str,
@@ -243,11 +243,20 @@ impl EmailService {
                 .parse()
                 .map_err(|_| AppError::BadRequest("Invalid recipient email format".to_string()))?,
         );
+        let html_body = email_templates::build_owner_html(subject, content, site_name);
         let email = Message::builder()
             .from(from_mailbox)
             .to(to_mailbox)
             .subject(subject)
-            .body(content.to_string())
+            .multipart(
+                MultiPart::alternative()
+                    .singlepart(SinglePart::plain(content.to_string()))
+                    .singlepart(
+                        SinglePart::builder()
+                            .header(ContentType::TEXT_HTML)
+                            .body(html_body),
+                    ),
+            )
             .map_err(|error| AppError::BadRequest(format!("Invalid email content: {error}")))?;
         let credentials = Credentials::new(config.user.clone(), config.password.clone());
         let mailer = match config.encryption {
