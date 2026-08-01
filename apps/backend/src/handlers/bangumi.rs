@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     response::Json,
 };
 use bson::{doc, oid::ObjectId};
@@ -18,7 +18,7 @@ use futures::{StreamExt, TryStreamExt, stream};
 use mongodb::{IndexModel, options::IndexOptions};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashMap, env};
+use std::collections::HashMap;
 
 const ALLOWED_SOURCE_TYPES: [&str; 2] = ["character", "person"];
 const BANGUMI_API_BASE_URL: &str = "https://api.bgm.tv/v0";
@@ -33,11 +33,6 @@ struct BangumiPage {
     data: Vec<Value>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct BangumiLibraryQuery {
-    username: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 struct CropCandidate {
     source_type: &'static str,
@@ -46,15 +41,10 @@ struct CropCandidate {
 }
 
 /// GET /bangumi/library — 聚合官方收藏，并在每个条目中直接附带后端缓存的 crop。
-pub async fn get_library(
-    State(state): State<SharedState>,
-    Query(query): Query<BangumiLibraryQuery>,
-) -> AppResult<Json<ApiResponse<Value>>> {
-    let username = env::var("BANGUMI_USERNAME")
-        .ok()
-        .or(query.username)
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
+pub async fn get_library(State(state): State<SharedState>) -> AppResult<Json<ApiResponse<Value>>> {
+    let username = state.config().bangumi_username.trim().to_string();
+    let username = (!username.is_empty())
+        .then_some(username)
         .ok_or_else(|| AppError::NotFound("Bangumi username is not configured".to_string()))?;
     let encoded_username = urlencoding::encode(&username);
     let profile_path = format!("/users/{encoded_username}");

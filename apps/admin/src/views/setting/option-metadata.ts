@@ -8,6 +8,7 @@ export interface OptionMetadata {
 
 const OPTION_METADATA: Record<string, OptionMetadata> = {
   seo: { title: "站点信息", description: "标题、描述与搜索关键词", icon: "globe" },
+  bangumiOptions: { title: "Bangumi", description: "公开收藏账号与聚合配置", icon: "database" },
   url: { title: "站点地址", description: "前台、后台与服务端 URL", icon: "link" },
   mailOptions: { title: "邮件", description: "邮件服务与发信配置", icon: "mail" },
   commentOptions: { title: "评论", description: "评论审核与交互策略", icon: "message-square" },
@@ -20,6 +21,7 @@ const OPTION_METADATA: Record<string, OptionMetadata> = {
 
 const DISPLAY_ORDER = [
   "seo",
+  "bangumiOptions",
   "url",
   "mailOptions",
   "commentOptions",

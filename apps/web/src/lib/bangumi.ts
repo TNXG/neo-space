@@ -18,7 +18,6 @@ import type {
 import { API_BASE_URL } from "@/lib/api-client";
 
 const BANGUMI_REVALIDATE_SECONDS = 1_800;
-const BANGUMI_CROP_SCHEMA_VERSION = "5";
 
 interface BangumiUserResponse {
   username: string;
@@ -81,20 +80,16 @@ interface BangumiBackendLibraryResponse {
 }
 
 /** 从本站后端读取已经附带持久化裁切参数的 Bangumi 聚合数据。 */
-async function fetchBackendLibrary(): Promise<BangumiBackendLibraryResponse> {
-  const username = process.env.BANGUMI_USERNAME?.trim();
-  const query = new URLSearchParams({
-    cropSchema: BANGUMI_CROP_SCHEMA_VERSION,
-  });
-  if (username) {
-    query.set("username", username);
-  }
-  const response = await fetch(`${API_BASE_URL}/bangumi/library?${query}`, {
+async function fetchBackendLibrary(): Promise<BangumiBackendLibraryResponse | null> {
+  const response = await fetch(`${API_BASE_URL}/bangumi/library`, {
     next: {
       revalidate: BANGUMI_REVALIDATE_SECONDS,
       tags: ["bangumi", "bangumi-crops"],
     },
   });
+  if (response.status === 404) {
+    return null;
+  }
   if (!response.ok) {
     throw new Error(`Bangumi backend request failed: ${response.status}`);
   }
@@ -157,6 +152,9 @@ function normalizeMediaCollections(
 /** 获取后端聚合并完成裁切关联的完整兴趣收藏。 */
 export async function getBangumiLibrary(): Promise<BangumiLibraryData | null> {
   const library = await fetchBackendLibrary();
+  if (!library) {
+    return null;
+  }
 
   const characters: BangumiCharacterCollection[] = library.characters.map(
     (item) => ({

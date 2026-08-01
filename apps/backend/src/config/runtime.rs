@@ -392,6 +392,13 @@ pub async fn migrate_options(
     .await?;
     ensure_field(
         database,
+        "bangumiOptions",
+        "username",
+        config.bangumi_username.clone(),
+    )
+    .await?;
+    ensure_field(
+        database,
         "friendLinkOptions",
         "healthCheckIntervalHours",
         i64::try_from(config.link_health_interval_hours).unwrap_or(6),
@@ -459,6 +466,10 @@ pub async fn apply_database_options(database: &Database, config: &mut AppConfig)
             .unwrap_or(config.meilisearch_host.clone());
         config.meilisearch_api_key =
             nested_string(&search, &["apiKey"]).unwrap_or(config.meilisearch_api_key.clone());
+    }
+    if let Some(bangumi) = option_value(database, "bangumiOptions").await {
+        config.bangumi_username =
+            nested_string(&bangumi, &["username"]).unwrap_or(config.bangumi_username.clone());
     }
     if let Some(comment) = option_value(database, "commentOptions").await {
         config.comments_disabled =

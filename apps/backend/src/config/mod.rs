@@ -30,6 +30,8 @@ pub struct AppConfig {
     pub meilisearch_host: String,
     /// Meilisearch API key
     pub meilisearch_api_key: String,
+    /// Bangumi 公开收藏用户名
+    pub bangumi_username: String,
     /// Friend link health check interval in hours
     pub link_health_interval_hours: u64,
     /// Friend link request timeout in seconds
@@ -122,6 +124,8 @@ impl AppConfig {
                 .or_else(|_| env::var("MEILISEARCH_HOST"))
                 .unwrap_or_else(|_| "http://localhost:7700".to_string()),
             meilisearch_api_key: env::var("MEILISEARCH_API_KEY").unwrap_or_default(),
+            // 仅作为首次迁移种子；进入 options 后由管理后台维护。
+            bangumi_username: "tnxg".to_string(),
             link_health_interval_hours: env::var("LINK_HEALTH_CHECK_INTERVAL_HOURS")
                 .or_else(|_| env::var("LINK_HEALTH_CHECK_INTERVAL"))
                 .ok()

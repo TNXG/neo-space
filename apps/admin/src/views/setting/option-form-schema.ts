@@ -26,6 +26,14 @@ function nested(
 }
 
 export const OPTION_FORM_SCHEMAS: Record<string, FormSection[]> = {
+  bangumiOptions: [{
+    key: "bangumiOptions",
+    title: "Bangumi 收藏",
+    description: "后端使用该用户名读取并聚合 Bangumi 的公开收藏",
+    fields: [
+      field("username", "Bangumi 用户名", "input", "保存后前台收藏页会从本站后端重新读取数据"),
+    ],
+  }],
   seo: [{
     key: "seo",
     title: "站点信息",
