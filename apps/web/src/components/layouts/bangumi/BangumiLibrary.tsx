@@ -22,27 +22,22 @@ export function BangumiLibrary({ data }: BangumiLibraryProps) {
   const t = useTranslations("bangumi");
   const reduceMotion = useReducedMotion();
   const [section, setSection] = useState<LibrarySection>("anime");
-  const peopleCount = data.characters.length + data.persons.length;
   const sectionOptions = [
     {
       value: "anime" as const,
       label: t("section.anime"),
-      count: data.media.anime.length,
     },
     {
       value: "game" as const,
       label: t("section.game"),
-      count: data.media.game.length,
     },
     {
       value: "book" as const,
       label: t("section.book"),
-      count: data.media.book.length,
     },
     {
       value: "people" as const,
       label: t("section.people"),
-      count: peopleCount,
     },
   ];
 
@@ -113,16 +108,21 @@ export function BangumiLibrary({ data }: BangumiLibraryProps) {
               ? { opacity: 0 }
               : { opacity: 0, y: 12, scale: 0.985, filter: "blur(8px)" }
           }
-          transition={{ duration: reduceMotion ? 0.18 : 0.3, ease: [0.23, 1, 0.32, 1] }}
+          transition={{
+            duration: reduceMotion ? 0.18 : 0.3,
+            ease: [0.23, 1, 0.32, 1],
+          }}
           className={cn("min-h-80", section === "people" && "min-h-64")}
         >
           {section === "people" ? (
-            <PeopleCollectionView
-              characters={data.characters}
-              persons={data.persons}
-            />
+            <PeopleCollectionView />
           ) : (
-            <MediaCollectionView kind={section} items={data.media[section]} />
+            <MediaCollectionView
+              kind={section}
+              initialPage={
+                section === "anime" ? data.initialAnimePage : undefined
+              }
+            />
           )}
         </motion.div>
       </AnimatePresence>

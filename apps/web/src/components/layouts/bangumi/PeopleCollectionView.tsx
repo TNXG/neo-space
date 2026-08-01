@@ -7,7 +7,8 @@ import type {
   BangumiPersonType,
 } from "@/types/bangumi";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useBangumiPeopleInfinite } from "@/hooks/useBangumiLibrary";
 import { Icon } from "@/lib/inline-icon";
 import { BangumiSegmentedControl } from "./BangumiSegmentedControl";
 import {
@@ -20,30 +21,28 @@ import {
 type PeopleKind = "characters" | "persons";
 type PeopleType = "all" | BangumiCharacterType | BangumiPersonType;
 
-interface PeopleCollectionViewProps {
-  characters: BangumiCharacterCollection[];
-  persons: BangumiPersonCollection[];
-}
-
 /** 展示人物收藏的真实二级层级：虚构角色与现实人物。 */
-export function PeopleCollectionView({
-  characters,
-  persons,
-}: PeopleCollectionViewProps) {
+export function PeopleCollectionView() {
   const t = useTranslations("bangumi");
   const [kind, setKind] = useState<PeopleKind>("characters");
   const [type, setType] = useState<PeopleType>("all");
+  const characterPages = useBangumiPeopleInfinite("characters");
+  const personPages = useBangumiPeopleInfinite("persons");
+  const characters = characterPages.items as BangumiCharacterCollection[];
+  const persons = personPages.items as BangumiPersonCollection[];
+  const activePages = kind === "characters" ? characterPages : personPages;
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
 
   const kindOptions = [
     {
       value: "characters" as const,
       label: t("people.characters"),
-      count: characters.length,
+      count: characterPages.total,
     },
     {
       value: "persons" as const,
       label: t("people.persons"),
-      count: persons.length,
+      count: personPages.total,
     },
   ];
   const typeOptions = useMemo(() => {
@@ -83,6 +82,23 @@ export function PeopleCollectionView({
     kind === "characters"
       ? visibleCharacters.length === 0
       : visiblePersons.length === 0;
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel || !activePages.hasNextPage || activePages.isLoadingMore) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          activePages.loadMore();
+        }
+      },
+      { rootMargin: "320px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activePages]);
 
   /** 切换虚构/现实人物时重置子类型，避免保留不属于新层级的筛选值。 */
   const handleKindChange = (nextKind: PeopleKind) => {
@@ -133,6 +149,8 @@ export function PeopleCollectionView({
           </p>
         </div>
       )}
+
+      <div ref={loadMoreSentinelRef} className="h-px w-full" aria-hidden />
     </div>
   );
 }

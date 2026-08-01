@@ -5,9 +5,11 @@ import type {
   BangumiMediaCollection,
   BangumiMediaKind,
 } from "@/types/bangumi";
+import type { PaginatedData } from "@/types/api";
 import { useReducedMotion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useBangumiMediaInfinite } from "@/hooks/useBangumiLibrary";
 import { Icon } from "@/lib/inline-icon";
 import { BangumiSegmentedControl } from "./BangumiSegmentedControl";
 import { MediaCollectionCard } from "./MediaCollectionCard";
@@ -15,11 +17,9 @@ import { MediaCollectionDetail } from "./MediaCollectionDetail";
 import { MediaCollectionMobileDetail } from "./MediaCollectionMobileDetail";
 
 const COLLECTION_STATUSES: BangumiCollectionStatus[] = [1, 2, 3, 4, 5];
-const INITIAL_VISIBLE_COUNT = 18;
-
 interface MediaCollectionViewProps {
   kind: BangumiMediaKind;
-  items: BangumiMediaCollection[];
+  initialPage?: PaginatedData<BangumiMediaCollection>;
 }
 
 /** 根据作品类型返回符合中文习惯的收藏状态文案 key。 */
@@ -54,75 +54,73 @@ function getProgress(
 }
 
 /** 展示单一作品类型，并让收藏状态成为清晰的第二层级。 */
-export function MediaCollectionView({ kind, items }: MediaCollectionViewProps) {
+export function MediaCollectionView({
+  kind,
+  initialPage,
+}: MediaCollectionViewProps) {
   const t = useTranslations("bangumi");
   const locale = useLocale();
   const reduceMotion = useReducedMotion();
   const [status, setStatus] = useState<"all" | BangumiCollectionStatus>("all");
-  const [selectedId, setSelectedId] = useState<number | null>(
-    items[0]?.subjectId ?? null,
-  );
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+  const { items, total, hasNextPage, isLoadingMore, loadMore } =
+    useBangumiMediaInfinite(
+      kind,
+      status,
+      status === "all" ? initialPage : undefined,
+    );
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
 
   const statusOptions = useMemo(
     () => [
-      { value: "all" as const, label: t("filter.all"), count: items.length },
+      {
+        value: "all" as const,
+        label: t("filter.all"),
+        count: status === "all" ? total : undefined,
+      },
       ...COLLECTION_STATUSES.map((value) => ({
         value,
         label: t(getStatusKey(kind, value)),
-        count: items.filter((item) => item.status === value).length,
+        count: status === value ? total : undefined,
       })),
     ],
-    [items, kind, t],
+    [kind, status, t, total],
   );
-  const filteredItems = useMemo(
-    () =>
-      status === "all" ? items : items.filter((item) => item.status === status),
-    [items, status],
-  );
-  const visibleItems = filteredItems.slice(0, visibleCount);
   const selectedItem =
-    filteredItems.find((item) => item.subjectId === selectedId) ??
-    filteredItems[0];
+    items.find((item) => item.subjectId === selectedId) ?? items[0];
 
   useEffect(() => {
-    setStatus("all");
-    setSelectedId(items[0]?.subjectId ?? null);
-    setVisibleCount(INITIAL_VISIBLE_COUNT);
-    setMobileDetailOpen(false);
-  }, [items, kind]);
+    if (
+      items.length > 0 &&
+      !items.some((item) => item.subjectId === selectedId)
+    ) {
+      setSelectedId(items[0]?.subjectId ?? null);
+    }
+  }, [items, selectedId]);
 
   useEffect(() => {
     const sentinel = loadMoreSentinelRef.current;
-    if (!sentinel || visibleCount >= filteredItems.length) {
+    if (!sentinel || !hasNextPage || isLoadingMore) {
       return;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisibleCount(count =>
-            Math.min(count + INITIAL_VISIBLE_COUNT, filteredItems.length),
-          );
+          loadMore();
         }
       },
       { rootMargin: "320px 0px" },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [filteredItems.length, visibleCount]);
+  }, [hasNextPage, isLoadingMore, loadMore]);
 
   /** 切换状态时将详情选择同步到新分组的第一项。 */
   const handleStatusChange = (nextStatus: "all" | BangumiCollectionStatus) => {
-    const nextItems =
-      nextStatus === "all"
-        ? items
-        : items.filter((item) => item.status === nextStatus);
     setStatus(nextStatus);
-    setSelectedId(nextItems[0]?.subjectId ?? null);
-    setVisibleCount(INITIAL_VISIBLE_COUNT);
+    setSelectedId(null);
     setMobileDetailOpen(false);
   };
 
@@ -142,10 +140,10 @@ export function MediaCollectionView({ kind, items }: MediaCollectionViewProps) {
         compact
       />
 
-      {filteredItems.length > 0 && selectedItem ? (
+      {items.length > 0 && selectedItem ? (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="grid auto-rows-max grid-cols-2 items-start gap-3 self-start sm:grid-cols-3 xl:grid-cols-4">
-            {visibleItems.map((item, index) => (
+            {items.map((item, index) => (
               <MediaCollectionCard
                 key={item.subjectId}
                 item={item}

@@ -1,4 +1,7 @@
+import type { PaginatedData } from "@/types/api";
+
 export type BangumiMediaKind = "anime" | "game" | "book";
+export type BangumiLibrarySection = BangumiMediaKind | "characters" | "persons";
 export type BangumiCollectionStatus = 1 | 2 | 3 | 4 | 5;
 export type BangumiCharacterType = 1 | 2 | 3 | 4;
 export type BangumiPersonType = 1 | 2 | 3;
@@ -24,6 +27,59 @@ export interface BangumiProfile {
   nickname: string;
   avatar?: string;
   sign?: string;
+}
+
+export interface BangumiUserResponse {
+  username: string;
+  nickname: string;
+  sign?: string;
+  avatar?: {
+    large?: string;
+    medium?: string;
+    small?: string;
+  };
+}
+
+export interface BangumiSubjectCollectionResponse {
+  subject_id: number;
+  rate: number;
+  type: BangumiCollectionStatus;
+  comment?: string | null;
+  tags: string[];
+  ep_status: number;
+  vol_status: number;
+  updated_at: string;
+  private: boolean;
+  subject?: {
+    name: string;
+    name_cn: string;
+    short_summary: string;
+    date?: string;
+    images?: BangumiImages;
+    score: number;
+    rank: number;
+    eps: number;
+    volumes: number;
+  };
+}
+
+export interface BangumiCharacterCollectionResponse {
+  id: number;
+  name: string;
+  type: BangumiCharacterType;
+  images?: BangumiImages;
+  created_at: string;
+  crop?: BangumiImageCrop;
+}
+
+export interface BangumiPersonCollectionResponse {
+  id: number;
+  name: string;
+  type: BangumiPersonType;
+  career?: BangumiPersonCareer[];
+  images?: BangumiImages;
+  created_at: string;
+  crop?: BangumiImageCrop;
 }
 
 export interface BangumiImageCrop {
@@ -85,7 +141,5 @@ export interface BangumiPersonCollection {
 
 export interface BangumiLibraryData {
   profile: BangumiProfile;
-  media: Record<BangumiMediaKind, BangumiMediaCollection[]>;
-  characters: BangumiCharacterCollection[];
-  persons: BangumiPersonCollection[];
+  initialAnimePage: PaginatedData<BangumiMediaCollection>;
 }
