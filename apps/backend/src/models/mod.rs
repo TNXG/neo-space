@@ -17,7 +17,7 @@ pub mod serializers;
 pub mod user;
 
 // Re-export commonly used types
-pub use bangumi::{BangumiImageCrop, DetectBangumiImageCrop, UpsertBangumiImageCrop};
+pub use bangumi::{BangumiImageCrop, UpsertBangumiImageCrop};
 pub use comment::{Comment, CommentState, CommentTree, UpdateCommentRequest};
 pub use common::{ApiResponse, PaginatedData, Pagination, ResponseStatus};
 pub use content::{

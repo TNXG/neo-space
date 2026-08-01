@@ -48,12 +48,3 @@ pub struct UpsertBangumiImageCrop {
     pub detector_version: String,
     pub image_url_hash: Option<String>,
 }
-
-/// 博主主动触发动漫图片检测时提交的来源信息。
-#[derive(Debug, Deserialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct DetectBangumiImageCrop {
-    pub source_type: String,
-    pub source_id: i64,
-    pub image_url: String,
-}
