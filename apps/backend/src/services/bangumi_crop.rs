@@ -8,6 +8,7 @@ use std::{
 
 use image::GenericImageView;
 use sha2::{Digest, Sha256};
+use tokio::io::AsyncWriteExt;
 use ultralytics_inference::{InferenceConfig, YOLOModel};
 
 use crate::error::{AppError, AppResult};
@@ -173,7 +174,7 @@ async fn ensure_cached_file(
         return Ok(());
     }
 
-    let response = http_client
+    let mut response = http_client
         .get(url)
         .send()
         .await
@@ -186,20 +187,34 @@ async fn ensure_cached_file(
         ));
     }
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|error| AppError::Internal(format!("Failed to read Bangumi asset: {error}")))?;
-    if max_bytes.is_some_and(|limit| bytes.len() as u64 > limit) {
-        return Err(AppError::BadRequest(
-            "Bangumi image is too large".to_string(),
-        ));
-    }
-
     let temporary_path = destination.with_extension("download");
-    tokio::fs::write(&temporary_path, bytes)
+    let mut temporary_file = tokio::fs::File::create(&temporary_path)
         .await
-        .map_err(|error| AppError::Internal(format!("Failed to cache Bangumi asset: {error}")))?;
+        .map_err(|error| AppError::Internal(format!("Failed to create Bangumi cache: {error}")))?;
+    let mut downloaded_bytes = 0_u64;
+
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|error| AppError::Internal(format!("Failed to read Bangumi asset: {error}")))?
+    {
+        downloaded_bytes = downloaded_bytes.saturating_add(chunk.len() as u64);
+        if max_bytes.is_some_and(|limit| downloaded_bytes > limit) {
+            drop(temporary_file);
+            let _ = tokio::fs::remove_file(&temporary_path).await;
+            return Err(AppError::BadRequest(
+                "Bangumi image is too large".to_string(),
+            ));
+        }
+        temporary_file.write_all(&chunk).await.map_err(|error| {
+            AppError::Internal(format!("Failed to cache Bangumi asset: {error}"))
+        })?;
+    }
+    temporary_file
+        .flush()
+        .await
+        .map_err(|error| AppError::Internal(format!("Failed to flush Bangumi cache: {error}")))?;
+    drop(temporary_file);
     tokio::fs::rename(&temporary_path, destination)
         .await
         .map_err(|error| {
