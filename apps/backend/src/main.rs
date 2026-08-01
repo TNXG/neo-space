@@ -72,6 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         info!("Bangumi 图像检测模型准备完成");
     }
+    handlers::bangumi::start_crop_worker(&state);
 
     // 重建执行器只存在于当前进程内；重启后旧任务不能续跑，必须先收敛状态。
     if let Err(error) = tasks::search_maintenance::recover_interrupted_rebuilds(&state).await {

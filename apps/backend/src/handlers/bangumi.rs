@@ -12,16 +12,23 @@ use axum::{extract::State, response::Json};
 use bson::{doc, oid::ObjectId};
 use futures::TryStreamExt;
 use mongodb::{IndexModel, options::IndexOptions};
+use reqwest::{Response, header::USER_AGENT};
 use serde::Deserialize;
 use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, OnceLock},
+    time::Instant,
 };
 use tokio::sync::{Mutex, Semaphore, mpsc};
 
 const ALLOWED_SOURCE_TYPES: [&str; 2] = ["character", "person"];
 const BANGUMI_API_BASE_URL: &str = "https://api.bgm.tv/v0";
+const BANGUMI_REQUEST_USER_AGENT: &str = concat!(
+    "Neo-Space/",
+    env!("CARGO_PKG_VERSION"),
+    " (+https://tnxg.top)"
+);
 const DEFAULT_PAGE_SIZE: u64 = 18;
 const MAX_PAGE_SIZE: u64 = 50;
 const CROP_QUEUE_CAPACITY: usize = 128;
@@ -29,7 +36,7 @@ const CROP_WORKER_CONCURRENCY: usize = 2;
 const CROP_FALLBACK_VERSION: &str = "layout-fallback@3";
 const CROP_GEOMETRY_VERSION: &str = "portrait-4x5-v5";
 
-static CROP_QUEUE: OnceLock<mpsc::Sender<CropCandidate>> = OnceLock::new();
+static CROP_QUEUE: OnceLock<mpsc::Sender<CropTask>> = OnceLock::new();
 static QUEUED_CROPS: OnceLock<Arc<Mutex<HashSet<String>>>> = OnceLock::new();
 
 #[derive(Debug, Deserialize)]
@@ -63,6 +70,20 @@ struct CropCandidate {
     image_url: String,
 }
 
+#[derive(Debug)]
+struct CropTask {
+    candidate: CropCandidate,
+    queued_at: Instant,
+}
+
+#[derive(Debug, Default)]
+struct CropEnqueueSummary {
+    cache_hits: usize,
+    duplicate_tasks: usize,
+    enqueued_tasks: usize,
+    queue_full_tasks: usize,
+}
+
 /// GET /bangumi/profile — 返回后台配置用户的公开资料。
 pub async fn get_profile(State(state): State<SharedState>) -> AppResult<Json<ApiResponse<Value>>> {
     let username = configured_username(&state)?;
@@ -87,10 +108,32 @@ pub async fn get_library(
     let mut upstream_page = fetch_bangumi_page(&state, &path, page, size).await?;
 
     if let Some(source_type) = section.source_type() {
+        let upstream_item_count = upstream_page.data.len();
         let candidates = collect_crop_candidates(&upstream_page.data, source_type);
         let crop_map = load_crop_map(&state, &candidates).await?;
         attach_crops(&mut upstream_page.data, source_type, &crop_map)?;
-        enqueue_missing_crops(&state, candidates, &crop_map).await;
+        let candidate_count = candidates.len();
+        let returned_without_crop = candidates
+            .iter()
+            .filter(|candidate| {
+                !crop_map.contains_key(&crop_key(candidate.source_type, candidate.source_id))
+            })
+            .count();
+        let enqueue_summary = enqueue_missing_crops(&state, candidates, &crop_map).await;
+        tracing::info!(
+            source_type,
+            page,
+            size,
+            upstream_item_count,
+            candidate_count,
+            unusable_item_count = upstream_item_count.saturating_sub(candidate_count),
+            returned_without_crop,
+            cache_hits = enqueue_summary.cache_hits,
+            duplicate_tasks = enqueue_summary.duplicate_tasks,
+            enqueued_tasks = enqueue_summary.enqueued_tasks,
+            queue_full_tasks = enqueue_summary.queue_full_tasks,
+            "Bangumi 人物分页已返回；缺失裁切不会阻塞响应，后台任务状态见后续日志"
+        );
     }
 
     let total = i64::try_from(upstream_page.total)
@@ -163,18 +206,17 @@ fn media_library_path(username: &str, subject_type: u8, status: Option<u8>) -> S
 
 /// 请求一个 Bangumi 官方 JSON 资源。
 async fn fetch_bangumi_value(state: &SharedState, path: &str) -> AppResult<Value> {
-    state
-        .http_client
-        .get(format!("{BANGUMI_API_BASE_URL}{path}"))
-        .header("Accept", "application/json")
-        .send()
-        .await
-        .map_err(|error| AppError::Internal(format!("Bangumi request failed: {error}")))?
-        .error_for_status()
-        .map_err(|error| AppError::Internal(format!("Bangumi returned an error: {error}")))?
-        .json::<Value>()
-        .await
-        .map_err(|error| AppError::Internal(format!("Invalid Bangumi response: {error}")))
+    let started_at = Instant::now();
+    let response = send_bangumi_request(state, path).await?;
+    response.json::<Value>().await.map_err(|error| {
+        tracing::error!(
+            upstream_path = path,
+            elapsed_ms = started_at.elapsed().as_millis(),
+            %error,
+            "Bangumi 上游成功响应无法解析为 JSON"
+        );
+        AppError::Internal(format!("Invalid Bangumi response: {error}"))
+    })
 }
 
 /// 只请求当前页，避免一次页面访问遍历用户的全部收藏。
@@ -186,20 +228,114 @@ async fn fetch_bangumi_page(
 ) -> AppResult<BangumiPage> {
     let separator = if path.contains('?') { '&' } else { '?' };
     let offset = (page - 1).saturating_mul(size);
-    state
+    let upstream_path = format!("{path}{separator}limit={size}&offset={offset}");
+    let started_at = Instant::now();
+    let response = send_bangumi_request(state, &upstream_path).await?;
+    response.json::<BangumiPage>().await.map_err(|error| {
+        tracing::error!(
+            %upstream_path,
+            elapsed_ms = started_at.elapsed().as_millis(),
+            %error,
+            "Bangumi 收藏分页响应无法解析"
+        );
+        AppError::Internal(format!("Invalid Bangumi page: {error}"))
+    })
+}
+
+/**
+ * 请求 Bangumi 上游并记录足够定位封禁、限流和网络超时的诊断信息。
+ *
+ * 错误响应只记录截断后的正文，避免异常上游返回过大内容污染日志。
+ */
+async fn send_bangumi_request(state: &SharedState, path: &str) -> AppResult<Response> {
+    let upstream_url = format!("{BANGUMI_API_BASE_URL}{path}");
+    let started_at = Instant::now();
+    tracing::info!(
+        upstream_path = path,
+        user_agent = BANGUMI_REQUEST_USER_AGENT,
+        "开始请求 Bangumi 上游"
+    );
+
+    let response = state
         .http_client
-        .get(format!(
-            "{BANGUMI_API_BASE_URL}{path}{separator}limit={size}&offset={offset}"
-        ))
+        .get(upstream_url)
         .header("Accept", "application/json")
+        // 使用稳定、可识别的专用 UA，避免全局浏览器 UA 变化影响 Bangumi 风控判断。
+        .header(USER_AGENT, BANGUMI_REQUEST_USER_AGENT)
         .send()
         .await
-        .map_err(|error| AppError::Internal(format!("Bangumi request failed: {error}")))?
-        .error_for_status()
-        .map_err(|error| AppError::Internal(format!("Bangumi returned an error: {error}")))?
-        .json::<BangumiPage>()
-        .await
-        .map_err(|error| AppError::Internal(format!("Invalid Bangumi page: {error}")))
+        .map_err(|error| {
+            tracing::error!(
+                upstream_path = path,
+                elapsed_ms = started_at.elapsed().as_millis(),
+                is_timeout = error.is_timeout(),
+                is_connect = error.is_connect(),
+                is_request = error.is_request(),
+                status = ?error.status(),
+                %error,
+                "Bangumi 上游请求未获得 HTTP 响应"
+            );
+            AppError::Internal(format!("Bangumi request failed: {error}"))
+        })?;
+
+    let status = response.status();
+    let server = response
+        .headers()
+        .get("server")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
+    let request_id = response
+        .headers()
+        .get("cf-ray")
+        .or_else(|| response.headers().get("x-request-id"))
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
+    let retry_after = response
+        .headers()
+        .get("retry-after")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("none")
+        .to_string();
+
+    if !status.is_success() {
+        let response_preview = read_error_response_preview(response).await;
+        tracing::error!(
+            upstream_path = path,
+            status = status.as_u16(),
+            elapsed_ms = started_at.elapsed().as_millis(),
+            %server,
+            %request_id,
+            %retry_after,
+            response_preview = %response_preview,
+            user_agent = BANGUMI_REQUEST_USER_AGENT,
+            "Bangumi 上游拒绝或处理失败"
+        );
+        return Err(AppError::Internal(format!(
+            "Bangumi upstream returned HTTP {}",
+            status.as_u16()
+        )));
+    }
+
+    tracing::info!(
+        upstream_path = path,
+        status = status.as_u16(),
+        elapsed_ms = started_at.elapsed().as_millis(),
+        %server,
+        %request_id,
+        "Bangumi 上游响应成功"
+    );
+    Ok(response)
+}
+
+/// 读取并截断上游错误正文，仅用于诊断风控或限流原因。
+async fn read_error_response_preview(response: Response) -> String {
+    const MAX_PREVIEW_CHARS: usize = 512;
+    match response.text().await {
+        Ok(body) => body.chars().take(MAX_PREVIEW_CHARS).collect(),
+        Err(error) => format!("<failed to read response body: {error}>"),
+    }
 }
 
 /// 从当前人物页提取可检测的图片，队列不会扫描未请求的上游页面。
@@ -284,9 +420,10 @@ async fn enqueue_missing_crops(
     state: &SharedState,
     candidates: Vec<CropCandidate>,
     crop_map: &HashMap<String, BangumiImageCrop>,
-) {
+) -> CropEnqueueSummary {
     let sender = crop_queue(state);
     let queued = queued_crops();
+    let mut summary = CropEnqueueSummary::default();
 
     for candidate in candidates {
         let key = crop_key(candidate.source_type, candidate.source_id);
@@ -299,46 +436,106 @@ async fn enqueue_missing_crops(
                     .is_some_and(|hash| hash != image_url_hash(&candidate.image_url))
         });
         if !requires_detection {
+            summary.cache_hits += 1;
             continue;
         }
 
         let mut queued_keys = queued.lock().await;
         if !queued_keys.insert(key.clone()) {
+            summary.duplicate_tasks += 1;
             continue;
         }
-        if sender.try_send(candidate).is_err() {
-            queued_keys.remove(&key);
-            tracing::warn!(source = %key, "Bangumi 裁切队列已满，本次请求跳过该任务");
+        let task = CropTask {
+            candidate,
+            queued_at: Instant::now(),
+        };
+        match sender.try_send(task) {
+            Ok(()) => {
+                summary.enqueued_tasks += 1;
+                tracing::info!(
+                    source = %key,
+                    queue_remaining_capacity = sender.capacity(),
+                    "Bangumi 裁切任务已入队"
+                );
+            }
+            Err(error) => {
+                summary.queue_full_tasks += 1;
+                queued_keys.remove(&key);
+                tracing::warn!(
+                    source = %key,
+                    queue_remaining_capacity = sender.capacity(),
+                    %error,
+                    "Bangumi 裁切任务入队失败，本次请求不会生成裁切参数"
+                );
+            }
         }
     }
+
+    summary
 }
 
-/// 延迟初始化进程内有界队列，并用信号量限制模型推理并发。
-fn crop_queue(state: &SharedState) -> mpsc::Sender<CropCandidate> {
+/// 初始化进程内有界队列，并用信号量限制模型推理并发。
+fn crop_queue(state: &SharedState) -> mpsc::Sender<CropTask> {
     CROP_QUEUE
         .get_or_init(|| {
-            let (sender, mut receiver) = mpsc::channel::<CropCandidate>(CROP_QUEUE_CAPACITY);
+            let (sender, mut receiver) = mpsc::channel::<CropTask>(CROP_QUEUE_CAPACITY);
             let worker_state = state.clone();
             let semaphore = Arc::new(Semaphore::new(CROP_WORKER_CONCURRENCY));
+            tracing::info!(
+                queue_capacity = CROP_QUEUE_CAPACITY,
+                worker_concurrency = CROP_WORKER_CONCURRENCY,
+                "Bangumi 裁切队列初始化完成"
+            );
             tokio::spawn(async move {
-                while let Some(candidate) = receiver.recv().await {
+                tracing::info!("Bangumi 裁切队列接收器已启动");
+                while let Some(task) = receiver.recv().await {
                     let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                        tracing::error!("Bangumi 裁切工作信号量已关闭，队列接收器退出");
                         break;
                     };
                     let worker_state = worker_state.clone();
                     tokio::spawn(async move {
                         let _permit = permit;
+                        let candidate = task.candidate;
                         let key = crop_key(candidate.source_type, candidate.source_id);
-                        if let Err(error) = resolve_candidate_crop(&worker_state, candidate).await {
-                            tracing::warn!(source = %key, ?error, "Bangumi 裁切后台任务失败");
+                        let started_at = Instant::now();
+                        tracing::info!(
+                            source = %key,
+                            queue_wait_ms = task.queued_at.elapsed().as_millis(),
+                            "Bangumi 裁切后台任务开始执行"
+                        );
+                        match resolve_candidate_crop(&worker_state, candidate).await {
+                            Ok(()) => tracing::info!(
+                                source = %key,
+                                elapsed_ms = started_at.elapsed().as_millis(),
+                                "Bangumi 裁切后台任务执行完成"
+                            ),
+                            Err(error) => tracing::warn!(
+                                source = %key,
+                                elapsed_ms = started_at.elapsed().as_millis(),
+                                ?error,
+                                "Bangumi 裁切后台任务失败"
+                            ),
                         }
                         queued_crops().lock().await.remove(&key);
                     });
                 }
+                tracing::warn!("Bangumi 裁切队列发送端已全部关闭，接收器退出");
             });
             sender
         })
         .clone()
+}
+
+/// 在服务启动阶段主动创建裁切队列，确保工作器状态可以从启动日志确认。
+pub fn start_crop_worker(state: &SharedState) {
+    let sender = crop_queue(state);
+    tracing::info!(
+        queue_capacity = CROP_QUEUE_CAPACITY,
+        queue_remaining_capacity = sender.capacity(),
+        worker_concurrency = CROP_WORKER_CONCURRENCY,
+        "Bangumi 裁切后台工作器启动完成"
+    );
 }
 
 /// 返回队列去重集合，避免多个页面请求重复提交同一张图片。
@@ -407,6 +604,14 @@ async fn resolve_candidate_crop(state: &SharedState, candidate: CropCandidate) -
         image_url_hash: Some(detected.image_url_hash),
     };
     persist_image_crop(state, candidate.source_type, candidate.source_id, &request).await?;
+    tracing::info!(
+        source_type = candidate.source_type,
+        source_id = candidate.source_id,
+        detector_version = %request.detector_version,
+        confidence = request.confidence,
+        has_crop_rectangle = request.crop_left.is_some(),
+        "Bangumi 裁切结果已写入数据库"
+    );
     Ok(())
 }
 
