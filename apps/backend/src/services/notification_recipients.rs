@@ -54,7 +54,10 @@ impl NotificationRecipient {
 ///
 /// `admin_email` 为站点 / 文章作者邮箱（由 `NotificationService::get_admin_config` 解析）。
 /// 返回值已按邮箱去重、过滤自回复、并标注优先级，可直接逐条发送。
-pub fn build_recipients(notification: &CommentNotification, admin_email: &str) -> Vec<NotificationRecipient> {
+pub fn build_recipients(
+    notification: &CommentNotification,
+    admin_email: &str,
+) -> Vec<NotificationRecipient> {
     let author_email = normalize_email(&notification.email);
     let admin_email_norm = normalize_email(admin_email);
 
@@ -63,13 +66,25 @@ pub fn build_recipients(notification: &CommentNotification, admin_email: &str) -
         std::collections::HashMap::new();
 
     // 1. admin 始终是候选收件人（文章作者总会收到新评论提醒）
-    push_role(&mut roles_by_email, admin_email_norm.clone(), NotificationRole::Admin);
+    push_role(
+        &mut roles_by_email,
+        admin_email_norm.clone(),
+        NotificationRole::Admin,
+    );
 
     // 2. 回复场景：把直接父级评论作者加入候选——只看直接父级，不看 root
     if notification.is_reply {
-        if let Some(parent_email) = notification.parent_author_email.as_deref().map(normalize_email) {
+        if let Some(parent_email) = notification
+            .parent_author_email
+            .as_deref()
+            .map(normalize_email)
+        {
             if !parent_email.is_empty() {
-                push_role(&mut roles_by_email, parent_email, NotificationRole::ParentAuthor);
+                push_role(
+                    &mut roles_by_email,
+                    parent_email,
+                    NotificationRole::ParentAuthor,
+                );
             }
         }
     }
@@ -91,7 +106,11 @@ pub fn build_recipients(notification: &CommentNotification, admin_email: &str) -
             } else {
                 NotificationPriority::Normal
             };
-            NotificationRecipient { email, roles, priority }
+            NotificationRecipient {
+                email,
+                roles,
+                priority,
+            }
         })
         .collect();
 

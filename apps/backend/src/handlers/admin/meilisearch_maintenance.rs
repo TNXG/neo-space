@@ -160,9 +160,7 @@ pub async fn cancel_rebuild(
     // 若任务已沉默超过阈值，说明执行器已卡在长耗时步骤（如向量化）或已失活，
     // 立即将状态置为 canceled 解除对新重建的阻塞；执行器后续恢复时仍会因 cancelRequested 而不再 swap。
     let now = DateTime::now();
-    let force_complete = task
-        .updated_at
-        .timestamp_millis()
+    let force_complete = task.updated_at.timestamp_millis()
         < now.timestamp_millis() - CANCEL_FORCE_SILENCE_SECS * 1000;
     let mut set_fields = doc! {
         "cancelRequested": true,

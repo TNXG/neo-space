@@ -7,6 +7,10 @@ use serde_json::{Value, json};
 use std::time::Duration;
 use tokio::time::sleep;
 
+use super::{
+    cleanup::{append_log, cleanup_orphaned_temporary_indexes, cleanup_temporary_indexes},
+    ensure_not_canceled, task_collection, task_id_filter, update_task,
+};
 use crate::{
     app::SharedState,
     error::{AppError, AppResult},
@@ -17,10 +21,6 @@ use crate::{
             is_rebuild_index, load_or_infer_vector_config, merge_vector_config_into_settings,
         },
     },
-};
-use super::{
-    cleanup::{append_log, cleanup_orphaned_temporary_indexes, cleanup_temporary_indexes},
-    ensure_not_canceled, task_collection, task_id_filter, update_task,
 };
 
 /// 单个正式索引及其本次重建临时索引。
@@ -272,7 +272,10 @@ async fn upload_documents<T: Serialize>(
                         let message = format!(
                             "索引 {} 单文档 3 次重试均失败，已跳过：{}",
                             index.uid,
-                            last_error.as_ref().map(|e| format!("{e:?}")).unwrap_or_default(),
+                            last_error
+                                .as_ref()
+                                .map(|e| format!("{e:?}"))
+                                .unwrap_or_default(),
                         );
                         tracing::warn!(index_uid = %index.uid, %message, "跳过向量化失败文档");
                         append_log(state, task_id, &message).await;
@@ -286,7 +289,10 @@ async fn upload_documents<T: Serialize>(
         append_log(
             state,
             task_id,
-            &format!("索引 {} 重建完成：成功 {succeeded} 条，跳过 {skipped} 条向量化失败文档", index.uid),
+            &format!(
+                "索引 {} 重建完成：成功 {succeeded} 条，跳过 {skipped} 条向量化失败文档",
+                index.uid
+            ),
         )
         .await;
     }
