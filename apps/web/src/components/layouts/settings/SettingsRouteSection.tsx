@@ -57,18 +57,22 @@ export function SettingsRouteSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold leading-tight tracking-tight">{title}</h3>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <h3 className="text-sm font-semibold leading-tight tracking-tight">
+            {title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:line-clamp-none">
+            {description}
+          </p>
         </div>
         <Button
           type="button"
           size="sm"
-          variant="ghost"
+          variant="outline"
           disabled={disabled || isBenchmarking}
           onClick={onBenchmark}
-          className="shrink-0"
+          className="min-h-11 shrink-0 cursor-pointer px-3 sm:min-h-0"
         >
           {isBenchmarking ? t("benchmarking") : t("benchmarkShort")}
         </Button>
@@ -100,17 +104,22 @@ export function SettingsRouteSection({
                   key={option.value}
                   value={option.value}
                   aria-label={option.label}
-                  className="h-auto min-h-18 cursor-pointer flex-col items-start gap-1 rounded-2xl border bg-background/40 px-3.5 py-3 text-left whitespace-normal backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] reduced-transparency:bg-background data-[state=on]:border-accent-500/70 data-[state=on]:bg-accent-500/10 data-[state=on]:shadow-sm"
+                  className="h-auto min-h-16 cursor-pointer flex-col items-start gap-1 rounded-2xl border bg-background/40 px-3 py-2.5 text-left whitespace-normal backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] reduced-transparency:bg-background sm:min-h-18 sm:px-3.5 sm:py-3 data-[state=on]:border-accent-500/70 data-[state=on]:bg-accent-500/10 data-[state=on]:shadow-sm"
                 >
                   <span className="flex w-full items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium">{option.label}</span>
+                    <span className="truncate text-sm font-medium">
+                      {option.label}
+                    </span>
                     {result && (
-                      <Badge variant={result.reachable ? "secondary" : "destructive"}>
+                      <Badge
+                        variant={result.reachable ? "secondary" : "destructive"}
+                        className="shrink-0"
+                      >
                         {result.reachable ? t("reachable") : t("unreachable")}
                       </Badge>
                     )}
                   </span>
-                  <span className="text-[0.7rem] leading-relaxed text-muted-foreground">
+                  <span className="line-clamp-1 text-[0.7rem] leading-relaxed text-muted-foreground sm:line-clamp-none">
                     {option.description}
                   </span>
                   {result && (
@@ -124,7 +133,9 @@ export function SettingsRouteSection({
               );
             })}
           </ToggleGroup>
-          <FieldDescription className="text-[0.7rem]">{t("benchmarkNote")}</FieldDescription>
+          <FieldDescription className="line-clamp-2 text-[0.7rem] sm:line-clamp-none">
+            {t("benchmarkNote")}
+          </FieldDescription>
         </FieldGroup>
       </FieldSet>
     </section>
