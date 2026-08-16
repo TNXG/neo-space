@@ -28,8 +28,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    useTypeScriptCli: true,
-    viewTransition: true,
+    useTypeScriptCli: true
   },
   async headers() {
     return [
