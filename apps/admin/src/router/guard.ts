@@ -1,3 +1,4 @@
+import type { RouteLocationNormalized } from "vue-router";
 import QProgress from "qier-progress";
 
 import { userApi } from "~/api/user";
@@ -29,7 +30,7 @@ router.beforeEach(async (to) => {
 });
 
 router.afterEach((to, from) => {
-  document.title = getPageTitle(to?.meta.title as any);
+  document.title = getPageTitle(to);
   progress.finish();
   // 跨页面（route.name 变化）时重置 layout store，清除旧 VNode 引用
   // 同一页面内的参数/查询变化不重置，以保留 header actions 等状态
@@ -58,9 +59,11 @@ router.onError((err) => {
   }
 });
 
-function getPageTitle(pageTitle?: string | null) {
-  if (pageTitle) {
-    return `${pageTitle} - ${title}`;
-  }
-  return `${title}`;
+/** 根据匹配路由的模块与页面名称生成完整标签页标题。 */
+function getPageTitle(route: RouteLocationNormalized): string {
+  const titles = route.matched
+    .map(record => record.meta.title)
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map(value => value.trim());
+  return titles.length > 0 ? `${titles.join(" · ")} | ${title}` : title;
 }
