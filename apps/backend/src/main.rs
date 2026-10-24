@@ -2,7 +2,6 @@
 //!
 //! A modern web backend built with Axum framework.
 
-mod admin_dashboard;
 mod app;
 mod auth;
 mod config;

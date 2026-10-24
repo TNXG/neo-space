@@ -52,8 +52,6 @@ pub struct AppConfig {
     pub comments_blocked_ips: Vec<String>,
     /// Keywords that immediately classify a comment as spam
     pub comments_spam_keywords: Vec<String>,
-    /// Whether to expose the embedded admin dashboard
-    pub admin_dashboard_enabled: bool,
     /// Owner 桌面客户端 WebSocket 鉴权令牌
     pub owner_desktop_token: String,
 }
@@ -143,15 +141,6 @@ impl AppConfig {
             comments_record_ip_location: true,
             comments_blocked_ips: Vec::new(),
             comments_spam_keywords: Vec::new(),
-            admin_dashboard_enabled: env::var("ADMIN_DASHBOARD_ENABLED")
-                .ok()
-                .map(|v| {
-                    matches!(
-                        v.trim().to_ascii_lowercase().as_str(),
-                        "1" | "true" | "yes" | "on"
-                    )
-                })
-                .unwrap_or(true),
             owner_desktop_token: env::var("OWNER_DESKTOP_TOKEN").unwrap_or_default(),
         })
     }

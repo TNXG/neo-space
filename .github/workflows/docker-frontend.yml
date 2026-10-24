@@ -43,7 +43,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Next.js
-        run: pnpm build
+        run: pnpm build:web
         env:
           NEXT_PUBLIC_API_URL: __NEXT_PUBLIC_API_URL__
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: __NEXT_PUBLIC_TURNSTILE_SITE_KEY__

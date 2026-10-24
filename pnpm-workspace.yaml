@@ -20,7 +20,6 @@ allowBuilds:
   esbuild: true
   exifreader: true
   sharp: true
-  vue-demi: true
 
 trustPolicyExclude:
   - chokidar@4.0.3

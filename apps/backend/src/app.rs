@@ -244,16 +244,12 @@ pub fn create_router(state: SharedState) -> axum::Router {
     );
 
     // Combine all routes
-    let mut router = axum::Router::new()
+    let router = axum::Router::new()
         .nest("/api", api_router)
         .merge(ws_router)
         .merge(static_router)
         .merge(health_router)
         .merge(SwaggerUi::new("/api-docs-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
-
-    if let Some(admin_router) = crate::admin_dashboard::mounted_router(&state) {
-        router = router.merge(admin_router);
-    }
 
     router
         .fallback(crate::error::fallback_404)

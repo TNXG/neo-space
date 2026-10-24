@@ -385,44 +385,19 @@ fn encode_oauth_state(return_to: &str) -> String {
     format!("return_to={}", urlencoding::encode(trimmed))
 }
 
-/// 解析 callback 拿到的原始 `state` 字符串，目前只关心 `return_to` 字段。
-fn decode_oauth_state(raw_state: Option<&str>) -> OAuthReturnTo {
-    let raw = match raw_state {
-        Some(value) if !value.is_empty() => value,
-        _ => return OAuthReturnTo::Web,
-    };
-    for pair in raw.split('&') {
-        let mut iter = pair.splitn(2, '=');
-        let key = iter.next().unwrap_or_default();
-        let value = iter.next().unwrap_or_default();
-        if key == "return_to" {
-            let decoded = urlencoding::decode(value)
-                .map(|cow| cow.into_owned())
-                .unwrap_or_else(|_| value.to_string());
-            return match decoded.as_str() {
-                "admin" => OAuthReturnTo::Admin,
-                _ => OAuthReturnTo::Web,
-            };
-        }
-    }
+/// 解析 callback 拿到的原始 `state` 字符串。旧面板的 `return_to=admin`
+/// 分支随 admin 面板一并移除，当前所有登录都回到 web 回调页。
+fn decode_oauth_state(_raw_state: Option<&str>) -> OAuthReturnTo {
     OAuthReturnTo::Web
 }
 
 /// 根据 return_to 拼出最终承接 token 的 callback 页 URL（不含 query）。
-fn callback_base_url(state: &SharedState, return_to: &OAuthReturnTo) -> String {
-    match return_to {
-        OAuthReturnTo::Admin => format!(
-            "{}{}/#/auth/callback",
-            state.config().backend_url,
-            crate::admin_dashboard::ADMIN_DASHBOARD_PROXY_PATH
-        ),
-        OAuthReturnTo::Web => format!("{}/auth/callback", state.config().frontend_url),
-    }
+fn callback_base_url(state: &SharedState, _return_to: &OAuthReturnTo) -> String {
+    format!("{}/auth/callback", state.config().frontend_url)
 }
 
 #[derive(Debug, Clone, Copy)]
 enum OAuthReturnTo {
-    Admin,
     Web,
 }
 

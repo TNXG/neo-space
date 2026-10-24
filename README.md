@@ -4,7 +4,7 @@
 
 **现代化全栈博客系统**
 
-基于 Next.js 16 + Rust/Axum 构建的高性能博客平台，使用 Turborepo 编排前端、后台与后端服务
+基于 Next.js 16 + Rust/Axum 构建的高性能博客平台，使用 Turborepo 编排前端与后端服务
 
 [![License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE.md)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black.svg)](https://nextjs.org/)
@@ -20,12 +20,11 @@
 
 ## 项目简介
 
-Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库以 Turborepo monorepo 形式组织，包含三个独立的应用与一个共享包：
+Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库以 Turborepo monorepo 形式组织，包含两个独立的应用与一个共享包：
 
 - **web**：Next.js 16 + React 19 前端，提供 SSR/SSG 渲染体验
-- **admin**：基于 Vue 3 + Vite 的内容管理后台
-- **backend**：Rust + Axum 的高性能 API 服务，构建时会将 admin 产物通过 `rust-embed` 内联到二进制中
-- **packages/rich-react**：跨应用共享的富文本相关 React 组件
+- **backend**：Rust + Axum 的高性能 API 服务，独立构建与部署，不依赖前端静态资源
+- **packages/rich-react**：保留的独立富文本 React 组件共享包，供后续复用
 
 ### 设计理念
 
@@ -34,7 +33,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - **现代技术栈**：采用 Web 与 Rust 生态最新的最佳实践
 - **可扩展性**：模块化 + monorepo 设计，便于维护与扩展
 
-> ℹ️ **关于 admin 后台**：`apps/admin` 派生自 [`mx-space/mx-admin`](https://github.com/mx-space/mx-admin)（AGPL-3.0），并在其基础上做了适配本项目数据模型与接口的改造。原项目版权归 mx-space 团队所有，按 AGPL-3.0 条款继续以 AGPL 形式分发。
+> **管理界面状态**：旧 Vue 管理面板及其静态内嵌、开发反代已移除，目前不提供替代管理界面。后端管理 API、JWT / 密码 / Passkey 认证与 dashboard overview API 均保留；后续管理界面将位于 `apps/web` 的独立路由组中。
 
 ---
 
@@ -135,7 +134,6 @@ pnpm dev:backend  # Rust/Axum 后端 (默认 :8000)
 ```bash
 pnpm build           # 构建所有应用（Turbo 自动按依赖顺序）
 pnpm build:web       # 仅构建前端
-pnpm build:admin     # 仅构建 admin（产物会被 backend 通过 rust-embed 内联）
 pnpm build:backend   # 仅构建 Rust 后端
 ```
 
@@ -145,7 +143,7 @@ pnpm build:backend   # 仅构建 Rust 后端
 
 ```bash
 docker-compose up -d                       # 默认编排
-docker-compose -f docker-compose.backend.yml up -d   # 仅启动后端依赖（DB / Meilisearch 等）
+docker-compose -f docker-compose.backend.yml up -d   # 后端 + MongoDB / Meilisearch
 ```
 
 ---
@@ -165,12 +163,6 @@ neo-space/
 │   │   │   ├── types/       # TypeScript 类型
 │   │   │   └── actions/     # Server Actions
 │   │   └── public/
-│   │
-│   ├── admin/               # Vue 3 admin 后台 (@neo-space/admin)
-│   │   │                    # 派生自 mx-space/mx-admin (AGPL-3.0)
-│   │   ├── src/
-│   │   ├── index.html
-│   │   └── vite.config.mts
 │   │
 │   └── backend/             # Rust/Axum 后端 (@neo-space/backend)
 │       ├── src/
@@ -212,7 +204,6 @@ CDN / 反向代理层 (Nginx / Cloudflare)
     ↓
 应用层
     ├── apps/web       Next.js 前端       → 客户端状态 (Zustand)
-    ├── apps/admin     Vue 3 管理后台     → 由 backend 内嵌静态托管
     └── apps/backend   Rust/Axum 服务     → 服务端缓存 (Moka)
     ↓
 数据层
@@ -230,7 +221,6 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 | 前端框架   | Next.js 16 / React 19 | SSR / SSG               |
 | 前端语言   | TypeScript 5.9      | 类型安全                   |
 | 前端样式   | Tailwind CSS 4      | 原子化 CSS                 |
-| Admin 框架 | Vue 3 + Vite + Naive UI | 管理后台 UI            |
 | 后端框架   | Axum 0.8            | 异步 Web 框架              |
 | 运行时     | Tokio 1.52          | 异步运行时                 |
 | 数据库     | MongoDB 7           | 主数据存储                 |
@@ -248,12 +238,12 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 - **API**：统一通过 `src/lib/api-client.ts` 调用，类型定义在 `src/types/api.ts`
 - **响应包装**：所有接口返回 `ApiResponse<T> = { code, status, message, data }`
 
-### Admin (apps/admin)
+### 管理能力
 
-- 基于 mx-space/mx-admin 改造，使用 Vue 3 + Vite + Naive UI + Pinia
-- 富文本编辑器集成 CodeMirror、Monaco、Lexical 与 Haklex Rich 系列
-- 通过 `pnpm build:admin` 产物输出至 `apps/admin/dist`，再由 backend 通过 `rust-embed` 嵌入二进制
-- 上线时由 backend 自身托管 admin 静态资源，无需独立部署
+- 后端保留内容管理、站点设置、管理员认证与 dashboard overview 等管理 API。
+- JWT、密码与 Passkey 认证不随旧面板移除；管理接口继续遵循原有权限校验。
+- 当前没有管理 UI；不再提供旧面板静态资源或开发反代，也无需构建 Vue 应用。
+- `packages/rich-react` 保留为独立共享包，不因旧面板移除而删除其组件能力。
 
 ### 后端 (apps/backend)
 
@@ -414,7 +404,7 @@ L5  Database Query Cache       (MongoDB / Meilisearch)
 
 - MongoDB 7（ReplicaSet 模式）
 - Meilisearch v1.5
-- Backend：多阶段构建，最终镜像 ~50MB（admin 已通过 rust-embed 内嵌）
+- Backend：CI 使用 Rust / musl 编译二进制，Alpine 3.23 运行镜像保留原生 ONNX Runtime；构建和部署不依赖 JavaScript 管理面板产物
 - Frontend：Alpine 基础镜像 + `.next` 缓存优化
 
 ### 生产架构
@@ -426,7 +416,7 @@ CDN / WAF (Cloudflare)
     ↓
 应用集群
     ├── Frontend (Next.js) × N
-    └── Backend (Rust/Axum, 内含 admin) × N
+    └── Backend (Rust/Axum API) × N
     ↓
 数据层
     ├── MongoDB ReplicaSet (3 节点)
@@ -444,7 +434,7 @@ CDN / WAF (Cloudflare)
 
 ```bash
 pnpm install
-pnpm dev               # 同时启动 web / admin / backend
+pnpm dev               # 同时启动 web / backend 与共享包开发任务
 pnpm lint              # 全仓 lint
 pnpm typecheck         # 全仓类型检查
 ```
@@ -463,6 +453,6 @@ pnpm typecheck         # 全仓类型检查
 
 ### 第三方致谢
 
-- **[mx-space/mx-admin](https://github.com/mx-space/mx-admin)** — `apps/admin` 派生自该项目（AGPL-3.0），版权归原作者所有，本仓库在此基础上进行了适配本项目数据模型与 API 的改造，并继续以 AGPL-3.0 形式分发。
+- **[mx-space/mx-admin](https://github.com/mx-space/mx-admin)** — 已移除的旧 Vue 管理面板曾派生自该项目（AGPL-3.0），版权归原作者所有；本仓库保留对这段历史来源的致谢，任何保留的派生代码仍遵循相应许可。
 
 - 感谢 Next.js、Axum、MongoDB、Meilisearch、Naive UI 等开源项目使本项目成为可能。

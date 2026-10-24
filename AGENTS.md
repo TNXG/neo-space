@@ -1,13 +1,12 @@
 # Neo-Space 开发规范 (Monorepo Edition)
 
-本规范覆盖 Turborepo 编排下的三应用 + 一共享包：
+本规范覆盖 Turborepo 编排下的两应用 + 一共享包：
 
 - `apps/web` — Next.js 16 (App Router) + React 19 + TypeScript 前端
-- `apps/admin` — Vue 3 + Vite + Naive UI 管理后台（派生自 mx-space/mx-admin，AGPL-3.0）
-- `apps/backend` — Rust + Axum 后端，构建期通过 `rust-embed` 内联 admin 产物
-- `packages/rich-react` — 跨应用共享的富文本 React 组件
+- `apps/backend` — Rust + Axum 后端，保留公共站与管理 API，不再托管旧管理面板
+- `packages/rich-react` — 独立的富文本 React 组件共享包
 
-> 默认范围：除非明确标注 `[admin]` 或 `[backend]`，本文档其余条款面向 `apps/web` 前端。
+> 默认范围：除非明确标注 `[backend]`，本文档其余条款面向 `apps/web` 前端；后续管理面板也在该应用的 App Router 路由组内实现。
 
 ---
 
@@ -16,17 +15,17 @@
 > 任何端到端的不一致，**优先改前端，不要改后端**。
 
 - **主键统一为 `_id`**：本站后端实体主键以 MongoDB 默认的 `_id` 为准（`String`，序列化后即为 ObjectId 文本）。
-- **前端禁用 `id` 兜底**：`apps/web` 与 `apps/admin` 在请求 / 提交后端 API 时**必须使用 `_id`**，不允许出现 `entity.id || entity._id` 之类的双轨兼容写法。
+- **前端禁用 `id` 兜底**：`apps/web` 的公共页面与管理面板在请求 / 提交后端 API 时**必须使用 `_id`**，不允许出现 `entity.id || entity._id` 之类的双轨兼容写法。
 - **路由参数名不等于数据字段**：管理后台 URL query 可以继续使用 `?id=<mongo _id>` 作为路由参数名；这里的 `id` 只是 URL 参数名称，不代表 API / 数据模型可以新增或依赖 `id` 字段。
 - **响应包装恒定**：所有后端接口统一返回 `ApiResponse<T> = { code: number, status: 'success' | 'failed', message: string, data: T | null }`。
   - SWR / fetch / axios 的泛型必须使用 `ApiResponse<T>`，访问业务数据走 `res.data?.data?.xxx`。
   - 分页结构固定为 `{ items: T[], pagination: { total, current_page, total_page, size, has_next_page, has_prev_page } }`。
 - **遇到 `id` / `_id` 不一致时的处置顺序**（不可绕过）：
-  1. 修改前端 TypeScript 模型（`src/types/api.ts` / `apps/admin` 同名模型）；
-  2. 修改 adapter / 归一化层（如 `apps/admin/src/api/*` 中的 normalizer）；
+  1. 修改前端 TypeScript 模型（`apps/web/src/types/api.ts`）；
+  2. 修改 API 封装 / adapter（如 `apps/web/src/lib/api-client.ts`）；
   3. 修改组件传参与 prop 名称；
-  4. 永远不要为了让 admin 跑通而修改后端返回字段。
-- **派生字段的边界**：前端组件可以按需派生本地字段（例如把 `_id` 别名为 `key` 给 Naive UI 表格用），但派生只发生在视图层，**离开组件即恢复 `_id`**。
+  4. 永远不要为了让管理面板跑通而修改后端返回字段。
+- **派生字段的边界**：前端组件可以按需派生本地字段（例如把 `_id` 别名为表格的 `key`），但派生只发生在视图层，**离开组件即恢复 `_id`**。
 
 ---
 
@@ -69,9 +68,9 @@
 
 ### Monorepo 协作纪律
 
-- **跨 app 复用走 `packages/`**：当 React 组件需被 `apps/web` 与 `apps/admin` 复用时，沉淀到 `packages/rich-react`，禁止跨 app 路径相对引用。
+- **共享包复用**：富文本 React 能力保留在 `packages/rich-react`，通过 workspace 包名引用；禁止跨 app 路径相对引用。
 - **环境变量分文件**：`apps/web/.env.local` / `apps/backend/.env`，不要在根目录设全局 .env。
-- **`pnpm dev` 是统一入口**：背后由 `scripts/dev.mjs` 调度三应用，不要直接 `cd apps/* && pnpm dev` 启动单端，除非你只在调试该 app。
+- **`pnpm dev` 是统一入口**：背后由 `scripts/dev.mjs` 调度 web、backend 与共享包的开发任务，不要直接 `cd apps/* && pnpm dev` 启动单端，除非你只在调试该 app。
 
 ---
 
@@ -119,7 +118,7 @@
   - **同一层级或下级目录**：统一使用 `./` 开头的相对路径，不允许出现 `../`。
   - **层数不高的上级目录**：统一使用 `../` 开头的相对路径，**避免出现 `../../../` 这类超过两层以上的相对路径**。
   - **跨目录/公共模块**：统一使用 `@/路径/路径` 绝对路径导入，用于公共模块、全局工具、核心组件等。
-  - **跨 app 引用**：仅允许通过 `packages/*` workspace 包名导入（例如 `@neo-space/rich-react`），**严禁** `../../admin/...` 之类的跨 app 相对路径。
+  - **跨 app 引用**：仅允许通过 `packages/*` workspace 包名导入（例如 `@neo-space/rich-react`），**严禁直接跨 `apps/` 相对路径导入**。
 - **导入格式**：优先使用命名导入 `import { Component } from "library"`，避免使用默认导入 `import Component from "library"`，以利于 Tree Shaking 和代码一致性。
 - **禁止通配符导入**：严禁使用 `import * as Library from "library"`，除非特殊场景（如导入大型库的所有内容）。
 - **await import**：尽量避免使用动态导入 (`await import(...)`)，除非用于代码分割或按需加载脚本。
@@ -481,7 +480,7 @@
 范围指明本次提交影响的范围，例如：
 
 - `auth` / `db` / `ui` / `api` / `deps`
-- monorepo 范围下也可使用 app 名 — `web` / `admin` / `backend` / `rich-react`
+- monorepo 范围下也可使用 app / package 名 — `web` / `backend` / `rich-react`
 
 ---
 
@@ -523,14 +522,13 @@
 
 ---
 
-## 20. [admin] Vue 3 后台规范
+## 20. 管理面板与管理 API
 
-> 本节仅约束 `apps/admin`。原项目派生自 `mx-space/mx-admin`，保留其大部分约定，但需要按本仓适配。
-
-- **API 适配优先级**：遵守 §0——遇到字段不一致时改 `apps/admin/src/api/*` 的 normalizer / 模型，不要改后端。
-- **登录与鉴权**：admin 通过后端 JWT 通道登录（参见提交 `1f1d3be`），HttpOnly Cookie + 鉴权中间件由后端统一处理。
-- **新增模块**：保持 mx-admin 原有目录结构（`views/` / `components/` / `store/` / `utils/`），不要把 Vue 风格的目录搬进 `apps/web`。
-- **构建产物**：`pnpm build:admin` 输出至 `apps/admin/dist`，由 `apps/backend` 通过 `rust-embed` 内联进二进制；上线时无需独立部署 admin。
+- **现状**：旧 Vue 管理面板已移除，不再提供 `/proxy` 托管、Vite 开发代理或嵌入式静态产物；后端管理 API 与 JWT / Passkey 鉴权保留。
+- **后续入口**：管理面板在 `apps/web` 的 App Router 路由组内实现，遵循本文前端规范，不恢复独立 Vue 应用。
+- **API 适配优先级**：遵守 §0，优先修改前端类型与 API 封装，不迁就界面更改后端字段或扩大权限。
+- **设计依据**：新增或调整 API 前使用项目 skill `skills/neo-space-api-design/SKILL.md`；现有契约差异见根目录 `API-AUDIT.md`。
+- **部署边界**：backend 的构建与运行不依赖前端面板产物；未完成的新面板不得用空入口或假数据代替。
 
 ---
 
@@ -546,5 +544,5 @@
 | 后端写完要刷新前端缓存              | §7.4              |
 | 写样式 / 暗色适配                   | §9, §10.2, §17    |
 | Rust 单文件快超 350 行              | §19.1             |
-| 给 admin 加接口对接                 | §0, §20           |
+| 给管理面板加接口对接                | §0, §20           |
 | 提交代码                            | §18               |

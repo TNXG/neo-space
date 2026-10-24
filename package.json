@@ -6,16 +6,14 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "turbo run dev --filter=@neo-space/web",
-    "dev:admin": "turbo run dev --filter=@neo-space/admin",
     "dev:backend": "turbo run dev --filter=@neo-space/backend",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=@neo-space/web",
-    "build:admin": "turbo run build --filter=@neo-space/admin",
     "build:backend": "turbo run build --filter=@neo-space/backend",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "fmt": "pnpm -r --parallel --filter=@neo-space/web --filter=@neo-space/admin run fmt",
-    "fmt:fix": "pnpm -r --parallel --filter=@neo-space/web --filter=@neo-space/admin run fmt:fix",
+    "fmt": "pnpm --filter=@neo-space/web run fmt",
+    "fmt:fix": "pnpm --filter=@neo-space/web run fmt:fix",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules"
   },

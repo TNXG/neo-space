@@ -11,11 +11,7 @@ use crate::config::AppConfig;
 /// Create CORS layer for the application
 pub fn cors_layer(config: Arc<ArcSwap<AppConfig>>) -> CorsLayer {
     let allow_origin = AllowOrigin::predicate(move |origin: &HeaderValue, _request: &Parts| {
-        const DEVELOPMENT_ORIGINS: &[&str] = &[
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:9528",
-        ];
+        const DEVELOPMENT_ORIGINS: &[&str] = &["http://localhost:3000", "http://localhost:3001"];
         let config = config.load();
         DEVELOPMENT_ORIGINS
             .iter()
