@@ -1,3 +1,5 @@
+import type { PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
+
 /**
  * API Response Types
  */
@@ -242,13 +244,13 @@ export interface RecentlyWithRendered extends Recently {
 }
 
 export interface UserSocialIds {
-  github?: string;
-  bilibili?: string;
-  netease?: string;
-  twitter?: string;
-  telegram?: string;
-  mail?: string;
-  rss?: string;
+  github?: string | null;
+  bilibili?: string | null;
+  netease?: string | null;
+  twitter?: string | null;
+  telegram?: string | null;
+  mail?: string | null;
+  rss?: string | null;
 }
 
 export interface User {
@@ -264,6 +266,17 @@ export interface User {
   socialIds?: UserSocialIds;
 }
 
+/** 当前 Owner 的 Profile PATCH；未提交字段保持不变。 */
+export interface DashboardProfileUpdate {
+  name?: string;
+  handle?: string;
+  image?: string;
+  email?: string;
+  introduce?: string;
+  url?: string;
+  socialIds?: UserSocialIds;
+}
+
 export interface Reader {
   _id: string;
   email: string;
@@ -274,6 +287,48 @@ export interface Reader {
   emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** 当前部署公开的后台登录方式。 */
+export interface DashboardLoginOptions {
+  password: boolean;
+  passkey: boolean;
+  passkeyAutomatic: boolean;
+  github: boolean;
+  qq: boolean;
+}
+
+/** Rust 发布的 RSA-OAEP/SHA-256 密码传输公钥。 */
+export interface DashboardPasswordKey {
+  keyId: string;
+  algorithm: "RSA-OAEP-256";
+  publicKey: string;
+}
+
+/** 浏览器加密后的登录请求；不包含原始密码。 */
+export interface DashboardEncryptedPassword {
+  encryptedPassword: string;
+  keyId: string;
+}
+
+/** 用户名匹配后可在登录页展示的 Owner 公开资料。 */
+export interface DashboardOwnerProfile {
+  name: string;
+  username: string;
+  avatar: string;
+}
+
+export interface DashboardOwnerIdentification {
+  matched: boolean;
+  profile: DashboardOwnerProfile | null;
+}
+
+/** 后端生成的一次性 WebAuthn 认证挑战，二进制字段使用 base64url。 */
+export interface DashboardPasskeyChallenge {
+  challengeId: string;
+  options: {
+    publicKey: PublicKeyCredentialRequestOptionsJSON;
+  };
 }
 
 export interface Page {
@@ -467,3 +522,9 @@ export interface CreateCommentRequest {
 export interface UpdateCommentRequest {
   text: string;
 }
+
+/** 后台 options 使用的 JSON 数据，不将敏感配置持久化到浏览器存储。 */
+export type OptionValue = string | number | boolean | null | OptionValue[] | OptionDocument;
+export interface OptionDocument { [key: string]: OptionValue; }
+export type ManagedOptionKey = "seo" | "url" | "commentOptions" | "friendLinkOptions" | "mailOptions" | "oauth" | "ai" | "searchOptions" | "bangumiOptions" | "securityOptions";
+export type DashboardOptions = Partial<Record<ManagedOptionKey, OptionDocument>>;

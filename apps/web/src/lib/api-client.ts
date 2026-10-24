@@ -1,4 +1,4 @@
-import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, Link, LinkApplyRequest, Note, Page, PaginatedData, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
+import type { ApiResponse, Category, Comment, CommentListResponse, CreateCommentRequest, DashboardLoginOptions, DashboardOwnerIdentification, DashboardPasswordKey, Link, LinkApplyRequest, Note, Page, PaginatedData, PaginatedResponse, Post, Reader, Recently, SiteConfig, TimeCapsuleRequest, TimeCapsuleResponse, UpdateCommentRequest, User } from "@/types/api";
 
 /**
  * API 配置 - 统一管理所有 API 相关的 URL
@@ -59,15 +59,17 @@ function withLangParam(endpoint: string, lang?: string): string {
 /**
  * Generic API client with error handling and ISR support
  */
-async function apiClient<T>(
+export async function apiClient<T>(
   endpoint: string,
   options?: RequestInit & {
     tags?: string[];
     revalidate?: number | false;
     timeout?: number;
+    /** Cookie 后台会话独立于公共站 Reader Bearer，不应清理 Reader 登录态。 */
+    clearReaderAuthOnUnauthorized?: boolean;
   },
 ): Promise<T> {
-  const { tags, revalidate, timeout, ...fetchOptions } = options || {};
+  const { tags, revalidate, timeout, clearReaderAuthOnUnauthorized = true, ...fetchOptions } = options || {};
   const requestHeaders = new Headers(fetchOptions.headers);
 
   /**
@@ -105,7 +107,7 @@ async function apiClient<T>(
       }
 
       // Handle 401 Unauthorized - token expired or invalid
-      if (response.status === 401) {
+      if (response.status === 401 && clearReaderAuthOnUnauthorized) {
         // Only clear auth on client side
         if (typeof window !== "undefined") {
           // Dynamically import to avoid circular dependency
@@ -140,6 +142,30 @@ async function apiClient<T>(
       clearTimeout(timeoutId);
     }
   }
+}
+
+/** 获取本次密码提交使用的后端公钥，不缓存进程生命周期密钥。 */
+export async function getDashboardPasswordKey(): Promise<ApiResponse<DashboardPasswordKey | null>> {
+  return apiClient<ApiResponse<DashboardPasswordKey | null>>("/auth/password-key", {
+    cache: "no-store",
+    timeout: 10000,
+  });
+}
+
+/** 获取当前部署真实可用的后台登录方式，不缓存认证配置。 */
+export async function getDashboardLoginOptions(): Promise<ApiResponse<DashboardLoginOptions | null>> {
+  return apiClient<ApiResponse<DashboardLoginOptions | null>>("/owner/allow-login", {
+    cache: "no-store",
+    timeout: 10000,
+  });
+}
+
+/** 按用户名或邮箱识别 Owner，仅返回后端允许公开的登录资料。 */
+export async function identifyDashboardOwner(identifier: string): Promise<ApiResponse<DashboardOwnerIdentification | null>> {
+  return apiClient<ApiResponse<DashboardOwnerIdentification | null>>(`/owner/identify?identifier=${encodeURIComponent(identifier.trim())}`, {
+    cache: "no-store",
+    timeout: 10000,
+  });
 }
 
 /**
