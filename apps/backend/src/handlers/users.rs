@@ -5,6 +5,7 @@ use crate::{
     auth::extractors::AuthUser,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    services::user_profile::{self, UpdateProfileRequest},
 };
 use axum::{
     Json,
@@ -20,22 +21,6 @@ use serde::{Deserialize, Serialize};
 pub struct PaginationParams {
     pub page: Option<u64>,
     pub size: Option<u64>,
-}
-
-/// Update user profile request
-#[derive(Debug, Deserialize)]
-pub struct UpdateProfileRequest {
-    name: Option<String>,
-    #[serde(alias = "username")]
-    handle: Option<String>,
-    #[serde(alias = "avatar")]
-    image: Option<String>,
-    #[serde(alias = "mail")]
-    email: Option<String>,
-    introduce: Option<String>,
-    url: Option<String>,
-    #[serde(rename = "socialIds")]
-    social_ids: Option<UserSocialIds>,
 }
 
 /// Update avatar request
@@ -56,104 +41,12 @@ pub async fn update_user_profile(
     auth_user: AuthUser,
     AppJson(payload): AppJson<UpdateProfileRequest>,
 ) -> AppResult<Json<ApiResponse<ReaderResponse>>> {
-    let readers = state.db.collection::<Reader>("readers");
-    let owner_profiles = state.db.collection::<bson::Document>("owner_profiles");
-
-    let mut reader_update = doc! {};
-    let mut owner_update = doc! {};
-
-    if let Some(name) = payload.name
-        && !name.is_empty()
-    {
-        reader_update.insert("name", name);
-    }
-
-    if let Some(handle) = payload.handle
-        && !handle.is_empty()
-    {
-        if !handle
-            .chars()
-            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
-        {
-            return Err(AppError::BadRequest("Invalid handle format. Only alphanumeric characters, dashes, and underscores are allowed.".to_string()));
-        }
-        let occupied = readers
-            .find_one(doc! { "handle": &handle, "_id": { "$ne": auth_user.user_id } })
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?
-            .is_some();
-        if occupied {
-            return Err(AppError::BadRequest(
-                "Username is already in use".to_string(),
-            ));
-        }
-        reader_update.insert("handle", handle);
-    }
-
-    if let Some(image) = payload.image {
-        reader_update.insert("image", image);
-    }
-
-    if let Some(email) = payload.email {
-        let email = email.trim().to_lowercase();
-        if !email.contains('@') {
-            return Err(AppError::BadRequest("Invalid email address".to_string()));
-        }
-        reader_update.insert("email", &email);
-        owner_update.insert("mail", email);
-    }
-    if let Some(introduce) = payload.introduce {
-        owner_update.insert("introduce", introduce);
-    }
-    if let Some(url) = payload.url {
-        owner_update.insert("url", url);
-    }
-    if let Some(social_ids) = payload.social_ids {
-        owner_update.insert(
-            "socialIds",
-            bson::to_bson(&social_ids)
-                .map_err(|e| AppError::Internal(format!("Failed to encode social IDs: {e}")))?,
-        );
-    }
-
-    if reader_update.is_empty() && owner_update.is_empty() {
-        return Err(AppError::BadRequest("No fields to update".to_string()));
-    }
-
-    if !reader_update.is_empty() {
-        reader_update.insert("updatedAt", bson::DateTime::now());
-        readers
-            .update_one(
-                doc! { "_id": auth_user.user_id },
-                doc! { "$set": reader_update },
-            )
-            .await
-            .map_err(|e| AppError::Database(format!("Failed to update profile: {e}")))?;
-    }
-    if !owner_update.is_empty() {
-        owner_profiles
-            .update_one(
-                doc! { "readerId": auth_user.user_id },
-                doc! { "$set": owner_update },
-            )
-            .await
-            .map_err(|e| AppError::Database(format!("Failed to update owner profile: {e}")))?;
-    }
-
-    // Fetch updated reader
-    let updated_reader = readers
-        .find_one(doc! { "_id": auth_user.user_id })
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal(
-            "Failed to fetch updated profile".to_string(),
-        ))?;
-
+    let updated_reader = user_profile::update_user_profile(&state, &auth_user, payload).await?;
     Ok(Json(ApiResponse {
         code: 200,
         status: ResponseStatus::Success,
         message: "Profile updated successfully".to_string(),
-        data: ReaderResponse::from(updated_reader),
+        data: updated_reader,
     }))
 }
 

@@ -16,7 +16,9 @@ use utoipa::OpenApi;
     paths(
         // Health check
         crate::routes::health::health_check,
+        crate::handlers::auth::get_password_key,
     ),
+    components(schemas(crate::services::password_crypto::PasswordKeyResponse)),
     tags(
         (name = "health", description = "Health check endpoints"),
         (name = "auth", description = "Authentication endpoints"),

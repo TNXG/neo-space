@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config::runtime::apply_database_options(&db, &mut config).await;
 
     // Create application state
-    let state = app::create_state(db, config.clone());
+    let state = app::create_state(db, config.clone()).await?;
 
     info!("正在准备 Bangumi 图像检测模型...");
     if let Err(error) = services::bangumi_crop::prepare_bangumi_models(&state.http_client).await {

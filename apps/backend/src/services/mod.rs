@@ -10,4 +10,6 @@ pub mod notification_templates;
 pub mod oauth;
 pub mod options;
 pub mod passkey;
+pub mod password_crypto;
 pub mod spam;
+pub mod user_profile;

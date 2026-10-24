@@ -14,6 +14,7 @@ use crate::openapi::ApiDoc;
 use crate::routes;
 use crate::services::ncm_np::NeteaseNowPlayingService;
 use crate::services::passkey::PasskeyService;
+use crate::services::password_crypto::PasswordCrypto;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -38,8 +39,10 @@ pub struct AppState {
     pub email_service: EmailService,
     /// NetEase Cloud Music now playing service
     pub ncm_np_service: NeteaseNowPlayingService,
-    /// Passkey 服务；仅在 BACKEND_URL 可作为合法 WebAuthn Origin 时启用
+    /// Passkey 服务；仅在 FRONTEND_URL 可作为合法 WebAuthn Origin 时启用
     pub passkey_service: Arc<RwLock<Option<PasskeyService>>>,
+    /// Process-local RSA transport key; never persisted or exposed to Next.
+    pub password_crypto: Arc<PasswordCrypto>,
 }
 
 /// Real-time event types
@@ -56,6 +59,8 @@ pub enum Event {
     PostCreated { id: String },
     /// Post updated
     PostUpdated { id: String },
+    /// Reader or owner profile updated
+    UserProfileUpdated { id: String },
     /// Link health changed
     LinkHealthChanged { id: String, is_healthy: bool },
 }
@@ -75,8 +80,8 @@ impl AppState {
         let mut next = (*previous).clone();
         crate::config::runtime::apply_database_options(&self.db, &mut next).await;
 
-        if previous.backend_url != next.backend_url {
-            let next_passkey_service = PasskeyService::from_backend_url(&next.backend_url);
+        if previous.frontend_url != next.frontend_url {
+            let next_passkey_service = PasskeyService::from_frontend_url(&next.frontend_url);
             match self.passkey_service.write() {
                 Ok(mut passkey_service) => *passkey_service = next_passkey_service,
                 Err(error) => tracing::error!(%error, "Passkey 配置锁已损坏，无法热更新"),
@@ -100,8 +105,11 @@ impl AppState {
 }
 
 /// Create the application state with all dependencies
-pub fn create_state(db: Database, config: AppConfig) -> SharedState {
+pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<SharedState> {
     tracing::info!("开始初始化应用服务...");
+    let password_crypto = tokio::task::spawn_blocking(PasswordCrypto::new)
+        .await
+        .map_err(std::io::Error::other)??;
 
     // Create cache with default settings
     const CACHE_CAPACITY: u64 = 10_000;
@@ -161,7 +169,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
     let ncm_np_service = NeteaseNowPlayingService::new(db.clone());
     tracing::info!("网易云音乐服务初始化完成");
 
-    let passkey_service = PasskeyService::from_backend_url(&config.backend_url);
+    let passkey_service = PasskeyService::from_frontend_url(&config.frontend_url);
     tracing::info!(
         enabled = passkey_service.is_some(),
         "Passkey 服务初始化完成"
@@ -169,7 +177,7 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
 
     tracing::info!("所有应用服务初始化完成");
 
-    Arc::new(AppState {
+    Ok(Arc::new(AppState {
         db,
         cache,
         link_health_cache,
@@ -180,7 +188,8 @@ pub fn create_state(db: Database, config: AppConfig) -> SharedState {
         email_service,
         ncm_np_service,
         passkey_service: Arc::new(RwLock::new(passkey_service)),
-    })
+        password_crypto: Arc::new(password_crypto),
+    }))
 }
 
 /// Build the application router
@@ -253,6 +262,10 @@ pub fn create_router(state: SharedState) -> axum::Router {
 
     router
         .fallback(crate::error::fallback_404)
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::dashboard_csrf::guard,
+        ))
         .layer(axum::middleware::from_fn(
             crate::middleware::request_log::log_request,
         ))

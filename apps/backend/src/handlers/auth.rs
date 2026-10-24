@@ -2,6 +2,7 @@
 
 use crate::services::helpers::is_owner_user_id;
 use crate::services::helpers::make_oauth_service;
+use crate::services::password_crypto::PasswordKeyResponse;
 use crate::{
     app::SharedState,
     auth::{extractors::AuthUser, jwt::generate_jwt},
@@ -11,7 +12,7 @@ use crate::{
 use axum::{
     Json,
     extract::State,
-    http::{HeaderMap, HeaderValue, header::SET_COOKIE},
+    http::{HeaderMap, HeaderValue, header::{CACHE_CONTROL, SET_COOKIE}},
 };
 use bson::{Bson, Document, doc};
 use futures::stream::TryStreamExt;
@@ -20,11 +21,12 @@ use serde::{Deserialize, Serialize};
 const ADMIN_AUTH_COOKIE: &str = "admin-auth-token";
 
 /// Request body for issuing an admin JWT.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CreateTokenRequest {
-    #[serde(alias = "username")]
     pub identifier: String,
-    pub password: String,
+    pub encrypted_password: String,
+    pub key_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -39,15 +41,42 @@ pub struct UpdateAvatarRequest {
     pub avatar: String,
 }
 
-/// Issue an admin JWT after verifying the submitted password.
+/// Publish only the current process's SPKI password-encryption public key.
+#[utoipa::path(
+    get,
+    path = "/api/auth/password-key",
+    responses(
+        (status = 200, description = "Current RSA-OAEP SHA-256 public key",
+            body = ApiResponse<PasswordKeyResponse>,
+            headers(("Cache-Control" = String, description = "no-store")))
+    ),
+    tag = "auth"
+)]
+pub async fn get_password_key(
+    State(state): State<SharedState>,
+) -> (HeaderMap, Json<ApiResponse<PasswordKeyResponse>>) {
+    let mut headers = HeaderMap::new();
+    headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    (headers, Json(ApiResponse::success(state.password_crypto.public_key_response())))
+}
+
+/// Issue an admin JWT after decrypting and verifying the encrypted password.
 pub async fn create_token(
     State(state): State<SharedState>,
     AppJson(payload): AppJson<CreateTokenRequest>,
 ) -> AppResult<(HeaderMap, Json<ApiResponse<TokenResponse>>)> {
+    let ciphertext = state
+        .password_crypto
+        .decode_ciphertext(&payload.encrypted_password, &payload.key_id)?;
     let (reader, account) = find_owner_credential_account(&state, &payload.identifier).await?;
-    let stored_hash = account_password_hash(&account)?;
+    let stored_hash = account_password_hash(&account)?.to_owned();
 
-    let password_matches = bcrypt::verify(&payload.password, stored_hash).unwrap_or(false);
+    let crypto = state.password_crypto.clone();
+    let password_matches = tokio::task::spawn_blocking(move || {
+        crypto.verify_password(&ciphertext, &stored_hash)
+    })
+    .await
+    .map_err(|_| AppError::Internal("Password verification worker failed".to_string()))??;
     if !password_matches {
         return Err(AppError::Unauthorized);
     }
@@ -64,7 +93,7 @@ pub(crate) fn issue_admin_session(
         .map_err(|e| AppError::Internal(format!("Failed to generate token: {e}")))?;
 
     let mut headers = HeaderMap::new();
-    headers.insert(SET_COOKIE, build_admin_auth_cookie(&token)?);
+    headers.insert(SET_COOKIE, build_admin_auth_cookie(&token, state)?);
 
     Ok((
         headers,
@@ -76,9 +105,9 @@ pub(crate) fn issue_admin_session(
 }
 
 /// Remove the admin JWT cookie. The token itself remains stateless.
-pub async fn delete_token() -> AppResult<(HeaderMap, Json<ApiResponse<()>>)> {
+pub async fn delete_token(State(state): State<SharedState>) -> AppResult<(HeaderMap, Json<ApiResponse<()>>)> {
     let mut headers = HeaderMap::new();
-    headers.insert(SET_COOKIE, expire_admin_auth_cookie()?);
+    headers.insert(SET_COOKIE, build_admin_auth_cookie("", &state)?);
 
     Ok((headers, Json(ApiResponse::success(()))))
 }
@@ -277,17 +306,15 @@ fn account_password_hash(account: &Document) -> AppResult<&str> {
     }
 }
 
-fn build_admin_auth_cookie(token: &str) -> AppResult<HeaderValue> {
+fn build_admin_auth_cookie(token: &str, state: &SharedState) -> AppResult<HeaderValue> {
+    let config = state.config();
+    let secure = config.backend_url.starts_with("https://") || config.frontend_url.starts_with("https://");
+    let max_age = if token.is_empty() { 0 } else { 7 * 24 * 60 * 60 };
+    let same_site = if secure { "None" } else { "Lax" };
     let cookie = format!(
-        "{ADMIN_AUTH_COOKIE}={}; Path=/; Max-Age={}; HttpOnly; SameSite=Lax",
-        token,
-        7 * 24 * 60 * 60
+        "{ADMIN_AUTH_COOKIE}={token}; Path=/; Max-Age={max_age}; HttpOnly; SameSite={same_site}{}",
+        if secure { "; Secure" } else { "" }
     );
     HeaderValue::from_str(&cookie)
-        .map_err(|e| AppError::Internal(format!("Failed to build auth cookie: {e}")))
-}
-
-fn expire_admin_auth_cookie() -> AppResult<HeaderValue> {
-    HeaderValue::from_str("admin-auth-token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax")
         .map_err(|e| AppError::Internal(format!("Failed to build auth cookie: {e}")))
 }

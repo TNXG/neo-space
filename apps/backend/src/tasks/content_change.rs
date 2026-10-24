@@ -1,6 +1,6 @@
 //! 后台内容写入后的缓存、搜索索引与 ISR 同步。
 
-use crate::app::SharedState;
+use crate::app::{Event, SharedState};
 use crate::models::{AiTranslation, Link, Note, Page, Post};
 use crate::tasks::isr::trigger_isr_revalidation;
 use crate::tasks::meilisearch_incremental::{enqueue_category_posts, enqueue_incremental_sync};
@@ -109,6 +109,21 @@ pub async fn notify_translation_changed(state: &SharedState, translation: &AiTra
         "notes" => trigger_isr_revalidation(state, "notes", None).await,
         "pages" => trigger_isr_revalidation(state, "pages", None).await,
         _ => {}
+    }
+}
+
+/// Broadcast profile changes; only owner writes affect the public ISR profile.
+pub async fn notify_user_profile_changed(
+    state: &SharedState,
+    reader_id: &bson::oid::ObjectId,
+    is_owner: bool,
+) {
+    // Profile and reader responses currently have no Rust-side Moka cache.
+    let _ = state.event_bus.send(Event::UserProfileUpdated {
+        id: reader_id.to_hex(),
+    });
+    if is_owner {
+        trigger_isr_revalidation(state, "user-profile", None).await;
     }
 }
 
