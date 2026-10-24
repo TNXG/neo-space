@@ -54,19 +54,15 @@ axum = { version = "0.8.9", default-features = false, features = [
   "multipart",
   "ws"
 ] }
-axum-extra = { version = "0.12.6", default-features = false, features = [
-  "cookie",
-  "typed-header"
-] }
 tower = { version = "0.5.3", default-features = false, features = [ "util" ] }
-tower-http = { version = "0.6.11", default-features = false, features = [
+tower-http = { version = "0.7.1", default-features = false, features = [
   "cors",
   "trace",
   "compression-br",
   "compression-gzip",
   "limit"
 ] }
-tokio = { version = "1.52.3", default-features = false, features = [
+tokio = { version = "1.54.1", default-features = false, features = [
   "rt-multi-thread",
   "macros",
   "net",
@@ -78,18 +74,21 @@ tokio = { version = "1.52.3", default-features = false, features = [
 ] }
 
 # Database
-mongodb = { version = "3.7.0", features = [ "rustls-tls" ] }
+mongodb = { version = "3.9.1", features = [ "rustls-tls" ] }
 bson = { version = "2.13", default-features = false, features = [ "chrono-0_4" ] }
 
 # Serialization
-serde = { version = "1.0.228", features = [ "derive" ], default-features = false }
-serde_json = { version = "1.0.150", default-features = false, features = [ "std" ] }
+serde = { version = "1.0.229", features = [ "derive" ], default-features = false }
+serde_json = { version = "1.0.154", default-features = false, features = [ "std" ] }
 
 # Auth
-jsonwebtoken = { version = "10.4.0", default-features = false, features = [ "rust_crypto" ] }
+jsonwebtoken = { version = "11.1.0", default-features = false, features = [ "rust_crypto" ] }
 # Passkey 服务端校验使用纯 Rust 加密实现，避免在构建和运行时依赖系统 OpenSSL。
 passkey-auth = "0.1.3"
-rustls = { version = "0.23.40", default-features = false, features = [
+base64 = "0.23.1"
+aws-lc-rs = { version = "1.18.2", default-features = false, features = [ "non-fips", "alloc" ] }
+zeroize = "1.9.1"
+rustls = { version = "0.23.46", default-features = false, features = [
   "ring",
   "logging",
   "std",
@@ -97,12 +96,11 @@ rustls = { version = "0.23.40", default-features = false, features = [
 ] }
 
 # Async
-futures = { version = "0.3.32", default-features = false, features = [ "std" ] }
-async-trait = "0.1.89"
-async-stream = "0.3.6"
+futures = { version = "0.3.34", default-features = false, features = [ "std" ] }
+async-trait = "0.1.92"
 
 # HTTP client
-reqwest = { version = "0.13.3", default-features = false, features = [
+reqwest = { version = "0.13.5", default-features = false, features = [
   "json",
   "form",
   "rustls"
@@ -115,18 +113,18 @@ chrono = { version = "0.4.45", default-features = false, features = [
   "std"
 ] }
 urlencoding = "2.1.3"
-html-escape = "0.2.13"
+html-escape = "0.3.0"
 dotenv = "0.15.0"
 hmac = "0.13.0"
-sha2 = "0.11.0"
+sha2 = "0.11.1"
 hex = { version = "0.4.3", default-features = false, features = [ "alloc" ] }
-uuid = { version = "1.23.3", default-features = false, features = [ "v4" ] }
-rand = { version = "0.10.1", default-features = false, features = [
+uuid = { version = "1.29.0", default-features = false, features = [ "v4" ] }
+rand = { version = "0.10.3", default-features = false, features = [
   "std",
   "std_rng",
   "thread_rng"
 ] }
-md5 = { version = "0.8.0", default-features = false }
+md5 = { version = "0.8.1", default-features = false }
 
 # Bangumi 动漫头像检测；关闭绘图和桌面预览，仅保留 ONNX 推理核心。
 ultralytics-inference = {
@@ -135,26 +133,26 @@ ultralytics-inference = {
   default-features = false
 }
 # Alpine 通过 pkg-config 链接原生 musl ONNX Runtime，避免 ort 尝试下载不存在的 musl 预构建包。
-ort = { version = "=2.0.0-rc.13", default-features = false, features = [ "pkg-config" ] }
+ort = { version = "2.0.0-rc.13", default-features = false, features = [ "pkg-config" ] }
 image = { version = "0.25.10", default-features = false, features = [ "jpeg", "png", "webp" ] }
 
 # Cache
-moka = { version = "0.12.15", default-features = false, features = [ "future" ] }
-arc-swap = "1.7.1"
+moka = { version = "0.12.16", default-features = false, features = [ "future" ] }
+arc-swap = "1.9.3"
 
 # OpenAPI
-utoipa = { version = "5.5.0", features = [
+utoipa = { version = "6.0.0", features = [
   "axum_extras",
   "chrono",
   "uuid"
 ] }
-utoipa-swagger-ui = { version = "9.0.2", features = [
+utoipa-swagger-ui = { version = "10.0.2", features = [
   "axum",
   "vendored"
 ] }
 
 # Email
-lettre = { version = "0.11.22", default-features = false, features = [
+lettre = { version = "0.11.23", default-features = false, features = [
   "tokio1-rustls-tls",
   "smtp-transport",
   "builder",
@@ -164,12 +162,6 @@ lettre = { version = "0.11.22", default-features = false, features = [
 # Meilisearch — tls feature (uses rustls internally)
 meilisearch-sdk = { version = "0.33.0", default-features = false, features = [ "tls" ] }
 
-# OpenAI — rustls backend
-async-openai = { version = "0.41.0", default-features = false, features = [ "rustls" ] }
-
-# Stream utilities
-tokio-stream = { version = "0.1.18", default-features = false, features = [ "time" ] }
-
 # Logging
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", default-features = false, features = [
@@ -177,9 +169,9 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
   "fmt",
   "ansi"
 ] }
-aes = { version = "0.9.1", default-features = false }
-ecb = { version = "0.2.0", default-features = false, features = [ "alloc" ] }
+aes = { version = "0.9.3", default-features = false }
+ecb = { version = "0.2.1", default-features = false, features = [ "alloc" ] }
 cipher = { version = "0.5.2", default-features = false, features = [ "block-padding" ] }
 
 
-bcrypt = "0.19.1"
+bcrypt = "0.19.3"
