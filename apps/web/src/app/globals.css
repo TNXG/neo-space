@@ -705,3 +705,251 @@ i,
   display: inline-block;
   margin-right: 0.05em;
 }
+
+/* 星海观测站：局部语义主题，不影响公共站与认证逻辑。 */
+.observatory {
+  --background: #eef3fa;
+  --foreground: #1c2943;
+  --card: #f7faff;
+  --card-foreground: var(--foreground);
+  --primary: #176b77;
+  --primary-foreground: #ffffff;
+  --secondary: #e3eaf5;
+  --secondary-foreground: #263b59;
+  --muted-foreground: #52647c;
+  --accent: #d8eaf0;
+  --accent-foreground: #174b59;
+  --border: #c3d1e2;
+  --input: #a7bad1;
+  --ring: #218598;
+  --destructive: #b33550;
+  --observatory-space: #10172d;
+  --observatory-blue: #557ecb;
+  --observatory-violet: #6453a2;
+  --observatory-lilac: #a28cda;
+  --observatory-ice: #a8edeb;
+  --observatory-star: #526f95;
+  /* @theme 别名在根节点求值，局部主题须在此重新绑定。 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-accent-400: var(--ring);
+  --color-accent-600: var(--primary);
+  --color-accent-500: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+}
+
+.dark .observatory {
+  --background: #080e1c;
+  --foreground: #e5edf9;
+  --card: #101b30;
+  --card-foreground: var(--foreground);
+  --primary: #a2e6e0;
+  --primary-foreground: #112c38;
+  --secondary: #1b2b42;
+  --secondary-foreground: #c4d6ed;
+  --muted-foreground: #9eafc8;
+  --accent: #22384c;
+  --accent-foreground: #c9f5f1;
+  --border: #2b3c54;
+  --input: #3c506d;
+  --ring: #a2e6e0;
+  --destructive: #f5a1b2;
+  --observatory-star: #c6d9ff;
+}
+
+.observatory-nebula {
+  background:
+    radial-gradient(ellipse at 22% 24%, color-mix(in srgb, var(--observatory-blue) 20%, transparent), transparent 48%),
+    radial-gradient(ellipse at 55% 65%, color-mix(in srgb, var(--observatory-violet) 14%, transparent), transparent 50%),
+    radial-gradient(ellipse at 96% 5%, color-mix(in srgb, var(--observatory-ice) 8%, transparent), transparent 35%);
+}
+
+.observatory-stars {
+  opacity: 0.45;
+  background-image:
+    radial-gradient(circle, var(--observatory-star) 0.7px, transparent 1px),
+    radial-gradient(circle, var(--observatory-star) 1px, transparent 1.4px);
+  background-size: 97px 113px, 223px 197px;
+  background-position: 12px 31px, 71px 16px;
+  mask-image: linear-gradient(to right, currentColor, transparent 85%);
+}
+
+.observatory-panel {
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 24px 90px -48px color-mix(in srgb, var(--observatory-space) 45%, transparent);
+}
+
+.observatory-panel input {
+  background: var(--background);
+}
+
+.observatory-panel [data-variant="default"] {
+  color: var(--primary-foreground);
+}
+
+.observatory-scene {
+  min-height: min(36rem, 75svh);
+}
+
+.observatory-art {
+  position: absolute;
+  width: 135%;
+  max-width: 48rem;
+  aspect-ratio: 760 / 650;
+  top: -8rem;
+  left: -17%;
+  mask-image: linear-gradient(currentColor 65%, transparent 97%);
+}
+
+.observatory-coordinate {
+  color: var(--muted-foreground);
+}
+
+.observatory-title {
+  background: linear-gradient(110deg, var(--foreground) 10%, var(--primary) 90%);
+  background-clip: text;
+  color: transparent;
+}
+
+.observatory-orbit {
+  transform-origin: 375px 280px;
+  animation: observatory-orbit 80s linear infinite;
+}
+
+.observatory-planet {
+  animation: observatory-float 12s var(--motion-ease-in-out) infinite alternate;
+}
+
+@keyframes observatory-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes observatory-float {
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+/* 单屏优先：小屏将星体退到背景，不再堆叠一块高大的插画。 */
+@media (max-width: 1023px) {
+  .observatory-scene {
+    min-height: 0;
+  }
+
+  .observatory-scene > div:last-child {
+    gap: 0.5rem;
+  }
+
+  .observatory-scene h1 {
+    font-size: 1.35rem;
+  }
+
+  .observatory-scene h1 br {
+    display: none;
+  }
+
+  .observatory-scene > div:last-child > p:first-child,
+  .observatory-coordinate {
+    display: none;
+  }
+
+  .observatory-art {
+    width: 32rem;
+    max-width: none;
+    top: -12rem;
+    left: calc(50% - 8rem);
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .observatory-orbit,
+  .observatory-planet {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .observatory-panel {
+    background: var(--card);
+    backdrop-filter: none;
+  }
+
+  .observatory-title {
+    background: none;
+    color: var(--foreground);
+  }
+}
+
+@media (forced-colors: active) {
+  .observatory-art,
+  .observatory-nebula,
+  .observatory-stars {
+    display: none;
+  }
+
+  .observatory-title {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+/* 极光与光环为静态光学层，不增加持续的模糊重绘。 */
+.observatory-nebula::before,
+.observatory-nebula::after {
+  content: "";
+  position: absolute;
+  inset: -20% -30%;
+  background: conic-gradient(from 215deg at 35% 40%, transparent 0deg, color-mix(in srgb, var(--observatory-ice) 14%, transparent) 18deg, transparent 40deg, color-mix(in srgb, var(--observatory-lilac) 18%, transparent) 62deg, transparent 85deg);
+  filter: blur(35px);
+  transform: rotate(-18deg);
+}
+
+.observatory-nebula::after {
+  transform: rotate(155deg);
+  opacity: 0.6;
+}
+
+.observatory-art::before {
+  content: "";
+  position: absolute;
+  inset: 10% 12% 24%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, transparent 35%, color-mix(in srgb, var(--observatory-lilac) 15%, transparent) 52%, transparent 70%);
+  transform: rotate(-28deg) scaleY(0.7);
+}
+
+@media (max-height: 740px) {
+  .observatory-panel {
+    gap: 0.65rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .observatory-panel input,
+  .observatory-panel button[type="submit"] {
+    height: 2.5rem;
+  }
+
+  .observatory-panel h2 {
+    font-size: 1.25rem;
+  }
+
+  .observatory-scene h1 {
+    font-size: clamp(1.15rem, 3vw, 2.5rem);
+  }
+}
