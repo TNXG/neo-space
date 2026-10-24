@@ -105,18 +105,28 @@ cd neo-space
 pnpm install
 
 # 配置环境变量
+cp .env.example .env                            # 后端 + docker compose（根目录）
 cp apps/web/.env.local.example apps/web/.env.local
-cp apps/backend/.env.example apps/backend/.env
 
 # 启动全部开发服务（统一调度）
 pnpm dev
 ```
 
+### 环境变量约定
+
+| 文件 | 使用方 | 说明 |
+| --- | --- | --- |
+| `.env` | `apps/backend`、`docker-compose.yml` | 后端从 `apps/backend` 启动时由 dotenv 向上查找；`PORT` 默认 8000 |
+| `apps/web/.env.local` | Next.js | 只读取应用目录，**不会**读取仓库根 `.env`；默认对接 `http://localhost:8000/api` |
+
+- 本地连接共享 / 线上 MongoDB 时，`.env` 必须保留 `ENV_OPTIONS_SYNC=false`：否则启动后会把本地 `FRONTEND_URL`、OAuth、Turnstile 等值写回数据库 `options` 集合，覆盖线上配置。确实要初始化数据库时改用 `cargo run -- --sync-config`。
+- `apps/web` 的 `REVALIDATION_SECRET` / `REVALIDATION_SALT` 必须与根 `.env` 完全一致，ISR 刷新才会生效。
+- 后端开发脚本依赖 `cargo-watch`：`cargo install cargo-watch`。
+
 ### 单独启动某个应用
 
 ```bash
 pnpm dev:web      # Next.js 前端 (默认 :3000)
-pnpm dev:admin    # Vite admin 后台 (默认 :2323)
 pnpm dev:backend  # Rust/Axum 后端 (默认 :8000)
 ```
 
