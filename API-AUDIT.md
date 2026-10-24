@@ -87,6 +87,8 @@
 - 客户端：`apps/web/src/types/api.ts:254-265` 声明 `last_login_time`。
 - 后端：`apps/backend/src/models/user.rs:28-29` 序列化名称是 `lastLoginTime`。
 - 后果：按客户端类型读取 `last_login_time` 得不到服务端值。检索仅发现页面 fallback 对其赋值，未发现实际展示使用，因此当前主要是潜伏类型偏差。
+- 后续资料写入契约：`PATCH /api/user/profile` 继续返回 `ReaderResponse`，`isOwner` 取当前 `AuthUser`；普通读者仍可修改基本资料/邮箱，但提交 `introduce`、`url`、`socialIds`（含显式 `null`）在写库前返回 403。`socialIds` 保持整体替换；邮箱与关联 owner mail 的既有写入行为保留。
+- 写后同步：`services/user_profile.rs` 成功后广播 `UserProfileUpdated`，站主写入再经既有 ISR 通道触发 `user-profile` 标签失效（依赖原有 revalidation 配置及日志告警）；Rust 资料读取当前无 Moka 缓存。以上为源码契约，未执行运行时验证。
 
 ### API-09：时间胶囊请求把后端必填字段声明为可选
 
@@ -155,7 +157,7 @@
 
 | 模块 | 代表性真实端点（均省略 `/api`） | 路由依据 |
 | --- | --- | --- |
-| 密码登录/会话 | `GET/POST/DELETE /auth/tokens` | `apps/backend/src/routes/auth.rs:9-15` |
+| 密码登录/会话 | `GET /auth/password-key`、`GET/POST/DELETE /auth/tokens` | `apps/backend/src/routes/auth.rs`；当前密码传输契约见下文 |
 | Passkey | 列表、删除、`/auth/passkeys/register/{start,finish}`、`authenticate/{start,finish}` | `apps/backend/src/routes/auth.rs:54-78` |
 | 登录前探测 | `GET /owner/allow-login`、`GET /owner/identify` | `apps/backend/src/routes/owner.rs:7-16` |
 | 仪表盘 | `GET /dashboard/overview` | `apps/backend/src/routes/admin_dashboard.rs:6-10` |
@@ -175,6 +177,24 @@
 | 搜索管理 | `/admin/meilisearch` 下索引、文档、设置、任务、向量配置、维护/重建/计划 | `apps/backend/src/routes/meilisearch_admin.rs:11-81` |
 
 权限需逐接口核对：内容和配置写入等主要要求 owner，但页面列表、部分分类/标签和辅助内容读取为公开接口；不能仅凭本表“管理能力”标签判定所有 GET 都需要 owner。
+
+### 当前 Owner 密码登录传输契约
+
+- `GET /api/auth/password-key` 匿名可读，返回 `ApiResponse<{ keyId: string, algorithm: "RSA-OAEP-256", publicKey: string }>`；`publicKey` 是 WebCrypto 可导入的 SPKI PEM，响应带 `Cache-Control: no-store`。
+- `POST /api/auth/tokens` 仅接收 `{ identifier, encryptedPassword, keyId }`。浏览器先用 RSA-OAEP/SHA-256 加密 UTF-8 密码，再以标准 base64 直传 Rust；Next.js 不再转发认证请求。禁止提交 `password`、旧 `username` 别名或任何未知字段。请求体上限为 4096 字节，4096-bit RSA 密文必须为 512 字节（base64 长度 684）；字段缺失、密钥不匹配、密文错误均返回 400。
+- Rust 启动时在阻塞工作线程通过 `aws-lc-rs 1.18.2` 生成一次 4096-bit RSA 密钥，失败则终止启动；私钥只保存在该进程内存。每次登录的 AWS-LC OAEP-SHA-256/MGF1-SHA-256 解密及既有 bcrypt 校验也在阻塞工作线程运行；仅将解密返回的有效明文片段交给 UTF-8 与 bcrypt 校验，完整输出缓冲使用 `Zeroizing` 在成功或失败退出时擦除。应用指纹计算使用 `sha2 0.11`，已移除直接依赖的 RustCrypto `rsa` 与 `sha2_010`，但 `jsonwebtoken` 的传递依赖仍保留 `rsa`。不修改数据库密码，不引入 OPAQUE，不重置已有密码。
+- Owner 查询/权限规则、成功响应中的 JWT 与用户不变；Cookie 现在由浏览器直接接收，属性与 CSRF 要求见下节。凭据不匹配仍为 401；本节是源码契约，尚未用真实账户验收登录部署链路。
+- 密钥随进程重启轮换，客户端遇到旧 `keyId` 必须重新获取公钥并加密。该传输方案不是一次性挑战协议：同一密文在密钥轮换前可重复提交，仍需 HTTPS；多进程部署须保证取公钥与登录命中同一进程。
+- 已执行无需数据库或真实账号的互通冒烟：使用实际密码服务生成 SPKI PEM，Node WebCrypto 以 RSA-OAEP/SHA-256 加密含中文及 emoji 的密码，AWS-LC 解密后通过 bcrypt；错误密码返回不匹配，旧 keyId、异常 base64/密文长度、无效 OAEP 密文、错误 hash/label 和非 UTF-8 明文均被拒绝。此验证不覆盖真实账号、Cookie 或跨源部署。
+
+### 后台 CSR 与 API 直连现状
+
+- 密码、Passkey、Owner 会话恢复及退出已经迁移到 `dashboard-api.ts`，浏览器 `credentials: include`，SWR 共享会话；旧 Next.js Server Action、服务端会话读取和认证转发模块已删除，旧 Next Cookie 需重新登录。公共站仍使用原有 SSR/RSC 与 ISR。
+- Rust 签发/删除同名 HttpOnly Cookie，HTTP 开发为 SameSite=Lax，HTTPS 配置为 Secure + SameSite=None；跨站仍受浏览器第三方 Cookie 限制，部署宜使用同站 API 域名或部署层代理。凭据 CORS 使用精确 Origin。
+- Cookie 认证变更及登录接口要求可信 Origin 和 `X-Requested-With: Neo-Space-Dashboard`；Bearer 调用保留既有认证。UI 守卫不替代 Rust Owner 权限。JWT 不进入持久化浏览器存储。
+- 用户资料编辑复用 `GET/PATCH /api/user/profile`；基本资料按脏字段提交，社交对象完整提交、保留未改平台。变更后回读资料并更新会话，Rust 广播内部 `UserProfileUpdated` 事件并失效公共站 `user-profile`。后台缓存与公共站 ISR 各自处理。
+- 已执行前端类型检查、后端 Profile 字段权限及 CSRF 单元检查，并用浏览器临时响应检查表单交互；未启动数据库或使用真实账户，未证明生产 Cookie / Passkey 登录和数据库持久化闭环。
+
 
 ### 不应误判为后端缺失的其他能力
 

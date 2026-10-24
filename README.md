@@ -33,7 +33,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - **现代技术栈**：采用 Web 与 Rust 生态最新的最佳实践
 - **可扩展性**：模块化 + monorepo 设计，便于维护与扩展
 
-> **管理界面状态**：旧 Vue 管理面板及其静态内嵌、开发反代已移除，目前不提供替代管理界面。后端管理 API、JWT / 密码 / Passkey 认证与 dashboard overview API 均保留；后续管理界面将位于 `apps/web` 的独立路由组中。
+> **管理界面状态**：新后台位于 `apps/web/src/app/[locale]/(dashboard)`，入口 `/dashboard`（登录页 `/dashboard/signin`）。后台已提供独立外壳与「设置 → 用户」资料编辑，参考 `../admin` 的身份概览、基本信息和动态社交条目；设置分组只在外侧导航保留，技术路由为 `/dashboard/settings/profile`。密码 / Passkey、会话及资料读写由浏览器直接请求 Rust，使用 HttpOnly Cookie，不再经过 Next.js 认证代理。内容管理和注册页面尚未接入。业务组件位于 `src/components/business/dashboard`。
 
 ---
 
@@ -61,6 +61,42 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - OAuth 认证：支持 GitHub 与 QQ 登录
 - 匿名用户：可绑定邮箱成为正式用户
 - 权限管理：区分普通用户和管理员
+
+### 后台登录
+
+- 登录页采用原创 SVG 星海观测站场景：环绕星体、星轨、极光薄雾与局部明暗主题，不依赖外部壁纸或 WebGPU。布局以单屏为目标，小屏将插画退为背景并压缩间距；极小视口或放大文字时仍保留内容可访问性。星轨在系统开启“减少动态效果”时自动停止。输入博主**用户名或邮箱**后调用 `/api/owner/identify`，匹配后仅显示公开头像与名称，不展示账号明细或凭据。
+- 密码 / Passkey、会话读取和退出由浏览器通过 `dashboard-api.ts` 直连 Rust，统一 `credentials: include`，JWT 不写入浏览器存储。Cookie 由 Rust 签发与清除；本地 HTTP 使用 SameSite=Lax，HTTPS 配置使用 Secure + SameSite=None 支持跨站 API。浏览器禁用第三方 Cookie 的跨站部署仍需改成同站 API 域名或部署层反向代理。
+- 博主密码先在浏览器使用 Web Crypto `RSA-OAEP / SHA-256` 和后端 4096 位公钥加密，再直接提交 Rust。`GET /api/auth/password-key` 返回 `{ keyId, algorithm, publicKey }` 且禁止缓存；`POST /api/auth/tokens` 只接受 `{ identifier, encryptedPassword, keyId }`。Next.js 不持有解密私钥，Rust 仅在校验现有 bcrypt 哈希时短暂解密，并清零临时密码缓冲。浏览器加密失败时不提交登录请求。
+- Rust 密码传输使用 `aws-lc-rs 1.18.2` 的 RSA 密钥生成与 OAEP 解密，应用侧公钥指纹使用 `sha2 0.11`，不再直接依赖 RustCrypto `rsa` 或 `sha2_010`；前端协议和数据库 bcrypt 哈希不变。AWS-LC 在本机编译原生代码，需要可用的 C/C++ 构建工具链；这不是 AWS 云服务调用，也不要求 AWS 账号。当前启用非 FIPS 后端，不代表 FIPS 认证部署。`jsonwebtoken` 仍间接依赖 RustCrypto `rsa`，因此锁文件中仍会保留它，但密码解密不再经过该实现。
+- 此方案保护请求体，不是零知识密码协议，也不代替 HTTPS：仍须防止公钥被替换、脚本被篡改及会话泄露。私钥仅保存在单个 Rust 进程内，重启后旧密文失效；多实例需保证取公钥和提交登录命中同一实例。密文没有一次性挑战绑定，在进程密钥轮换前仍可能被重放，不能记录密文或将其视为非敏感数据。
+- WebAuthn 的 RP 主机名及精确 Origin 使用后端 `FRONTEND_URL`，须与实际访问 Next.js 的地址一致（含协议、端口）；生产环境使用 HTTPS，本地可用 `http://localhost:3000`。`BACKEND_URL` 仍用于 API / OAuth 回调，不作为后台页面 Origin。
+- 已在旧 API 域名下登记的 Passkey 无法跨 RP 主机名迁移。切换前端域名后，需通过可用的其他认证方式登录，再在新 Origin 重新登记；本站登录页不提供 Passkey 注册管理。
+- 身份识别的等待、查询中、未找到账号及匹配成功状态统一显示在表单上方的身份卡片中；用户名输入框通过 `aria-describedby` 关联该区域，不在输入框下重复显示识别提示。
+- `/api/owner/allow-login` 确认 Passkey 已配置后自动创建挑战并请求浏览器凭据，支持条件式填充时不阻塞密码输入；不支持时调用系统验证器。手动入口默认隐藏，仅在 Passkey 失败后显示带无障碍名称的低调密钥重试图标，无需先匹配用户名；密码提交时取消等待中的 Passkey，若已在验签则先等待会话写入完成。身份信息切换使用短透明度过渡，错误就近显示。
+
+### 后台数据架构约定
+
+- **目标架构**：后台 CSR 优先，浏览器使用统一 API 客户端直接调用 Rust；登录、Passkey、会话、退出、业务读取与变更均不经过 Next.js Server Actions / Route Handler 转发。App Router 只保留路由、静态元数据与页面外壳，尽量不用 RSC 获取后台业务数据；公共站 SSR/RSC 不受影响。具体约束见 `AGENTS.md` §20.1。
+- **同步方式**：业务读取由 SWR（或该功能域既有 TanStack Query）管理，详情、列表、筛选、分页使用一致的资源 key。变更成功后更新或失效所有关联客户端缓存；退出清理受保护缓存，不依赖 `router.refresh()`、页面重载或 Next.js 缓存失效。后端事件和跨标签页会话变化通过同一缓存入口同步，避免多份数据状态长期分叉。
+- **直连认证要求**：Cookie 由 Rust 设置与清除；浏览器启用适当的 `credentials`，后端配置精确的凭据 CORS、SameSite / Secure 和 CSRF 防护。生产环境必须 HTTPS，密码仍须先在浏览器加密。不能通过把 token 放入 localStorage 来绕过 Cookie 部署问题。
+- **当前实现**：后台已移除旧 Server Action、服务端会话 Cookie 与认证转发模块，使用 SWR 共享 Owner 会话；旧的 Next.js 会话不会自动迁移，需要重新登录。Cookie 变更及登录请求要求精确可信 Origin 和 `X-Requested-With: Neo-Space-Dashboard`，Bearer API 客户端保持原有鉴权。Profile 变更回读聚合资料并更新会话缓存，Rust 通知公共站失效 `user-profile`。真实部署中的 Cookie、Passkey 与数据库写后回读仍须用授权测试账户验收。
+
+### 用户资料设置
+
+- 设置父菜单下的「用户」对应原后台用户设置页。外侧分组复用 shadcn `Collapsible` 与现有 `Button`，图标统一使用项目 `@/lib/inline-icon`；不在内容区重复设置列表。内容区为顶部保存栏、头像与账户概览、分栏基本资料和可添加/切换平台/删除的社交条目。移动导航继续使用现有 shadcn Drawer。
+- 复用 `GET/PATCH /api/user/profile`；基本字段仅提交修改值，社交变更提交完整 `socialIds`，删除平台时显式清空，保留其他平台。保存失败保留输入；保存成功但回读失败时只重试读取，避免重复提交。昵称、用户名及邮箱必填，URL/邮箱使用表单校验。头像当前通过 URL 维护，不提供未接入的上传按钮。
+- 会话建立与资料读取各有匹配布局的 shadcn `Skeleton`，预留侧栏、头像、字段行、社交区及保存按钮位置；移动端改为单列，减少动态效果时停止骨架脉冲。后台 401 不会清除公共站独立的 Reader Bearer 会话。
+- 本轮验证包括 TypeScript 检查、Profile Owner 字段权限与 CSRF 边界检查，以及浏览器临时响应下的编辑/失败/回读、父子导航、桌面/移动骨架与独立 Reader 会话保留；未访问真实账户或执行真实数据库写入，完整上线验收尚未完成。
+
+### 其他后台设置
+
+- 外侧「设置」新增 SEO、地址、评论、友链、邮件、第三方登录、AI、搜索、追番及安全十个分组，路由为 `/dashboard/settings/{seo,url,comments,friend-links,mail,oauth,ai,search,bangumi,security}`。使用 shadcn Field、Input、Textarea、Checkbox、DropdownMenu 和 Skeleton；图标仍为项目 inline-icon，不重复内部导航。
+- 浏览器携带 Cookie 直连 Owner options API；集合读取为 `GET /api/options`（不带尾斜杠），单组读取及保存为 `GET/PUT /api/options/{key}`。读取后保留完整分组及未知字段，通过 PUT 保存本组，支持服务商条目删除；其他分组不受影响。未配置字段不填入假默认值，凭据使用密码输入且不持久化到浏览器存储，退出清除配置缓存。
+- 保存后重新读取最终值；回读失败保留草稿并只允许重试读取，避免重复提交。部署环境覆盖在字段旁说明，最终值不一致时提示已被后端调整或环境覆盖。多人同时编辑同一分组可能覆盖对方修改，现有接口没有版本冲突控制。
+- AI 服务商支持增删、模型分配与引用校验；OAuth 仅维护后端支持的 GitHub / QQ 声明及 GitHub 凭据。当前 OAuth enabled 标记不是登录访问控制。安全设置仅包含后端已有桌面令牌，不提供不存在的密码/CORS/JWT 开关。
+- 已通过 TypeScript 检查；浏览器临时响应覆盖保存、失败保留、只读重试、未知字段保留、AI/OAuth 数组删除、环境覆盖、折叠及移动导航、骨架屏和数值边界。未连接真实数据库、发送邮件或调用 AI；真实部署中的持久化及服务生效仍需授权验收。
+
+
 
 ### 友链系统
 
@@ -242,7 +278,7 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 
 - 后端保留内容管理、站点设置、管理员认证与 dashboard overview 等管理 API。
 - JWT、密码与 Passkey 认证不随旧面板移除；管理接口继续遵循原有权限校验。
-- 当前没有管理 UI；不再提供旧面板静态资源或开发反代，也无需构建 Vue 应用。
+- 新管理 UI 已提供登录与仪表盘外壳，内容管理尚未接入；不再提供旧面板静态资源或开发反代，也无需构建 Vue 应用。
 - `packages/rich-react` 保留为独立共享包，不因旧面板移除而删除其组件能力。
 
 ### 后端 (apps/backend)
