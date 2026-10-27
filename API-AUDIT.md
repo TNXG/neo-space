@@ -178,6 +178,15 @@
 
 权限需逐接口核对：内容和配置写入等主要要求 owner，但页面列表、部分分类/标签和辅助内容读取为公开接口；不能仅凭本表“管理能力”标签判定所有 GET 都需要 owner。
 
+### AI 模型分配契约
+
+- 沿用 Owner `GET/PUT /api/options/ai` 与 `ApiResponse<T>` 包装，不新增路由或扩大权限。
+- `summaryModel` / `enableSummary` 的实际用途是时间胶囊（文章时效性分析），不是独立摘要生成；内容翻译读取 `translationModel` / `enableTranslation`，评论反垃圾读取 `commentReviewModel` 并由评论配置中的反垃圾、AI 审核开关共同控制。
+- 三项用途统一从 `providers` 获取接口与密钥。删除 `openAiEndpoint`、`openAiPreferredModel`、`openAiKey` 回退消费；无服务商时返回配置错误，后台保存 AI 分组时剔除旧字段。原先只配置独立接口的实例需要先添加服务商并完成模型分配。
+- 时间胶囊、翻译未指定服务商时仍沿用第一个已启用服务商；评论审核必须明确选择服务商。用途模型未填写时使用所选服务商的 `defaultModel`。
+- 本轮仅修改代码与说明，按用户要求未运行测试、类型检查、构建、浏览器或真实 API 请求。
+
+
 ### 当前 Owner 密码登录传输契约
 
 - `GET /api/auth/password-key` 匿名可读，返回 `ApiResponse<{ keyId: string, algorithm: "RSA-OAEP-256", publicKey: string }>`；`publicKey` 是 WebCrypto 可导入的 SPKI PEM，响应带 `Cache-Control: no-store`。

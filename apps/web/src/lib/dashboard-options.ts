@@ -15,7 +15,13 @@ export async function getDashboardOption(key: ManagedOptionKey): Promise<OptionD
   return dashboardRequest<OptionDocument>(`/options/${encodeURIComponent(key)}`);
 }
 
-/** 完整替换当前分组；保留读取到的未知字段，并支持真正删除数组条目。 */
+/** 完整替换当前分组；保留未知字段，仅剔除已移除的 AI 独立接口配置。 */
 export async function saveDashboardOption(key: ManagedOptionKey, value: OptionDocument): Promise<OptionDocument> {
-  return dashboardRequest<OptionDocument>(`/options/${encodeURIComponent(key)}`, { method: "PUT", body: JSON.stringify(value) });
+  const document = { ...value };
+  if (key === "ai") {
+    delete document.openAiEndpoint;
+    delete document.openAiPreferredModel;
+    delete document.openAiKey;
+  }
+  return dashboardRequest<OptionDocument>(`/options/${encodeURIComponent(key)}`, { method: "PUT", body: JSON.stringify(document) });
 }

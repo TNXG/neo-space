@@ -21,6 +21,7 @@ pub struct AiConfig {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AiUsage {
+    /// Time-capsule analysis uses the existing summaryModel / enableSummary settings.
     Summary,
     Translation,
     CommentReview,
@@ -42,12 +43,6 @@ struct AiOptionsValue {
     enable_summary: bool,
     #[serde(default)]
     enable_translation: bool,
-    #[serde(default)]
-    open_ai_endpoint: String,
-    #[serde(default)]
-    open_ai_preferred_model: String,
-    #[serde(default)]
-    open_ai_key: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,75 +132,69 @@ fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Opti
 }
 
 fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, String> {
-    if !ai_options.providers.is_empty() {
-        let selected_provider_id = get_selected_provider_id(&ai_options, usage);
-        if usage == AiUsage::CommentReview && selected_provider_id.is_none() {
-            return Err("Comment review provider and model are not configured".to_string());
-        }
-        let selected_model = match usage {
-            AiUsage::Summary => ai_options.summary_model.as_ref(),
-            AiUsage::Translation => ai_options.translation_model.as_ref(),
-            AiUsage::CommentReview => ai_options.comment_review_model.as_ref(),
-        };
-        let provider = selected_provider_id
-            .and_then(|provider_id| {
-                ai_options
-                    .providers
-                    .iter()
-                    .find(|provider| provider.id == provider_id)
-            })
-            .or_else(|| {
-                (usage != AiUsage::CommentReview)
-                    .then(|| {
-                        ai_options
-                            .providers
-                            .iter()
-                            .find(|provider| provider.enabled)
-                    })
-                    .flatten()
-            })
-            .ok_or_else(|| "No enabled AI provider found".to_string())?;
+    if ai_options.providers.is_empty() {
+        return Err(
+            "AI provider is not configured; add a provider and assign models in AI settings"
+                .to_string(),
+        );
+    }
 
-        if !matches!(
-            provider.provider_type.as_str(),
-            "openai" | "openai-compatible"
-        ) {
-            return Err(format!(
-                "Unsupported AI provider type for current backend: {}",
-                provider.provider_type
-            ));
-        }
+    let selected_provider_id = get_selected_provider_id(&ai_options, usage);
+    if usage == AiUsage::CommentReview && selected_provider_id.is_none() {
+        return Err("Comment review provider and model are not configured".to_string());
+    }
+    let selected_model = match usage {
+        AiUsage::Summary => ai_options.summary_model.as_ref(),
+        AiUsage::Translation => ai_options.translation_model.as_ref(),
+        AiUsage::CommentReview => ai_options.comment_review_model.as_ref(),
+    };
+    let provider = selected_provider_id
+        .and_then(|provider_id| {
+            ai_options
+                .providers
+                .iter()
+                .find(|provider| provider.id == provider_id)
+        })
+        .or_else(|| {
+            (usage != AiUsage::CommentReview)
+                .then(|| {
+                    ai_options
+                        .providers
+                        .iter()
+                        .find(|provider| provider.enabled)
+                })
+                .flatten()
+        })
+        .ok_or_else(|| "No enabled AI provider found".to_string())?;
 
-        let model = selected_model
-            .and_then(|selection| selection.model.clone())
-            .filter(|model| !model.is_empty())
-            .unwrap_or_else(|| provider.default_model.clone());
-        if usage == AiUsage::CommentReview && model.is_empty() {
-            return Err("Comment review model is not configured".to_string());
-        }
+    if !matches!(
+        provider.provider_type.as_str(),
+        "openai" | "openai-compatible"
+    ) {
+        return Err(format!(
+            "Unsupported AI provider type for current backend: {}",
+            provider.provider_type
+        ));
+    }
 
-        return Ok(AiConfig {
-            enabled: provider.enabled
-                && match usage {
-                    AiUsage::Summary => ai_options.enable_summary,
-                    AiUsage::Translation => ai_options.enable_translation,
-                    AiUsage::CommentReview => true,
-                },
-            endpoint: provider.endpoint.clone(),
-            model,
-            api_key: provider.api_key.clone(),
-        });
+    let model = selected_model
+        .and_then(|selection| selection.model.clone())
+        .filter(|model| !model.is_empty())
+        .unwrap_or_else(|| provider.default_model.clone());
+    if usage == AiUsage::CommentReview && model.is_empty() {
+        return Err("Comment review model is not configured".to_string());
     }
 
     Ok(AiConfig {
-        enabled: match usage {
-            AiUsage::Summary => ai_options.enable_summary,
-            AiUsage::Translation => ai_options.enable_translation,
-            AiUsage::CommentReview => true,
-        },
-        endpoint: ai_options.open_ai_endpoint,
-        model: ai_options.open_ai_preferred_model,
-        api_key: ai_options.open_ai_key,
+        enabled: provider.enabled
+            && match usage {
+                AiUsage::Summary => ai_options.enable_summary,
+                AiUsage::Translation => ai_options.enable_translation,
+                AiUsage::CommentReview => true,
+            },
+        endpoint: provider.endpoint.clone(),
+        model,
+        api_key: provider.api_key.clone(),
     })
 }
 
