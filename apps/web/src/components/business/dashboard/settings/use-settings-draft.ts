@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import useSWR from "swr";
 import { create } from "zustand";
 import type { DashboardOptions, ManagedOptionKey, OptionDocument, OptionValue } from "@/types/api";
 import { DASHBOARD_OPTIONS_KEY, getDashboardOption, getDashboardOptions, saveDashboardOption } from "@/lib/dashboard-options";
+import type { ProfileDraft } from "./profile-model";
 import type { SettingGroup } from "./settings-schema";
 import { failureMessage, isDocument, readValue, sameValue, writeValue } from "./settings-model";
 
@@ -19,6 +21,7 @@ interface DraftStore {
   drafts: Partial<Record<ManagedOptionKey, GroupDraft>>;
   edit: (key: ManagedOptionKey, base: OptionDocument, path: string, value: OptionValue | undefined) => void;
   discard: (key: ManagedOptionKey) => void;
+  restore: (key: ManagedOptionKey, snapshot: GroupDraft | undefined) => void;
 }
 
 export const useDraftStore = create<DraftStore>(set => ({
@@ -33,11 +36,29 @@ export const useDraftStore = create<DraftStore>(set => ({
     delete drafts[key];
     return { drafts };
   }),
+  restore: (key, snapshot) => set(state => {
+    const drafts = { ...state.drafts };
+    if (snapshot) drafts[key] = snapshot;
+    else delete drafts[key];
+    return { drafts };
+  }),
+}));
+
+/** 资料草稿同样跨路由保留；只在存在差异时持有值，便于导航直接判断未保存。 */
+export const useProfileDraftStore = create<{ draft?: ProfileDraft; setDraft: (draft: ProfileDraft | undefined) => void }>(set => ({
+  draft: undefined,
+  setDraft: draft => set({ draft }),
 }));
 
 /** 返回草稿映射本身，调用方按需派生未保存分组，避免选择器每次产生新数组。 */
 export function useSettingsDrafts() {
   return useDraftStore(state => state.drafts);
+}
+
+/** 退出登录时清理受保护的内存草稿。 */
+export function clearAllDrafts() {
+  useDraftStore.setState({ drafts: {} });
+  useProfileDraftStore.setState({ draft: undefined });
 }
 
 /** 管理单个分组的读取、草稿、保存与回读确认。 */
@@ -47,7 +68,6 @@ export function useGroupSettings(group: SettingGroup) {
   const discard = useDraftStore(state => state.discard);
   const [pending, setPending] = useState(false);
   const [awaitingRead, setAwaitingRead] = useState(false);
-  const [message, setMessage] = useState("");
   const [failure, setFailure] = useState("");
   const inFlight = useRef(false);
   const stored = data?.[group.key];
@@ -59,17 +79,21 @@ export function useGroupSettings(group: SettingGroup) {
   /** 写入草稿；等待回读期间禁止继续编辑，避免结果指向未知状态。 */
   function change(path: string, value: OptionValue | undefined) {
     if (busy || !document) return;
-    setMessage("");
     setFailure("");
     useDraftStore.getState().edit(group.key, draft?.base ?? document, path, value);
   }
 
-  /** 丢弃本组草稿，回到当前服务端快照。 */
+  /** 丢弃本组草稿；保留快照供提示条一键恢复，误点不会丢失输入。 */
   function reset() {
     if (busy) return;
+    const snapshot = useDraftStore.getState().drafts[group.key];
     discard(group.key);
-    setMessage("");
     setFailure("");
+    if (!snapshot) return;
+    toast("已放弃本组修改", {
+      id: `discard-${group.key}`,
+      action: { label: "恢复", onClick: () => useDraftStore.getState().restore(group.key, snapshot) },
+    });
   }
 
   /** 写入后回读并采用最终生效值，解释环境变量或后端规范化造成的差异。 */
@@ -82,7 +106,8 @@ export function useGroupSettings(group: SettingGroup) {
     discard(group.key);
     setAwaitingRead(false);
     setFailure("");
-    setMessage(adjusted ? "已保存并回读；部分值被后端调整或被部署环境变量覆盖，页面已显示最终生效值。" : "已保存，并已回读最终生效配置。");
+    if (adjusted) toast.warning(`${group.title}已保存`, { description: "部分值被后端调整或被部署环境变量覆盖，页面已显示最终生效值。", duration: 8000 });
+    else toast.success(`${group.title}已保存`);
   }
 
   /** 只提交本组完整文档；写入失败保留草稿，回读失败禁止重复写入。 */
@@ -92,7 +117,6 @@ export function useGroupSettings(group: SettingGroup) {
     inFlight.current = true;
     setPending(true);
     setFailure("");
-    setMessage("");
     let written = false;
     try {
       await saveDashboardOption(group.key, entry.draft);
@@ -127,7 +151,7 @@ export function useGroupSettings(group: SettingGroup) {
   }
 
   return {
-    document, dirty, pending, awaitingRead, busy, message,
+    document, dirty, pending, awaitingRead, busy,
     failure: failure || (incompatible ? "该分组的数据格式与表单不兼容，已停止覆盖。" : error ? failureMessage(error) : ""),
     loading: !data && !error,
     change, reset, save, retry,

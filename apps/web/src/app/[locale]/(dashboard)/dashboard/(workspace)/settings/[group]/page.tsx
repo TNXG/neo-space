@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DashboardWorkspace } from "@/components/business/dashboard/DashboardWorkspace";
 import { SettingsForm } from "@/components/business/dashboard/settings/settings-form";
 import { findSettingGroup } from "@/components/business/dashboard/settings/settings-groups";
 
@@ -17,5 +16,5 @@ export default async function SettingsGroupPage({ params }: SettingsRouteProps) 
   const { group: slug } = await params;
   const group = findSettingGroup(slug);
   if (!group) notFound();
-  return <DashboardWorkspace><SettingsForm key={group.key} group={group} /></DashboardWorkspace>;
+  return <SettingsForm key={group.key} group={group} />;
 }

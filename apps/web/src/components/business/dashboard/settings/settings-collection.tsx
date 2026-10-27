@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { toast } from "sonner";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import type { SettingField } from "./settings-schema";
@@ -84,11 +85,16 @@ export function SettingsCollection({ field, entries, pathPrefix, disabled, incom
     onChange([...entries, entry]);
   }
 
-  function remove(index: number) {
+  /** 删除立即生效，提示条可恢复原位置，免去确认弹窗打断操作。 */
+  function remove(index: number, name: string) {
     if (disabled) return;
-    const nextKeys = keys.filter((_, keyIndex) => keyIndex !== index);
-    setKeys(nextKeys);
+    const removedEntries = entries;
+    const removedKeys = keys;
+    setKeys(keys.filter((_, keyIndex) => keyIndex !== index));
     onChange(entries.filter((_, entryIndex) => entryIndex !== index));
+    toast(`已移除${name}`, {
+      action: { label: "撤销", onClick: () => { setKeys(removedKeys); onChange(removedEntries); } },
+    });
     requestAnimationFrame(() => {
       const triggers = container.current?.querySelectorAll<HTMLElement>("[data-entry-header]");
       (triggers?.[Math.min(index, triggers.length - 1)] ?? container.current?.querySelector<HTMLButtonElement>("[data-entry-add]"))?.focus();
@@ -160,7 +166,7 @@ export function SettingsCollection({ field, entries, pathPrefix, disabled, incom
                       disabled={disabled}
                       aria-label={`移除${name}`}
                       className="text-muted-foreground hover:text-destructive"
-                      onClick={() => remove(index)}
+                      onClick={() => remove(index, name)}
                     >
                       <Icon icon="mingcute:delete-line" aria-hidden="true" />
                     </Button>

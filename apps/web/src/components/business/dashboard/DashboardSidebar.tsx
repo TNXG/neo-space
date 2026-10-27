@@ -17,7 +17,7 @@ interface DashboardSidebarProps {
 /** 按 admin-react 保留顶部工作区、紧凑导航、底部用户菜单三段结构。 */
 export function DashboardSidebar({ user, collapsed = false, onNavigate }: DashboardSidebarProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted">
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-muted", collapsed ? "w-14" : "w-[15.25rem]")}>
       <div className="flex h-[3.25rem] shrink-0 items-center gap-2 px-3">
         <Popover>
           <PopoverTrigger asChild>
@@ -35,7 +35,7 @@ export function DashboardSidebar({ user, collapsed = false, onNavigate }: Dashbo
           <button type="button" disabled aria-label="新建（尚未接入）" title="新建尚未接入" className="flex size-7 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground/60"><Icon icon="mingcute:edit-3-line" className="size-4" aria-hidden="true" /></button>
         </div>}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto"><DashboardNavigation collapsed={collapsed} onNavigate={onNavigate} /></div>
+      <div className="min-h-0 flex-1 overflow-y-auto"><DashboardNavigation collapsed={collapsed} onNavigate={onNavigate} layoutScope="sidebar" /></div>
       <footer className={cn("shrink-0 px-3 pb-5 pt-4", collapsed && "px-1.5")}>
         <DashboardAccount user={user} collapsed={collapsed} />
       </footer>

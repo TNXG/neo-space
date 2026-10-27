@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "@/locales/navigation";
 import { logoutDashboard, DASHBOARD_SESSION_KEY, DASHBOARD_PROFILE_KEY } from "@/lib/dashboard-api";
 import { DASHBOARD_OPTIONS_KEY } from "@/lib/dashboard-options";
- 
+import { clearAllDrafts, useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
+
 /** 展示服务端已验证的主人身份；退出成功后替换历史，失败保留当前工作区。 */
 export function DashboardAccount({ user, collapsed = false }: { user: Reader; collapsed?: boolean }) {
   const router = useRouter();
@@ -24,10 +25,16 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
   const [error, setError] = useState("");
   const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const draftCount = Object.keys(useSettingsDrafts()).length + (useProfileDraftStore(state => state.draft) ? 1 : 0);
 
   /** 保留既有 HttpOnly 会话退出入口，不在浏览器保存凭据。 */
   const signOut = async () => {
     if (inFlight.current) return;
+    if (draftCount > 0 && !confirming) {
+      setConfirming(true);
+      return;
+    }
     inFlight.current = true;
     setPending(true);
     setError("");
@@ -40,6 +47,7 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
       await mutate(DASHBOARD_SESSION_KEY, null, { revalidate: false });
       await mutate(DASHBOARD_PROFILE_KEY, undefined, { revalidate: false });
       await mutate(DASHBOARD_OPTIONS_KEY, undefined, { revalidate: false });
+      clearAllDrafts();
       router.replace("/dashboard/signin");
     } catch {
       setError("退出失败，请检查连接后重试。");
@@ -50,7 +58,7 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={next => { setOpen(next); if (!next) setConfirming(false); }}>
         <section aria-label="账户" className="flex w-full flex-col gap-3">
           <div className={cn("grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3", collapsed && "grid-cols-1")} aria-hidden="true">
             <Separator className="bg-foreground/15" />
@@ -70,7 +78,7 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
                   {user.handle && <span className="truncate text-xs text-foreground/65">{user.handle}</span>}
                 </span>
               )}
-              {!collapsed && <Icon icon="mingcute:down-line" className="size-4 rotate-180 text-foreground/50 group-hover/account:text-foreground group-data-[state=open]/account:rotate-0" aria-hidden="true" />}
+              {!collapsed && <Icon icon="mingcute:down-line" className="size-4 rotate-180 text-foreground/50 transition-transform duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] group-hover/account:text-foreground group-data-[state=open]/account:rotate-0" aria-hidden="true" />}
             </button>
           </PopoverTrigger>
         </section>
@@ -82,9 +90,10 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
             <span className="ml-auto text-xs text-muted-foreground">{resolvedTheme === "dark" ? "深色" : "浅色"}</span>
           </Button>
           <Separator />
-          <Button type="button" variant="ghost" onClick={() => { void signOut(); }} disabled={pending} className="h-10 w-full justify-start rounded-lg px-3 max-lg:h-11">
+          {confirming && <p role="alert" className="px-3 pt-1 text-xs leading-relaxed text-muted-foreground">还有 {draftCount} 处未保存修改，退出后将丢失。</p>}
+          <Button type="button" variant="ghost" onClick={() => { void signOut(); }} disabled={pending} className={cn("h-10 w-full justify-start rounded-lg px-3 max-lg:h-11", confirming && "text-destructive hover:bg-destructive/10 hover:text-destructive")}>
             <Icon icon="mingcute:arrow-left-line" data-icon="inline-start" aria-hidden="true" />
-            {pending ? "正在退出…" : "退出登录"}
+            {pending ? "正在退出…" : confirming ? "仍然退出" : "退出登录"}
           </Button>
         </div>
         {error && <p role="alert" className="px-3 py-2 text-xs leading-relaxed text-destructive">{error}</p>}

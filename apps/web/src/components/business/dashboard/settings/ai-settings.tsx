@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import type { SettingsIssue } from "./settings-model";
@@ -95,9 +96,14 @@ export function AiSettings({ document, disabled, issues, onChange }: AiSettingsP
     setOpenIds(current => new Set(current).add(newId));
   }
 
+  /** 移除服务商同时清空引用它的模型分配；提示条可整体恢复。 */
   function removeProvider(index: number) {
     if (disabled) return;
     const removedId = providers[index]?.id;
+    const snapshot = { providers: providers as unknown as OptionDocument[], summaryModel: document.summaryModel, translationModel: document.translationModel, commentReviewModel: document.commentReviewModel };
+    toast(`已移除${providerLabel(providers[index])}`, {
+      action: { label: "撤销", onClick: () => { for (const [key, value] of Object.entries(snapshot)) onChange(key, value); } },
+    });
     onChange("providers", providers.filter((_, i) => i !== index) as unknown as OptionDocument[]);
     if (!removedId) return;
     for (const key of ["summaryModel", "translationModel", "commentReviewModel"] as const) {

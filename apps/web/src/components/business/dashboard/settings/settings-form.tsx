@@ -1,22 +1,24 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Icon } from "@/lib/inline-icon";
 import { AiSettings } from "./ai-settings";
 import { SettingsField } from "./settings-field";
+import { focusSettingsField, SettingsIssueList, SettingsNotice, SettingsSaveBar } from "./settings-savebar";
 import { SettingsSkeleton } from "./settings-skeleton";
 import type { SettingGroup } from "./settings-schema";
 import { type SettingsIssue } from "./settings-model";
 import { validateSettings } from "./settings-validation";
 import { useGroupSettings } from "./use-settings-draft";
 
-/** 固定操作栏 + 紧凑分组；离开页面前保留草稿，保存只提交当前分组。 */
+/** 浮动操作条 + 紧凑分组；离开页面前保留草稿，保存只提交当前分组。 */
 export function SettingsForm({ group }: { group: SettingGroup }) {
   const state = useGroupSettings(group);
   const [issues, setIssues] = useState<SettingsIssue[]>([]);
+  const [attention, setAttention] = useState(0);
   const form = useRef<HTMLFormElement>(null);
   const dirty = state.dirty;
 
@@ -27,27 +29,23 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  /** 集合条目需要先展开再渲染输入，逐帧重试直到问题字段出现。 */
-  function focusIssue(path: string, attempt = 0) {
-    const target = form.current?.querySelector<HTMLElement>(`[data-path="${path}"]`);
-    if (!target) {
-      if (attempt < 10) requestAnimationFrame(() => focusIssue(path, attempt + 1));
-      return;
-    }
-    target.scrollIntoView({ block: "center", behavior: "smooth" });
-    target.querySelector<HTMLElement>("input, select, textarea, [role=switch], [role=combobox]")?.focus({ preventScroll: true });
-  }
-
   /** 保存前校验并定位第一个问题字段。 */
   function submit() {
     if (!state.document || state.busy || !state.dirty) return;
     const found = validateSettings(group, state.document);
     setIssues(found);
     if (found.length) {
-      requestAnimationFrame(() => focusIssue(found[0].path));
+      setAttention(value => value + 1);
+      requestAnimationFrame(() => focusSettingsField(form.current, found[0].path));
       return;
     }
     void state.save();
+  }
+
+  /** 只清除被修改字段的问题，其余提示继续保留，用户可逐项处理。 */
+  function change(path: string, value: Parameters<typeof state.change>[1]) {
+    setIssues(current => current.length ? current.filter(issue => issue.path !== path && !issue.path.startsWith(`${path}.`)) : current);
+    state.change(path, value);
   }
 
   return (
@@ -57,36 +55,25 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
       aria-busy={state.loading || state.pending}
       className="flex h-full min-h-0 min-w-0 flex-col"
       onKeyDown={event => {
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-          event.preventDefault();
-          submit();
-        }
         if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing) event.preventDefault();
       }}
       onSubmit={event => { event.preventDefault(); submit(); }}
       onReset={event => { event.preventDefault(); state.reset(); setIssues([]); }}
+      data-settings-form
     >
-      <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <header className="sticky top-0 z-20 flex min-h-14 flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-background/95 px-4 py-2 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 lg:px-6">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-sm font-semibold tracking-tight">{group.title}</h1>
-            {dirty && <span role="status" className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground font-medium">未保存</span>}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {dirty && <Button type="reset" variant="ghost" size="sm" disabled={state.busy}>撤销修改</Button>}
-          {state.loading ? <Skeleton aria-hidden="true" className="h-8 w-24 rounded-lg" /> : <Button type="submit" size="sm" disabled={!dirty || state.busy}>
-            {state.pending
-              ? <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" aria-hidden="true" />
-              : <Icon icon="mingcute:check-line" data-icon="inline-start" aria-hidden="true" />}
-            {state.pending ? "保存中…" : "保存本组"}
-          </Button>}
-        </div>
-        </header>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 pt-5 lg:px-6 lg:pt-8">
+          <header className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground/80" aria-hidden="true">
+              <Icon icon={group.icon} className="size-[1.125rem]" />
+            </span>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2 className="truncate text-base font-semibold tracking-tight">{group.title}</h2>
+              {group.help && <p className="text-[0.8125rem] text-foreground/70">{group.help}</p>}
+            </div>
+          </header>
 
-        <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 lg:p-6">
-          {state.failure && (
+          <SettingsNotice show={Boolean(state.failure)}>
             <Alert variant="destructive">
               <AlertTitle>{state.awaitingRead ? "已保存，等待确认生效值" : "配置请求失败"}</AlertTitle>
               <AlertDescription>
@@ -96,39 +83,32 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
                 </Button>
               </AlertDescription>
             </Alert>
-          )}
-          {issues.length > 0 && (
+          </SettingsNotice>
+          <SettingsNotice show={issues.length > 0}>
             <Alert variant="destructive">
               <AlertTitle>还有 {issues.length} 项需要处理</AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4">
-                  {issues.slice(0, 4).map((issue, index) => <li key={`${issue.path}-${index}`}>{issue.message}</li>)}
-                </ul>
-              </AlertDescription>
+              <AlertDescription><SettingsIssueList issues={issues} onSelect={path => focusSettingsField(form.current, path)} /></AlertDescription>
             </Alert>
-          )}
-          {state.message && <Alert role="status"><AlertTitle>保存完成</AlertTitle><AlertDescription>{state.message}</AlertDescription></Alert>}
+          </SettingsNotice>
 
           {state.document ? (
             group.key === "ai" ? (
-              <AiSettings
-                document={state.document}
-                disabled={state.busy}
-                issues={issues}
-                onChange={(path, value) => {
-                  setIssues([]);
-                  state.change(path, value);
-                }}
-              />
+              <AiSettings document={state.document} disabled={state.busy} issues={issues} onChange={change} />
             ) : (
-              group.sections.map(section => (
-                <section key={section.title} className="flex flex-col gap-2">
+              group.sections.map((section, index) => (
+                <motion.section
+                  key={section.title}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: Math.min(index, 5) * 0.04, ease: [0.23, 1, 0.32, 1] }}
+                  className="flex flex-col gap-2"
+                >
                   <div className="flex flex-col gap-0.5">
-                    <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
                       <Icon icon={section.icon} className="size-4 text-muted-foreground" aria-hidden="true" />
                       <span>{section.title}</span>
-                    </h2>
-                    {section.help && <p className="pl-6 text-[13px] text-foreground/70">{section.help}</p>}
+                    </h3>
+                    {section.help && <p className="pl-6 text-[0.8125rem] text-foreground/70">{section.help}</p>}
                   </div>
                   <div className="divide-y divide-border/50 rounded-xl border border-border px-3 lg:px-4">
                     {section.fields.map(field => (
@@ -142,17 +122,18 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
                         id={`setting-${group.key}-${field.path}`.replaceAll(".", "-")}
                         disabled={state.busy}
                         issues={issues}
-                        onChange={(path, value) => { setIssues([]); state.change(path, value); }}
+                        onChange={change}
                       />
                     ))}
                   </div>
-                </section>
+                </motion.section>
               ))
             )
           ) : (
             state.loading && <SettingsSkeleton group={group} />
           )}
         </div>
+        <SettingsSaveBar dirty={dirty} pending={state.pending} disabled={state.busy} attention={attention} saveLabel="保存" />
       </div>
     </form>
   );

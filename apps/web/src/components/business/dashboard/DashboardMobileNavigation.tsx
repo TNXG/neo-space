@@ -36,7 +36,7 @@ export function DashboardMobileNavigation({ user, open, onOpenChange }: Dashboar
           </DrawerClose>
         </DrawerHeader>
         <div className="min-h-0 overflow-y-auto overscroll-contain px-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <DashboardNavigation onNavigate={() => onOpenChange(false)} />
+          <DashboardNavigation onNavigate={() => onOpenChange(false)} layoutScope="drawer" />
           <div className="px-3 pt-2">
             <Button variant="ghost" asChild className="h-11 w-full justify-start px-2.5">
               <Link href="/" onClick={() => onOpenChange(false)}>
