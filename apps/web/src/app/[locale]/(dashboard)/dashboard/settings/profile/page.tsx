@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { DashboardWorkspace } from "@/components/business/dashboard/DashboardWorkspace";
-import { ProfileSettings } from "@/components/business/dashboard/settings/ProfileSettings";
+import { ProfileForm } from "@/components/business/dashboard/settings/profile-form";
 
 export const metadata: Metadata = { title: "用户 · 设置" };
 
-/** 静态路由编排，Profile 由客户端通过 Cookie API 读取和保存。 */
+/** 静态路由编排资料表单；读写由浏览器直连 Owner API。 */
 export default function ProfileSettingsPage() {
-  return <DashboardWorkspace><ProfileSettings /></DashboardWorkspace>;
+  return <DashboardWorkspace><ProfileForm /></DashboardWorkspace>;
 }

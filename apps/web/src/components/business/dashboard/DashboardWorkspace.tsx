@@ -17,6 +17,6 @@ export function DashboardWorkspace({ children }: { children?: ReactNode }) {
     if (session.data === null) router.replace("/dashboard/signin");
   }, [session.data, router]);
   if (session.error) return <main className="flex min-h-svh flex-col items-center justify-center gap-4"><p role="alert">暂时无法验证会话</p><Button variant="outline" onClick={() => { void session.mutate(); }}>重试</Button></main>;
-  if (!session.data) return <DashboardWorkspaceSkeleton settings={pathname.startsWith("/dashboard/settings")} groupSlug={pathname.split("/")[3]} />;
+  if (!session.data) return <DashboardWorkspaceSkeleton settings={pathname.startsWith("/dashboard/settings")} groupSlug={pathname.split("/").filter(Boolean).at(-1)} />;
   return <DashboardShell user={session.data}>{children}</DashboardShell>;
 }

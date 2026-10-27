@@ -24,6 +24,8 @@ const buttonVariants = cva(
     "cursor-pointer",
     // 禁用状态
     "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
+    // 按下反馈：Apple 的响应原则，按下立即给反馈，位移极小
+    "active:scale-[0.98] motion-reduce:active:scale-100",
     // SVG 图标处理
     "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
     "shrink-0",

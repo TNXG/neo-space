@@ -5,11 +5,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/lib/inline-icon";
 import { Link, usePathname } from "@/locales/navigation";
-import { optionGroups } from "./settings/options/option-groups";
+import { useSettingsDrafts } from "./settings/use-settings-draft";
+import { settingGroups } from "./settings/settings-groups";
 
 const settingLinks = [
-  { href: "/dashboard/settings/profile", title: "用户", icon: "mingcute:user-3-line" },
-  ...optionGroups.map(group => ({ href: `/dashboard/settings/${group.slug}`, title: group.title, icon: group.icon })),
+  { href: "/dashboard/settings/profile", title: "用户", icon: "mingcute:user-3-line", key: "profile" },
+  ...settingGroups.map(group => ({ href: `/dashboard/settings/${group.slug}`, title: group.title, icon: group.icon, key: group.key as string })),
 ];
 
 interface DashboardNavigationProps {
@@ -20,6 +21,7 @@ interface DashboardNavigationProps {
 /** 设置分组只在外侧保留，折叠及按钮语义交给 shadcn/ui。 */
 export function DashboardNavigation({ collapsed = false, onNavigate }: DashboardNavigationProps) {
   const pathname = usePathname();
+  const unsaved = new Set<string>(Object.keys(useSettingsDrafts()));
   const settingsActive = pathname.startsWith("/dashboard/settings");
   return (
     <nav aria-label="后台导航" className="flex flex-col gap-1 px-3 py-1">
@@ -38,7 +40,7 @@ export function DashboardNavigation({ collapsed = false, onNavigate }: Dashboard
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start">
             <DropdownMenuGroup>
-              {settingLinks.map(item => <DropdownMenuItem key={item.href} asChild><Link href={item.href} onClick={onNavigate} aria-current={pathname === item.href ? "page" : undefined}><Icon icon={item.icon} aria-hidden="true" />{item.title}</Link></DropdownMenuItem>)}
+              {settingLinks.map(item => <DropdownMenuItem key={item.href} asChild><Link href={item.href} onClick={onNavigate} aria-current={pathname === item.href ? "page" : undefined}><Icon icon={item.icon} aria-hidden="true" />{item.title}{unsaved.has(item.key) && <span aria-label="有未保存修改" title="有未保存修改" className="ml-auto size-1.5 rounded-full bg-primary" />}</Link></DropdownMenuItem>)}
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -51,7 +53,7 @@ export function DashboardNavigation({ collapsed = false, onNavigate }: Dashboard
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-1 pt-1 pl-6">
             {settingLinks.map(item => <Button key={item.href} asChild variant={pathname === item.href ? "secondary" : "ghost"} size="sm" className="w-full justify-start max-lg:h-11">
-              <Link href={item.href} onClick={onNavigate} aria-current={pathname === item.href ? "page" : undefined}><Icon icon={item.icon} data-icon="inline-start" aria-hidden="true" /><span>{item.title}</span></Link>
+              <Link href={item.href} onClick={onNavigate} aria-current={pathname === item.href ? "page" : undefined}><Icon icon={item.icon} data-icon="inline-start" aria-hidden="true" /><span className="flex-1 text-left">{item.title}</span>{unsaved.has(item.key) && <span aria-label="有未保存修改" title="有未保存修改" className="size-1.5 rounded-full bg-primary" />}</Link>
             </Button>)}
           </CollapsibleContent>
         </Collapsible>

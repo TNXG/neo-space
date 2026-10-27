@@ -639,6 +639,43 @@
   }
 }
 
+/* 面板开合复用 Radix 测得的真实高度，避免猜测内容尺寸导致跳动 */
+.panel-collapsible {
+  overflow: hidden;
+}
+
+.panel-collapsible[data-state="open"] {
+  animation: panel-expand var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.panel-collapsible[data-state="closed"] {
+  animation: panel-collapse var(--motion-duration-press) var(--motion-ease-out);
+}
+
+@keyframes panel-expand {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes panel-collapse {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -664,6 +701,11 @@
   .animate-pulse-ring-delayed,
   .animate-bounce,
   .animate-ping {
+    animation: none !important;
+  }
+
+  /* 面板只保留静态切换，去掉高度与位移运动 */
+  .panel-collapsible {
     animation: none !important;
   }
 }
