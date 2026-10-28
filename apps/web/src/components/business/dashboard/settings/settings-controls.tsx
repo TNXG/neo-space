@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Icon } from "@/lib/inline-icon";
+import { SecretInput } from "./settings-inputs";
 
 interface BaseControlProps {
   id: string;
@@ -31,7 +30,7 @@ export function SettingsSwitch({ id, value, onChange, disabled, describedBy }: B
   );
 }
 
-/** 文本类字段共用受控输入；密码可切换可见性。 */
+/** 文本类字段共用受控输入；凭据交给 SecretInput 处理遮挡。 */
 export function SettingsText({ id, type, value, onChange, disabled, invalid, describedBy, placeholder, multiline }: BaseControlProps & {
   type: "text" | "url" | "email" | "password" | "textarea";
   value: string;
@@ -39,33 +38,27 @@ export function SettingsText({ id, type, value, onChange, disabled, invalid, des
   multiline?: boolean;
   onChange: (value: string) => void;
 }) {
-  const [visible, setVisible] = useState(false);
   if (multiline || type === "textarea") {
     return <Textarea id={id} aria-invalid={invalid} aria-describedby={describedBy} value={value} disabled={disabled} placeholder={placeholder} rows={3} onChange={event => onChange(event.target.value)} />;
   }
-  const input = (
+  if (type === "password") {
+    return <SecretInput id={id} value={value} disabled={disabled} invalid={invalid} describedBy={describedBy} placeholder={placeholder} onChange={onChange} />;
+  }
+  return (
     <Input
       id={id}
-      type={type === "password" && visible ? "text" : type}
+      type={type}
+      inputMode={type === "url" ? "url" : type === "email" ? "email" : undefined}
       aria-invalid={invalid}
       aria-describedby={describedBy}
       value={value}
       disabled={disabled}
       placeholder={placeholder}
-      autoComplete={type === "password" ? "new-password" : "off"}
+      autoComplete="off"
       spellCheck={type === "text"}
-      className={type === "password" ? "pr-10" : undefined}
+      className={type === "url" || type === "email" ? "font-mono text-[0.8125rem]" : undefined}
       onChange={event => onChange(event.target.value)}
     />
-  );
-  if (type !== "password") return input;
-  return (
-    <div className="relative">
-      {input}
-      <Button type="button" variant="ghost" size="icon-sm" className="absolute top-1 right-1" aria-label={visible ? "隐藏密码" : "显示密码"} aria-pressed={visible} onClick={() => setVisible(current => !current)}>
-        <Icon icon={visible ? "mingcute:eye-close-line" : "mingcute:eye-line"} aria-hidden="true" />
-      </Button>
-    </div>
   );
 }
 
@@ -95,7 +88,7 @@ export function SettingsNumber({ id, value, onChange, disabled, invalid, describ
         step={step}
         disabled={disabled}
         placeholder={placeholder}
-        className="w-28"
+        className="w-28 tabular-nums"
         onChange={event => {
           const next = event.target.value;
           setText(next);
@@ -128,10 +121,12 @@ export function SettingsChoice({ id, value, options, onChange, disabled, invalid
       <SelectTrigger id={id} aria-invalid={invalid} aria-describedby={describedBy} className="w-full">
         <span className="truncate">{label}</span>
       </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__unset__">使用默认（不覆盖）</SelectItem>
-        {stale && <SelectItem value={value}>当前值已失效：{value}</SelectItem>}
-        {options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+      <SelectContent position="popper">
+        <SelectGroup>
+          <SelectItem value="__unset__">使用默认（不覆盖）</SelectItem>
+          {stale && <SelectItem value={value}>当前值已失效：{value}</SelectItem>}
+          {options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );

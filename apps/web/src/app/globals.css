@@ -194,7 +194,7 @@
   --destructive-foreground: #fef2f2;
 
   --border: var(--primary-200);
-  --input: var(--primary-200);
+  --input: var(--primary-300);
   --ring: var(--accent-500);
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);

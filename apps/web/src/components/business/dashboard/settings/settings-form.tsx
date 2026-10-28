@@ -1,13 +1,14 @@
 "use client";
 
-import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/lib/inline-icon";
 import { AiSettings } from "./ai-settings";
+import { OAuthSettings } from "./oauth-settings";
 import { SettingsField } from "./settings-field";
 import { focusSettingsField, SettingsIssueList, SettingsNotice, SettingsSaveBar } from "./settings-savebar";
+import { SettingsSection } from "./settings-section";
 import { SettingsSkeleton } from "./settings-skeleton";
 import type { SettingGroup } from "./settings-schema";
 import { type SettingsIssue } from "./settings-model";
@@ -43,10 +44,10 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
   }
 
   /** 只清除被修改字段的问题，其余提示继续保留，用户可逐项处理。 */
-  function change(path: string, value: Parameters<typeof state.change>[1]) {
+  const change = (path: string, value: Parameters<typeof state.change>[1]) => {
     setIssues(current => current.length ? current.filter(issue => issue.path !== path && !issue.path.startsWith(`${path}.`)) : current);
     state.change(path, value);
-  }
+  };
 
   return (
     <form
@@ -62,14 +63,14 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
       data-settings-form
     >
       <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 pt-5 lg:px-6 lg:pt-8">
-          <header className="flex items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground/80" aria-hidden="true">
-              <Icon icon={group.icon} className="size-[1.125rem]" />
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pt-6 lg:px-6 lg:pt-10">
+          <header className="flex items-start gap-3.5 px-1">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card text-foreground/80 shadow-xs" aria-hidden="true">
+              <Icon icon={group.icon} className="size-5" />
             </span>
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <h2 className="truncate text-base font-semibold tracking-tight">{group.title}</h2>
-              {group.help && <p className="text-[0.8125rem] text-foreground/70">{group.help}</p>}
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 className="truncate text-lg font-semibold tracking-tight">{group.title}</h2>
+              {group.help && <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">{group.help}</p>}
             </div>
           </header>
 
@@ -94,39 +95,26 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
           {state.document ? (
             group.key === "ai" ? (
               <AiSettings document={state.document} disabled={state.busy} issues={issues} onChange={change} />
+            ) : group.key === "oauth" ? (
+              <OAuthSettings group={group} document={state.document} disabled={state.busy} issues={issues} onChange={change} />
             ) : (
               group.sections.map((section, index) => (
-                <motion.section
-                  key={section.title}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: Math.min(index, 5) * 0.04, ease: [0.23, 1, 0.32, 1] }}
-                  className="flex flex-col gap-2"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-                      <Icon icon={section.icon} className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <span>{section.title}</span>
-                    </h3>
-                    {section.help && <p className="pl-6 text-[0.8125rem] text-foreground/70">{section.help}</p>}
-                  </div>
-                  <div className="divide-y divide-border/50 rounded-xl border border-border px-3 lg:px-4">
-                    {section.fields.map(field => (
-                      <SettingsField
-                        key={field.path}
-                        field={field}
-                        document={state.document!}
-                        root={state.document!}
-                        relative={field.path}
-                        path={field.path}
-                        id={`setting-${group.key}-${field.path}`.replaceAll(".", "-")}
-                        disabled={state.busy}
-                        issues={issues}
-                        onChange={change}
-                      />
-                    ))}
-                  </div>
-                </motion.section>
+                <SettingsSection key={section.title} title={section.title} icon={section.icon} description={section.help} index={index}>
+                  {section.fields.map(field => (
+                    <SettingsField
+                      key={field.path}
+                      field={field}
+                      document={state.document!}
+                      root={state.document!}
+                      relative={field.path}
+                      path={field.path}
+                      id={`setting-${group.key}-${field.path}`.replaceAll(".", "-")}
+                      disabled={state.busy}
+                      issues={issues}
+                      onChange={change}
+                    />
+                  ))}
+                </SettingsSection>
               ))
             )
           ) : (

@@ -82,10 +82,9 @@ function validateAiAssignments(document: OptionDocument, issues: SettingsIssue[]
       continue;
     }
     if (provider.enabled !== true) {
-      const fallbackType = provider.type === "openai" ? "OpenAI" : "OpenAI 兼容";
-      const shortId = typeof provider.id === "string" ? provider.id.slice(0, 8) : "";
-      const name = typeof provider.name === "string" && provider.name.trim() ? provider.name : `${fallbackType} · ${shortId}`;
-      issues.push({ path: providerPath, message: `「${name}」未启用，请在上方服务商卡片中启用后再保存。` });
+      const shortId = typeof provider.id === "string" ? provider.id.slice(0, 6) : "";
+      const name = typeof provider.name === "string" && provider.name.trim() ? provider.name : `OpenAI 兼容 · ${shortId}`;
+      issues.push({ path: providerPath, message: `「${name}」未启用，请在服务商列表中打开它的开关后再保存。` });
       continue;
     }
     const modelPath = `${assignment.path}.model`;

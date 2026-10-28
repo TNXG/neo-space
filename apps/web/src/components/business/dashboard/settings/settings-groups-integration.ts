@@ -185,16 +185,6 @@ export const integrationGroups: readonly SettingGroup[] = [
                 required: true,
                 hint: "模型分配引用的唯一 ID，不是数据库主键。",
               },
-              {
-                path: "type",
-                label: "服务类型",
-                control: "choice",
-                required: true,
-                options: [
-                  { value: "openai", label: "OpenAI" },
-                  { value: "openai-compatible", label: "OpenAI 兼容接口" },
-                ],
-              },
               { path: "name", label: "显示名称", control: "text", hint: "仅用于管理界面。" },
               {
                 path: "apiKey",

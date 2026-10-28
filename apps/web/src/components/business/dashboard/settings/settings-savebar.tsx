@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { KbdShortcut } from "@/components/ui/kbd";
+import { Spinner } from "@/components/ui/spinner";
 import { Icon } from "@/lib/inline-icon";
 
 /** 集合条目需先展开才渲染输入，逐帧重试直到字段出现，再滚动居中并高亮。 */
@@ -32,7 +33,7 @@ export function SettingsSaveBar({ dirty, pending, disabled, attention, saveLabel
   const controls = useAnimationControls();
 
   useEffect(() => {
-    if (attention > 0) void controls.start({ x: [0, -8, 8, -5, 5, 0], transition: { duration: 0.4 } });
+    if (attention > 0) void controls.start({ transform: ["translateX(0px)", "translateX(-6px)", "translateX(6px)", "translateX(-3px)", "translateX(0px)"], transition: { duration: 0.32, ease: "easeOut" } });
   }, [attention, controls]);
 
   return (
@@ -60,7 +61,7 @@ export function SettingsSaveBar({ dirty, pending, disabled, attention, saveLabel
               <Button type="reset" variant="ghost" size="sm" disabled={disabled}>放弃</Button>
               <Button type="submit" size="sm" disabled={disabled} className="min-w-24">
                 {pending
-                  ? <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" aria-hidden="true" />
+                  ? <Spinner data-icon="inline-start" aria-hidden="true" />
                   : <Icon icon="mingcute:check-line" data-icon="inline-start" aria-hidden="true" />}
                 {pending ? "保存中" : saveLabel}
                 {!pending && <KbdShortcut keys={["Ctrl", "S"]} className="ml-1 hidden opacity-80 lg:inline-flex [&_kbd]:border-white/30 [&_kbd]:bg-white/15 [&_kbd]:text-white [&_kbd]:shadow-none" />}
