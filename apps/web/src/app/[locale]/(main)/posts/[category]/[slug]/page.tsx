@@ -7,9 +7,9 @@ import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/co
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
+import { buildSeoDescription } from "@/utils/seo";
 
 // Static regex patterns to avoid re-compilation
-const NEWLINE_REGEX = /\n/g;
 const OBJECT_ID_REGEX = /^[0-9a-f]{24}$/i;
 
 // ISR 配置：16小时过期
@@ -40,13 +40,16 @@ export async function generateMetadata({ params }: PageProps) {
   const { slug, category, locale } = await params;
 
   try {
-    const { data: post } = await getPostBySlug(slug, locale);
+    const [{ data: post }, t] = await Promise.all([getPostBySlug(slug, locale), getTranslations({ locale })]);
 
     if (post.category?.slug !== category) {
       return { title: "文章不存在" };
     }
 
-    const description = (post.aiSummary || post.summary || post.text.slice(0, 150)).replace(NEWLINE_REGEX, " ");
+    const description = buildSeoDescription({
+      ...post,
+      formatAiSummary: summary => t("seo.aiSummary", { summary }),
+    });
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
     return {
@@ -112,7 +115,10 @@ export default async function PostPage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
   const jsonLd = generateArticleJsonLd({
     title: post.title,
-    description: (post.aiSummary || post.summary || post.text.slice(0, 150)).replace(NEWLINE_REGEX, " "),
+    description: buildSeoDescription({
+      ...post,
+      formatAiSummary: summary => t("seo.aiSummary", { summary }),
+    }),
     url: `${baseUrl}/posts/${post.category?.slug}/${post.slug}`,
     datePublished: post.created,
     dateModified: post.modified || post.created,

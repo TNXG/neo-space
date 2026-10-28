@@ -5,6 +5,7 @@ import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer"
 import { ArticleLayout } from "@/components/layouts/article";
 import { getPageBySlug } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
+import { markdownToPlainText, truncateDescription } from "@/utils/seo";
 
 export const revalidate = 57600;
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps) {
     const { data: page } = await getPageBySlug(slug);
     return {
       title: page.title,
-      description: page.text.slice(0, 100),
+      description: truncateDescription(markdownToPlainText(page.text)),
     };
   } catch {
     return { title: "页面不存在" };

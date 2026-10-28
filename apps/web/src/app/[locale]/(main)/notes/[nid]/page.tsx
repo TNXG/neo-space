@@ -9,9 +9,7 @@ import { ArticleLayout, NoteHeader, OutdatedAlert, ProtectedNoteContent } from "
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
-
-// Static regex patterns to avoid re-compilation
-const NEWLINE_REGEX = /\n/g;
+import { buildSeoDescription } from "@/utils/seo";
 
 // ISR 配置：16小时过期
 export const revalidate = 57600;
@@ -42,8 +40,11 @@ export async function generateMetadata({ params }: PageProps) {
     return { title: "日记不存在" };
 
   try {
-    const { data: note } = await getNoteByNid(nidNum, locale);
-    const description = note.text.slice(0, 150).replace(NEWLINE_REGEX, " ");
+    const [{ data: note }, t] = await Promise.all([getNoteByNid(nidNum, locale), getTranslations({ locale })]);
+    const description = buildSeoDescription({
+      ...note,
+      formatAiSummary: summary => t("seo.aiSummary", { summary }),
+    });
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
 
     return {
@@ -136,7 +137,10 @@ export default async function NotePage({ params }: PageProps) {
     ? null
     : generateArticleJsonLd({
         title: note.title,
-        description: note.text.slice(0, 150).replace(NEWLINE_REGEX, " "),
+        description: buildSeoDescription({
+          ...note,
+          formatAiSummary: summary => t("seo.aiSummary", { summary }),
+        }),
         url: `${baseUrl}/notes/${note.nid}`,
         datePublished: note.created,
         dateModified: note.modified || note.created,

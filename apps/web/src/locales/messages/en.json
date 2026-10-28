@@ -95,6 +95,7 @@
   "interactive.category.noPosts": "No posts currently",
   "interactive.category.browseAll": "Browse All Posts",
   "article.aiSummary": "AI Summary",
+  "seo.aiSummary": "AI Summary: {summary}",
   "article.publishedAt": "Published at",
   "article.updatedAt": "Updated at",
   "article.languageMeta": "Language {source} -> {target}",

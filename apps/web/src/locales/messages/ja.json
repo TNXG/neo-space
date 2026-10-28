@@ -95,6 +95,7 @@
   "interactive.category.noPosts": "公開された記事はまだありません",
   "interactive.category.browseAll": "すべての記事を見る",
   "article.aiSummary": "AI 要約",
+  "seo.aiSummary": "AI 要約：{summary}",
   "article.publishedAt": "公開",
   "article.updatedAt": "更新",
   "article.languageMeta": "言語 {source} -> {target}",

@@ -95,6 +95,7 @@
   "interactive.category.noPosts": "暂无文章发布",
   "interactive.category.browseAll": "浏览全部文章",
   "article.aiSummary": "AI 摘要",
+  "seo.aiSummary": "AI 摘要：{summary}",
   "article.publishedAt": "发布于",
   "article.updatedAt": "更新于",
   "article.languageMeta": "语言 {source} -> {target}",
