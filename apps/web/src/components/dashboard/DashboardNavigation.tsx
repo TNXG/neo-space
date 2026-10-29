@@ -10,6 +10,7 @@ import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/locales/navigation";
 import { useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
+import { useContentDraftStore } from "./content/use-content-editor";
 import { settingGroups } from "./settings/settings-groups";
 
 export const settingLinks = [
@@ -44,7 +45,7 @@ function NavItem({ href, title, icon, active, unsaved, collapsed, layoutScope, o
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? title : undefined}
       className={cn(
-        "relative flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[0.8125rem] outline-none transition-colors duration-[var(--motion-duration-fast)] focus-visible:ring-2 focus-visible:ring-ring max-lg:h-11",
+        "relative flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[0.8125rem] outline-none transition-colors duration-(--motion-duration-fast) focus-visible:ring-2 focus-visible:ring-ring max-lg:h-11",
         active ? "font-medium text-foreground" : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
         collapsed && "justify-center px-0",
       )}
@@ -69,17 +70,17 @@ export function DashboardNavigation({ collapsed = false, onNavigate, layoutScope
   const pathname = usePathname();
   const drafts = useSettingsDrafts();
   const profileDirty = useProfileDraftStore(state => state.draft !== undefined);
+  const contentDrafts = useContentDraftStore(state => state.drafts);
   const settingsActive = pathname.startsWith("/dashboard/settings");
-  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const unsaved = new Set([...Object.keys(drafts), ...(profileDirty ? ["profile"] : [])]);
   const anyUnsaved = unsaved.size > 0;
 
   return (
     <nav aria-label="后台导航" className="flex flex-col gap-0.5 px-3 py-1">
       <NavItem href="/dashboard" title="仪表盘" icon="mingcute:home-3-line" active={pathname === "/dashboard"} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
-      <Button type="button" variant="ghost" size="sm" disabled aria-label="文章（尚未接入）" title="文章管理尚未接入" className={cn("h-8 w-full justify-start rounded-lg px-2.5 text-[0.8125rem] font-normal max-lg:h-11", collapsed && "justify-center px-0")}>
-        <Icon icon="mingcute:document-2-line" aria-hidden="true" />{!collapsed && <span className="truncate">文章</span>}
-      </Button>
+      <NavItem href="/dashboard/posts" title="文章" icon="mingcute:document-2-line" active={pathname.startsWith("/dashboard/posts")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("post:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
+      <NavItem href="/dashboard/pages" title="页面" icon="mingcute:file-line" active={pathname.startsWith("/dashboard/pages")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("page:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       {collapsed ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -98,9 +99,10 @@ export function DashboardNavigation({ collapsed = false, onNavigate, layoutScope
         <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="group mt-4">
           <CollapsibleTrigger asChild>
             <button type="button" className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[0.6875rem] font-medium tracking-[0.08em] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-lg:h-10">
+              <Icon icon="mingcute:settings-3-line" className="size-4 shrink-0" aria-hidden="true" />
               <span className="flex-1 text-left">设置</span>
               {!settingsOpen && anyUnsaved && <span aria-label="有未保存修改" className="size-1.5 rounded-full bg-primary" />}
-              <Icon icon="mingcute:right-line" className="size-3.5 transition-transform duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] group-data-[state=open]:rotate-90" aria-hidden="true" />
+              <Icon icon="mingcute:right-line" className="size-3.5 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-out) group-data-[state=open]:rotate-90" aria-hidden="true" />
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="panel-collapsible">

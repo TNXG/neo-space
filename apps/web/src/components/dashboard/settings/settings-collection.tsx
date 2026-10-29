@@ -142,7 +142,7 @@ export function SettingsCollection({ field, entries, pathPrefix, disabled, incom
                     <span className="truncate text-sm font-medium">{name}</span>
                     {typeLabel && typeLabel !== name && <Badge variant="outline">{typeLabel}</Badge>}
                     {typeof entry.enabled === "boolean" && <Badge variant={entry.enabled ? "secondary" : "outline"}>{entry.enabled ? "已启用" : "未启用"}</Badge>}
-                    <Icon icon="mingcute:down-line" className="ml-auto size-4 shrink-0 text-muted-foreground transition-[transform,color] duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] group-hover/trigger:text-foreground group-data-[state=open]/trigger:rotate-180" aria-hidden="true" />
+                    <Icon icon="mingcute:down-line" className="ml-auto size-4 shrink-0 text-muted-foreground transition-[transform,color] duration-(--motion-duration-fast) ease-(--motion-ease-out) group-hover/trigger:text-foreground group-data-[state=open]/trigger:rotate-180" aria-hidden="true" />
                   </CollapsibleTrigger>
                   <Button
                     type="button"

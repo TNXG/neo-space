@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SettingsForm } from "@/components/business/dashboard/settings/settings-form";
-import { findSettingGroup } from "@/components/business/dashboard/settings/settings-groups";
+import { SettingsForm } from "@/components/dashboard/settings/settings-form";
+import { findSettingGroup } from "@/components/dashboard/settings/settings-groups";
 
 type SettingsRouteProps = { params: Promise<{ group: string }> };
 

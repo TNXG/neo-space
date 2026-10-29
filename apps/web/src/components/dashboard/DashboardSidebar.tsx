@@ -17,8 +17,8 @@ interface DashboardSidebarProps {
 /** 按 admin-react 保留顶部工作区、紧凑导航、底部用户菜单三段结构。 */
 export function DashboardSidebar({ user, collapsed = false, onNavigate }: DashboardSidebarProps) {
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-muted", collapsed ? "w-14" : "w-[15.25rem]")}>
-      <div className="flex h-[3.25rem] shrink-0 items-center gap-2 px-3">
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-muted", collapsed ? "w-14" : "w-61")}>
+      <div className="flex h-13 shrink-0 items-center gap-2 px-3">
         <Popover>
           <PopoverTrigger asChild>
             <button type="button" aria-label="工作区菜单" className={cn("flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring", collapsed && "justify-center px-0")}>

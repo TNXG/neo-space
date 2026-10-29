@@ -53,7 +53,7 @@ export function OAuthSettings({ group, document, disabled, issues, onChange }: O
             return (
               <div key={provider.type} data-path="providers" className="flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs">
                 <div className="flex items-start gap-3.5 px-4 py-4 lg:px-5">
-                  <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 transition-colors duration-[var(--motion-duration-fast)]", enabled ? "bg-foreground text-background" : "bg-muted text-muted-foreground")} aria-hidden="true">
+                  <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 transition-colors duration-(--motion-duration-fast)", enabled ? "bg-foreground text-background" : "bg-muted text-muted-foreground")} aria-hidden="true">
                     <Icon icon={provider.icon} className="size-5" />
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

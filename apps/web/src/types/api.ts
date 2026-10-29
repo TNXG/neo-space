@@ -336,9 +336,43 @@ export interface Page {
   title: string;
   text: string;
   slug: string;
+  subtitle?: string;
+  order?: number;
   created: string;
+  modified?: string;
   allowComment: boolean;
   commentsIndex: number;
+}
+
+/** 后台创建/更新文章的请求体；更新时字段均为可选，后端按字段 $set。 */
+export interface DashboardPostInput {
+  title: string;
+  text: string;
+  categoryId: string;
+  slug: string;
+  tags: string[];
+  summary: string;
+  copyright: boolean;
+  isPublished: boolean;
+}
+
+/** 后台创建/更新独立页面的请求体。 */
+export interface DashboardPageInput {
+  title: string;
+  text: string;
+  slug: string;
+  subtitle: string;
+  order: number;
+}
+
+export interface DashboardUploadResult {
+  url: string;
+  name: string;
+}
+
+export interface TagSummary {
+  name: string;
+  count: number;
 }
 
 /**
@@ -528,3 +562,26 @@ export type OptionValue = string | number | boolean | null | OptionValue[] | Opt
 export interface OptionDocument { [key: string]: OptionValue; }
 export type ManagedOptionKey = "seo" | "url" | "commentOptions" | "friendLinkOptions" | "mailOptions" | "oauth" | "ai" | "searchOptions" | "bangumiOptions" | "securityOptions";
 export type DashboardOptions = Partial<Record<ManagedOptionKey, OptionDocument>>;
+
+/** 后台编辑草稿；refId 为空表示尚未创建的新内容。 */
+export interface DashboardDraft {
+  _id: string;
+  refType: "post" | "page";
+  refId?: string | null;
+  title?: string;
+  text?: string;
+  typeSpecificData?: Record<string, unknown> | null;
+  version: number;
+  created: string;
+  updated?: string;
+  modified?: string;
+}
+
+export interface DashboardDraftInput {
+  refType: "post" | "page";
+  refId?: string;
+  title: string;
+  text: string;
+  contentFormat: "markdown";
+  typeSpecificData: Record<string, unknown>;
+}

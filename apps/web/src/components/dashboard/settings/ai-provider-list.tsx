@@ -94,12 +94,12 @@ export function AiProviderList({ providers, disabled, issues, onAdd, onUpdate, o
                   <Collapsible
                     open={isOpen}
                     onOpenChange={next => toggle(index, next)}
-                    className={cn("overflow-hidden rounded-2xl border bg-card shadow-xs transition-colors duration-[var(--motion-duration-fast)]", invalid ? "border-destructive/60" : "border-border/70")}
+                    className={cn("overflow-hidden rounded-2xl border bg-card shadow-xs transition-colors duration-(--motion-duration-fast)", invalid ? "border-destructive/60" : "border-border/70")}
                   >
                     <div className="flex items-center gap-2 pr-4">
                       <CollapsibleTrigger className="group/trigger flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-2xl py-3.5 pl-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset lg:pl-5">
                         <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/60", provider.enabled ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")} aria-hidden="true">
-                          <Icon icon="mingcute:ai-line" className="size-[1.125rem]" />
+                          <Icon icon="mingcute:ai-line" className="size-4.5" />
                         </span>
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className="flex min-w-0 items-center gap-2">
@@ -108,7 +108,7 @@ export function AiProviderList({ providers, disabled, issues, onAdd, onUpdate, o
                           </span>
                           <span className="truncate font-mono text-xs text-muted-foreground">{summary}</span>
                         </span>
-                        <Icon icon="mingcute:down-line" className="size-4 shrink-0 text-muted-foreground transition-[transform,color] duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] group-hover/trigger:text-foreground group-data-[state=open]/trigger:rotate-180" aria-hidden="true" />
+                        <Icon icon="mingcute:down-line" className="size-4 shrink-0 text-muted-foreground transition-[transform,color] duration-(--motion-duration-fast) ease-(--motion-ease-out) group-hover/trigger:text-foreground group-data-[state=open]/trigger:rotate-180" aria-hidden="true" />
                       </CollapsibleTrigger>
                       <Switch
                         checked={provider.enabled === true}

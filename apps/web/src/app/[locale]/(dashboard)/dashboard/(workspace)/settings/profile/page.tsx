@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ProfileForm } from "@/components/business/dashboard/settings/profile-form";
+import { ProfileForm } from "@/components/dashboard/settings/profile-form";
 
 export const metadata: Metadata = { title: "用户 · 设置" };
 

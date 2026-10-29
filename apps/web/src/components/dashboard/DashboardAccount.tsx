@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "@/locales/navigation";
 import { logoutDashboard, DASHBOARD_SESSION_KEY, DASHBOARD_PROFILE_KEY } from "@/lib/dashboard-api";
 import { DASHBOARD_OPTIONS_KEY } from "@/lib/dashboard-options";
+import { clearContentDrafts } from "./content/use-content-editor";
 import { clearAllDrafts, useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
 
 /** 展示服务端已验证的主人身份；退出成功后替换历史，失败保留当前工作区。 */
@@ -47,7 +48,10 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
       await mutate(DASHBOARD_SESSION_KEY, null, { revalidate: false });
       await mutate(DASHBOARD_PROFILE_KEY, undefined, { revalidate: false });
       await mutate(DASHBOARD_OPTIONS_KEY, undefined, { revalidate: false });
+      // 后台内容读取均以 dashboard- 前缀为键，退出时一并清除受保护缓存。
+      await mutate(key => (typeof key === "string" || Array.isArray(key)) && String(Array.isArray(key) ? key[0] : key).startsWith("dashboard-"), undefined, { revalidate: false });
       clearAllDrafts();
+      clearContentDrafts();
       router.replace("/dashboard/signin");
     } catch {
       setError("退出失败，请检查连接后重试。");
@@ -78,7 +82,7 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
                   {user.handle && <span className="truncate text-xs text-foreground/65">{user.handle}</span>}
                 </span>
               )}
-              {!collapsed && <Icon icon="mingcute:down-line" className="size-4 rotate-180 text-foreground/50 transition-transform duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] group-hover/account:text-foreground group-data-[state=open]/account:rotate-0" aria-hidden="true" />}
+              {!collapsed && <Icon icon="mingcute:down-line" className="size-4 rotate-180 text-foreground/50 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-out) group-hover/account:text-foreground group-data-[state=open]/account:rotate-0" aria-hidden="true" />}
             </button>
           </PopoverTrigger>
         </section>

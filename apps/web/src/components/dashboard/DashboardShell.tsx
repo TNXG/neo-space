@@ -13,6 +13,11 @@ import { DashboardMobileNavigation } from "./DashboardMobileNavigation";
 
 const COLLAPSE_KEY = "neo-dashboard-sidebar-collapsed";
 
+const CONTENT_SECTIONS = [
+  { href: "/dashboard/posts", title: "文章" },
+  { href: "/dashboard/pages", title: "页面" },
+];
+
 /** 侧栏与内嵌内容面板；外壳跨路由常驻，仅内容区执行进出场过渡。 */
 export function DashboardShell({ user, children }: { user: Reader; children?: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -20,6 +25,8 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
   const pathname = usePathname();
   const settings = pathname.startsWith("/dashboard/settings");
   const page = settingLinks.find(item => item.href === pathname);
+  const section = CONTENT_SECTIONS.find(item => pathname.startsWith(item.href));
+  const editing = Boolean(section && pathname !== section.href);
 
   // 折叠偏好只是界面布局，不含业务数据，可安全持久化。
   useEffect(() => {
@@ -73,7 +80,7 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
       <div className="my-2 mr-2 ml-1.5 flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background max-lg:m-0 max-lg:rounded-none max-lg:border-0">
         <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border/50 px-4">
           <button type="button" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? "展开侧栏" : "收起侧栏"} aria-expanded={!collapsed} aria-controls="dashboard-sidebar" aria-keyshortcuts="Control+b Meta+b" title="切换侧栏（⌘ / Ctrl B）" className="hidden size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:flex">
-            <Icon icon="mingcute:layout-leftbar-close-line" className={cn("size-4 transition-transform duration-[var(--motion-duration-page)] ease-[var(--motion-ease-out)]", collapsed && "rotate-180")} aria-hidden="true" />
+            <Icon icon="mingcute:layout-leftbar-close-line" className={cn("size-4 transition-transform duration-(--motion-duration-page) ease-(--motion-ease-out)", collapsed && "rotate-180")} aria-hidden="true" />
           </button>
           <DashboardMobileNavigation user={user} open={mobileOpen} onOpenChange={setMobileOpen} />
           <nav aria-label="当前位置" className="flex min-w-0 items-center gap-1.5 text-[0.8125rem]">
@@ -85,16 +92,26 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.h1 key={pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="truncate font-medium">{page?.title ?? "设置"}</motion.h1>
               </AnimatePresence>
+            </> : section ? <>
+              <Link href="/dashboard" className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">仪表盘</Link>
+              <Icon icon="mingcute:right-line" className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+              {editing
+                ? <>
+                  <Link href={section.href} className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">{section.title}</Link>
+                  <Icon icon="mingcute:right-line" className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+                  <h1 className="truncate font-medium">{pathname.endsWith("/new") ? "新建" : "编辑"}</h1>
+                </>
+                : <h1 className="font-medium">{section.title}</h1>}
             </> : <h1 className="font-medium">仪表盘</h1>}
           </nav>
         </header>
         <main id="main-content" tabIndex={-1} className="relative min-h-0 flex-1 overflow-hidden outline-none">
           <motion.div
             key={pathname}
-            initial={{ opacity: 0, y: 10, scale: 0.995, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-            className={cn("h-full", !settings && "overflow-y-auto overscroll-contain")}
+            initial={editing ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.995, filter: "blur(4px)" }}
+            animate={editing ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            transition={{ duration: editing ? 0.2 : 0.3, ease: [0.23, 1, 0.32, 1] }}
+            className={cn("h-full", !settings && !editing && "overflow-y-auto overscroll-contain")}
           >
             {children}
           </motion.div>

@@ -100,7 +100,7 @@ export function SettingsIssueList({ issues, onSelect }: { issues: readonly { pat
       {issues.slice(0, 6).map((issue, index) => (
         <li key={`${issue.path}-${index}`}>
           <button type="button" onClick={() => onSelect(issue.path)} className="group/issue flex cursor-pointer items-center gap-1.5 rounded-md text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-            <Icon icon="mingcute:arrow-right-line" className="size-3.5 shrink-0 transition-transform duration-[var(--motion-duration-fast)] group-hover/issue:translate-x-0.5" aria-hidden="true" />
+            <Icon icon="mingcute:arrow-right-line" className="size-3.5 shrink-0 transition-transform duration-(--motion-duration-fast) group-hover/issue:translate-x-0.5" aria-hidden="true" />
             {issue.message}
           </button>
         </li>

@@ -53,8 +53,8 @@ function AiFeatureRow({ feature, document, providers, disabled, issues, onChange
   return (
     <div data-path={feature.key} className="flex flex-col py-4">
       <div className="flex items-start gap-3.5">
-        <span className={cn("mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/60 transition-colors duration-[var(--motion-duration-fast)]", enabled ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")} aria-hidden="true">
-          <Icon icon={feature.icon} className="size-[1.125rem]" />
+        <span className={cn("mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/60 transition-colors duration-(--motion-duration-fast)", enabled ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")} aria-hidden="true">
+          <Icon icon={feature.icon} className="size-4.5" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ function AiFeatureRow({ feature, document, providers, disabled, issues, onChange
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:pl-[3.125rem]">
+            <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:pl-12.5">
               <Field data-path={providerPath} data-invalid={Boolean(providerError) || undefined}>
                 <FieldLabel htmlFor={`${id}-provider`} className="text-[0.8125rem] text-muted-foreground">服务商</FieldLabel>
                 <Select

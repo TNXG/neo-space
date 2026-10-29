@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardOverview } from "@/components/business/dashboard/DashboardOverview";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 
 export const metadata: Metadata = { title: "工作区总览" };
 

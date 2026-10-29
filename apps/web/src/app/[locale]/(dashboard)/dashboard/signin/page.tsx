@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LoginPanel } from "@/components/business/dashboard/sign/LoginPanel";
+import { LoginPanel } from "@/components/dashboard/sign/LoginPanel";
 
 export const metadata: Metadata = { title: "后台登录" };
 
