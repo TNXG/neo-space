@@ -7,10 +7,10 @@
 基于 Next.js 16 + Rust/Axum 构建的高性能博客平台，使用 Turborepo 编排前端与后端服务
 
 [![License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE.md)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4-black.svg)](https://nextjs.org/)
 [![Rust](https://img.shields.io/badge/Rust-edition_2024-orange.svg)](https://www.rust-lang.org/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-2.9-blueviolet.svg)](https://turbo.build/)
-[![pnpm](https://img.shields.io/badge/pnpm-11.1-yellow.svg)](https://pnpm.io/)
+[![pnpm](https://img.shields.io/badge/pnpm-12.5-yellow.svg)](https://pnpm.io/)
 
 [功能介绍](#核心特性) • [快速开始](#快速开始) • [项目结构](#项目结构) • [技术架构](#技术架构)
 
@@ -22,9 +22,9 @@
 
 Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库以 Turborepo monorepo 形式组织，包含两个独立的应用与一个共享包：
 
-- **web**：Next.js 16 + React 19 前端，提供 SSR/SSG 渲染体验
+- **web**：Next.js 16 + React 19 前端，提供 SSR/SSG 渲染体验与现代管理后台
 - **backend**：Rust + Axum 的高性能 API 服务，独立构建与部署，不依赖前端静态资源
-- **packages/rich-react**：保留的独立富文本 React 组件共享包，供后续复用
+- **packages/editor**：自建的轻量 Markdown / 富文本编辑器共享包（`@neo-space/editor`），集成 Milkdown 所见即所得与 CodeMirror 源码模式
 
 ### 设计理念
 
@@ -33,20 +33,19 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - **现代技术栈**：采用 Web 与 Rust 生态最新的最佳实践
 - **可扩展性**：模块化 + monorepo 设计，便于维护与扩展
 
-> **管理界面状态**：新后台位于 `apps/web/src/app/[locale]/(dashboard)`，入口 `/dashboard`（登录页 `/dashboard/signin`）。后台已提供独立外壳与「设置 → 用户」资料编辑，参考 `../admin` 的身份概览、基本信息和动态社交条目；设置分组只在外侧导航保留，技术路由为 `/dashboard/settings/profile`。密码 / Passkey、会话及资料读写由浏览器直接请求 Rust，使用 HttpOnly Cookie，不再经过 Next.js 认证代理。内容管理和注册页面尚未接入。业务组件位于 `src/components/business/dashboard`。
+> **管理界面状态**：新后台位于 `apps/web/src/app/[locale]/(dashboard)`，入口 `/dashboard`（登录页 `/dashboard/signin`）。后台已接入**仪表盘概览**、**系统设置中心**（分节卡片与 AI / OAuth 专用界面）以及**文章与独立页面内容生产**（`/dashboard/posts`、`/dashboard/pages`）。编辑器集成自建 `@neo-space/editor`，支持 WYSIWYG、Split 与 Source 三模切换、Slash 快捷指令、浮动格式栏、图片直传与服务端草稿持续防抖同步；密码 / Passkey、会话、资料及内容数据读写由浏览器直连 Rust，使用 HttpOnly Cookie，不再经过 Next.js 认证代理。业务组件位于 `apps/web/src/components/dashboard`。
 
 ---
 
 ## 核心特性
 
-### 内容管理
+### 内容管理与写作
 
-| 功能         | 描述                                            |
-| ------------ | ----------------------------------------------- |
-| 文章系统     | 支持 Markdown、代码高亮、数学公式、图片管理     |
-| 日记系统     | Mood / Weather / Location 标签的碎片化记录      |
-| 页面系统     | 静态页面支持，关于、友链等独立页面              |
-| 分类管理     | 文章分类系统，支持多级分类                      |
+- **文章与页面系统**：支持 Markdown 写作、代码高亮（Shiki）、KaTeX 数学公式、影视卡片解析与图片直传；文章支持多级分类、标签交互式录入、自定义 Slug、手动或 AI 结构化摘要生成；独立页面支持副标题与自定义排序。
+- **现代化编辑器工作台**：集成 `@neo-space/editor`，提供 Milkdown 所见即所得（WYSIWYG）、CodeMirror 源码（Source）与分屏同步预览（Split）三模无缝切换并记忆偏好；支持 Slash (`/`) 命令菜单、选中即出的行内浮动工具栏（FloatingToolbar）与段落悬停块级工具栏（BlockToolbar）。
+- **服务端草稿持续同步**：编辑过程防抖串行推送服务端草稿，新建文章自动分配草稿并同步 URL，防止意外断网或误触丢失；正式发布或保存时清空对应草稿。
+- **统一正文渲染管线**：公共站与后台编辑器预览共享单一事实来源的 Markdown 渲染管线（`markdown-pipeline.ts`）与 Prose 样式，彻底杜绝预览与发布展示漂移。
+- **日记系统**：支持 Mood / Weather / Location 标签的情境化碎片记录。
 
 ### 评论系统
 
@@ -81,6 +80,12 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - **直连认证要求**：Cookie 由 Rust 设置与清除；浏览器启用适当的 `credentials`，后端配置精确的凭据 CORS、SameSite / Secure 和 CSRF 防护。生产环境必须 HTTPS，密码仍须先在浏览器加密。不能通过把 token 放入 localStorage 来绕过 Cookie 部署问题。
 - **当前实现**：后台已移除旧 Server Action、服务端会话 Cookie 与认证转发模块，使用 SWR 共享 Owner 会话；旧的 Next.js 会话不会自动迁移，需要重新登录。Cookie 变更及登录请求要求精确可信 Origin 和 `X-Requested-With: Neo-Space-Dashboard`，Bearer API 客户端保持原有鉴权。Profile 变更回读聚合资料并更新会话缓存，Rust 通知公共站失效 `user-profile`。真实部署中的 Cookie、Passkey 与数据库写后回读仍须用授权测试账户验收。
 
+### 文章与页面管理
+
+- **列表与筛选**：文章与页面列表支持按修改时间倒序排列、分页检索与状态筛选，提供删除二次确认防误触。
+- **创作与元数据**：抽屉式元数据面板承载分类选择、交互式标签录入（TagInput）、自定义 Slug、文章摘要及版权声明；页面支持副标题与排序。
+- **图片直传**：支持本地图片直接上传至后端媒体存储并回填 Markdown 语法，上传请求支持超时保护与进度反馈。
+
 ### 用户资料设置
 
 - 设置父菜单下的「用户」对应原后台用户设置页。外侧分组复用 shadcn `Collapsible` 与现有 `Button`，图标统一使用项目 `@/lib/inline-icon`；不在内容区重复设置列表。资料页与配置分组共用固定操作栏、字段行、未保存提示和帮助弹层。移动导航继续使用现有 shadcn Drawer。
@@ -92,10 +97,9 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - 外侧「设置」提供 SEO、地址、评论、友链、邮件、第三方登录、AI、搜索、追番及安全十个分组，路由为 `/dashboard/settings/{seo,url,comments,friend-links,mail,oauth,ai,search,bangumi,security}`。设置区按控件语义重建：开关使用 `Switch`，数字输入限宽并紧邻显示单位，多值字段使用可删除标签或逐条列表，服务商使用折叠摘要集合，长说明与部署环境变量收进帮助弹层。
 - 浏览器携带 Cookie 直连 Owner options API；集合读取为 `GET /api/options`（不带尾斜杠），单组读取及保存为 `GET/PUT /api/options/{key}`。读取后保留完整分组及未知字段，通过 PUT 保存本组；未配置与显式 `false`、空串保持区别，凭据使用密码输入且不持久化到浏览器存储。
 - 草稿按分组保存在内存，切换设置分类不丢失未保存修改，侧栏显示未保存标记；保存只提交当前分组。保存前校验并定位第一个问题字段，服务商集合会自动展开。保存后回读最终值；回读失败保留草稿并只允许重试读取。部署环境覆盖会提示最终生效值可能被替换；多人同时编辑同一分组仍可能覆盖对方修改。
-- AI 服务商支持增删、模型分配与引用校验；模型分配明确区分时间胶囊（文章时效性分析）、内容翻译、评论 AI 审核。时间胶囊沿用 `summaryModel` / `enableSummary`，不是独立摘要生成。已移除 `openAiEndpoint`、`openAiPreferredModel`、`openAiKey` 独立接口配置；后端不再读取它们，后台保存 AI 分组时剔除旧值，连接信息统一来自服务商。OAuth 仅维护后端支持的 GitHub / QQ 声明及 GitHub 凭据，enabled 标记不是登录访问控制。安全设置仅包含后端已有桌面令牌。
-- 本轮按用户要求未运行浏览器交互、服务联调或真实数据库写入。重构主体完成后曾执行一次 `tsc --noEmit` 并通过；其后的小幅调整未再复检，真实部署中的持久化与服务生效仍需授权验收。
-
-
+- **AI 设置专区**：采用专用界面编排，集中管理服务商增删改与模型分配（时间胶囊、内容翻译、评论 AI 审核）；支持服务商行内快捷开关、自动平移与校验报错自展开；未显式指定模型时支持回退默认模型。已移除旧独立接口配置，连接信息统一来自服务商。
+- **OAuth 设置专区**：固定 GitHub / QQ 两张服务卡片，开关直接写入 `providers[].enabled`；直观展示根据系统 URL 派生的 GitHub 回调地址，缺失时引导跳转地址配置。
+- 安全设置仅包含后端已有桌面令牌。
 
 ### 友链系统
 
@@ -124,7 +128,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 ### 环境要求
 
 - Node.js >= 22
-- pnpm >= 11
+- pnpm >= 11 (推荐 pnpm 12)
 - Rust（edition 2024，建议使用 rustup 维护）
 - MongoDB >= 7.0
 - Meilisearch（可选，用于全文搜索）
@@ -216,7 +220,7 @@ neo-space/
 │       └── Dockerfile
 │
 ├── packages/
-│   └── rich-react/          # 共享富文本 React 组件 (@neo-space/rich-react)
+│   └── editor/              # 所见即所得与源码编辑器 (@neo-space/editor)
 │
 ├── scripts/                 # 脚本（统一 dev 启动等）
 ├── turbo.json               # Turborepo 任务编排
@@ -253,10 +257,11 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 | 层级       | 选型                | 说明                       |
 | ---------- | ------------------- | -------------------------- |
 | 编排       | Turborepo 2.9       | monorepo 任务调度          |
-| 包管理     | pnpm 11             | workspace 依赖管理         |
-| 前端框架   | Next.js 16 / React 19 | SSR / SSG               |
+| 包管理     | pnpm 12             | workspace 依赖管理         |
+| 前端框架   | Next.js 16 / React 19 | SSR / SSG / App Router   |
 | 前端语言   | TypeScript 5.9      | 类型安全                   |
 | 前端样式   | Tailwind CSS 4      | 原子化 CSS                 |
+| 富文本编辑 | Milkdown 7 / CodeMirror 6 | WYSIWYG & 源码双模式      |
 | 后端框架   | Axum 0.8            | 异步 Web 框架              |
 | 运行时     | Tokio 1.52          | 异步运行时                 |
 | 数据库     | MongoDB 7           | 主数据存储                 |
@@ -278,8 +283,8 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 
 - 后端保留内容管理、站点设置、管理员认证与 dashboard overview 等管理 API。
 - JWT、密码与 Passkey 认证不随旧面板移除；管理接口继续遵循原有权限校验。
-- 新管理 UI 已提供登录与仪表盘外壳，内容管理尚未接入；不再提供旧面板静态资源或开发反代，也无需构建 Vue 应用。
-- `packages/rich-react` 保留为独立共享包，不因旧面板移除而删除其组件能力。
+- 新管理 UI 完整实现登录认证、仪表盘总览、系统设置中心以及文章与独立页面的内容生产闭环；不再提供旧面板静态资源或开发反代，也无需构建独立 Vue 应用。
+- `packages/editor` 为轻量自建的编辑器共享包，基于 Milkdown 与 CodeMirror，无需打包构建步骤，源码直出，由 Next.js `transpilePackages` 统一参与打包。
 
 ### 后端 (apps/backend)
 
@@ -489,4 +494,4 @@ pnpm typecheck         # 全仓类型检查
 
 ### 第三方致谢
 
-- 感谢 Next.js、Axum、MongoDB、Meilisearch、Naive UI 等开源项目使本项目成为可能。
+- 感谢 Next.js、Axum、MongoDB、Meilisearch、Tailwind CSS、Milkdown、CodeMirror 等开源项目使本项目成为可能。
