@@ -489,6 +489,4 @@ pnpm typecheck         # 全仓类型检查
 
 ### 第三方致谢
 
-- **[mx-space/mx-admin](https://github.com/mx-space/mx-admin)** — 已移除的旧 Vue 管理面板曾派生自该项目（AGPL-3.0），版权归原作者所有；本仓库保留对这段历史来源的致谢，任何保留的派生代码仍遵循相应许可。
-
 - 感谢 Next.js、Axum、MongoDB、Meilisearch、Naive UI 等开源项目使本项目成为可能。
