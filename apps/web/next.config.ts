@@ -17,6 +17,7 @@ const withNextIntl = createNextIntlPlugin("./src/locales/index.ts");
 const nextConfig: NextConfig = {
   reactCompiler: true,
   compress: true,
+  transpilePackages: ["@neo-space/editor"],
   outputFileTracingRoot: resolve(__dirname, "../../"),
   allowedDevOrigins: ["192.168.3.3"],
   images: {
