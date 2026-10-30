@@ -2,6 +2,8 @@ import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import type { PluggableList } from "unified";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
+import type { ContentMeta } from "@/types/api";
+import { ImageMetadataProvider } from "../content/ImageMetadataProvider";
 
 import { FootnoteNavigator } from "../content/Footnote/FootnoteNavigator";
 import { KatexStyles } from "../content/KatexStyles";
@@ -15,6 +17,7 @@ interface MarkdownRendererProps {
   content: string;
   className?: string;
   hasScript?: boolean;
+  meta?: ContentMeta | null;
 }
 
 /**
@@ -22,7 +25,7 @@ interface MarkdownRendererProps {
  * @param props 正文与额外类名
  * @returns 渲染后的正文
  */
-export async function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
+export async function MarkdownRenderer({ content, className = "", meta }: MarkdownRendererProps) {
   const hasMath = MATH_CONTENT_REGEX.test(content);
   const [highlighter, mediaCards] = await Promise.all([
     getHighlighter(collectCodeLanguages(content)),
@@ -38,13 +41,15 @@ export async function MarkdownRenderer({ content, className = "" }: MarkdownRend
   return (
     <>
       {hasMath && <KatexStyles />}
-      <FootnoteNavigator>
-        <div className={`markdown-body ${className}`}>
-          <ReactMarkdown remarkPlugins={markdownRemarkPlugins} rehypePlugins={rehypePlugins} components={createMarkdownComponents(mediaCards)}>
-            {content}
-          </ReactMarkdown>
-        </div>
-      </FootnoteNavigator>
+      <ImageMetadataProvider meta={meta}>
+        <FootnoteNavigator>
+          <div className={`markdown-body ${className}`}>
+            <ReactMarkdown remarkPlugins={markdownRemarkPlugins} rehypePlugins={rehypePlugins} components={createMarkdownComponents(mediaCards)}>
+              {content}
+            </ReactMarkdown>
+          </div>
+        </FootnoteNavigator>
+      </ImageMetadataProvider>
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
+import { MetadataImage } from "./MetadataImage";
 
 interface GridImagesProps {
   images: string[];
@@ -28,11 +29,11 @@ export function GridImages({ images, cols = 2, gap = 8, rows, className }: GridI
       }}
     >
       {images.map((src, idx) => (
-        <div key={src} className="relative aspect-video overflow-hidden rounded-xl bg-surface-100">
-          <img
+        <div key={src} className="relative min-w-0 aspect-video overflow-hidden rounded-xl bg-muted">
+          <MetadataImage
             src={src}
             alt={`Grid image ${idx + 1}`}
-            className="object-cover"
+            className="size-full object-cover"
             sizes={`${100 / cols}vw`}
           />
         </div>

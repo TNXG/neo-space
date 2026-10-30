@@ -159,7 +159,7 @@ export default async function PostPage({ params }: PageProps) {
               lang={locale}
               lastUpdated={post.modified || post.created}
             />
-            <MarkdownRenderer content={post.text} />
+            <MarkdownRenderer content={post.text} meta={post.meta} />
           </>
         )}
         footer={(

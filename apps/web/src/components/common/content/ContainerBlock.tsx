@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { extractImagesFromMarkdown, parseContainerParams } from "../markdown/plugins/container";
+import { parseContainerParams } from "../markdown/plugins/container";
 import { Banner } from "./Banner";
 import { Gallery } from "./Gallery";
 import { GridImages } from "./GridImages";
@@ -11,13 +11,13 @@ interface ContainerBlockProps {
   type: string;
   params?: string;
   children: ReactNode;
-  rawContent?: string;
+  images: Array<{ url: string; alt?: string }>;
 }
 
 /**
  * ContainerBlock 组件 - 渲染自定义容器
  */
-export function ContainerBlock({ type, params = "", children, rawContent = "" }: ContainerBlockProps) {
+export function ContainerBlock({ type, params = "", children, images }: ContainerBlockProps) {
   // 类型映射
   const typeMap: Record<string, string> = {
     warning: "warn",
@@ -29,7 +29,6 @@ export function ContainerBlock({ type, params = "", children, rawContent = "" }:
 
   // Gallery 容器
   if (normalizedType === "gallery") {
-    const images = extractImagesFromMarkdown(rawContent);
     return <Gallery images={images} />;
   }
 
@@ -53,7 +52,6 @@ export function ContainerBlock({ type, params = "", children, rawContent = "" }:
     const gridType = parsedParams.type || "normal";
 
     if (gridType === "images") {
-      const images = extractImagesFromMarkdown(rawContent);
       return <GridImages images={images.map(img => img.url)} cols={cols} gap={gap} rows={rows} />;
     }
 
@@ -76,7 +74,6 @@ export function ContainerBlock({ type, params = "", children, rawContent = "" }:
   if (normalizedType === "masonry") {
     const parsedParams = parseContainerParams(params);
     const gap = Number.parseInt(parsedParams.gap || "8", 10);
-    const images = extractImagesFromMarkdown(rawContent);
     return <MasonryImages images={images.map(img => img.url)} gap={gap} />;
   }
 

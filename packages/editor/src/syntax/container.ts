@@ -24,6 +24,17 @@ const firstLine = (node: RootContent): string | null => {
 };
 
 /**
+ * 读取段落末行，允许结束标记紧跟图片或正文而不额外插入空行。
+ * @param node mdast 节点
+ * @returns 最后一个文本子节点的末行
+ */
+const lastLine = (node: RootContent): string | null => {
+  if (node.type !== "paragraph") return null;
+  const tail = node.children.at(-1);
+  return tail?.type === "text" ? tail.value.split("\n").at(-1) ?? null : null;
+};
+
+/**
  * 依据源码位置截取容器内原文，确保往返序列化不丢失任何站点私有语法。
  * @param source 原始 Markdown
  * @returns remark 转换器
@@ -34,7 +45,7 @@ const remarkContainer = () => (tree: Root, file: { value?: unknown }) => {
   for (let index = 0; index < children.length; index++) {
     const match = CONTAINER_START.exec(firstLine(children[index]) ?? "");
     if (!match) continue;
-    const end = children.findIndex((node, i) => i > index && CONTAINER_END.test((firstLine(node) ?? "").trim()));
+    const end = children.findIndex((node, i) => i >= index && CONTAINER_END.test((lastLine(node) ?? "").trim()));
     if (end === -1) continue;
 
     const startOffset = children[index].position?.start.offset;

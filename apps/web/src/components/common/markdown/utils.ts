@@ -1,5 +1,7 @@
+import type { Element } from "hast";
 import type { ReactNode } from "react";
 import { isValidElement } from "react";
+import { visit } from "unist-util-visit";
 
 // Static regex patterns to avoid re-compilation
 const HEADING_MARKER_REGEX = /^#{1,6}\s+/gm;
@@ -111,4 +113,22 @@ export const getStandaloneImageProps = (node: ReactNode): { src: string; alt?: s
     }
   }
   return null;
+};
+
+/**
+ * 从容器的 HAST 中收集已解析的图片，保留引用式图片与替代文字。
+ * @param node 容器元素
+ * @returns 按正文顺序排列的图片
+ */
+export const getContainerImages = (node?: Element): Array<{ url: string; alt?: string }> => {
+  const images: Array<{ url: string; alt?: string }> = [];
+  if (!node) return images;
+  visit(node, "element", (child) => {
+    if (child.tagName !== "img" || typeof child.properties.src !== "string") return;
+    images.push({
+      url: child.properties.src,
+      alt: typeof child.properties.alt === "string" ? child.properties.alt : undefined,
+    });
+  });
+  return images;
 };

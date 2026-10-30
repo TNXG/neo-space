@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Icon } from "@/lib/inline-icon";
+import { MetadataImage } from "./MetadataImage";
 
 interface GalleryImage {
   url: string;
@@ -82,12 +83,12 @@ export function Gallery({ images, className }: GalleryProps) {
               key={image.url}
               type="button"
               onClick={() => setSelectedIndex(idx)}
-              className="relative aspect-video overflow-hidden rounded-xl bg-surface-100 cursor-pointer group"
+              className="relative min-w-0 aspect-video overflow-hidden rounded-xl bg-muted cursor-pointer group"
             >
-              <img
+              <MetadataImage
                 src={image.url}
                 alt={image.alt || t("common.gallery.imageAlt", { index: idx + 1 })}
-                className="object-cover"
+                className="size-full object-cover"
                 sizes="(max-width: 768px) 50vw, 33vw"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />

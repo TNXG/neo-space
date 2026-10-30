@@ -1,10 +1,46 @@
-import type { Root } from "mdast";
-import { visit } from "unist-util-visit";
+import type { Paragraph, Root, RootContent } from "mdast";
+import { SKIP, visit } from "unist-util-visit";
 
-// Static regex patterns to avoid re-compilation
-const CONTAINER_START_REGEX = /^::: *(\w+)(?: *\{([^}]+)\})? *$/;
+const CONTAINER_START_REGEX = /^::: *(\w+)(?: *\{([^}]*)\})? *$/;
 const CONTAINER_END_REGEX = /^::: *$/;
-const IMAGE_REGEX = /!\[([^\]]*)\]\(([^)]+)\)/g;
+const CONTAINER_TYPES: Record<string, true> = {
+  gallery: true, banner: true, grid: true, masonry: true, info: true, success: true,
+  warn: true, error: true, warning: true, danger: true, note: true,
+};
+
+/**
+ * 读取段落边界的纯文本行；代码块和图片节点不作为容器标记。
+ * @param node Markdown 块
+ * @param start 是否读取首行
+ * @returns 边界文本
+ */
+const boundaryLine = (node: RootContent, start: boolean) => {
+  if (node.type !== "paragraph") return "";
+  const text = start ? node.children[0] : node.children.at(-1);
+  if (text?.type !== "text") return "";
+  return (start ? text.value.split("\n")[0] : text.value.split("\n").at(-1)) ?? "";
+};
+
+/**
+ * 只移除容器标记及相邻换行，保留同一段落中的图片、格式和正文。
+ * @param node 边界段落
+ * @param start 是否移除首行
+ * @returns 不含标记的段落副本
+ */
+const withoutMarker = (node: Paragraph, start: boolean): Paragraph => {
+  const children = [...node.children];
+  const index = start ? 0 : children.length - 1;
+  const text = children[index];
+  if (text?.type !== "text") return node;
+  const value = text.value.replace(start ? /^[^\n]*(?:\n|$)/ : /(?:\n)?[^\n]*$/, "");
+  if (value) children[index] = { ...text, value };
+  else {
+    children.splice(index, 1);
+    if (start && children[0]?.type === "break") children.shift();
+    if (!start && children.at(-1)?.type === "break") children.pop();
+  }
+  return { ...node, children };
+};
 
 /**
  * Remark 插件：解析自定义容器语法
@@ -18,156 +54,35 @@ const IMAGE_REGEX = /!\[([^\]]*)\]\(([^)]+)\)/g;
  */
 export function remarkContainer() {
   return (tree: Root) => {
-    const nodesToReplace: Array<{ index: number; parent: any; node: any }> = [];
-
     visit(tree, "paragraph", (node, index, parent) => {
-      if (index === undefined || !parent)
-        return;
+      if (index === undefined || !parent) return;
+      const match = CONTAINER_START_REGEX.exec(boundaryLine(node, true));
+      if (!match || !Object.hasOwn(CONTAINER_TYPES, match[1])) return;
 
-      const firstChild = node.children[0];
-      if (firstChild?.type !== "text")
-        return;
+      const siblings = parent.children as RootContent[];
+      const endIndex = siblings.findIndex((sibling, i) => i >= index && CONTAINER_END_REGEX.test(boundaryLine(sibling, false)));
+      if (endIndex === -1) return;
 
-      const text = firstChild.value;
-      const containerMatch = CONTAINER_START_REGEX.exec(text);
-
-      if (!containerMatch)
-        return;
-
-      const [, containerType, params] = containerMatch;
-      const supportedTypes = [
-        "gallery",
-        "banner",
-        "grid",
-        "masonry",
-        "info",
-        "success",
-        "warn",
-        "error",
-        "warning",
-        "danger",
-        "note",
-      ];
-
-      if (!supportedTypes.includes(containerType))
-        return;
-
-      // 查找容器结束标记
-      const siblings = parent.children;
-      let endIndex = -1;
-
-      for (let i = index + 1; i < siblings.length; i++) {
-        const sibling = siblings[i];
-        if (
-          sibling.type === "paragraph"
-          && sibling.children[0]?.type === "text"
-          && CONTAINER_END_REGEX.test(sibling.children[0].value)
-        ) {
-          endIndex = i;
-          break;
-        }
-      }
-
-      if (endIndex === -1)
-        return;
-
-      // 提取容器内容
-      const contentNodes = siblings.slice(index + 1, endIndex);
-
-      // 创建自定义节点
-      const containerNode = {
+      const content = siblings.slice(index, endIndex + 1);
+      content[0] = withoutMarker(content[0] as Paragraph, true);
+      content[content.length - 1] = withoutMarker(content.at(-1) as Paragraph, false);
+      const container = {
         type: "containerBlock",
         data: {
           hName: "div",
           hProperties: {
-            "data-container-type": containerType,
-            "data-container-params": params || "",
+            "data-container-type": match[1],
+            "data-container-params": match[2] ?? "",
           },
         },
-        children: contentNodes,
+        children: content.filter(child => child.type !== "paragraph" || child.children.length > 0),
       };
 
-      nodesToReplace.push({
-        index,
-        parent,
-        node: containerNode,
-      });
-
-      // 标记要删除的节点
-      for (let i = index + 1; i <= endIndex; i++) {
-        nodesToReplace.push({
-          index: i,
-          parent,
-          node: null,
-        });
-      }
+      // 整段只替换一次，不能再次删除已移动的索引，否则会吞掉后文。
+      siblings.splice(index, endIndex - index + 1, container as unknown as RootContent);
+      return [SKIP, index + 1];
     });
-
-    // 从后往前替换，避免索引问题
-    nodesToReplace.reverse();
-    const processed = new Set<any>();
-
-    for (const { index: _index, parent, node: _node } of nodesToReplace) {
-      if (processed.has(parent))
-        continue;
-
-      const toRemove: number[] = [];
-      const toAdd: Array<{ index: number; node: any }> = [];
-
-      for (const item of nodesToReplace) {
-        if (item.parent === parent) {
-          if (item.node === null) {
-            toRemove.push(item.index);
-          } else {
-            toAdd.push({ index: item.index, node: item.node });
-          }
-        }
-      }
-
-      // 删除标记的节点
-      toRemove.sort((a, b) => b - a);
-      for (const idx of toRemove) {
-        parent.children.splice(idx, 1);
-      }
-
-      // 添加新节点
-      toAdd.sort((a, b) => b.index - a.index);
-      for (const { index: idx, node: newNode } of toAdd) {
-        const adjustedIndex = idx - toRemove.filter(r => r < idx).length;
-        parent.children.splice(adjustedIndex, 1, newNode);
-      }
-
-      // 删除标记的节点
-      toRemove.sort((a, b) => b - a);
-      for (const idx of toRemove) {
-        parent.children.splice(idx, 1);
-      }
-
-      // 添加新节点
-      toAdd.sort((a, b) => b.index - a.index);
-      for (const { index: _index, node: newNode } of toAdd) {
-        const adjustedIndex = _index - toRemove.filter(r => r < _index).length;
-        parent.children.splice(adjustedIndex, 1, newNode);
-      }
-
-      processed.add(parent);
-    }
   };
-}
-
-export function extractImagesFromMarkdown(content: string): Array<{ url: string; alt?: string }> {
-  const images: Array<{ url: string; alt?: string }> = [];
-
-  let match = IMAGE_REGEX.exec(content);
-  while (match !== null) {
-    images.push({
-      url: match[2],
-      alt: match[1] || undefined,
-    });
-    match = IMAGE_REGEX.exec(content);
-  }
-
-  return images;
 }
 
 /**

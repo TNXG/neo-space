@@ -6,6 +6,8 @@ import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import { useDeferredValue, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
+import type { ContentMeta } from "@/types/api";
+import { ImageMetadataProvider } from "../content/ImageMetadataProvider";
 
 import { FootnoteNavigator } from "../content/Footnote/FootnoteNavigator";
 import { KatexStyles } from "../content/KatexStyles";
@@ -41,7 +43,7 @@ function useHighlighter(content: string) {
  * @param props 正文与额外类名
  * @returns 渲染结果
  */
-export function MarkdownRendererClient({ content, className = "" }: { content: string; className?: string }) {
+export function MarkdownRendererClient({ content, className = "", meta }: { content: string; className?: string; meta?: ContentMeta | null }) {
   const deferred = useDeferredValue(content);
   const highlighter = useHighlighter(deferred);
   const hasMath = MATH_CONTENT_REGEX.test(deferred);
@@ -55,13 +57,15 @@ export function MarkdownRendererClient({ content, className = "" }: { content: s
   return (
     <>
       {hasMath && <KatexStyles />}
-      <FootnoteNavigator>
-        <div className={`markdown-body ${className}`}>
-          <ReactMarkdown remarkPlugins={markdownRemarkPlugins} rehypePlugins={rehypePlugins} components={components}>
-            {deferred}
-          </ReactMarkdown>
-        </div>
-      </FootnoteNavigator>
+      <ImageMetadataProvider meta={meta}>
+        <FootnoteNavigator>
+          <div className={`markdown-body ${className}`}>
+            <ReactMarkdown remarkPlugins={markdownRemarkPlugins} rehypePlugins={rehypePlugins} components={components}>
+              {deferred}
+            </ReactMarkdown>
+          </div>
+        </FootnoteNavigator>
+      </ImageMetadataProvider>
     </>
   );
 }

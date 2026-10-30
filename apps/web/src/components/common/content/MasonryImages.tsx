@@ -1,6 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
+import { MetadataImage } from "./MetadataImage";
 
 interface MasonryImagesProps {
   images: string[];
@@ -24,14 +25,13 @@ export function MasonryImages({ images, gap = 8, className }: MasonryImagesProps
       {images.map((src, idx) => (
         <div
           key={src}
-          className="relative mb-4 break-inside-avoid overflow-hidden rounded-xl bg-surface-100"
+          className="relative mb-4 min-w-0 break-inside-avoid overflow-hidden rounded-xl bg-muted"
           style={{ marginBottom: `${gap}px` }}
         >
-          <img
+          <MetadataImage
             src={src}
             alt={`Masonry image ${idx + 1}`}
-            width={400}
-            height={300}
+            reserveRatio
             className="w-full h-auto"
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
           />

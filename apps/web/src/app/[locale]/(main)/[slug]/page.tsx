@@ -52,14 +52,16 @@ export default async function PageDetail({ params }: PageProps) {
           </h1>
           <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
             <span>
-              更新于
+              {page.modified ? "更新于" : "发布于"}
               {" "}
-              {new Date(page.created).toLocaleDateString()}
+              <time dateTime={page.modified || page.created}>
+                {new Date(page.modified || page.created).toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai" })}
+              </time>
             </span>
           </div>
         </header>
       )}
-      content={<MarkdownRenderer content={page.text} />}
+      content={<MarkdownRenderer content={page.text} meta={page.meta} />}
       footer={
         page.allowComment && (
           <div className="mt-16">

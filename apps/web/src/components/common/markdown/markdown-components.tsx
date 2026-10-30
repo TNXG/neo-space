@@ -19,7 +19,7 @@ import { Spoiler } from "../content/Spoiler";
 import { getMediaCardUrlFromProps } from "./plugins/media-card";
 import { MediaCard } from "./plugins/media-card/MediaCard";
 import { PROSE_CLASSES } from "./prose-classes";
-import { getStandaloneImageProps } from "./utils";
+import { getContainerImages, getStandaloneImageProps } from "./utils";
 
 const LANGUAGE_CLASS_REGEX = /language-(\w+)/;
 
@@ -266,21 +266,8 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     }
 
     if (containerType) {
-      // 提取原始文本内容用于图片解析
-      const extractText = (node: any): string => {
-        if (typeof node === "string")
-          return node;
-        if (Array.isArray(node))
-          return node.map(extractText).join("\n");
-        if (node?.props?.children)
-          return extractText(node.props.children);
-        return "";
-      };
-
-      const rawContent = extractText(children);
-
       return (
-        <ContainerBlock type={containerType} params={containerParams} rawContent={rawContent}>
+        <ContainerBlock type={containerType} params={containerParams} images={getContainerImages(props.node)}>
           {children}
         </ContainerBlock>
       );
