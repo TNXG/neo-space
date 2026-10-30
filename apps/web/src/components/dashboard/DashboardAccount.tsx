@@ -86,7 +86,7 @@ export function DashboardAccount({ user, collapsed = false }: { user: Reader; co
             </button>
           </PopoverTrigger>
         </section>
-      <PopoverContent side={collapsed ? "right" : "top"} align="end" sideOffset={8} collisionPadding={12} aria-label="账户选项" className="w-56 max-w-[calc(100vw-1.5rem)] rounded-xl border-border bg-background p-1.5 text-foreground shadow-none backdrop-blur-none motion-reduce:animate-none">
+      <PopoverContent side={collapsed ? "right" : "top"} align="end" sideOffset={8} collisionPadding={12} aria-label="账户选项" className="w-56 max-w-[calc(100vw-1.5rem)] p-1.5 motion-reduce:animate-none">
         <div className="flex flex-col gap-1">
           <Button type="button" variant="ghost" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")} className="h-10 w-full justify-start rounded-lg px-3 max-lg:h-11">
             <Icon icon={resolvedTheme === "dark" ? "mingcute:sun-line" : "mingcute:moon-line"} data-icon="inline-start" aria-hidden="true" />
