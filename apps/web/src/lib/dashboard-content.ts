@@ -12,17 +12,17 @@ export interface DashboardPostQuery {
 }
 
 /** 文章列表缓存键：包含影响响应的全部参数。 */
-export const dashboardPostsKey = (query: DashboardPostQuery) => ["dashboard-posts", query.page, query.keyword ?? "", query.categoryId ?? ""] as const;
+export const dashboardPostsKey = (query: DashboardPostQuery) => ["dashboard-posts", "created-desc", query.page, query.keyword ?? "", query.categoryId ?? ""] as const;
 export const dashboardPostKey = (_id: string) => ["dashboard-post", _id] as const;
 export const dashboardPageKey = (_id: string) => ["dashboard-page", _id] as const;
 
 /**
- * Owner Cookie 下列表包含未发布文章；按修改时间倒序，最近编辑的排在最前。
+ * Owner Cookie 下列表包含未发布文章；按发布时间倒序，在服务端排序后分页。
  * @param query 分页与筛选
  * @returns 分页文章
  */
 export function getDashboardPosts(query: DashboardPostQuery): Promise<PaginatedData<Post>> {
-  const params = new URLSearchParams({ page: String(query.page), size: "20", sortBy: "modified", sortOrder: "-1" });
+  const params = new URLSearchParams({ page: String(query.page), size: "20", sortBy: "created", sortOrder: "-1" });
   if (query.keyword) params.set("keyword", query.keyword);
   if (query.categoryId) params.set("categoryIds", query.categoryId);
   return dashboardRequest<PaginatedData<Post>>(`/posts?${params}`);
