@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentMeta } from "@/types/api";
 import { useSourceEditor } from "@neo-space/editor";
 import { useEffect, useRef } from "react";
 import { MarkdownRendererClient } from "@/components/common/markdown/MarkdownRenderer.client";
@@ -10,6 +11,7 @@ import { ToolbarButton } from "./FloatingToolbar";
 interface SourcePaneProps {
   split: boolean;
   value: string;
+  meta?: ContentMeta | null;
   onChange: (value: string) => void;
   header?: React.ReactNode;
   onPickImage: () => void;
@@ -22,7 +24,7 @@ interface SourcePaneProps {
  * @param props 正文、模式与图片回调
  * @returns 源码面板
  */
-export function SourcePane({ split, value, onChange, header, onPickImage, onPasteImages, uploading }: SourcePaneProps) {
+export function SourcePane({ split, value, meta, onChange, header, onPickImage, onPasteImages, uploading }: SourcePaneProps) {
   const source = useSourceEditor({ value, onChange, placeholder: "使用 Markdown 书写…" });
   const preview = useRef<HTMLDivElement>(null);
   const driver = useRef<"source" | "preview" | null>(null);
@@ -87,7 +89,7 @@ export function SourcePane({ split, value, onChange, header, onPickImage, onPast
           <div ref={preview} aria-label="预览" className="min-h-0 overflow-y-auto overscroll-contain border-l border-border/50 bg-background">
             <div className="mx-auto w-full max-w-3xl px-6 pt-8 pb-[40vh] lg:px-8">
               {header}
-              <MarkdownRendererClient content={value} />
+              <MarkdownRendererClient content={value} meta={meta} />
             </div>
           </div>
         )}

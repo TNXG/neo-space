@@ -1,11 +1,10 @@
 "use client";
 
 import type { EditorMode } from "./EditorModeSwitch";
+import type { ContentMeta } from "@/types/api";
 import { useMilkdown } from "@neo-space/editor";
 import { useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { toast } from "sonner";
-import { MarkdownRendererClient } from "@/components/common/markdown/MarkdownRenderer.client";
 import { PROSE_CLASSES } from "@/components/common/markdown/prose-classes";
 import { KatexStyles } from "@/components/common/content/KatexStyles";
 import { uploadDashboardImage } from "@/lib/dashboard-content";
@@ -14,27 +13,17 @@ import { BlockToolbar } from "./BlockToolbar";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { SlashMenu } from "./SlashMenu";
 import { SourcePane } from "./SourcePane";
+import { useBlockPreviews } from "./use-block-previews";
 import "@neo-space/editor/styles.css";
 
 interface ContentEditorSurfaceProps {
   mode: EditorMode;
   value: string;
+  meta?: ContentMeta | null;
   onChange: (value: string) => void;
   /** 标题等位于正文上方的内容，随正文一起滚动。 */
   header?: React.ReactNode;
 }
-
-/**
- * 把站点组件挂进 Milkdown 节点视图：容器块的预览与前台完全一致。
- * @param host 节点视图提供的宿主元素
- * @param markdown 容器源码
- * @returns 卸载函数
- */
-const renderSiteBlock = (host: HTMLElement, markdown: string) => {
-  const root = createRoot(host);
-  root.render(<MarkdownRendererClient content={markdown} />);
-  return () => queueMicrotask(() => root.unmount());
-};
 
 /**
  * 上传图片并在失败时给出明确提示；成功返回公开地址。
@@ -58,10 +47,11 @@ const uploadImage = async (file: File) => {
  * @param props 模式、正文与修改回调
  * @returns 编辑区
  */
-export function ContentEditorSurface({ mode, value, onChange, header }: ContentEditorSurfaceProps) {
+export function ContentEditorSurface({ mode, value, meta, onChange, header }: ContentEditorSurfaceProps) {
   const [uploading, setUploading] = useState(0);
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const { renderBlock, previews } = useBlockPreviews(meta);
   const upload = async (file: File) => {
     setUploading(count => count + 1);
     try {
@@ -70,7 +60,7 @@ export function ContentEditorSurface({ mode, value, onChange, header }: ContentE
       setUploading(count => count - 1);
     }
   };
-  const milkdown = useMilkdown({ value, onChange, upload, renderBlock: renderSiteBlock, proseClasses: PROSE_CLASSES, onCopy: () => toast.success("代码已复制") });
+  const milkdown = useMilkdown({ value, onChange, upload, renderBlock, proseClasses: PROSE_CLASSES, onCopy: () => toast.success("代码已复制") });
 
   const pickImage = () => fileInput.current?.click();
   const insertFiles = async (files: FileList | null) => {
@@ -86,6 +76,7 @@ export function ContentEditorSurface({ mode, value, onChange, header }: ContentE
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <KatexStyles />
+      {previews}
       <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={(event) => { void insertFiles(event.target.files); event.target.value = ""; }} />
       {mode === "rich" && (
         <div className="flex h-11 shrink-0 items-center border-b border-border/50 px-2 sm:px-3 lg:px-4">
@@ -108,7 +99,7 @@ export function ContentEditorSurface({ mode, value, onChange, header }: ContentE
       )}
 
       {mode !== "rich" && (
-        <SourcePane split={mode === "split"} value={value} onChange={onChange} header={header} onPickImage={pickImage} onPasteImages={files => void insertFiles(files)} uploading={uploading > 0} />
+        <SourcePane split={mode === "split"} value={value} meta={meta} onChange={onChange} header={header} onPickImage={pickImage} onPasteImages={files => void insertFiles(files)} uploading={uploading > 0} />
       )}
     </div>
   );
