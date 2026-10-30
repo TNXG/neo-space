@@ -485,5 +485,6 @@
   "notFound.description": "你所寻找的页面似乎飘向了宇宙深处，或许它从未存在过。",
   "notFound.home": "返回首页",
   "notFound.back": "返回上页",
+  "interactive.note.encrypted": "这篇手记的内容已加密，请进入详情页输入密码查看。",
   "notFound.signalLost": "Signal Lost"
 }

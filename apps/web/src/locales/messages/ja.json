@@ -485,5 +485,6 @@
   "notFound.description": "お探しのページは宇宙の奥へ漂っていったようです。もともと存在しなかったのかもしれません。",
   "notFound.home": "ホームへ戻る",
   "notFound.back": "前のページへ戻る",
+  "interactive.note.encrypted": "この手記は暗号化されています。詳細ページでパスワードを入力してお読みください。",
   "notFound.signalLost": "Signal Lost"
 }

@@ -485,5 +485,6 @@
   "notFound.description": "The page you are looking for seems to have drifted deep into the universe, or perhaps it never existed.",
   "notFound.home": "Back to Home",
   "notFound.back": "Go Back",
+  "interactive.note.encrypted": "This note is encrypted. Open its detail page and enter the password to read it.",
   "notFound.signalLost": "Signal Lost"
 }

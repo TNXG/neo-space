@@ -46,6 +46,7 @@ export default async function PostsPage({
       <PostInteractiveList
         items={data.items}
         emptyMessage={t("interactive.empty.post")}
+        archive
       />
     </main>
   );

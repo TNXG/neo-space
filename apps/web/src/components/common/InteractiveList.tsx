@@ -7,6 +7,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSWRConfig } from "swr";
 import useSWRInfinite from "swr/infinite";
+import { ArchiveGroups } from "@/components/common/ArchiveGroups";
+import { PostArchiveItem } from "@/components/common/PostArchiveItem";
 import { MarkdownPreviewClient } from "@/components/common/markdown/MarkdownPreview.client";
 import { stripMarkdown, truncateText } from "@/components/common/markdown/utils";
 import { SmartDate } from "@/components/common/smart-date";
@@ -16,6 +18,7 @@ import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/locales/navigation";
+import { ArchiveMetadata } from "./ArchiveMetadata";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -39,6 +42,7 @@ interface InteractiveListProps<T> {
   emptyMessage?: string;
   previewPosition?: "left" | "right";
   infiniteScroll?: InfiniteScrollConfig<T>;
+  groupByYear?: (item: T) => string;
 }
 
 // ─── Generic InteractiveList ─────────────────────────────────────────
@@ -52,6 +56,7 @@ export function InteractiveList<T>({
   emptyMessage,
   previewPosition = "left",
   infiniteScroll,
+  groupByYear,
 }: InteractiveListProps<T>) {
   const t = useTranslations();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -137,10 +142,15 @@ export function InteractiveList<T>({
     }
     const listRect = listRef.current.getBoundingClientRect();
     const itemRect = itemEl.getBoundingClientRect();
+    if (groupByYear) {
+      // 首次定位直接落位；后续通过 transform 过渡，快速切换可从当前位置接续。
+      indicatorRef.current.style.transitionProperty = indicatorRef.current.style.opacity === "0" ? "opacity" : "transform, opacity";
+      indicatorRef.current.style.transform = `translate3d(0, ${itemRect.top - listRect.top}px, 0)`;
+    }
     indicatorRef.current.style.setProperty("--indicator-top", `${itemRect.top - listRect.top}px`);
     indicatorRef.current.style.setProperty("--indicator-height", `${itemRect.height}px`);
     indicatorRef.current.style.opacity = "1";
-  }, [activeItem, previewPosition, getItemKey]);
+  }, [activeItem, previewPosition, getItemKey, groupByYear]);
 
   // ── Infinite Scroll Observer ──
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -184,6 +194,48 @@ export function InteractiveList<T>({
     </AnimatePresence>
   );
 
+  /** 复用同一导航与预加载路径，年份分组不改变文章行交互。 */
+  const renderItem = (item: T, index: number) => {
+    const key = getItemKey(item);
+    const isActive = mounted && activeItem ? getItemKey(activeItem) === key : false;
+    const itemUrl = getItemUrl(item);
+    const isLastFewItems = index >= items.length - 3;
+    return (
+      <Link
+        key={key}
+        ref={(el) => {
+          if (el) itemRef.current.set(key, el);
+          else itemRef.current.delete(key);
+        }}
+        href={itemUrl}
+        prefetch={false}
+        onMouseEnter={() => {
+          router.prefetch(itemUrl);
+          handleMouseEnter(key);
+          if (isLastFewItems && hasInfiniteScroll) prefetchNextPage();
+        }}
+        onFocus={() => handleMouseEnter(key)}
+        className={cn(
+          "group relative block cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isLeftPreview && "border-b border-dashed border-border/30 lg:border-0 last:border-0",
+        )}
+      >
+        {isLeftPreview && (
+          <motion.div
+            className={cn("absolute rounded-xl -z-10", groupByYear ? "inset-0" : "-inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4")}
+            animate={{
+              backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "rgba(0,0,0,0)",
+            }}
+            style={{
+              backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "rgba(0,0,0,0)",
+            }}
+          />
+        )}
+        {renderListItem(item, { isActive: isActive && !isMobile, index })}
+      </Link>
+    );
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className={cn(
@@ -199,7 +251,7 @@ export function InteractiveList<T>({
           </aside>
         )}
 
-        <div className={cn("flex flex-col", !isLeftPreview && "lg:col-span-5")}>
+        <div className={cn("flex min-w-0 flex-col", !isLeftPreview && "lg:col-span-5")}>
           <div
             ref={listRef}
             className={cn(
@@ -213,56 +265,18 @@ export function InteractiveList<T>({
             {isLeftPreview && (
               <div
                 ref={indicatorRef}
-                className="hidden lg:block absolute left-0 w-0.75 bg-accent-500 rounded-r-full shadow-[0_0_10px_rgba(45,212,191,0.5)] pointer-events-none z-10 transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out"
+                className={cn("hidden lg:block absolute left-0 w-0.75 bg-accent-500 rounded-r-full pointer-events-none z-10", groupByYear ? "transition-[transform,opacity] duration-(--motion-duration-page) ease-(--motion-ease-out) motion-reduce:duration-0" : "shadow-[0_0_10px_rgba(45,212,191,0.5)] transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out")}
                 style={{
-                  top: "var(--indicator-top, 0)",
+                  top: groupByYear ? 0 : "var(--indicator-top, 0)",
                   height: "var(--indicator-height, 0)",
                   opacity: 0,
                 }}
               />
             )}
 
-            {items.map((item, index) => {
-              const key = getItemKey(item);
-              const isActive = mounted && activeItem ? getItemKey(activeItem) === key : false;
-              const itemUrl = getItemUrl(item);
-              const isLastFewItems = index >= items.length - 3;
-
-              return (
-                <Link
-                  key={key}
-                  ref={(el) => {
-                    if (el)
-                      itemRef.current.set(key, el);
-                  }}
-                  href={itemUrl}
-                  prefetch={false}
-                  onMouseEnter={() => {
-                    router.prefetch(itemUrl);
-                    handleMouseEnter(key);
-                    if (isLastFewItems && hasInfiniteScroll)
-                      prefetchNextPage();
-                  }}
-                  className={cn(
-                    "group relative block outline-none",
-                    isLeftPreview && "border-b border-dashed border-border/30 lg:border-0 last:border-0",
-                  )}
-                >
-                  {isLeftPreview && (
-                    <motion.div
-                      className="absolute -inset-y-1 md:-inset-y-2 -inset-x-2 md:-inset-x-4 rounded-xl -z-10"
-                      animate={{
-                        backgroundColor: isActive && !isMobile ? "var(--bg-glass)" : "rgba(0,0,0,0)",
-                      }}
-                      style={{
-                        backgroundColor: isActive && !isMobile ? "rgba(var(--primary-100), 0.5)" : "rgba(0,0,0,0)",
-                      }}
-                    />
-                  )}
-                  {renderListItem(item, { isActive: isActive && !isMobile, index })}
-                </Link>
-              );
-            })}
+            {groupByYear
+              ? <ArchiveGroups items={items} getYear={groupByYear} renderItem={renderItem} />
+              : items.map(renderItem)}
 
             {hasInfiniteScroll && (
               <div
@@ -349,6 +363,7 @@ function TitleDateListItem({ title, created, modified, isActive }: {
 
 // ─── Post Preview ────────────────────────────────────────────────────
 
+/** 文章摘要预览，独立于文章列表中的年份归档。 */
 function PostPreview({ post }: { post: Post }) {
   const t = useTranslations();
 
@@ -376,15 +391,22 @@ function PostPreview({ post }: { post: Post }) {
 
       <h2 className="text-3xl font-bold leading-tight text-foreground">{post.title}</h2>
 
-      {post.category && (
-        <div className="flex justify-start">
-          <Link
-            href={`/categories/${post.category.slug}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200"
-          >
-            <Icon icon="mingcute:folder-2-line" className="w-3.5 h-3.5" />
-            {post.category.name}
-          </Link>
+      {(post.category || post.tags.length > 0) && (
+        <div className="flex min-w-0 items-center justify-start gap-2 text-sm text-muted-foreground/50">
+          {post.category && (
+            <Link
+              href={`/categories/${post.category.slug}`}
+              className="shrink-0 cursor-pointer rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {post.category.name}
+            </Link>
+          )}
+          {post.tags.length > 0 && (
+            <ArchiveMetadata className="justify-start text-sm">
+              <span aria-hidden="true" className="mr-2">#</span>
+              {post.tags.join(" · ")}
+            </ArchiveMetadata>
+          )}
         </div>
       )}
 
@@ -402,16 +424,6 @@ function PostPreview({ post }: { post: Post }) {
         </div>
       </div>
 
-      {post.tags && post.tags.length > 0 && (
-        <div className="flex flex-wrap justify-start gap-2 pt-2">
-          {post.tags.map(tag => (
-            <span key={tag} className="flex items-center gap-1 text-xs text-accent-600 bg-accent-50 px-2 py-1 rounded-md border border-accent-100">
-              <Icon icon="mingcute:tag-line" className="w-3 h-3" />
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
     </motion.div>
   );
 }
@@ -445,37 +457,26 @@ function NotePreview({ note }: { note: Note }) {
 
       <h2 className="text-3xl font-bold leading-tight text-foreground">{note.title}</h2>
 
-      <div className="flex flex-wrap justify-start gap-2">
-        {note.mood && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
-            <Icon icon="mingcute:emoji-line" className="w-3.5 h-3.5" />
-            {note.mood}
-          </span>
-        )}
-        {note.weather && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-            <Icon icon="mingcute:cloud-line" className="w-3.5 h-3.5" />
-            {note.weather}
-          </span>
-        )}
-        {note.location && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <Icon icon="mingcute:location-line" className="w-3.5 h-3.5" />
-            {note.location}
-          </span>
-        )}
-      </div>
+      {(note.mood || note.weather || note.location) && (
+        <ArchiveMetadata className="justify-start text-sm">
+          {[note.mood, note.weather, note.location].filter(Boolean).join(" · ")}
+        </ArchiveMetadata>
+      )}
 
       <div className="text-primary-600 text-sm leading-7">
-        {note.aiSummary && (
+        {!note.isEncrypted && note.aiSummary && (
           <div className="flex items-center gap-1.5 mb-2">
             <Icon icon="mingcute:sparkles-fill" className="w-3.5 h-3.5 text-accent-500" />
             <span className="text-xs font-medium text-accent-600">{t("interactive.post.aiSummary")}</span>
           </div>
         )}
-        <div className="text-left line-clamp-6">
-          <MarkdownPreviewClient content={note.aiSummary || note.text} maxLength={200} />
-        </div>
+        {note.isEncrypted
+          ? <p className="text-left">{t("interactive.note.encrypted")}</p>
+          : (
+              <div className="text-left line-clamp-6">
+                <MarkdownPreviewClient content={note.aiSummary || note.text} maxLength={200} />
+              </div>
+            )}
       </div>
     </motion.div>
   );
@@ -488,6 +489,7 @@ interface PostInteractiveListProps {
   emptyMessage?: string;
   staticMode?: boolean;
   pageSize?: number;
+  archive?: boolean;
 }
 
 export function PostInteractiveList({
@@ -495,6 +497,7 @@ export function PostInteractiveList({
   emptyMessage,
   staticMode = false,
   pageSize = 10,
+  archive = false,
 }: PostInteractiveListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -505,9 +508,10 @@ export function PostInteractiveList({
       getItemKey={p => p._id}
       getItemUrl={p => `/posts/${p.category?.slug || "default"}/${p.slug}`}
       renderPreview={post => <PostPreview post={post} />}
-      renderListItem={(post, { isActive }) => (
-        <TitleDateListItem title={post.title} created={post.created} modified={post.modified} isActive={isActive} />
-      )}
+      groupByYear={archive ? post => String(new Date(post.created).getFullYear()) : undefined}
+      renderListItem={(post, { isActive }) => archive
+        ? <PostArchiveItem post={post} isActive={isActive} />
+        : <TitleDateListItem title={post.title} created={post.created} modified={post.modified} isActive={isActive} />}
       emptyMessage={emptyMessage ?? t("interactive.empty.post")}
       infiniteScroll={!staticMode
         ? {
@@ -543,8 +547,9 @@ export function NoteInteractiveList({
       getItemKey={n => n._id}
       getItemUrl={n => `/notes/${n.nid}`}
       renderPreview={note => <NotePreview note={note} />}
+      groupByYear={note => String(new Date(note.created).getFullYear())}
       renderListItem={(note, { isActive }) => (
-        <TitleDateListItem title={note.title} created={note.created} modified={note.modified} isActive={isActive} />
+        <PostArchiveItem post={{ title: note.title, created: note.created, tags: [note.mood, note.weather, note.location].filter((value): value is string => Boolean(value)) }} isActive={isActive} />
       )}
       emptyMessage={emptyMessage ?? t("interactive.empty.note")}
       infiniteScroll={{
