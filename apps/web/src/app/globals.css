@@ -356,9 +356,12 @@
   */
   --font-family-sans:
     "Noto Sans SC", var(--font-noto-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-family-mono:
-    "Maple Mono NF CN", "Maple Mono NF", var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, "SF Mono", Menlo,
-    Consolas, monospace;
+}
+
+@theme inline {
+  --font-mono:
+    "Maple Mono NF CN", "Maple Mono NF", "Maple Mono CN", "Maple Mono", var(--font-jetbrains-mono), "JetBrains Mono",
+    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* ===================================
