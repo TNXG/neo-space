@@ -41,6 +41,7 @@ export const postToDraft = (post: Post): PostDraft => ({
   summary: post.summary ?? "",
   copyright: post.copyright,
   isPublished: post.isPublished,
+  meta: post.meta ?? {},
 });
 
 export const pageToDraft = (page: Page): PageDraft => ({
@@ -49,7 +50,36 @@ export const pageToDraft = (page: Page): PageDraft => ({
   slug: page.slug,
   subtitle: page.subtitle ?? "",
   order: page.order ?? 0,
+  meta: page.meta ?? {},
 });
+
+/**
+ * 按 JSON 数据结构比较值，忽略对象键顺序，保留数组顺序与正文空白差异。
+ * @param left 已保存字段
+ * @param right 当前字段
+ * @returns 两个字段是否相等
+ */
+const equalValue = (left: unknown, right: unknown): boolean => {
+  if (Object.is(left, right)) return true;
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") return false;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length
+      && left.every((value, index) => equalValue(value, right[index]));
+  }
+  const a = left as Record<string, unknown>;
+  const b = right as Record<string, unknown>;
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length
+    && keys.every(key => Object.hasOwn(b, key) && equalValue(a[key], b[key]));
+};
+
+/**
+ * 判断草稿是否真的不同；所有状态、恢复提示及提交使用同一比较规则。
+ * @param base 已保存版本
+ * @param draft 当前版本
+ * @returns 是否有实际修改
+ */
+export const hasContentChanges = (base: ContentDraft, draft: ContentDraft): boolean => !equalValue(base, draft);
 
 /**
  * 只提交变化的字段，避免覆盖其他端（如 AI 摘要任务）同时写入的值。
@@ -60,7 +90,7 @@ export const pageToDraft = (page: Page): PageDraft => ({
 export const changedFields = <T extends ContentDraft>(base: T, draft: T): Partial<T> => {
   const changed: Partial<T> = {};
   for (const key of Object.keys(draft) as (keyof T)[]) {
-    if (JSON.stringify(base[key]) !== JSON.stringify(draft[key])) changed[key] = draft[key];
+    if (!equalValue(base[key], draft[key])) changed[key] = draft[key];
   }
   return changed;
 };

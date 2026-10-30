@@ -38,6 +38,7 @@ const leave = (view: EditorView, pos: number, size: number, after: boolean) => {
 export const createSourceView = (options: SourceViewOptions) => (initial: ProseNode, view: EditorView, getPos: () => number | undefined): NodeView => {
   let node = initial;
   let cleanup: void | (() => void);
+  let updatingFromSource = false;
 
   const tag = options.inline ? "span" : "div";
   const dom = document.createElement(tag);
@@ -48,6 +49,7 @@ export const createSourceView = (options: SourceViewOptions) => (initial: ProseN
   const panel = document.createElement(tag);
   panel.className = "ns-source-panel";
   panel.contentEditable = "false";
+  panel.inert = true;
   const header = document.createElement(tag);
   header.className = "ns-source-header";
   const label = document.createElement("span");
@@ -59,7 +61,10 @@ export const createSourceView = (options: SourceViewOptions) => (initial: ProseN
   textarea.className = "ns-source-input";
   textarea.spellcheck = false;
   textarea.placeholder = options.placeholder ?? "";
-  panel.append(header, textarea);
+  // 折叠网格只能有一个直接子项，否则 textarea 会落入隐式行并留下空白。
+  const panelContent = document.createElement(tag);
+  panelContent.append(header, textarea);
+  panel.append(panelContent);
   dom.append(preview, panel);
 
   /** 依内容高度伸缩，避免内部出现第二条滚动条。 */
@@ -81,7 +86,13 @@ export const createSourceView = (options: SourceViewOptions) => (initial: ProseN
     fit();
     const pos = getPos();
     if (pos === undefined) return;
-    view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...options.write(node, textarea.value) }));
+    // 输入中的不完整容器头不能反向规范化源码，否则会重置光标并重复插入标记。
+    updatingFromSource = true;
+    try {
+      view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...options.write(node, textarea.value) }));
+    } finally {
+      updatingFromSource = false;
+    }
   });
 
   textarea.addEventListener("keydown", (event) => {
@@ -113,23 +124,28 @@ export const createSourceView = (options: SourceViewOptions) => (initial: ProseN
     dom,
     update: (next) => {
       if (next.type !== node.type) return false;
+      const changed = !node.eq(next);
       const sourceChanged = options.read(next) !== textarea.value;
       node = next;
-      if (sourceChanged) {
+      if (sourceChanged && !updatingFromSource) {
         textarea.value = options.read(next);
         fit();
       }
-      paint();
+      if (changed) paint();
       return true;
     },
     selectNode: () => {
       dom.classList.add("is-editing");
+      panel.inert = false;
       requestAnimationFrame(() => {
         fit();
         textarea.focus({ preventScroll: true });
       });
     },
-    deselectNode: () => dom.classList.remove("is-editing"),
+    deselectNode: () => {
+      dom.classList.remove("is-editing");
+      panel.inert = true;
+    },
     stopEvent: event => event.target === textarea || panel.contains(event.target as Node),
     ignoreMutation: () => true,
     destroy: () => cleanup?.(),

@@ -147,7 +147,8 @@
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
-.ns-prose img {
+/* 节点预览内的图片由站点组件排版，不能继承编辑态图片的外边距与高度。 */
+.ns-prose img:not(.ns-source-preview img) {
   display: block;
   max-width: 100%;
   height: auto;

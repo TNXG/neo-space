@@ -1,6 +1,7 @@
 "use client";
 
 import type { Editor } from "@milkdown/kit/core";
+import type { Node } from "@milkdown/kit/prose/model";
 import type { EditorView } from "@milkdown/kit/prose/view";
 import type { ProseClassMap } from "../core/prose-classes";
 import type { BlockPreviewRenderer } from "../syntax/container";
@@ -45,19 +46,27 @@ export function useMilkdown(options: UseMilkdownOptions): MilkdownHandle {
   const [revision, setRevision] = useState(0);
   const latest = useRef(options);
   const emitted = useRef(options.value);
+  const baseline = useRef<{ doc: Node; markdown: string }>(undefined);
+  const replacing = useRef(false);
   latest.current = options;
 
   useEffect(() => {
     if (!root) return;
     let disposed = false;
     let instance: Editor | undefined;
+    const initialMarkdown = latest.current.value;
     createSiteEditor({
       root,
-      value: latest.current.value,
+      value: initialMarkdown,
       languages,
       onChange: (markdown) => {
-        emitted.current = markdown;
-        latest.current.onChange(markdown);
+        if (disposed || !instance || replacing.current) return;
+        const doc = instance.ctx.get(editorViewCtx).state.doc;
+        // 初始化的序列化与撤销回原文都不能制造文件差异。
+        const next = baseline.current?.doc.eq(doc) ? baseline.current.markdown : markdown;
+        if (next === emitted.current) return;
+        emitted.current = next;
+        latest.current.onChange(next);
       },
       onView: (next) => {
         setView(next);
@@ -74,7 +83,8 @@ export function useMilkdown(options: UseMilkdownOptions): MilkdownHandle {
         return;
       }
       instance = created;
-      emitted.current = latest.current.value;
+      baseline.current = { doc: created.ctx.get(editorViewCtx).state.doc, markdown: initialMarkdown };
+      emitted.current = initialMarkdown;
       setEditor(created);
     });
     return () => {
@@ -89,7 +99,13 @@ export function useMilkdown(options: UseMilkdownOptions): MilkdownHandle {
   useEffect(() => {
     if (!editor || options.value === emitted.current) return;
     emitted.current = options.value;
-    editor.action(replaceAll(options.value, true));
+    replacing.current = true;
+    try {
+      editor.action(replaceAll(options.value, true));
+      baseline.current = { doc: editor.ctx.get(editorViewCtx).state.doc, markdown: options.value };
+    } finally {
+      replacing.current = false;
+    }
   }, [editor, options.value]);
 
   const commands = useMemo(() => editor ? createCommands(editor) : undefined, [editor]);
