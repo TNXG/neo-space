@@ -7,7 +7,7 @@ import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert, ProtectedNoteContent } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
-import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getSiteConfig } from "@/lib/api-client";
+import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getProtectedNoteMetadata, getSiteConfig } from "@/lib/api-client";
 import { extractTOC } from "@/lib/toc";
 import { buildSeoDescription } from "@/utils/seo";
 
@@ -109,25 +109,9 @@ export default async function NotePage({ params }: PageProps) {
     }
 
     isProtected = true;
-    note = {
-      _id: `protected-note-${nidNum}`,
-      nid: nidNum,
-      title: `加密日记 #${nidNum}`,
-      text: "",
-      created: new Date().toISOString(),
-      lang: locale,
-      sourceLang: locale,
-      isAiTranslated: false,
-      modified: undefined,
-      mood: undefined,
-      weather: undefined,
-      location: undefined,
-      allowComment: false,
-      isPublished: true,
-      bookmark: false,
-      images: [],
-      isEncrypted: true,
-    };
+    const publicMetadata = await getProtectedNoteMetadata(nidNum, locale);
+    if (!publicMetadata) notFound();
+    note = publicMetadata;
     toc = [];
   }
 

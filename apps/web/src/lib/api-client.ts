@@ -246,6 +246,23 @@ export async function getNoteByNid(nid: number, lang?: string): Promise<ApiRespo
   });
 }
 
+/**
+ * 从已公开且已脱敏的手记列表读取加密手记元数据，不绕过详情密码校验。
+ * @param nid 手记编号
+ * @param lang 显示语言
+ * @returns 真实公开元数据；不在公开列表中则返回 null
+ */
+export async function getProtectedNoteMetadata(nid: number, lang?: string): Promise<Note | null> {
+  let page = 1;
+  while (true) {
+    const { data } = await getNotes(page, 100, lang);
+    const note = data.items.find(item => item.nid === nid);
+    if (note) return note.isEncrypted ? note : null;
+    if (!data.pagination.has_next_page) return null;
+    page += 1;
+  }
+}
+
 export async function unlockNoteByNid(nid: number, password: string, lang?: string): Promise<ApiResponse<Note>> {
   return apiClient<ApiResponse<Note>>(`/notes/nid/${nid}/unlock`, {
     method: "POST",
