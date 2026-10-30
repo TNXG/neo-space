@@ -30,6 +30,21 @@ export type PaginatedResponse<T> = ApiResponse<PaginatedData<T>>;
 /**
  * Data Models
  */
+/** 编辑器计算的图片占位数据；src 用于验证 URL 哈希是否匹配。 */
+export interface ImageMetadata {
+  src: string;
+  width: number;
+  height: number;
+  blurhash: string;
+  bytes?: number;
+}
+
+/** 保留其他已有元数据，仅由图片扫描更新 images。 */
+export interface ContentMeta {
+  [key: string]: unknown;
+  images?: Record<string, ImageMetadata>;
+}
+
 
 export interface Post {
   _id: string;
@@ -50,7 +65,7 @@ export interface Post {
   allowComment: boolean;
   isPublished: boolean;
   copyright: boolean;
-  meta?: string;
+  meta?: ContentMeta | null;
   images: PostImage[];
 }
 
@@ -342,6 +357,7 @@ export interface Page {
   modified?: string;
   allowComment: boolean;
   commentsIndex: number;
+  meta?: ContentMeta | null;
 }
 
 /** 后台创建/更新文章的请求体；更新时字段均为可选，后端按字段 $set。 */
@@ -354,6 +370,7 @@ export interface DashboardPostInput {
   summary: string;
   copyright: boolean;
   isPublished: boolean;
+  meta?: ContentMeta | null;
 }
 
 /** 后台创建/更新独立页面的请求体。 */
@@ -363,6 +380,7 @@ export interface DashboardPageInput {
   slug: string;
   subtitle: string;
   order: number;
+  meta?: ContentMeta | null;
 }
 
 export interface DashboardUploadResult {
