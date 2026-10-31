@@ -4,6 +4,7 @@ use crate::{
     app::SharedState,
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
+    tasks::link_health::{cached_feed, cached_health},
 };
 use axum::{
     Json,
@@ -110,17 +111,12 @@ pub async fn list_links(
         links.push(link);
     }
 
-    // Wrap in LinkWithHealth and enrich with health data from cache
+    // 附加缓存中的健康与订阅状态；首轮检查未完成时为 None，前端按未检查降级
     let mut items = Vec::new();
     for link in links {
-        let cache_key = format!("link_health_{}", link.id);
-        // Try to get from cache - returns None if not cached yet
-        let health = state
-            .link_health_cache
-            .get(&cache_key)
-            .await
-            .and_then(|bytes| serde_json::from_slice::<LinkHealthStatus>(&bytes).ok());
-        items.push(LinkWithHealth { link, health });
+        let health = cached_health(&state, &link.id).await;
+        let feed = cached_feed(&state, &link.id).await;
+        items.push(LinkWithHealth { link, health, feed });
     }
 
     let total_page = ((total as f64) / (size as f64)).ceil() as i64;

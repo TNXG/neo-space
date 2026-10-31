@@ -26,7 +26,8 @@ pub use content::{
 };
 pub use extended::{Draft, DraftHistoryEntry, Project, Say, Snippet, Topic};
 pub use link::{
-    Link, LinkApplyRequest, LinkHealthStatus, LinkState, LinkType, LinkWithHealth, SendCodeRequest,
+    Link, LinkApplyRequest, LinkFeedEntry, LinkFeedSummary, LinkHealthStatus, LinkState, LinkType,
+    LinkWithHealth, SendCodeRequest,
 };
 pub use passkey::{PasskeySummary, StoredPasskey};
 pub use search_management::{

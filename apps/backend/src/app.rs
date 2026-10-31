@@ -27,6 +27,8 @@ pub struct AppState {
     pub cache: Cache<String, Vec<u8>>,
     /// 友链健康状态刷新周期较长，需要独立缓存避免被通用短 TTL 提前清掉
     pub link_health_cache: Cache<String, Vec<u8>>,
+    /// 友链订阅源摘要（仅最新一篇 + 总数），按条目体积加权限制内存上限
+    pub link_feed_cache: Cache<String, crate::models::LinkFeedSummary>,
     /// Application configuration
     pub config: Arc<ArcSwap<AppConfig>>,
     /// 配置变更通知；后台任务可据此立即重建调度周期
@@ -136,6 +138,29 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
         link_health_cache_ttl_secs
     );
 
+    // 每个摘要已在抓取端截断，按估算字节加权后整体不超过 4 MiB
+    const LINK_FEED_CACHE_MAX_BYTES: u64 = 4 * 1024 * 1024;
+    let link_feed_cache = Cache::builder()
+        .weigher(|key: &String, summary: &crate::models::LinkFeedSummary| {
+            let latest = summary.latest.as_ref().map_or(0, |entry| {
+                entry.title.len()
+                    + entry.url.len()
+                    + entry.summary.as_ref().map_or(0, String::len)
+                    + entry.published.as_ref().map_or(0, String::len)
+            });
+            let bytes = key.len()
+                + summary.link_id.len()
+                + summary.feed_url.len()
+                + summary.checked_at.len()
+                + summary.error_message.as_ref().map_or(0, String::len)
+                + latest
+                + 128;
+            u32::try_from(bytes).unwrap_or(u32::MAX)
+        })
+        .max_capacity(LINK_FEED_CACHE_MAX_BYTES)
+        .time_to_live(Duration::from_secs(link_health_cache_ttl_secs))
+        .build();
+
     // Create event bus with channel size 100
     let (event_bus, _) = broadcast::channel(100);
     let (config_events, _) = broadcast::channel(16);
@@ -181,6 +206,7 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
         db,
         cache,
         link_health_cache,
+        link_feed_cache,
         config: Arc::new(ArcSwap::from_pointee(config)),
         config_events,
         event_bus,

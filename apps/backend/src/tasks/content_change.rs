@@ -76,7 +76,15 @@ pub async fn notify_page_deleted(state: &SharedState, page: &Page) {
 /// 同步友链写入产生的缓存，并仅在公开列表可能变化时刷新 ISR。
 pub async fn notify_link_changed(state: &SharedState, link: &Link, previous_state: Option<i32>) {
     invalidate_link_cache(state, &link.id).await;
-    if link.state == 0 || previous_state == Some(0) {
+    if link.state == 0 {
+        // 后台重新检查站点与订阅源，完成后再刷新公共页，避免写请求被外部站点拖慢
+        let state = state.clone();
+        let link = link.clone();
+        tokio::spawn(async move {
+            crate::tasks::link_health::check_link(&state, &link).await;
+            trigger_isr_revalidation(&state, "links", None).await;
+        });
+    } else if previous_state == Some(0) {
         trigger_isr_revalidation(state, "links", None).await;
     }
 }
@@ -147,6 +155,7 @@ async fn invalidate_link_cache(state: &SharedState, link_id: &str) {
     state.cache.invalidate("links").await;
     state
         .link_health_cache
-        .invalidate(&format!("link_health_{link_id}"))
+        .invalidate(&crate::tasks::link_health::health_cache_key(link_id))
         .await;
+    state.link_feed_cache.invalidate(link_id).await;
 }

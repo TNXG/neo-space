@@ -69,12 +69,33 @@ pub struct SendCodeRequest {
     pub email: String,
 }
 
-/// Link with health status (for API responses)
+/// Link with health status and feed summary (for API responses)
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct LinkWithHealth {
     #[serde(flatten)]
     pub link: Link,
     pub health: Option<LinkHealthStatus>,
+    pub feed: Option<LinkFeedSummary>,
+}
+
+/// 订阅源最新一篇文章
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LinkFeedEntry {
+    pub title: String,
+    pub url: String,
+    pub summary: Option<String>,
+    pub published: Option<String>,
+}
+
+/// 订阅源抓取结果：成功时含最新一篇与条目总数，失败时仅保留错误
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LinkFeedSummary {
+    pub link_id: String,
+    pub feed_url: String,
+    pub latest: Option<LinkFeedEntry>,
+    pub total: usize,
+    pub checked_at: String,
+    pub error_message: Option<String>,
 }
 
 /// Link health status

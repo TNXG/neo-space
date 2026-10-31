@@ -113,13 +113,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     info!("Meilisearch 增量同步已启用，维护计划检查器已启动");
 
-    // Start link health check task
+    // 友链健康与订阅检查在后台首轮执行，不阻塞服务监听
     let link_check_interval = state.config().link_health_interval_hours;
-    info!("正在预热友链健康检查缓存...");
-    tasks::run_link_health_check(&state).await;
     tasks::start_link_health_task(state.clone());
     info!(
-        "友链健康检查任务已启动（间隔: {}小时）",
+        "友链健康检查任务已在后台启动（间隔: {}小时）",
         link_check_interval
     );
 

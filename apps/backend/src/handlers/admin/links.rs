@@ -6,14 +6,14 @@ use crate::{
     error::{AppError, AppJson, AppQuery, AppResult},
     models::*,
     tasks::content_change::{notify_link_changed, notify_link_deleted},
-    tasks::link_health_check::perform_health_check,
+    tasks::link_health::{cached_feed, cached_health, check_link, check_links, load_active_links},
 };
 use axum::{
     extract::{Path, State},
     response::Json,
 };
 use bson::{Bson, doc, oid::ObjectId};
-use futures::stream::{self, StreamExt, TryStreamExt};
+use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -81,14 +81,9 @@ pub struct LinkStateCount {
 }
 
 async fn attach_health(state: &SharedState, link: Link) -> LinkWithHealth {
-    let cache_key = format!("link_health_{}", link.id);
-    let health = state
-        .link_health_cache
-        .get(&cache_key)
-        .await
-        .and_then(|bytes| serde_json::from_slice::<LinkHealthStatus>(&bytes).ok());
-
-    LinkWithHealth { link, health }
+    let health = cached_health(state, &link.id).await;
+    let feed = cached_feed(state, &link.id).await;
+    LinkWithHealth { link, health, feed }
 }
 
 pub async fn list_links(
@@ -355,71 +350,57 @@ pub async fn link_state_count(
     })))
 }
 
+/// 手动触发全部已通过友链的站点与订阅检查
 pub async fn check_link_health(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
-) -> AppResult<Json<ApiResponse<HashMap<String, LinkHealthStatus>>>> {
-    let collection = state.db.collection::<serde_json::Value>("links");
-    let filter = doc! {
-        "$or": [
-            { "state": LinkState::NORMAL },
-            { "state": { "$exists": false } }
-        ]
-    };
-
-    let mut cursor = collection
-        .find(filter)
-        .await
-        .map_err(|error| AppError::Database(format!("Failed to query links: {error}")))?;
-
-    let mut links = Vec::new();
-    while let Some(link) = cursor
-        .try_next()
-        .await
-        .map_err(|error| AppError::Database(format!("Failed to iterate links: {error}")))?
-    {
-        links.push(link);
-    }
-
-    let concurrency_limit = (links.len() / 2).clamp(3, 17);
-    let results = stream::iter(links)
-        .map(|link| {
-            let http_client = state.http_client.clone();
-            let timeout_secs = state.config().link_health_timeout_secs;
-            async move { perform_health_check(&link, &http_client, timeout_secs).await }
+) -> AppResult<Json<ApiResponse<HashMap<String, LinkWithHealth>>>> {
+    let links = load_active_links(&state).await.map_err(AppError::Database)?;
+    let checked = check_links(&state, links.clone()).await;
+    let mut by_id: HashMap<String, (LinkHealthStatus, Option<LinkFeedSummary>)> = checked
+        .into_iter()
+        .map(|(health, feed)| (health.link_id.clone(), (health, feed)))
+        .collect();
+    let response = links
+        .into_iter()
+        .filter_map(|link| {
+            let (health, feed) = by_id.remove(&link.id)?;
+            Some((
+                link.id.clone(),
+                LinkWithHealth {
+                    link,
+                    health: Some(health),
+                    feed,
+                },
+            ))
         })
-        .buffer_unordered(concurrency_limit)
-        .collect::<Vec<_>>()
-        .await;
-
-    let mut response = HashMap::new();
-    for result in results {
-        let hosting_provider = serde_json::to_value(&result.hosting_provider)
-            .ok()
-            .and_then(|value| value.as_str().map(ToString::to_string))
-            .unwrap_or_else(|| "unknown".to_string());
-
-        let health_data = LinkHealthStatus {
-            link_id: result.link_id.clone(),
-            url: result.url,
-            is_alive: result.is_alive,
-            status_code: result.status_code,
-            latency_ms: result.latency_ms,
-            hosting_provider,
-            checked_at: result.checked_at.to_rfc3339(),
-            error_message: result.error_message,
-            is_stale: false,
-        };
-
-        if let Ok(serialized) = serde_json::to_vec(&health_data) {
-            let cache_key = format!("link_health_{}", health_data.link_id);
-            state.link_health_cache.insert(cache_key, serialized).await;
-        }
-
-        response.insert(health_data.link_id.clone(), health_data);
-    }
-
+        .collect();
+    crate::tasks::isr::trigger_isr_revalidation(&state, "links", None).await;
     Ok(Json(ApiResponse::success(response)))
+}
+
+/// 重新检查单个友链（任意状态），返回最新健康与订阅结果
+pub async fn check_single_link(
+    State(state): State<SharedState>,
+    _owner: OwnerOnly,
+    Path(id): Path<String>,
+) -> AppResult<Json<ApiResponse<LinkWithHealth>>> {
+    let link = state
+        .db
+        .collection::<Link>("links")
+        .find_one(link_id_filter(&id))
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or(AppError::NotFound("Link not found".into()))?;
+    let (health, feed) = check_link(&state, &link).await;
+    if link.state == LinkState::NORMAL {
+        crate::tasks::isr::trigger_isr_revalidation(&state, "links", None).await;
+    }
+    Ok(Json(ApiResponse::success(LinkWithHealth {
+        link,
+        health: Some(health),
+        feed,
+    })))
 }
 
 #[cfg(test)]

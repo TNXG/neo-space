@@ -1,10 +1,12 @@
 //! Link health check implementation details.
 
+mod feed;
 mod provider;
 mod ssrf;
 
 use std::time::Duration;
 
+pub use feed::fetch_feed_summary;
 pub use provider::HostingProvider;
 pub use ssrf::is_ssrf_url;
 
@@ -29,28 +31,13 @@ pub struct LinkHealthStatus {
 
 /// Perform health check on a single link.
 pub async fn perform_health_check(
-    link: &serde_json::Value,
+    link_id: &str,
+    url: &str,
     http_client: &reqwest::Client,
     timeout_secs: u64,
 ) -> LinkHealthStatus {
     let start = std::time::Instant::now();
-
-    let link_id = link
-        .get("_id")
-        .and_then(|value| {
-            value.as_str().map(ToString::to_string).or_else(|| {
-                value
-                    .get("$oid")
-                    .and_then(|oid| oid.as_str())
-                    .map(ToString::to_string)
-            })
-        })
-        .unwrap_or_else(|| "unknown".to_string());
-
-    let url = link
-        .get("url")
-        .and_then(|value| value.as_str())
-        .unwrap_or("http://unknown");
+    let link_id = link_id.to_string();
 
     if is_ssrf_url(url) {
         tracing::warn!("SSRF protection blocked URL: {}", url);
