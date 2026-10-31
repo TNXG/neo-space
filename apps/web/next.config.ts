@@ -26,6 +26,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lain.bgm.tv",
       },
+      {
+        protocol: "https",
+        hostname: "api-space.tnxg.top",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.tnxg.top",
+      },
     ],
   },
   experimental: {
