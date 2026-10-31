@@ -60,16 +60,16 @@ const month = postAt("month", "2026-10-01T00:00:00Z");
 const ancient = postAt("ancient", "2024-01-01T00:00:00Z");
 const undated = postAt("undated");
 
-/** 越新权重越高，旧文与无日期文章保底不为零。 */
-test("recencyWeight decays with age and keeps a floor", () => {
-  assert.ok(recencyWeight(fresh, NOW) > recencyWeight(month, NOW));
+/** 越新权重越高，旧文不为零；无日期文章排在近期文章之后。 */
+test("recencyWeight decays with age and stays positive", () => {
+  assert.ok(recencyWeight(fresh, NOW) > recencyWeight(month, NOW) * 100);
   assert.ok(recencyWeight(month, NOW) > recencyWeight(ancient, NOW));
   assert.ok(recencyWeight(ancient, NOW) > 0);
-  assert.equal(recencyWeight(undated, NOW), recencyWeight(ancient, NOW));
+  assert.ok(recencyWeight(undated, NOW) < recencyWeight(month, NOW));
 });
 
 /** 统计上最新文章最常排第一，但旧文章也会偶尔领先。 */
-test("weightedByRecency favours recent posts without fixing the order", () => {
+test("weightedByRecency strongly favours recent posts", () => {
   let seed = 7;
   const random = () => {
     seed = (seed * 16807) % 2147483647;
@@ -79,9 +79,8 @@ test("weightedByRecency favours recent posts without fixing the order", () => {
   for (let round = 0; round < 4000; round++) {
     leads[weightedByRecency([ancient, month, fresh], random, NOW)[0]._id]++;
   }
-  assert.ok(leads.fresh > leads.month);
-  assert.ok(leads.month > leads.ancient);
-  assert.ok(leads.ancient > 0);
+  assert.ok(leads.fresh > 3900);
+  assert.ok(leads.month >= leads.ancient);
 });
 
 /** 服务端稳定输出：有文章组按发布时间倒序。 */

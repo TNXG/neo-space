@@ -34,28 +34,31 @@ export function shuffle<T>(items: readonly T[], random: () => number = Math.rand
   return result;
 }
 
-/** 文章新鲜度半衰期：每过 14 天，排到前面的权重减半 */
-const RECENCY_HALF_LIFE_DAYS = 14;
-/** 权重下限：很久以前或无日期的文章仍有机会靠前，不会被完全压到末尾 */
-const MIN_RECENCY_WEIGHT = 0.02;
+/** 新鲜度时间尺度（天）：文章发布这么久后，权重降到刚发布时的 1/8 */
+const RECENCY_SCALE_DAYS = 3;
+/** 衰减幂次：越大越偏向新文章 */
+const RECENCY_POWER = 3;
+/** 无发布日期的文章按约三年前处理，排在末尾附近 */
+const UNDATED_AGE_DAYS = 1000;
 const DAY_MS = 86_400_000;
 
 /**
- * 按最新文章发布时间计算权重：指数衰减，越新越接近 1。
+ * 按最新文章发布时间计算权重：幂律衰减 1 / (1 + age/scale)^power。
+ * 相比指数衰减，几个月前与几年前的文章仍能拉开差距，不会挤在同一个下限上。
  * @param link 有文章的友链
  * @param now 当前时间戳
- * @returns (MIN_RECENCY_WEIGHT, 1] 区间内的权重
+ * @returns (0, 1] 区间内的权重
  */
 export function recencyWeight(link: FeaturedLink, now: number): number {
   const published = Date.parse(link.feed.latest.published ?? "");
-  if (Number.isNaN(published)) return MIN_RECENCY_WEIGHT;
-  const ageDays = Math.max(0, now - published) / DAY_MS;
-  return Math.max(MIN_RECENCY_WEIGHT, 0.5 ** (ageDays / RECENCY_HALF_LIFE_DAYS));
+  const ageDays = Number.isNaN(published) ? UNDATED_AGE_DAYS : Math.max(0, now - published) / DAY_MS;
+  return 1 / (1 + ageDays / RECENCY_SCALE_DAYS) ** RECENCY_POWER;
 }
 
 /**
- * 加权随机排序（Efraimidis–Spirakis）：每项取 u^(1/w) 为键降序排列，
+ * 加权随机排序（Efraimidis–Spirakis）：每项取 ln(u)/w 为键降序排列，
  * 权重越大越可能靠前，但任何一项都可能出现在任意位置。
+ * 用对数形式而非 u^(1/w)，避免极小权重时下溢成 0 导致并列。
  * @param links 有文章的友链
  * @param random 随机源
  * @param now 当前时间戳
@@ -63,7 +66,7 @@ export function recencyWeight(link: FeaturedLink, now: number): number {
  */
 export function weightedByRecency(links: readonly FeaturedLink[], random: () => number, now: number): FeaturedLink[] {
   return links
-    .map(link => ({ link, key: random() ** (1 / recencyWeight(link, now)) }))
+    .map(link => ({ link, key: Math.log(1 - random()) / recencyWeight(link, now) }))
     .sort((a, b) => b.key - a.key)
     .map(entry => entry.link);
 }
