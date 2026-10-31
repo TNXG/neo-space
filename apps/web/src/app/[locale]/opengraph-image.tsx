@@ -2,7 +2,6 @@
 import { ImageResponse } from "next/og";
 import { getSiteConfig } from "@/lib/api-client";
 
-export const runtime = "edge";
 export const alt = "Neo-Space";
 export const size = {
   width: 1200,
