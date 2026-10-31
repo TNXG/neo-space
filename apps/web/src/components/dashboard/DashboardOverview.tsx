@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
+import useSWR from "swr";
 import { useDashboardSession } from "@/hooks/use-dashboard-session";
+import { DASHBOARD_LINK_COUNT_KEY, getDashboardLinkCount } from "@/lib/dashboard-links";
 import { Icon } from "@/lib/inline-icon";
 import { Link } from "@/locales/navigation";
 import { settingLinks } from "./DashboardNavigation";
@@ -19,6 +21,8 @@ export function DashboardOverview() {
   const { data: user } = useDashboardSession();
   const drafts = useSettingsDrafts();
   const profileDirty = useProfileDraftStore(state => state.draft !== undefined);
+  const linkCount = useSWR(DASHBOARD_LINK_COUNT_KEY, getDashboardLinkCount);
+  const pendingLinks = linkCount.data?.audit ?? 0;
   const unsaved = settingLinks.filter(item => item.key === "profile" ? profileDirty : item.key in drafts);
   const hour = new Date().getHours();
   const greeting = greetings.find(([until]) => hour < until)?.[1] ?? "你好";
@@ -64,6 +68,21 @@ export function DashboardOverview() {
             </motion.li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="overview-community" className="flex flex-col gap-3">
+        <h3 id="overview-community" className="text-sm font-semibold">社区</h3>
+        <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}>
+          <Link href={pendingLinks > 0 ? "/dashboard/friends?state=1" : "/dashboard/friends"} className="group/card flex cursor-pointer items-center gap-3 rounded-xl border border-border p-3 outline-none transition-colors duration-(--motion-duration-fast) hover:border-foreground/20 hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[calc(50%-0.25rem)]">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground/75 transition-colors group-hover/card:text-foreground" aria-hidden="true"><Icon icon="mingcute:link-2-line" className="size-4.5" /></span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-medium">友链</span>
+              <span className="truncate text-xs text-muted-foreground tabular-nums">{linkCount.data ? `${linkCount.data.pass} 位朋友` : "审核、订阅与可用性"}</span>
+            </span>
+            {pendingLinks > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary tabular-nums">{pendingLinks} 待审核</span>}
+            <Icon icon="mingcute:right-line" className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) group-hover/card:translate-x-0.5" aria-hidden="true" />
+          </Link>
+        </motion.div>
       </section>
 
       <section aria-labelledby="overview-settings" className="flex flex-col gap-3">

@@ -81,6 +81,7 @@ export function DashboardNavigation({ collapsed = false, onNavigate, layoutScope
       <NavItem href="/dashboard" title="仪表盘" icon="mingcute:home-3-line" active={pathname === "/dashboard"} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       <NavItem href="/dashboard/posts" title="文章" icon="mingcute:document-2-line" active={pathname.startsWith("/dashboard/posts")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("post:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       <NavItem href="/dashboard/pages" title="页面" icon="mingcute:file-line" active={pathname.startsWith("/dashboard/pages")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("page:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
+      <NavItem href="/dashboard/friends" title="友链" icon="mingcute:link-2-line" active={pathname.startsWith("/dashboard/friends")} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       {collapsed ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

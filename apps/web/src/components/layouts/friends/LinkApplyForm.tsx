@@ -349,18 +349,19 @@ export function LinkApplyForm() {
 
   return (
     <>
-      <div className="mt-12 flex justify-center pb-20">
+      <div className="flex justify-center pt-4">
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 px-8 py-4 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl transition-colors duration-200 cursor-pointer"
+          className="group flex cursor-pointer items-center gap-3 rounded-full py-2 pr-5 pl-2 outline-none transition-colors duration-(--motion-duration-fast) hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] motion-safe:transition-[background-color,transform]"
         >
-          <div className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-white transition-colors duration-200">
-            <Icon icon="mingcute:add-line" className="w-5 h-5" />
-          </div>
-          <div className="text-left">
-            <div className="text-sm font-bold text-foreground">{t("friends.apply.open.title")}</div>
-            <div className="text-xs text-muted-foreground">{t("friends.apply.open.subtitle")}</div>
-          </div>
+          <span className="flex size-10 items-center justify-center rounded-full bg-accent-500/10 text-accent-600 transition-colors duration-(--motion-duration-fast) group-hover:bg-accent-500 group-hover:text-white">
+            <Icon icon="mingcute:add-line" className="size-5" aria-hidden="true" />
+          </span>
+          <span className="text-left">
+            <span className="block text-sm font-bold text-foreground">{t("friends.apply.open.title")}</span>
+            <span className="block text-xs text-muted-foreground">{t("friends.apply.open.subtitle")}</span>
+          </span>
         </button>
       </div>
 

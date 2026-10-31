@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { PageHero } from "@/components/common/PageHero";
-import { FriendsList } from "@/components/layouts/friends/FriendsList";
+import { FriendsBoard } from "@/components/layouts/friends/FriendsBoard";
 import { LinkApplyForm } from "@/components/layouts/friends/LinkApplyForm";
 import { getLinks, getSiteConfig } from "@/lib/api-client";
 import { LinkType } from "@/types/api";
@@ -72,9 +72,12 @@ export default async function FriendsPage() {
         subtitleAlt={t("friends.subtitleAlt")}
       />
 
-      <FriendsList friends={friends} />
-
-      {siteConfig?.data.friend_link.allowApply && <LinkApplyForm />}
+      <FriendsBoard
+        friends={friends}
+        apply={siteConfig?.data.friend_link.allowApply
+          ? <LinkApplyForm />
+          : undefined}
+      />
 
       {/* 评论区 */}
       <Suspense fallback={<CommentSkeleton />}>

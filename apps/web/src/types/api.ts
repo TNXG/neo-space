@@ -202,8 +202,26 @@ export interface LinkHealthStatus {
   is_stale: boolean;
 }
 
+/** 订阅源最新一篇文章 */
+export interface LinkFeedEntry {
+  title: string;
+  url: string;
+  summary?: string;
+  published?: string;
+}
+
+/** 订阅源抓取摘要：成功时含最新一篇与条目总数，失败时只有错误信息 */
+export interface LinkFeedSummary {
+  link_id: string;
+  feed_url: string;
+  latest?: LinkFeedEntry;
+  total: number;
+  checked_at: string;
+  error_message?: string;
+}
+
 /**
- * 友链（含健康状态）
+ * 友链（含健康状态与订阅摘要）
  */
 export interface Link {
   _id: string;
@@ -214,10 +232,34 @@ export interface Link {
   state: LinkStateType;
   type: LinkTypeValue;
   created: string;
+  email?: string;
   rssurl?: string;
   techstack?: string[];
-  /** 健康状态（可选，仅在 /api/links 接口返回） */
+  /** 健康状态；首轮检查完成前为空 */
   health?: LinkHealthStatus;
+  /** 订阅摘要；无订阅源或尚未抓取时为空 */
+  feed?: LinkFeedSummary;
+}
+
+/** 后台各状态友链数量 */
+export interface LinkStateCount {
+  audit: number;
+  pass: number;
+  outdate: number;
+  banned: number;
+  rejected: number;
+}
+
+/** 后台新建 / 编辑友链提交体 */
+export interface DashboardLinkInput {
+  name: string;
+  url: string;
+  avatar: string;
+  description: string;
+  state: LinkStateType;
+  email: string | null;
+  rssurl: string | null;
+  techstack: string[] | null;
 }
 
 /**
