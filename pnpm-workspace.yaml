@@ -98,3 +98,4 @@ minimumReleaseAgeExclude:
   - katex@0.18.0 || 0.19.1
   - exifreader@4.52.0
   - react-hook-form@7.91.0
+  - '@hookform/resolvers@7.0.0'
