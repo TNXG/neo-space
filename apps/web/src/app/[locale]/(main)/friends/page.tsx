@@ -60,9 +60,8 @@ export default async function FriendsPage() {
     getSiteConfig().catch(() => null),
   ]);
 
-  // 按类型分组
+  // 仅保留共演者（朋友），收藏类型不再展示
   const friends = allLinks.filter(link => link.type === LinkType.FRIEND);
-  const collections = allLinks.filter(link => link.type === LinkType.COLLECTION);
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-12 md:py-16 max-w-6xl">
@@ -73,7 +72,7 @@ export default async function FriendsPage() {
         subtitleAlt={t("friends.subtitleAlt")}
       />
 
-      <FriendsList friends={friends} collections={collections} />
+      <FriendsList friends={friends} />
 
       {siteConfig?.data.friend_link.allowApply && <LinkApplyForm />}
 

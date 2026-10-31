@@ -171,11 +171,9 @@ export type LinkStateType = typeof LinkState[keyof typeof LinkState];
 /**
  * 友链类型
  * - 0: 朋友（默认）
- * - 1: 收藏
  */
 export const LinkType = {
   FRIEND: 0,
-  COLLECTION: 1,
 } as const;
 
 export type LinkTypeValue = typeof LinkType[keyof typeof LinkType];

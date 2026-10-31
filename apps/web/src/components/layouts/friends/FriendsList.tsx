@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 
 interface FriendsListProps {
   friends: Link[];
-  collections: Link[];
 }
 
 // -----------------------------------------------------------------------------
@@ -85,39 +84,26 @@ const DetailCard = ({
 // 主组件
 // -----------------------------------------------------------------------------
 
-export function FriendsList({ friends, collections }: FriendsListProps) {
+export function FriendsList({ friends }: FriendsListProps) {
   const t = useTranslations();
-  const [activeTab, setActiveTab] = useState<"friends" | "collections">("friends");
   const isMobile = useIsMobile();
-
-  const items = useMemo(
-    () => (activeTab === "friends" ? friends : collections),
-    [activeTab, friends, collections],
-  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const initialSelectedId = useMemo(() => {
-    if (items.length > 0)
-      return items[0]._id;
+    if (friends.length > 0)
+      return friends[0]._id;
     return null;
-  }, [items]);
+  }, [friends]);
 
   if (initialSelectedId && !selectedId) {
     setSelectedId(initialSelectedId);
   }
 
   const activeItem = useMemo(
-    () => items.find(item => item._id === selectedId) || items[0],
-    [items, selectedId],
+    () => friends.find(item => item._id === selectedId) || friends[0],
+    [friends, selectedId],
   );
-
-  const handleTabChange = (tab: "friends" | "collections") => {
-    setActiveTab(tab);
-    const newItems = tab === "friends" ? friends : collections;
-    if (newItems.length > 0)
-      setSelectedId(newItems[0]._id);
-  };
 
   // -------------------------------------------------------------------------
   // 渲染预览面板
@@ -407,42 +393,6 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
   // -------------------------------------------------------------------------
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Tab Switcher */}
-      <div className="flex justify-center mb-12">
-        <div className="inline-flex items-center p-1.5 bg-secondary/40 backdrop-blur-xl rounded-full border border-border/40 shadow-sm">
-          {(["friends", "collections"] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={cn(
-                "relative px-8 py-2.5 text-sm font-medium rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 ease-out",
-                activeTab === tab
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground/70",
-              )}
-            >
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="activeTabBg"
-                  className="absolute inset-0 bg-background shadow-md rounded-full border border-border/20"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.24 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                <Icon
-                  icon={tab === "friends" ? "mingcute:group-line" : "mingcute:bookmark-line"}
-                  className="w-4 h-4"
-                />
-                {tab === "friends" ? t("friends.tab.friends") : t("friends.tab.collections")}
-                <span className="opacity-40 text-xs font-mono ml-0.5">
-                  {tab === "friends" ? friends.length : collections.length}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 xl:gap-10 relative items-start">
         {/* Left: Sticky Details Panel (Desktop Only) */}
         <aside className="hidden lg:block sticky top-24 max-h-[calc(100vh-8rem)]">
@@ -463,7 +413,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
         {/* Right: Scrollable List Grid */}
         <div className="flex flex-col gap-6 min-w-0">
           <MagneticZone className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {items.length === 0
+            {friends.length === 0
               ? (
                   <div className="col-span-full py-32 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-border/50 rounded-3xl bg-secondary/10">
                     <Icon icon="mingcute:ghost-line" className="w-16 h-16 mb-4 opacity-40" />
@@ -471,7 +421,7 @@ export function FriendsList({ friends, collections }: FriendsListProps) {
                   </div>
                 )
               : (
-                  items.map(item => (
+                  friends.map(item => (
                     <MagneticHoverEffect
                       key={item._id}
                       as="a"
