@@ -36,11 +36,11 @@ export function FriendPostEntry({ link }: { link: FeaturedLink }) {
       <Byline link={link} />
       <h3 className="line-clamp-2 text-lg leading-snug font-semibold tracking-tight text-foreground transition-colors duration-(--motion-duration-fast) group-hover/entry:text-accent-600">{latest.title}</h3>
       {latest.summary && <p className="line-clamp-2 text-sm leading-relaxed text-foreground/65">{latest.summary}</p>}
-      <div className="relative z-10 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-2 text-[0.6875rem] text-muted-foreground">
-        {latest.published && <time dateTime={latest.published} className="tabular-nums">{formatSmartDate(latest.published, locale)}</time>}
-        {total > 0 && <span className="tabular-nums">{t("total", { count: total })}</span>}
-        <FriendPing health={link.health} />
-        <FriendTechStack techstack={link.techstack} limit={3} className="ml-auto" />
+      <div className="relative z-10 mt-auto flex flex-nowrap items-center gap-x-3 overflow-hidden pt-2 text-[0.6875rem] text-muted-foreground">
+        {latest.published && <time dateTime={latest.published} className="shrink-0 tabular-nums">{formatSmartDate(latest.published, locale)}</time>}
+        {total > 0 && <span className="shrink-0 tabular-nums">{t("total", { count: total })}</span>}
+        <FriendPing health={link.health} className="shrink-0" />
+        <FriendTechStack techstack={link.techstack} className="ml-auto min-w-0" />
       </div>
     </a>
   );
@@ -60,9 +60,9 @@ export function FriendQuietEntry({ link }: { link: Link }) {
       </span>
       <h3 className="truncate text-base font-semibold text-foreground transition-colors duration-(--motion-duration-fast) group-hover/entry:text-accent-600">{link.name}</h3>
       {link.description && <p className="line-clamp-1 text-xs text-foreground/60">{link.description}</p>}
-      <div className="relative z-10 mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5">
-        <FriendPing health={link.health} />
-        <FriendTechStack techstack={link.techstack} limit={2} className="ml-auto" />
+      <div className="relative z-10 mt-auto flex flex-nowrap items-center gap-x-3 overflow-hidden pt-1.5">
+        <FriendPing health={link.health} className="shrink-0" />
+        <FriendTechStack techstack={link.techstack} className="ml-auto min-w-0" />
       </div>
     </a>
   );

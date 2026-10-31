@@ -2,7 +2,7 @@
 
 import type { Link, LinkHealthStatus } from "@/types/api";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icon";
 import { cn } from "@/lib/utils";
@@ -95,16 +95,33 @@ export function FriendPing({ health, className }: { health?: LinkHealthStatus; c
 
 /**
  * 技术栈：图标 + `#tag` 文本，不加边框底色，避免和正文争夺注意力。
- * @param props 技术栈与数量上限（不传则全部展示）
+ * 与 `/posts` 的 ArchiveMetadata 一致：全部展示、单行不换行，仅在真正溢出时渐隐末端。
+ * @param props 技术栈
  * @returns 技术栈标签
  */
-export function FriendTechStack({ techstack, limit, className }: { techstack?: string[]; limit?: number; className?: string }) {
+export function FriendTechStack({ techstack, className }: { techstack?: string[]; className?: string }) {
+  const listRef = useRef<HTMLUListElement>(null);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    /** 内容或可用宽度变化后，按实际溢出状态更新遮罩。 */
+    const updateOverflow = () => {
+      list.dataset.overflow = String(list.scrollWidth > list.clientWidth);
+    };
+    updateOverflow();
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [techstack]);
+
   if (!techstack?.length) return null;
-  const shown = limit ? techstack.slice(0, limit) : techstack;
-  const rest = techstack.length - shown.length;
   return (
-    <ul aria-label="Tech stack" className={cn("flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground", className)}>
-      {shown.map((tech) => {
+    <ul
+      ref={listRef}
+      aria-label="Tech stack"
+      className={cn("flex min-w-0 flex-nowrap items-center gap-x-2 overflow-hidden whitespace-nowrap text-xs text-muted-foreground data-[overflow=true]:mask-[linear-gradient(to_right,black_calc(100%-2rem),transparent)]", className)}
+    >
+      {techstack.map((tech) => {
         const TechIcon = getArchIcon(tech);
         return (
           <li key={tech} className="inline-flex items-center whitespace-nowrap">
@@ -114,7 +131,6 @@ export function FriendTechStack({ techstack, limit, className }: { techstack?: s
           </li>
         );
       })}
-      {rest > 0 && <li title={techstack.slice(shown.length).join(", ")} className="text-muted-foreground/60 tabular-nums">+{rest}</li>}
     </ul>
   );
 }

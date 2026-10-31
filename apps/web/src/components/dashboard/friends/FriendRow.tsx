@@ -77,7 +77,7 @@ export function FriendRow({ link, onEdit, onState, onRecheck, onDelete }: Friend
           <span className="flex min-w-0 max-w-full flex-1"><FeedStatus link={link} /></span>
         </span>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <FriendTechStack techstack={link.techstack} limit={6} />
+          <FriendTechStack techstack={link.techstack} className="min-w-0" />
           <span className="text-[0.6875rem] text-muted-foreground/70">{getRelativeTime(link.created)}加入</span>
           {link.email && <span className="truncate text-[0.6875rem] text-muted-foreground/70">{link.email}</span>}
         </span>
