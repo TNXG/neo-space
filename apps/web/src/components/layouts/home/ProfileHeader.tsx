@@ -48,6 +48,10 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                     <img
                       src={profile.avatar}
                       alt={profile.name}
+                      width={160}
+                      height={160}
+                      loading="eager"
+                      fetchPriority="high"
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
@@ -109,6 +113,10 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
                     <img
                       src={profile.avatar}
                       alt={profile.name}
+                      width={56}
+                      height={56}
+                      loading="eager"
+                      fetchPriority="high"
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
