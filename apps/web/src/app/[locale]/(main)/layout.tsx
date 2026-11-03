@@ -1,5 +1,3 @@
-import { ViewTransition } from "react";
-
 import { FloatingNav } from "@/components/common/navigation";
 import { Footer } from "@/components/layouts/Footer";
 import { PageProvider } from "@/contexts/PageContext";
@@ -28,24 +26,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <PageProvider>
       <div className="flex flex-col min-h-screen">
         <FloatingNav user={profileResponse.data} />
-        <ViewTransition
-          name="page-content"
-          enter={{
-            "nav-forward": "nav-forward",
-            "nav-back": "nav-back",
-            default: "page-transition",
-          }}
-          exit={{
-            "nav-forward": "nav-forward",
-            "nav-back": "nav-back",
-            default: "page-transition",
-          }}
-          default="page-transition"
-        >
-          <main className="flex-1 pt-20">
-            {children}
-          </main>
-        </ViewTransition>
+        <main className="flex-1 pt-20">
+          {children}
+        </main>
         <Footer user={profileResponse.data} />
       </div>
     </PageProvider>
