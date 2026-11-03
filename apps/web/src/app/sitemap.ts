@@ -8,7 +8,7 @@ function localizePath(path: string, locale: string) {
 
 function createLocalizedEntries(path: string, priority: number, lastModified: Date): MetadataRoute.Sitemap {
   return routing.locales.map(locale => ({
-    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe"}${localizePath(path, locale)}`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com"}${localizePath(path, locale)}`,
     lastModified,
     changeFrequency: "weekly" as const,
     priority: locale === routing.defaultLocale ? priority : Math.max(priority - 0.1, 0.1),
@@ -16,7 +16,7 @@ function createLocalizedEntries(path: string, priority: number, lastModified: Da
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
 
   try {
     // 获取所有文章和日记

@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PageProps) {
       ...post,
       formatAiSummary: summary => t("seo.aiSummary", { summary }),
     });
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
 
     return {
       title: post.title,
@@ -112,7 +112,7 @@ export default async function PostPage({ params }: PageProps) {
   }
 
   // 生成 JSON-LD 结构化数据
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
   const jsonLd = generateArticleJsonLd({
     title: post.title,
     description: buildSeoDescription({

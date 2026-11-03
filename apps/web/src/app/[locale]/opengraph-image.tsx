@@ -31,7 +31,7 @@ export default async function Image() {
 
   const icon = await readFile(join(process.cwd(), "public/favicon_256.png"));
   const hostname = new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com",
   ).hostname;
   const fonts = await loadOgFonts([title, description, hostname]);
 

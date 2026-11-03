@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps) {
       ...note,
       formatAiSummary: summary => t("seo.aiSummary", { summary }),
     });
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
 
     return {
       title: note.title,
@@ -116,7 +116,7 @@ export default async function NotePage({ params }: PageProps) {
   }
 
   // 生成 JSON-LD 结构化数据
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
   const jsonLd = isProtected
     ? null
     : generateArticleJsonLd({

@@ -41,7 +41,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
 
   try {
     const configResponse = await getSiteConfig();
@@ -93,7 +93,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   const messages = await getMessages();
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tnxg.moe";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.example.com";
   let jsonLdData;
   try {
     const configResponse = await getSiteConfig();
