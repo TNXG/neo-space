@@ -47,6 +47,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 - **统一正文渲染管线**：公共站与后台编辑器预览共享 Markdown 渲染管线（`markdown-pipeline.ts`）与 Prose 样式；富文本容器通过 React Portal 继承国际化等上下文，默认展示渲染结果，点击展开源码，按 `Esc` / `Ctrl+Enter` 结束编辑并折叠源码区。
 - **容器语法与图片**：`::: grid {cols=4}` 等容器的起止标记无需额外空行；解析保留首张图片及容器后的正文。画廊、图片网格与瀑布流直接从已解析的图片节点取数，支持引用式图片，不从 React 子节点反向还原 Markdown。
 - **日记系统**：支持 Mood / Weather / Location 标签的情境化碎片记录。
+- **LLM 内容索引**：`/llms.txt` 由 App Router 的 `route.ts` 生成纯文本 Markdown，列出最近最多 50 篇文章、30 篇日记及公开内容入口；链接使用 `NEXT_PUBLIC_SITE_URL`，未配置时使用 `https://www.example.com`，路由重验证间隔为 57600 秒。
 
 ### 评论系统
 
