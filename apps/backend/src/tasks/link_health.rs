@@ -168,5 +168,6 @@ pub async fn check_link(
         }
         None => state.link_feed_cache.invalidate(&link.id).await,
     }
+    state.response_cache.invalidate_all();
     (health, feed)
 }

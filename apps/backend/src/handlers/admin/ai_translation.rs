@@ -240,6 +240,10 @@ pub async fn generate_translations(
             .upsert(true)
             .await
             .map_err(|error| AppError::Database(error.to_string()))?;
+        // 每种语言提交后立即失效，后续 AI 请求或回读失败也不会保留旧响应。
+        if matches!(ref_type, "posts" | "notes" | "pages") {
+            state.response_cache.invalidate_all();
+        }
         let translation = collection
             .find_one(filter)
             .await

@@ -128,6 +128,7 @@ pub async fn create_note(
         .insert_one(doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    notify_note_changed(&state, &id).await;
 
     let inserted = state
         .db
@@ -137,7 +138,6 @@ pub async fn create_note(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Note not found after insert".into()))?;
 
-    notify_note_changed(&state, &inserted).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -191,13 +191,13 @@ pub async fn update_note(
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Note not found".into()));
     }
+    notify_note_changed(&state, &oid).await;
 
     let updated = collection
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Note not found".into()))?;
-    notify_note_changed(&state, &updated).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -247,6 +247,8 @@ pub async fn delete_notes_batch(
     let result = collection
         .delete_many(filter)
         .await
+        // delete_many 可能在返回错误前已删除部分文档。
+        .inspect_err(|_| state.response_cache.invalidate_all())
         .map_err(|e| AppError::Database(e.to_string()))?;
     notify_notes_deleted(&state, &notes).await;
     Ok(Json(ApiResponse::success(result.deleted_count)))

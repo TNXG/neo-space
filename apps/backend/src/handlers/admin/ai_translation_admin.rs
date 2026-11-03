@@ -323,6 +323,7 @@ pub async fn update_translation(
         .update_one(doc! { "_id": oid }, doc! { "$set": set_doc })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
 
     let translation = collection
         .find_one(doc! { "_id": oid })

@@ -246,6 +246,7 @@ pub async fn apply_link(
         .insert_one(&new_link)
         .await
         .map_err(|e| AppError::Database(format!("Failed to create link: {}", e)))?;
+    state.response_cache.invalidate_all();
 
     tracing::info!("New friend link application from: {}", payload.email);
 

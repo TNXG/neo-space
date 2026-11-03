@@ -158,6 +158,7 @@ pub async fn create_link(
         .insert_one(doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
     let link = state
         .db
         .collection::<Link>("links")
@@ -222,6 +223,7 @@ pub async fn update_link(
         .update_one(link_id_filter(&id), doc! { "$set": set_doc })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
     let link = collection
         .find_one(link_id_filter(&id))
         .await

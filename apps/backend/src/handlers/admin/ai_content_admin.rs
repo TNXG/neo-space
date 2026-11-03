@@ -166,5 +166,6 @@ pub async fn delete_summary(
     if r.deleted_count == 0 {
         return Err(AppError::NotFound("Summary not found".into()));
     }
+    state.response_cache.invalidate_all();
     Ok(Json(ApiResponse::success(())))
 }

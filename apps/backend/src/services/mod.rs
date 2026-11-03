@@ -11,5 +11,6 @@ pub mod oauth;
 pub mod options;
 pub mod passkey;
 pub mod password_crypto;
+pub mod response_cache;
 pub mod spam;
 pub mod user_profile;

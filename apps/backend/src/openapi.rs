@@ -17,11 +17,13 @@ use utoipa::OpenApi;
         // Health check
         crate::routes::health::health_check,
         crate::handlers::auth::get_password_key,
+        crate::handlers::admin::cache::clear_cache,
     ),
     components(schemas(crate::services::password_crypto::PasswordKeyResponse)),
     tags(
         (name = "health", description = "Health check endpoints"),
         (name = "auth", description = "Authentication endpoints"),
+        (name = "admin", description = "Owner-only administration endpoints"),
         (name = "posts", description = "Post/article endpoints"),
         (name = "notes", description = "Note/diary endpoints"),
         (name = "pages", description = "Page endpoints"),

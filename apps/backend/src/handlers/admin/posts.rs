@@ -180,6 +180,7 @@ pub async fn create_post(
         .insert_one(doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    notify_post_changed(&state, &id).await;
 
     let inserted = collection
         .find_one(doc! { "_id": id })
@@ -187,7 +188,6 @@ pub async fn create_post(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Post not found after insert".into()))?;
 
-    notify_post_changed(&state, &inserted, None).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -200,11 +200,6 @@ pub async fn update_post(
 ) -> AppResult<Json<ApiResponse<Post>>> {
     let oid = parse_oid(&id)?;
     let collection = state.db.collection::<Post>("posts");
-    let previous = collection
-        .find_one(doc! { "_id": oid })
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".into()))?;
 
     let mut set_doc = doc! { "modified": now() };
     if let Some(v) = req.title {
@@ -259,6 +254,7 @@ pub async fn update_post(
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Post not found".into()));
     }
+    notify_post_changed(&state, &oid).await;
 
     let updated = collection
         .find_one(doc! { "_id": oid })
@@ -266,7 +262,6 @@ pub async fn update_post(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Post not found".into()))?;
 
-    notify_post_changed(&state, &updated, Some(&previous.slug)).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -316,6 +311,8 @@ pub async fn delete_posts_batch(
     let result = collection
         .delete_many(filter)
         .await
+        // delete_many 可能在返回错误前已删除部分文档。
+        .inspect_err(|_| state.response_cache.invalidate_all())
         .map_err(|e| AppError::Database(e.to_string()))?;
     notify_posts_deleted(&state, &posts).await;
     Ok(Json(ApiResponse::success(result.deleted_count)))

@@ -6,6 +6,7 @@ pub mod ai_time_capsule_admin;
 pub mod ai_translation;
 pub mod ai_translation_admin;
 pub mod ai_translation_entries;
+pub mod cache;
 pub mod categories;
 pub mod comment;
 pub mod comments_anchor;

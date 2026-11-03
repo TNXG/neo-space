@@ -8,6 +8,7 @@ pub mod admin_posts;
 pub mod ai_admin;
 pub mod auth;
 pub mod bangumi;
+pub mod cache;
 pub mod categories;
 pub mod comment;
 pub mod drafts;

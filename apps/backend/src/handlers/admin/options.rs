@@ -86,12 +86,16 @@ async fn write_option(
         .with_options(opts)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
 
     // 环境变量是部署级最高优先级；保存后立即回写覆盖值并刷新运行时快照。
-    crate::config::runtime::synchronize_environment_options(&state.db)
-        .await
-        .map_err(|error| AppError::Database(error.to_string()))?;
+    let synchronization =
+        crate::config::runtime::synchronize_environment_options(&state.db).await;
+    // 环境覆盖可能部分写入后失败，也必须淘汰同步期间填充的响应。
+    state.response_cache.invalidate_all();
+    synchronization.map_err(|error| AppError::Database(error.to_string()))?;
     state.reload_runtime_config().await;
+    state.response_cache.invalidate_all();
 
     if matches!(
         key,

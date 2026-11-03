@@ -204,6 +204,10 @@
 - 用户资料编辑复用 `GET/PATCH /api/user/profile`；基本资料按脏字段提交，社交对象完整提交、保留未改平台。变更后回读资料并更新会话，Rust 广播内部 `UserProfileUpdated` 事件并失效公共站 `user-profile`。后台缓存与公共站 ISR 各自处理。
 - 已执行前端类型检查、后端 Profile 字段权限及 CSRF 单元检查，并用浏览器临时响应检查表单交互；未启动数据库或使用真实账户，未证明生产 Cookie / Passkey 登录和数据库持久化闭环。
 
+### 公开内容响应缓存与后台清除
+
+- `DELETE /api/admin/cache`：Owner 专用，无请求体，成功返回 HTTP 200 与 `ApiResponse<null>`；Cookie 调用沿用现有 CSRF 校验。后台站点信息设置提供手动清除入口。
+- 仅清除当前进程公开 API 响应缓存，不清登录凭据、验证码或友链派生缓存；TTL 5 分钟、TTI 1 分钟，内容保存/删除后自动失效。带认证头或 Cookie 的请求绕过公共响应缓存。
 
 ### 不应误判为后端缺失的其他能力
 

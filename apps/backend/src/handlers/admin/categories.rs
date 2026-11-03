@@ -125,6 +125,7 @@ pub async fn create_category(
         .insert_one(doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
     let cat = collection
         .find_one(doc! { "_id": id })
         .await
@@ -157,6 +158,7 @@ pub async fn update_category(
         .update_one(doc! { "_id": oid }, doc! { "$set": set_doc })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    state.response_cache.invalidate_all();
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Category not found".into()));
     }
@@ -200,6 +202,7 @@ pub async fn delete_category(
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Category not found".into()));
     }
+    state.response_cache.invalidate_all();
     trigger_isr_revalidation(&state, "categories", None).await;
     Ok(Json(ApiResponse::success(())))
 }

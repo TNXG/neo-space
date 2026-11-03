@@ -124,6 +124,7 @@ pub async fn create_page(
         .insert_one(doc)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    notify_page_changed(&state).await;
 
     let inserted = state
         .db
@@ -132,7 +133,6 @@ pub async fn create_page(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::Internal("Page not found after insert".into()))?;
-    notify_page_changed(&state, &inserted, None).await;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -145,11 +145,6 @@ pub async fn update_page(
 ) -> AppResult<Json<ApiResponse<Page>>> {
     let oid = parse_oid(&id)?;
     let collection = state.db.collection::<Page>("pages");
-    let previous = collection
-        .find_one(doc! { "_id": oid })
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Page not found".into()))?;
     let mut set_doc = doc! { "modified": bson::DateTime::now() };
     if let Some(v) = req.title {
         set_doc.insert("title", v);
@@ -176,12 +171,12 @@ pub async fn update_page(
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Page not found".into()));
     }
+    notify_page_changed(&state).await;
     let updated = collection
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or(AppError::NotFound("Page not found".into()))?;
-    notify_page_changed(&state, &updated, Some(&previous.slug)).await;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -193,11 +188,6 @@ pub async fn delete_page(
 ) -> AppResult<Json<ApiResponse<()>>> {
     let oid = parse_oid(&id)?;
     let collection = state.db.collection::<Page>("pages");
-    let page = collection
-        .find_one(doc! { "_id": oid })
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Page not found".into()))?;
     let result = collection
         .delete_one(doc! { "_id": oid })
         .await
@@ -205,6 +195,6 @@ pub async fn delete_page(
     if result.deleted_count == 0 {
         return Err(AppError::NotFound("Page not found".into()));
     }
-    notify_page_deleted(&state, &page).await;
+    notify_page_deleted(&state).await;
     Ok(Json(ApiResponse::success(())))
 }

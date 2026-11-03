@@ -23,8 +23,10 @@ use utoipa_swagger_ui::SwaggerUi;
 pub struct AppState {
     /// MongoDB database handle
     pub db: Database,
-    /// In-memory cache for frequently accessed data
+    /// Crates metadata cache; independent from public content response invalidation.
     pub cache: Cache<String, Vec<u8>>,
+    /// Anonymous public API responses; TTL/TTI and generation-safe content invalidation.
+    pub response_cache: crate::services::response_cache::ResponseCache,
     /// 友链健康状态刷新周期较长，需要独立缓存避免被通用短 TTL 提前清掉
     pub link_health_cache: Cache<String, Vec<u8>>,
     /// 友链订阅源摘要（仅最新一篇 + 总数），按条目体积加权限制内存上限
@@ -205,6 +207,7 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
     Ok(Arc::new(AppState {
         db,
         cache,
+        response_cache: Default::default(),
         link_health_cache,
         link_feed_cache,
         config: Arc::new(ArcSwap::from_pointee(config)),
@@ -264,7 +267,12 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/admin/meilisearch", routes::meilisearch_admin::routes())
         .nest("/files", routes::files::routes())
         .merge(routes::admin_dashboard::routes())
-        .merge(routes::misc::routes());
+        .merge(routes::misc::routes())
+        .nest("/admin/cache", routes::cache::routes())
+        .layer(axum::middleware::from_fn_with_state(
+            state.response_cache.clone(),
+            crate::middleware::response_cache::cache_response,
+        ));
 
     // WebSocket routes
     let ws_router = axum::Router::new().nest("/ws", routes::ws::routes());

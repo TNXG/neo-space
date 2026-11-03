@@ -105,6 +105,7 @@ pub async fn update_entry(
         )
         .await
         .map_err(|error| AppError::Database(error.to_string()))?;
+    state.response_cache.invalidate_all();
     let entry = collection
         .find_one(doc! { "_id": object_id })
         .await
@@ -131,5 +132,6 @@ pub async fn delete_entry(
             "Translation entry not found".to_string(),
         ));
     }
+    state.response_cache.invalidate_all();
     Ok(Json(ApiResponse::success(())))
 }
