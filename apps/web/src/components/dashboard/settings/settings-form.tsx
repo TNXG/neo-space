@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/lib/inline-icon";
 import { AiSettings } from "./ai-settings";
+import { CacheSettings } from "./cache-settings";
 import { OAuthSettings } from "./oauth-settings";
 import { SettingsField } from "./settings-field";
 import { focusSettingsField, SettingsIssueList, SettingsNotice, SettingsSaveBar } from "./settings-savebar";
@@ -120,6 +121,7 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
           ) : (
             state.loading && <SettingsSkeleton group={group} />
           )}
+          {group.key === "seo" && <CacheSettings index={group.sections.length} />}
         </div>
         <SettingsSaveBar dirty={dirty} pending={state.pending} disabled={state.busy} attention={attention} saveLabel="保存" />
       </div>

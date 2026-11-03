@@ -66,3 +66,8 @@ export function getDashboardProfile(): Promise<User> {
 export function updateDashboardProfile(payload: DashboardProfileUpdate): Promise<Reader> {
   return dashboardRequest<Reader>("/user/profile", { method: "PATCH", body: JSON.stringify(payload) });
 }
+
+/** 只清除当前 Rust 进程公开响应缓存，不修改配置或登录凭据。 */
+export function clearDashboardResponseCache(): Promise<null> {
+  return dashboardRequest<null>("/admin/cache", { method: "DELETE" });
+}
