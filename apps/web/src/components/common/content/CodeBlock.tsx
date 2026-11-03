@@ -117,7 +117,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
           ? (
               <pre
                 className={cn(
-                  "min-w-full p-3 md:p-4 text-xs md:text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
+                  "w-max min-w-full p-3 md:p-4 text-xs md:text-[13px] leading-relaxed font-mono [&_code]:font-mono custom-scrollbar bg-transparent",
                   className,
                 )}
                 style={{ ...style, margin: 0 }}
@@ -129,7 +129,7 @@ export function CodeBlock({ children, className, language = "text", filename, st
               <pre
                 ref={preRef}
                 className={cn(
-                  "min-w-full p-3 md:p-4 text-xs md:text-[13px] leading-relaxed font-mono custom-scrollbar bg-transparent",
+                  "w-max min-w-full p-3 md:p-4 text-xs md:text-[13px] leading-relaxed font-mono [&_code]:font-mono custom-scrollbar bg-transparent",
                   className,
                 )}
                 style={{ ...style, margin: 0 }}
