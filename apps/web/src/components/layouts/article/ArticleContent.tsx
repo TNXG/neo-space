@@ -25,11 +25,9 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
   const lastActiveIdRef = useRef<string>("");
   const rafIdRef = useRef<number | null>(null);
 
-  // 初始化 items（仅当 prop 提供有效数据时；为空则交由其他 client 组件如 ProtectedNoteContent 推送）
+  // 空目录同样表示加载完成，并清除上一篇目录；加密日记解锁后可再次推送目录。
   useEffect(() => {
-    if (items.length > 0) {
-      setItems(items);
-    }
+    setItems(items);
   }, [items, setItems]);
 
   // 防抖的 setActiveId，避免快速滚动时抖动
