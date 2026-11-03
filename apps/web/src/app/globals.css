@@ -5,6 +5,17 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant reduced-transparency (@media (prefers-reduced-transparency: reduce));
 
+/* 系统已装思源黑体时优先使用本地字形，避免重复下载 CJK 分包。
+   Chrome 130+ 才可靠地使用本地可变字体，低版本会把 VF 显示为细体。 */
+@supports (box-decoration-break: clone) {
+  @font-face {
+    font-family: "Noto Sans SC Local";
+    font-style: normal;
+    font-weight: 100 900;
+    src: local("Noto Sans SC");
+  }
+}
+
 :root {
   /* =========================================
   核心色板定义 (Base Palette)
@@ -355,7 +366,7 @@
 
 @theme inline {
   --font-sans:
-    var(--font-noto-sans), "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    var(--font-inter), "Noto Sans SC Local", var(--font-noto-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:
     "Maple Mono NF CN", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --default-mono-font-family: "Maple Mono NF CN", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -380,8 +391,6 @@
   }
 
   html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     /* 移动端优化：防止横向滚动 */
     overflow-x: clip;
     /* 防止移动端浏览器自动放大文本 */
@@ -391,9 +400,24 @@
     line-height: 1.4;
     /* 禁用浏览器合成的粗体（中文字体合成效果差） */
     font-synthesis: style;
-    /* 长单词打断 */
+    /* 长单词打断；hyphens 只在对应语言的词典存在时生效 */
     overflow-wrap: break-word;
     word-wrap: break-word;
+    hyphens: auto;
+    /* 下划线不穿过字形，并留出与字身的间距 */
+    text-underline-position: under;
+    text-underline-offset: 0.1em;
+    text-decoration-skip-ink: none;
+  }
+
+  /* 表格等宽数字，避免数字列跳动 */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 深色背景上的白字会产生视觉膨胀，正文降低一档字重 */
+  .dark body {
+    font-weight: 350;
   }
 
   body {
@@ -423,6 +447,12 @@
 /* ===================================
    Native View Transitions
    =================================== */
+/* 原生快照覆盖层必须沿用当前主题，不能露出默认的浅色画布。 */
+::view-transition {
+  background: var(--background);
+  pointer-events: none;
+}
+
 
 .view-transition-navigation {
   view-transition-name: site-navigation;
@@ -432,8 +462,12 @@
   view-transition-name: site-footer;
 }
 
-::view-transition-old(root),
+::view-transition-old(root) {
+  display: none;
+}
+
 ::view-transition-new(root),
+::view-transition-group(page-content),
 ::view-transition-group(site-navigation),
 ::view-transition-group(site-footer) {
   animation: none;
@@ -453,86 +487,25 @@
   animation: none;
 }
 
-::view-transition-image-pair(.page-transition),
-::view-transition-image-pair(.nav-forward),
-::view-transition-image-pair(.nav-back) {
+/* 固定快照几何，禁止浏览器对长短页面的高度和变换进行插值。 */
+::view-transition-image-pair(page-content) {
   isolation: isolate;
 }
 
-::view-transition-old(.page-transition) {
-  animation: view-transition-page-out var(--motion-duration-fast) var(--motion-ease-out) both;
+::view-transition-old(page-content),
+::view-transition-new(page-content) {
+  mix-blend-mode: normal;
+  object-fit: none;
+  object-position: left top;
 }
 
-::view-transition-new(.page-transition) {
-  animation: view-transition-page-in var(--motion-duration-page) var(--motion-ease-out) both;
+/* 旧正文始终保留在下层，新正文覆盖淡入，避免同时透明造成亮度闪烁。 */
+::view-transition-old(page-content) {
+  animation: none;
 }
 
-@keyframes view-transition-page-out {
-  to {
-    opacity: 0;
-    filter: blur(3px);
-    transform: scale(0.985);
-  }
-}
-
-@keyframes view-transition-page-in {
-  from {
-    opacity: 0;
-    filter: blur(4px);
-    transform: translateY(1rem) scale(0.985);
-  }
-}
-
-::view-transition-old(.nav-forward) {
-  --page-slide-offset: -2.5rem;
-  animation:
-    view-transition-directional-out var(--motion-duration-fast) var(--motion-ease-out) both,
-    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) reverse both;
-}
-
-::view-transition-new(.nav-forward) {
-  --page-slide-offset: 2.5rem;
-  animation:
-    view-transition-directional-in var(--motion-duration-page) var(--motion-ease-out) both,
-    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) both;
-}
-
-::view-transition-old(.nav-back) {
-  --page-slide-offset: 2.5rem;
-  animation:
-    view-transition-directional-out var(--motion-duration-fast) var(--motion-ease-out) both,
-    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) reverse both;
-}
-
-::view-transition-new(.nav-back) {
-  --page-slide-offset: -2.5rem;
-  animation:
-    view-transition-directional-in var(--motion-duration-page) var(--motion-ease-out) both,
-    view-transition-slide var(--motion-duration-page) var(--motion-ease-in-out) both;
-}
-
-@keyframes view-transition-directional-out {
-  to {
-    opacity: 0.2;
-    filter: blur(3px);
-  }
-}
-
-@keyframes view-transition-directional-in {
-  from {
-    opacity: 0.2;
-    filter: blur(4px);
-  }
-}
-
-@keyframes view-transition-slide {
-  from {
-    transform: translate3d(var(--page-slide-offset), 0, 0) scale(0.985);
-  }
-
-  to {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
+::view-transition-new(page-content) {
+  animation: view-transition-fade var(--motion-duration-page) var(--motion-ease-out) both;
 }
 
 /* Glassmorphism Utilities */
@@ -683,18 +656,8 @@
     scroll-behavior: auto !important;
   }
 
-  ::view-transition-old(.page-transition),
-  ::view-transition-new(.page-transition),
-  ::view-transition-old(.nav-forward),
-  ::view-transition-new(.nav-forward),
-  ::view-transition-old(.nav-back),
-  ::view-transition-new(.nav-back) {
-    animation: view-transition-fade var(--motion-duration-fast) var(--motion-ease-out) both !important;
-  }
-
-  ::view-transition-group(.nav-forward),
-  ::view-transition-group(.nav-back) {
-    animation: none !important;
+  ::view-transition-new(page-content) {
+    animation-duration: var(--motion-duration-fast);
   }
 
   .animate-pulse-ring,

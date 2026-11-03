@@ -131,6 +131,7 @@ export default async function PostPage({ params }: PageProps) {
       <JsonLd data={jsonLd} />
       <ArticleLayout
         toc={toc}
+        contentLang={post.lang}
         breadcrumbs={[
           { label: t("nav.home"), href: "/" },
           ...(post.category ? [{ label: post.category.name, href: `/categories/${post.category.slug}` }] : []),

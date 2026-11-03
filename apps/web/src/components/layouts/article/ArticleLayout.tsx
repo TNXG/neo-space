@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { TOCItem } from "@/lib/toc";
+import { toBcp47 } from "@/locales/lang";
 import { ArticleContent } from "./ArticleContent";
 import { ArticleNavButtons } from "./ArticleNavButtons";
 import { ArticleTOC } from "./ArticleTOC";
@@ -31,6 +32,8 @@ interface ArticleLayoutProps {
   navigation?: ArticleNavigation;
   /** 面包屑路径（首页 → 分类 → 标题） */
   breadcrumbs?: BreadcrumbItem[];
+  /** 正文语言；翻译文章与站点语言不同时用于 locl 字形与断词 */
+  contentLang?: string;
 }
 
 /**
@@ -45,6 +48,7 @@ export function ArticleLayout({
   footer,
   navigation,
   breadcrumbs,
+  contentLang,
 }: ArticleLayoutProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -53,7 +57,7 @@ export function ArticleLayout({
         <div className="relative" data-toc-boundary>
           <article className="max-w-3xl mx-auto min-w-0">
             {header}
-            <div className="prose-container">
+            <div className="prose-container" lang={contentLang ? toBcp47(contentLang) : undefined}>
               <ArticleContent items={toc}>
                 {content}
               </ArticleContent>

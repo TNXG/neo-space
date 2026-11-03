@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
-import { Noto_Sans_SC } from "next/font/google";
+import { Inter, Noto_Sans_SC } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/common/theme";
@@ -11,12 +11,22 @@ import { generateWebsiteJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteConfig } from "@/lib/api-client";
 import { routing } from "@/locales";
+import { toBcp47 } from "@/locales/lang";
 
+// 拉丁字形交给 Inter：Noto Sans SC 的西文字形辨识度与字形均弱于 Inter。
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// 中文使用可变字重（100–900），避免为每个字重重复加载同一批 CJK 分包；
+// CJK 分包数量多，关闭 preload，交由 unicode-range 按需请求。
 const notoSans = Noto_Sans_SC({
   variable: "--font-noto-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+  preload: false,
 });
 
 const OPEN_GRAPH_LOCALE: Record<string, string> = {
@@ -107,9 +117,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={toBcp47(locale)} suppressHydrationWarning>
       <body
         className={`
+          ${inter.variable}
           ${notoSans.variable} 
           selection:bg-accent-500/30 
           selection:text-primary-900 

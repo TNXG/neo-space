@@ -136,6 +136,7 @@ export default async function NotePage({ params }: PageProps) {
       {jsonLd && <JsonLd data={jsonLd} />}
       <ArticleLayout
         toc={toc}
+        contentLang={isProtected ? undefined : note.lang}
         breadcrumbs={[
           { label: t("nav.home"), href: "/" },
           { label: t("nav.notes"), href: "/notes" },

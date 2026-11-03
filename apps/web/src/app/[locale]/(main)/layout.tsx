@@ -1,4 +1,5 @@
 import { FloatingNav } from "@/components/common/navigation";
+import { PageTransition } from "@/components/common/PageTransition";
 import { Footer } from "@/components/layouts/Footer";
 import { PageProvider } from "@/contexts/PageContext";
 import { getUserProfile } from "@/lib/api-client";
@@ -27,7 +28,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <div className="flex flex-col min-h-screen">
         <FloatingNav user={profileResponse.data} />
         <main className="flex-1 pt-20">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
         <Footer user={profileResponse.data} />
       </div>
