@@ -1,3 +1,4 @@
+@import url("https://fontsapi.zeoseven.com/442/main/result.css");
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
@@ -350,18 +351,14 @@
       opacity: 0;
     }
   }
-
-  /*
-  字体家族定义
-  */
-  --font-family-sans:
-    "Noto Sans SC", var(--font-noto-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 @theme inline {
+  --font-sans:
+    var(--font-noto-sans), "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:
-    "Maple Mono NF CN", "Maple Mono NF", "Maple Mono CN", "Maple Mono", var(--font-jetbrains-mono), "JetBrains Mono",
-    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    "Maple Mono NF CN", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --default-mono-font-family: "Maple Mono NF CN", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* ===================================

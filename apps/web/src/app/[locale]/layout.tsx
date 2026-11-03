@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
-import { JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
+import { Noto_Sans_SC } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/common/theme";
@@ -17,11 +17,6 @@ const notoSans = Noto_Sans_SC({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
 });
 
 const OPEN_GRAPH_LOCALE: Record<string, string> = {
@@ -116,7 +111,6 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <body
         className={`
           ${notoSans.variable} 
-          ${jetbrainsMono.variable} 
           selection:bg-accent-500/30 
           selection:text-primary-900 
           font-sans
