@@ -432,16 +432,6 @@
   pre {
     text-autospace: no-autospace;
   }
-
-  /* 标题平衡换行，避免突兀的单字换行 */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    text-wrap: balance;
-  }
 }
 
 /* ===================================
