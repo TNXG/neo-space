@@ -65,7 +65,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 
 ### 后台登录
 
-- 登录页采用原创 SVG 星海观测站场景：环绕星体、星轨、极光薄雾与局部明暗主题，不依赖外部壁纸或 WebGPU。布局以单屏为目标，小屏将插画退为背景并压缩间距；极小视口或放大文字时仍保留内容可访问性。星轨在系统开启“减少动态效果”时自动停止。输入博主**用户名或邮箱**后调用 `/api/owner/identify`，匹配后仅显示公开头像与名称，不展示账号明细或凭据。
+- 登录页完整展示随机壁纸，不叠加全屏遮罩；实底圆角登录卡片隔离表单与背景，自动适配亮暗主题。桌面端（≥1024px）采用左侧插画、右侧表单的双栏布局，窄屏改为顶部插画区与下方单列表单；透明双角色贴纸完整置于卡片内，不参与交互或遮挡输入。贴纸资源为 `apps/web/public/angel-sticker.webp`，由 Next.js Image 按显示尺寸优化。输入博主**用户名或邮箱**后调用 `/api/owner/identify`，匹配后仅显示公开头像与名称，不展示账号明细或凭据。
 - 密码 / Passkey、会话读取和退出由浏览器通过 `dashboard-api.ts` 直连 Rust，统一 `credentials: include`，JWT 不写入浏览器存储。Cookie 由 Rust 签发与清除；本地 HTTP 使用 SameSite=Lax，HTTPS 配置使用 Secure + SameSite=None 支持跨站 API。浏览器禁用第三方 Cookie 的跨站部署仍需改成同站 API 域名或部署层反向代理。
 - 博主密码先在浏览器使用 Web Crypto `RSA-OAEP / SHA-256` 和后端 4096 位公钥加密，再直接提交 Rust。`GET /api/auth/password-key` 返回 `{ keyId, algorithm, publicKey }` 且禁止缓存；`POST /api/auth/tokens` 只接受 `{ identifier, encryptedPassword, keyId }`。Next.js 不持有解密私钥，Rust 仅在校验现有 bcrypt 哈希时短暂解密，并清零临时密码缓冲。浏览器加密失败时不提交登录请求。
 - Rust 密码传输使用 `aws-lc-rs 1.18.2` 的 RSA 密钥生成与 OAEP 解密，应用侧公钥指纹使用 `sha2 0.11`，不再直接依赖 RustCrypto `rsa` 或 `sha2_010`；前端协议和数据库 bcrypt 哈希不变。AWS-LC 在本机编译原生代码，需要可用的 C/C++ 构建工具链；这不是 AWS 云服务调用，也不要求 AWS 账号。当前启用非 FIPS 后端，不代表 FIPS 认证部署。`jsonwebtoken` 仍间接依赖 RustCrypto `rsa`，因此锁文件中仍会保留它，但密码解密不再经过该实现。

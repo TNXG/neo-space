@@ -36,7 +36,7 @@ export function OwnerIdentity({ profile, identifying, unmatched }: OwnerIdentity
             <motion.span key={name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="absolute inset-0 truncate text-sm font-medium">{name}</motion.span>
           </AnimatePresence>
         </div>
-        <span className="text-xs text-muted-foreground">{identifying ? "正在连接你的空间" : unmatched ? "检查你的登录凭据" : profile ? "已找到空间主人" : "输入用户名或邮箱以连接"}</span>
+        <span className="text-sm text-foreground/75">{identifying ? "正在连接你的空间" : unmatched ? "检查你的登录凭据" : profile ? "已找到空间主人" : "输入用户名或邮箱以连接"}</span>
       </div>
     </div>
   );

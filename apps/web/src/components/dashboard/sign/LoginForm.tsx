@@ -15,13 +15,13 @@ export function LoginForm({ login }: { login: DashboardLoginState }) {
 
   return (
     <form onSubmit={(event) => { event.preventDefault(); void login.signIn("password"); }} aria-busy={busy}>
-      <FieldGroup className="gap-3">
+      <FieldGroup className="gap-5">
         <Field data-invalid={login.unmatched || Boolean(login.queryError)} data-disabled={busy}>
-          <FieldLabel htmlFor="dashboard-identifier" className="cursor-pointer">用户名<span aria-hidden="true" className="ml-auto font-mono text-[0.625rem] tracking-widest text-muted-foreground">IDENTITY</span></FieldLabel>
+          <FieldLabel htmlFor="dashboard-identifier" className="cursor-pointer text-sm">用户名或邮箱</FieldLabel>
           <Input
             id="dashboard-identifier"
             name="username"
-            className="h-12 rounded-lg"
+            className="h-12 rounded-xl border-foreground/20 bg-background text-base md:text-base"
             autoComplete="username webauthn"
             autoCapitalize="none"
             spellCheck={false}
@@ -35,11 +35,11 @@ export function LoginForm({ login }: { login: DashboardLoginState }) {
           />
         </Field>
         <Field data-disabled={busy || !showPassword} aria-hidden={!showPassword} className={cn(!showPassword && "hidden")}>
-          <FieldLabel htmlFor="dashboard-password" className="cursor-pointer">密码<span aria-hidden="true" className="ml-auto font-mono text-[0.625rem] tracking-widest text-muted-foreground">SECRET KEY</span></FieldLabel>
+          <FieldLabel htmlFor="dashboard-password" className="cursor-pointer text-sm">密码</FieldLabel>
           <Input
             id="dashboard-password"
             name="password"
-            className="h-12 rounded-lg"
+            className="h-12 rounded-xl border-foreground/20 bg-background text-base md:text-base"
             type="password"
             autoComplete="current-password"
             placeholder="输入密码"
@@ -49,7 +49,7 @@ export function LoginForm({ login }: { login: DashboardLoginState }) {
             required={showPassword}
           />
         </Field>
-        <Button type="submit" disabled={busy || !showPassword || !matched || !login.allow?.password || !login.password} className={cn("h-12 w-full cursor-pointer rounded-lg", !showPassword && "hidden")} aria-hidden={!showPassword}>
+        <Button type="submit" disabled={busy || !showPassword || !matched || !login.allow?.password || !login.password} className={cn("h-12 w-full cursor-pointer rounded-xl text-base", !showPassword && "hidden")} aria-hidden={!showPassword}>
           {login.pending === "password" ? "正在登录…" : "登录"}
           <Icon icon="mingcute:arrow-right-line" data-icon="inline-end" aria-hidden="true" />
         </Button>
