@@ -1,4 +1,5 @@
 //! Explicit server HTTP transport. Settings take effect after a backend restart.
+//! `NETWORK_PROXY_URL` overrides the persisted proxy for this process without writing it back.
 use bson::doc;
 use mongodb::Database;
 use reqwest::{Client, Url};
@@ -79,33 +80,42 @@ impl NetworkOptions {
         reqwest::Proxy::all(url.clone()).map_err(|_| invalid())?;
         Ok(Some(url))
     }
+}
 
-    /// A configured proxy needs the existing server-to-server trust secret in both runtimes.
-    pub fn validate_deployment(&self, secret: Option<&str>) -> Result<(), String> {
-        self.validate()?;
-        if !self.proxy_url.is_empty() && secret.is_none_or(str::is_empty) {
-            return Err("Configure matching REVALIDATION_SECRET in backend and Next before enabling the proxy".into());
-        }
-        Ok(())
-    }
+/// `NETWORK_PROXY_URL` is a per-process deployment override with higher priority than the
+/// persisted option; it is never written back to the shared options collection, so local
+/// development and a deployment can share one database while using different proxies.
+/// Unset or blank falls back to the database.
+fn environment_proxy_url() -> Option<String> {
+    std::env::var("NETWORK_PROXY_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
 }
 
 /// Missing options mean explicitly direct; malformed persisted options or database failures abort startup.
 pub async fn load_options(database: &Database) -> Result<NetworkOptions, std::io::Error> {
-    let document = database
-        .collection::<bson::Document>("options")
-        .find_one(doc! { "name": "networkOptions" })
-        .await
-        .map_err(|_| std::io::Error::other("Unable to load outbound network configuration"))?;
-    let options = match document {
-        None => NetworkOptions::default(),
-        Some(document) => {
-            bson::from_bson(document.get("value").cloned().unwrap_or(bson::Bson::Null))
-                .map_err(|_| std::io::Error::other("Invalid outbound network configuration"))?
+    let options = match environment_proxy_url() {
+        Some(proxy_url) => NetworkOptions { proxy_url },
+        None => {
+            let document = database
+                .collection::<bson::Document>("options")
+                .find_one(doc! { "name": "networkOptions" })
+                .await
+                .map_err(|_| {
+                    std::io::Error::other("Unable to load outbound network configuration")
+                })?;
+            match document {
+                None => NetworkOptions::default(),
+                Some(document) => bson::from_bson(
+                    document.get("value").cloned().unwrap_or(bson::Bson::Null),
+                )
+                .map_err(|_| std::io::Error::other("Invalid outbound network configuration"))?,
+            }
         }
     };
     options
-        .validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
+        .validate()
+        .map(|_| ())
         .map_err(std::io::Error::other)?;
     Ok(options)
 }

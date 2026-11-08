@@ -41,8 +41,6 @@ pub struct AppState {
     pub http_client: Client,
     /// Internal ISR always uses explicit direct transport, including after live frontend URL changes.
     pub internal_http_client: Client,
-    /// Active startup network settings; persisted changes require a backend restart.
-    pub network_options: crate::external::network::NetworkOptions,
     pub network_bypass_origins: Vec<String>,
     /// Shared email service (preserves verification code cache across requests)
     pub email_service: EmailService,
@@ -215,7 +213,6 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
         event_bus,
         http_client,
         internal_http_client,
-        network_options,
         network_bypass_origins,
         email_service,
         ncm_np_service,
@@ -270,14 +267,6 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/admin/meilisearch", routes::meilisearch_admin::routes())
         .nest("/files", routes::files::routes())
         .merge(routes::admin_dashboard::routes())
-        .route(
-            "/internal/network",
-            axum::routing::get(crate::handlers::network::get_network_options),
-        )
-        .route(
-            "/internal/network/status",
-            axum::routing::get(crate::handlers::network::get_network_status),
-        )
         .merge(routes::misc::routes())
         .nest("/admin/cache", routes::cache::routes())
         .layer(axum::middleware::from_fn_with_state(

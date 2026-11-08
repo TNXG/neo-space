@@ -9,7 +9,7 @@ function imageError(code: number, message: string) {
   return Response.json({ code, status: "failed", message, data: null }, { status: code });
 }
 
-/** Serve only allowlisted raster images via native fetch, retaining the managed dispatcher and per-hop policy. */
+/** Serve only allowlisted raster images via native fetch with per-hop redirect policy. */
 export async function fetchImageSource(source: string, fetchSource: ImageSourceFetcher = fetch): Promise<Response> {
   let url: URL;
   try { url = parseRemoteImageUrl(source); } catch { return imageError(400, "Remote image source is not allowed"); }

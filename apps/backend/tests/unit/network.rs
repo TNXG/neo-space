@@ -161,21 +161,6 @@ fn topology_bypass_is_explicit_and_does_not_cover_public_integrations() {
     ));
 }
 
-#[test]
-fn proxy_requires_internal_secret_but_direct_deployments_do_not() {
-    assert!(NetworkOptions::default().validate_deployment(None).is_ok());
-    let options = NetworkOptions {
-        proxy_url: "http://user:secret@localhost:3128".into(),
-    };
-    assert!(options.validate_deployment(None).is_err());
-    assert!(options.validate_deployment(Some("")).is_err());
-    assert!(
-        options
-            .validate_deployment(Some("shared-internal-secret"))
-            .is_ok()
-    );
-}
-
 #[tokio::test]
 async fn https_requests_issue_authenticated_connect_to_proxy() {
     let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind proxy");

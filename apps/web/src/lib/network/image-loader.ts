@@ -1,7 +1,7 @@
 import type { ImageLoaderProps } from "next/image";
 import { parseRemoteImageUrl } from "./image-policy";
 
-/** Keep Next's default resize/cache endpoint, but fetch remote bytes only through our managed fetch transport. */
+/** Keep Next's default resize/cache endpoint, but fetch remote bytes only through the `/api/image-source` route. */
 export default function imageLoader({ src, width }: ImageLoaderProps) {
   const source = src.startsWith("/") && !src.startsWith("//")
     ? src

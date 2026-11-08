@@ -81,7 +81,8 @@ async fn write_option(
                 AppError::BadRequest("networkOptions requires a proxyUrl string".into())
             })?;
         options
-            .validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
+            .validate()
+            .map(|_| ())
             .map_err(AppError::BadRequest)?;
         crate::external::network::build_client(&options, &state.network_bypass_origins)
             .map_err(AppError::BadRequest)?;
