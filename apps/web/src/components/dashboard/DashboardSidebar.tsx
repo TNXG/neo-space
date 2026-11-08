@@ -24,7 +24,7 @@ export function DashboardSidebar({ user, collapsed = false, onNavigate }: Dashbo
         <Popover>
           <PopoverTrigger asChild>
             <button type="button" aria-label="站点菜单" className={cn("flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring", collapsed && "justify-center px-0")}>
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-[0.3125rem] bg-primary text-[0.6875rem] font-medium text-primary-foreground">N</span>
+              <Image src="/favicon.webp" alt="" width={20} height={20} className="size-5 shrink-0 rounded-[0.3125rem] object-cover" />
               {!collapsed && <><span className="flex-1 truncate text-left text-[0.8125rem] font-medium tracking-[-0.00625em]">Neo Space</span><Icon icon="mingcute:down-line" className="size-3.5 text-muted-foreground" aria-hidden="true" /></>}
             </button>
           </PopoverTrigger>
