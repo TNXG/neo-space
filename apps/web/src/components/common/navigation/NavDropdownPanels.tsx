@@ -10,9 +10,9 @@ import { useState } from "react";
 import useSWR from "swr";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { API_BASE_URL } from "@/lib/api-client";
-import { getRelativeTime } from "@/lib/date";
-import { Icon } from "@/lib/inline-icon";
+import { API_BASE_URL } from "@/lib/api/client";
+import { getRelativeTime } from "@/lib/utils/date";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link } from "@/locales/navigation";
 

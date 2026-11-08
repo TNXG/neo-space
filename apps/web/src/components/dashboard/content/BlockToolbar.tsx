@@ -2,7 +2,7 @@
 
 import type { BlockFormat, EditorCommands, FormatState } from "@neo-space/editor";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { ToolbarButton } from "./FloatingToolbar";
 

@@ -3,8 +3,8 @@
 import type { AppLocale } from "@/locales";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { CreativeCommonsIcon } from "@/lib/file-icons";
-import { Icon } from "@/lib/inline-icon";
+import { CreativeCommonsIcon } from "@/lib/icons/file-icons";
+import { Icon } from "@/lib/icons/inline-icon";
 
 type LicenseAtom = "CC" | "BY" | "NC" | "ND" | "SA" | "ZERO";
 

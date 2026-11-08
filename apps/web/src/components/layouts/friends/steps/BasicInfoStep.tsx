@@ -5,7 +5,7 @@ import type { LinkApplyFormData } from "@/lib/validations/link";
 import { useTranslations } from "next-intl";
 
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface BasicInfoStepProps {
   register: UseFormRegister<LinkApplyFormData>;

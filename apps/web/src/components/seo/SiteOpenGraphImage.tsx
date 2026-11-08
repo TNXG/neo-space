@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- ImageResponse renders embedded images, not browser image elements. */
-import { OG_FONT_FAMILY } from "@/lib/og-font";
+import { OG_FONT_FAMILY } from "@/lib/og/font";
 
 interface SiteOpenGraphImageProps {
   title: string;

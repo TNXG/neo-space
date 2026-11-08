@@ -3,7 +3,7 @@
 import type { Comment } from "@/types/api";
 import { useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
-import { getComments } from "@/lib/api-client";
+import { getComments } from "@/lib/api/client";
 import { useAuthStore } from "@/stores/auth-store";
 
 /**

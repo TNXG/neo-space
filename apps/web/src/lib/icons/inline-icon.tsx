@@ -2,7 +2,7 @@
  * InlineIcon — 直接从预提取的静态数据渲染 SVG，零运行时 JSON 加载。
  *
  * 用法与 @iconify/react 完全一致：
- *   import { Icon } from "@/lib/inline-icon";
+ *   import { Icon } from "@/lib/icons/inline-icon";
  *   <Icon icon="mingcute:arrow-right-line" className="w-4 h-4" />
  *
  * 支持的集合：mingcute · simple-icons · catppuccin

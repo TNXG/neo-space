@@ -3,7 +3,7 @@ import type { MediaCardData } from "./plugins/media-card";
 
 import { DashedSeparator } from "@/components/ui/separator";
 
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 import { AnimatedLink } from "../content/AnimatedLink";
 import { ClientOnlyScript } from "../content/ClientOnlyScript";

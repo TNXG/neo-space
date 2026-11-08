@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 import { fetchMediaCard } from "./media-card.client";
 import type { MediaCardData } from "./types";

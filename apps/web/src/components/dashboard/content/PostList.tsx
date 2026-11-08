@@ -10,8 +10,8 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { dashboardPostsKey, DASHBOARD_CATEGORIES_KEY, deleteDashboardPost, getDashboardCategories, getDashboardPosts } from "@/lib/dashboard-content";
-import { Icon } from "@/lib/inline-icon";
+import { dashboardPostsKey, DASHBOARD_CATEGORIES_KEY, deleteDashboardPost, getDashboardCategories, getDashboardPosts } from "@/lib/dashboard/content";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link } from "@/locales/navigation";
 import { PostArchive } from "./PostArchive";

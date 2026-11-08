@@ -5,7 +5,7 @@ import type { ApiResponse, Link, Note, PaginatedResponse, Post, SearchResults } 
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 
-import { API_BASE_URL } from "./api-client";
+import { API_BASE_URL } from "./client";
 
 /**
  * 客户端使用服务端的 API_BASE_URL 配置

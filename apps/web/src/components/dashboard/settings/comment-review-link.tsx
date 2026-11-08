@@ -3,7 +3,7 @@
 import type { OptionDocument } from "@/types/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { resolveCommentReview } from "./comment-review-model";
 

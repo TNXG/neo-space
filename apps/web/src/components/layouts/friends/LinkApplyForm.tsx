@@ -10,8 +10,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { applyLink, sendLinkVerificationCode } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { applyLink, sendLinkVerificationCode } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { linkApplySchema, linkApplyStepSchemas } from "@/lib/validations/link";
 

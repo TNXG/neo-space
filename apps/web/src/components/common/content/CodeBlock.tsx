@@ -4,8 +4,8 @@ import * as React from "react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { FileIcon } from "@/lib/file-icons";
-import { Icon } from "@/lib/inline-icon";
+import { FileIcon } from "@/lib/icons/file-icons";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { SpecialCodeBlock } from "./special";
 

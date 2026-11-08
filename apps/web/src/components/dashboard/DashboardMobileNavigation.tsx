@@ -3,7 +3,7 @@
 import type { Reader } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { DashboardAccount } from "./DashboardAccount";
 import { DashboardNavigation } from "./DashboardNavigation";

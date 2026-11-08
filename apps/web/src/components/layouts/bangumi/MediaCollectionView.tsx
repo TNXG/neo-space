@@ -10,7 +10,7 @@ import { useReducedMotion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBangumiMediaInfinite } from "@/hooks/useBangumiLibrary";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { BangumiSegmentedControl } from "./BangumiSegmentedControl";
 import { MediaCollectionCard } from "./MediaCollectionCard";
 import { MediaCollectionDetail } from "./MediaCollectionDetail";

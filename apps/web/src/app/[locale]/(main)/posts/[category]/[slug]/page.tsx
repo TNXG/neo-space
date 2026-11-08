@@ -5,8 +5,8 @@ import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleHeader, ArticleLayout, CopyrightCard, OutdatedAlert } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
-import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api-client";
-import { extractTOC } from "@/lib/toc";
+import { getAdjacentPosts, getPostBySlug, getPosts, getUserProfile } from "@/lib/api/client";
+import { extractTOC } from "@/lib/content/toc";
 import { buildSeoDescription } from "@/utils/seo";
 
 // Static regex patterns to avoid re-compilation

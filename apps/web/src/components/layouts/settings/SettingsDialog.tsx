@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useServiceWorkerSettings } from "@/hooks/useServiceWorkerSettings";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface SettingsDialogProps {
   open: boolean;

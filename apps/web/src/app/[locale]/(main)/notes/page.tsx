@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { NoteInteractiveList } from "@/components/common/InteractiveList";
 import { PageHero } from "@/components/common/PageHero";
-import { getNotes } from "@/lib/api-client";
+import { getNotes } from "@/lib/api/client";
 
 interface NotesPageProps {
   params: Promise<{ locale: string }>;

@@ -5,7 +5,7 @@ import type { RichEditorView as EditorView } from "@neo-space/editor";
 import { readSelectionRect } from "@neo-space/editor";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 const INLINE_ACTIONS: { format: InlineFormat; label: string; icon: string; keys: string }[] = [

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PageHero } from "@/components/common/PageHero";
 import { ThinkingItem, ThinkingList } from "@/components/layouts/thinking";
-import { getRecently } from "@/lib/api-client";
+import { getRecently } from "@/lib/api/client";
 
 interface ThinkingPageProps {
   params: Promise<{ locale: string }>;

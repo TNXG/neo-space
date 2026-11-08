@@ -3,7 +3,7 @@
 import type { TagSummary } from "@/types/api";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface TagInputProps {
   id: string;

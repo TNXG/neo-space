@@ -14,8 +14,8 @@ import { stripMarkdown, truncateText } from "@/components/common/markdown/utils"
 import { SmartDate } from "@/components/common/smart-date";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { fetchNotes, fetchPosts } from "@/lib/api-client.client";
-import { Icon } from "@/lib/inline-icon";
+import { fetchNotes, fetchPosts } from "@/lib/api/client.client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/locales/navigation";
 import { ArchiveMetadata } from "./ArchiveMetadata";

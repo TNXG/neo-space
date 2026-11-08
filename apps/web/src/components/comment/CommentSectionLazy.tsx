@@ -3,7 +3,7 @@
 import type { Comment } from "@/types/api";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 // 懒加载整个客户端评论组件
 const CommentSection = dynamic(

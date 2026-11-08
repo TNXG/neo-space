@@ -1,7 +1,7 @@
 "use client";
 
 import type { DashboardEncryptedPassword } from "@/types/api";
-import { getDashboardPasswordKey } from "@/lib/api-client";
+import { getDashboardPasswordKey } from "@/lib/api/client";
 
 /** 仅在浏览器使用后端公钥加密密码，返回可交给 Server Action 的密文。 */
 export async function encryptDashboardPassword(password: string): Promise<DashboardEncryptedPassword> {

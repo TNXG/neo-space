@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PostInteractiveList } from "@/components/common/InteractiveList";
 import { PageHero } from "@/components/common/PageHero";
-import { getCategories, getPosts } from "@/lib/api-client";
+import { getCategories, getPosts } from "@/lib/api/client";
 import { Link } from "@/locales/navigation";
 
 export const revalidate = 57600;

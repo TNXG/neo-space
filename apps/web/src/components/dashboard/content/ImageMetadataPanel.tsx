@@ -5,8 +5,8 @@ import type { ImageMatchingState } from "./use-image-matching";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { collectContentImageSources } from "@/lib/image-scan-sources";
-import { Icon } from "@/lib/inline-icon";
+import { collectContentImageSources } from "@/lib/image-scan/sources";
+import { Icon } from "@/lib/icons/inline-icon";
 import { getImageMetadata } from "@/utils/images/common";
 
 interface ImageMetadataPanelProps {

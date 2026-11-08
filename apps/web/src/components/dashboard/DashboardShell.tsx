@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { Reader } from "@/types/api";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/locales/navigation";
 import { settingLinks } from "./DashboardNavigation";

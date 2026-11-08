@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import type { BangumiImageCrop } from "@/types/bangumi";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface BangumiArtworkProps {

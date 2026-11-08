@@ -1,11 +1,11 @@
 "use client";
 
-import type { AccountInfo } from "@/lib/api-client";
+import type { AccountInfo } from "@/lib/api/client";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { updateAvatar } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { updateAvatar } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 
 interface AvatarSelectorProps {

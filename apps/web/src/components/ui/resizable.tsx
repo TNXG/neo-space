@@ -2,7 +2,7 @@
 
 import type { GroupProps, PanelProps, SeparatorProps } from "react-resizable-panels";
 import * as ResizablePrimitive from "react-resizable-panels";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 /** 可键盘调整的分栏容器；方向由 `orientation` 决定。 */

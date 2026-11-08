@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface SecretInputProps {
   id?: string;

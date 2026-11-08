@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { ArchiveMetadata } from "@/components/common/ArchiveMetadata";
 import { ArchiveTitle } from "@/components/common/ArchiveTitle";
 import { Badge } from "@/components/ui/badge";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton";
 

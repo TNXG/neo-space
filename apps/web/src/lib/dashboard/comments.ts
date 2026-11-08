@@ -1,6 +1,6 @@
 import type { ApiResponse, Comment, CommentListResponse, PaginatedData } from "@/types/api";
 import type { DashboardComment, DashboardCommentReply, DashboardCommentState } from "@/types/dashboard-comments";
-import { dashboardRequest, dashboardResponse } from "./dashboard-api";
+import { dashboardRequest, dashboardResponse } from "./api";
 
 /** Distinguish all owner comment caches, including counts and conversation context. */
 export const isDashboardCommentsKey = (key: unknown) => Array.isArray(key) && typeof key[0] === "string" && key[0].startsWith("dashboard-comments-");

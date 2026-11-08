@@ -1,5 +1,5 @@
 import type { DashboardCommentState } from "@/types/dashboard-comments";
-import { dashboardRequest } from "./dashboard-api";
+import { dashboardRequest } from "./api";
 
 /** Apply a state to the whole explicitly selected filter, including pages not currently visible. */
 export function setAllDashboardCommentStates(currentState: DashboardCommentState, state: DashboardCommentState): Promise<number> {

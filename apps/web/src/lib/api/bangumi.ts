@@ -6,7 +6,7 @@ import type {
   BangumiSubjectCollectionResponse,
   BangumiUserResponse,
 } from "@/types/bangumi";
-import { API_BASE_URL } from "@/lib/api-client";
+import { API_BASE_URL } from "@/lib/api/client";
 import {
   normalizeBangumiMediaPage,
   normalizeBangumiProfile,

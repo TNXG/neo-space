@@ -2,7 +2,7 @@ import type { Category } from "@/types/api";
 import { useTranslations } from "next-intl";
 import { MarkdownPreviewClient } from "@/components/common/markdown";
 import { SmartDate } from "@/components/common/smart-date";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 
 interface ArticleHeaderProps {

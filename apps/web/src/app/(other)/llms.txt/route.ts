@@ -1,4 +1,4 @@
-import { getNotes, getPosts } from "@/lib/api-client";
+import { getNotes, getPosts } from "@/lib/api/client";
 
 export const revalidate = 57600;
 

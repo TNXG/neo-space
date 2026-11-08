@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { BangumiSegmentedControl } from "./BangumiSegmentedControl";
 import { MediaCollectionView } from "./MediaCollectionView";

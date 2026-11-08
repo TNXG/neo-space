@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { API_BASE_URL, getCurrentUser } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { API_BASE_URL, getCurrentUser } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOAuthStore } from "@/stores/oauth-store";
 

@@ -3,7 +3,7 @@
 import type { CreateCommentRequest, UpdateCommentRequest } from "@/types/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { createComment as apiCreateComment, deleteComment as apiDeleteComment, updateComment as apiUpdateComment } from "@/lib/api-client";
+import { createComment as apiCreateComment, deleteComment as apiDeleteComment, updateComment as apiUpdateComment } from "@/lib/api/client";
 
 const COMMENT_FORWARD_HEADER_NAMES = [
   "x-forwarded-for",

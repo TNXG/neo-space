@@ -4,7 +4,7 @@ import type { Link, LinkHealthStatus } from "@/types/api";
 import { useTranslations } from "next-intl";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icon";
+import { getArchIcon, getHostingDisplayName, getHostingIcon } from "@/lib/icons/icon";
 import { cn } from "@/lib/utils";
 
 /**

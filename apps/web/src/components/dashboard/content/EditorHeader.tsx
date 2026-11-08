@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 const relativeTime = new Intl.RelativeTimeFormat("zh-CN", { numeric: "auto" });
 

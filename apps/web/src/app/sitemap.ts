@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getNotes, getPosts } from "@/lib/api-client";
+import { getNotes, getPosts } from "@/lib/api/client";
 import { routing } from "@/locales";
 
 function localizePath(path: string, locale: string) {

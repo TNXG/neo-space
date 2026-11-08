@@ -6,8 +6,8 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { bindAnonymousIdentity, skipBind } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { bindAnonymousIdentity, skipBind } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 // Static regex patterns to avoid re-compilation

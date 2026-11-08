@@ -3,8 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { SiteOpenGraphImage } from "@/components/seo/SiteOpenGraphImage";
-import { getSiteConfig } from "@/lib/api-client";
-import { loadOgFonts } from "@/lib/og-font";
+import { getSiteConfig } from "@/lib/api/client";
+import { loadOgFonts } from "@/lib/og/font";
 
 export const alt = "Neo-Space";
 export const size = {

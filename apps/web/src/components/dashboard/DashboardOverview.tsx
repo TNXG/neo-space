@@ -3,8 +3,8 @@
 import { motion } from "motion/react";
 import useSWR from "swr";
 import { useDashboardSession } from "@/hooks/use-dashboard-session";
-import { DASHBOARD_LINK_COUNT_KEY, getDashboardLinkCount } from "@/lib/dashboard-links";
-import { Icon } from "@/lib/inline-icon";
+import { DASHBOARD_LINK_COUNT_KEY, getDashboardLinkCount } from "@/lib/dashboard/links";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { settingLinks } from "./DashboardNavigation";
 import { useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";

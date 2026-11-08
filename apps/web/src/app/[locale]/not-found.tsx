@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 
 /**

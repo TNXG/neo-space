@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { PROSE_CLASSES } from "@/components/common/markdown/prose-classes";
 import { KatexStyles } from "@/components/common/content/KatexStyles";
-import { uploadDashboardImage } from "@/lib/dashboard-content";
+import { uploadDashboardImage } from "@/lib/dashboard/content";
 import { cn } from "@/lib/utils";
 import { BlockToolbar } from "./BlockToolbar";
 import { FloatingToolbar } from "./FloatingToolbar";

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { KbdShortcut } from "@/components/ui/kbd";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import type { ExifData } from "./image-exif";
 
 export { LightboxPortal };

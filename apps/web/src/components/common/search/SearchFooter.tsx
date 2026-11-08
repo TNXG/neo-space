@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { KbdShortcut } from "@/components/ui/kbd";
-import { MeiliSearchIcon } from "@/lib/file-icons";
+import { MeiliSearchIcon } from "@/lib/icons/file-icons";
 
 export function SearchFooter() {
   const t = useTranslations();

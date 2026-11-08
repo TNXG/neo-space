@@ -9,7 +9,7 @@ import { MotionProvider } from "@/components/providers/MotionProvider";
 import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 import { generateWebsiteJsonLd, JsonLd } from "@/components/seo/JsonLd";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { getSiteConfig } from "@/lib/api-client";
+import { getSiteConfig } from "@/lib/api/client";
 import { routing } from "@/locales";
 import { toBcp47 } from "@/locales/lang";
 

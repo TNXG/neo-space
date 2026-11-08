@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ServiceWorkerUiState } from "@/hooks/useServiceWorkerSettings";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import type {
   BangumiImageSource,
   CdnHostname,

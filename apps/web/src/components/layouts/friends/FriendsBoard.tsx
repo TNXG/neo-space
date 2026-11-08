@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { useHasMounted } from "@/hooks/use-has-mounted";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { groupFriends } from "@/utils/friends";
 import { FriendPostEntry, FriendQuietEntry } from "./FriendEntries";
 

@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { Select as SelectPrimitive } from "radix-ui";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 /** 选择器使用 Radix 的浮层与滚动锁，避免展开时带动侧栏滚动。 */

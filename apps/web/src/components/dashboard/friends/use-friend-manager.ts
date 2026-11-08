@@ -14,7 +14,7 @@ import {
   recheckAllDashboardLinks,
   recheckDashboardLink,
   updateDashboardLink,
-} from "@/lib/dashboard-links";
+} from "@/lib/dashboard/links";
 
 const errorText = (error: unknown) => error instanceof Error ? error.message : "请稍后重试";
 

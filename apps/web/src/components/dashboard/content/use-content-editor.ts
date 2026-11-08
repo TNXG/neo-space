@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import useSWR, { useSWRConfig } from "swr";
 import { create } from "zustand";
-import { createDashboardDraft, createDashboardPage, createDashboardPost, dashboardDraftKey, dashboardNewDraftsKey, dashboardPageKey, dashboardPostKey, DASHBOARD_PAGES_KEY, deleteDashboardDraft, getDashboardDraft, getDashboardDraftByRef, getDashboardPage, getDashboardPost, updateDashboardDraft, updateDashboardPage, updateDashboardPost } from "@/lib/dashboard-content";
+import { createDashboardDraft, createDashboardPage, createDashboardPost, dashboardDraftKey, dashboardNewDraftsKey, dashboardPageKey, dashboardPostKey, DASHBOARD_PAGES_KEY, deleteDashboardDraft, getDashboardDraft, getDashboardDraftByRef, getDashboardPage, getDashboardPost, updateDashboardDraft, updateDashboardPage, updateDashboardPost } from "@/lib/dashboard/content";
 import { useRouter } from "@/locales/navigation";
 import { changedFields, hasContentChanges, pageToDraft, postToDraft } from "./content-model";
 

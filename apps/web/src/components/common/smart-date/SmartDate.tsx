@@ -14,7 +14,7 @@ import {
   getFullDateTime,
   getRelativeTime,
   shouldShowRelative,
-} from "@/lib/date";
+} from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 
 export type DateDisplayMode = "auto" | "absolute" | "relative";

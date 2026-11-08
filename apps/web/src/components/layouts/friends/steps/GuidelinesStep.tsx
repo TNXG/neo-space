@@ -7,7 +7,7 @@ import Link from "next/link";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface GuidelinesStepProps {
   register: UseFormRegister<LinkApplyFormData>;

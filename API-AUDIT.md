@@ -6,7 +6,7 @@
 
 ## 1. 范围与结论
 
-本次核对 `apps/web/src/lib/api-client.ts`、`api-client.client.ts`、相关 TypeScript 类型与消费方，对照后端路由挂载、请求提取器、处理器、序列化模型与鉴权规则。
+本次核对 `src/lib/api/client.ts`、`api/client.client.ts`、相关 TypeScript 类型与消费方，对照后端路由挂载、请求提取器、处理器、序列化模型与鉴权规则。
 
 **结论：公共站主要读取接口的 method/path 基本匹配，但客户端并非全部契约一致；它也不是完整的管理 API 客户端，不能直接作为新管理面板全部能力已经可用的证明。**
 
@@ -25,7 +25,7 @@
 
 ### API-01：读者接口缺少 `/user` 前缀
 
-- 客户端：`apps/web/src/lib/api-client.ts:343-349`。
+- 客户端：`src/lib/api/client.ts:343-349`。
   - `getReaders()` 调用 `GET /api/readers`。
   - `getReaderById()` 调用 `GET /api/readers/{id}`。
 - 后端：`apps/backend/src/app.rs:227` 挂载 `/user`，`apps/backend/src/routes/user.rs:24-31` 注册 `/readers` 和 `/readers/{id}`。
@@ -35,7 +35,7 @@
 
 ### API-02：头像更新请求体与返回类型不一致（P1）
 
-- 客户端：`apps/web/src/lib/api-client.ts:619-633`。
+- 客户端：`src/lib/api/client.ts:619-633`。
   - `PUT /api/auth/avatar` 发送 `{ provider: "github" | "qq" | "gravatar" }`。
   - 声明返回 `ApiResponse<Reader>`。
 - 后端：`apps/backend/src/handlers/auth.rs:36-40,165-186`。
@@ -47,14 +47,14 @@
 
 ### API-03：账号关联方法调用不存在的后端路由
 
-- 客户端：`apps/web/src/lib/api-client.ts:507-518`，`linkAccount()` 调用 `POST /api/auth/link/{provider}`。
+- 客户端：`src/lib/api/client.ts:507-518`，`linkAccount()` 调用 `POST /api/auth/link/{provider}`。
 - 后端：`apps/backend/src/routes/auth.rs:7-79` 未注册该路由；现有身份绑定入口为 `/bindable-identities`、`/bind-anonymous`、`/skip-bind` 等。
 - 后果：该方法调用将返回 404。检索未发现当前 web 业务调用方。
 - 边界：不能把已有匿名身份绑定接口当成 OAuth 账号关联接口，它们的业务语义不同。
 
 ### API-04：普通读者的删除评论入口与后端权限不一致（P1）
 
-- 客户端方法：`apps/web/src/lib/api-client.ts:557-563`，`deleteAuthComment()` 携带读者 Bearer token 请求 `DELETE /api/comments/{id}`。
+- 客户端方法：`src/lib/api/client.ts:557-563`，`deleteAuthComment()` 携带读者 Bearer token 请求 `DELETE /api/comments/{id}`。
 - 当前消费者：`apps/web/src/components/comment/comment-item/CommentActions.tsx:43-65,174-207` 为 `isOwnComment` 展示删除按钮并调用该方法。
 - 后端注册：`apps/backend/src/routes/comment.rs:16-20`。
 - 后端权限：`apps/backend/src/handlers/admin/comment.rs:97-118` 只允许 `auth.is_owner` 删除。
@@ -63,7 +63,7 @@
 
 ### API-05：Server Action 的评论更新/删除没有转发身份（P1）
 
-- 客户端：`apps/web/src/lib/api-client.ts:425-439` 的 `updateComment()`、`deleteComment()` 没有 token 参数，也未添加鉴权头。
+- 客户端：`src/lib/api/client.ts:425-439` 的 `updateComment()`、`deleteComment()` 没有 token 参数，也未添加鉴权头。
 - 调用路径：`apps/web/src/actions/comment.ts:78-80,106-108` 直接调用这两个方法，没有转发 Cookie 或 Authorization。
 - 后端：`apps/backend/src/auth/extractors.rs:31-33,130-147` 从请求 Bearer 或 `admin-auth-token` Cookie 识别身份。
 - 权限：`apps/backend/src/handlers/admin/comment.rs:35-51,115-118` 分别要求作者/owner、owner。
@@ -71,13 +71,13 @@
 
 ### API-06：评论隐藏、显示、置顶、取消置顶的返回类型错误
 
-- 客户端：`apps/web/src/lib/api-client.ts:569-611` 的 `hideComment`、`showComment`、`pinComment`、`unpinComment` 均声明 `ApiResponse<Comment>`。
+- 客户端：`src/lib/api/client.ts:569-611` 的 `hideComment`、`showComment`、`pinComment`、`unpinComment` 均声明 `ApiResponse<Comment>`。
 - 后端：`apps/backend/src/handlers/admin/comment.rs:170-268` 四个处理器均返回 `ApiResponse<()>`，序列化后 `data: null`。
 - 后果：不能读取返回值中的 Comment 字段。当前 `CommentActions.tsx` 只判断 `code` 并刷新，所以此偏差未直接破坏现有成功分支。
 
 ### API-07：账号列表期望的头像与昵称字段不在响应中
 
-- 客户端类型：`apps/web/src/lib/api-client.ts:445-452` 声明 `oauth_avatar?`、`oauth_name?`。
+- 客户端类型：`src/lib/api/client.ts:445-452` 声明 `oauth_avatar?`、`oauth_name?`。
 - 当前消费者：`apps/web/src/components/comment/auth/ProfilePopover.tsx:125-150` 用这两个字段显示账号头像和昵称。
 - 后端：`apps/backend/src/models/account.rs:58-86` 的 `AccountResponse` 只提供 `_id`、`userId`、`provider`、`accountId`、`scope`、`createdAt`、`updatedAt`，没有上述两个字段。
 - 后果：账号列表无法从该响应取得 OAuth 头像和昵称，当前界面回退显示 provider/accountId。内部 Account 的字段不能当作公开 AccountResponse 已返回的字段。
@@ -114,7 +114,7 @@
 
 - 项目目标响应为 `{ code, status, message, data }`，失败时 `data: null`。
 - 实际 `apps/backend/src/error.rs:79-83` 仅输出 `code`、`status`、`message`，没有 `data`。
-- 当前 `api-client.ts:98-129` 在非 2xx 时读取 message 并抛错，因此没有直接解包错误 data；但后续统一 API 消费层不能假设现有失败响应完全符合目标包装。
+- 当前 `api/client.ts:98-129` 在非 2xx 时读取 message 并抛错，因此没有直接解包错误 data；但后续统一 API 消费层不能假设现有失败响应完全符合目标包装。
 - 此项是现状与项目契约的差异，本轮未修改后端。
 
 ### API-12：OpenAPI 不能作为完整 API 清单
@@ -128,13 +128,13 @@
 以下不归类为当前调用必错，但后续设计/迁移容易误用：
 
 - 匿名身份绑定与跳过绑定的 token 通过 `message` 返回，`data` 是 Reader；当前调用方按此处理。依据：`apps/backend/src/handlers/oauth.rs` 的 `bind_anonymous`、`skip_bind`，以及 `apps/web/src/app/[locale]/auth/callback/page.tsx`。不能在新调用方中假设 token 位于 `data.token`；未来新 API 不应沿用把业务数据藏在 message 的设计。
-- `getComments()` 固定传入资源引用，消费的是公共评论树 `{ comments, count }`；后端 owner 在无 ref 时使用管理分页分支。新面板应单独建模管理查询，不能直接把现有公共评论方法当作完整管理列表。依据：`apps/backend/src/handlers/comment.rs:35-84`、`apps/web/src/lib/api-client.ts:396-411`。
+- `getComments()` 固定传入资源引用，消费的是公共评论树 `{ comments, count }`；后端 owner 在无 ref 时使用管理分页分支。新面板应单独建模管理查询，不能直接把现有公共评论方法当作完整管理列表。依据：`apps/backend/src/handlers/comment.rs:35-84`、`src/lib/api/client.ts:396-411`。
 - `/recentlies` 与 `/recently` 是两套真实入口，不能仅凭命名认定前者拼写错误。依据：`apps/backend/src/routes/misc.rs:11-14`、`apps/backend/src/routes/recently.rs:7-18`。
 - GET `/ai/time-capsule/{ref_id}` 在条件满足时会生成分析并写入缓存，不保证完全无副作用；检查时不能只按 HTTP 方法判断是否安全。依据：`apps/backend/src/handlers/ai/service.rs:196-234`。
 
 ## 5. 后端 API 能力与客户端覆盖
 
-常规端点统一加 `/api` 前缀。以下是按能力归类的覆盖地图，不是每个端点都已完成运行时验证，也不是要求把全部能力塞进同一个 `api-client.ts`。
+常规端点统一加 `/api` 前缀。以下是按能力归类的覆盖地图，不是每个端点都已完成运行时验证，也不是要求把全部能力塞进同一个 `api/client.ts`。
 
 ### 已有公共站封装
 
@@ -151,9 +151,9 @@
 | 登录用户/OAuth | `/auth/me`、`/auth/accounts`、绑定、头像、OAuth 跳转 | 部分契约偏差见 API-02/03/07 |
 | 读者 | `getReaders`、`getReaderById` | 路径错误，见 API-01 |
 | 时间胶囊 | `/ai/time-capsule` 与 `/{ref_id}` | 路径匹配；POST 必填性偏差见 API-09 |
-| 客户端分页与搜索 | `api-client.client.ts` 的文章/日记/友链 SWR 与 `/search` | method/path 匹配；不是管理 API 的完整封装 |
+| 客户端分页与搜索 | `api/client.client.ts` 的文章/日记/友链 SWR 与 `/search` | method/path 匹配；不是管理 API 的完整封装 |
 
-### 后端已有、但 `api-client.ts` 尚未封装的管理能力
+### 后端已有、但 `api/client.ts` 尚未封装的管理能力
 
 | 模块 | 代表性真实端点（均省略 `/api`） | 路由依据 |
 | --- | --- | --- |
@@ -211,14 +211,14 @@
 
 ### 不应误判为后端缺失的其他能力
 
-- `/search` 已在 `apps/web/src/lib/api-client.client.ts` 中封装。
-- `/aggregate/nav`、Bangumi、crates 等已有其他模块或组件请求，不因未出现在 `api-client.ts` 就算后端不存在。
+- `/search` 已在 `src/lib/api/client.client.ts` 中封装。
+- `/aggregate/nav`、Bangumi、crates 等已有其他模块或组件请求，不因未出现在 `api/client.ts` 就算后端不存在。
 - `/ws/reader`、`/ws/owner-desktop` 已注册，WebSocket 协议与鉴权未在本轮深入验证。
 - `/health`、`/api/artworks/{filename}`、`/api/static/artworks/{filename}` 为独立健康/资源能力，不是管理 CRUD。
 
 ## 6. 顺带发现的数据可见性风险
 
-这两项不是 `api-client.ts` 路径问题，也未在本轮修改，但应在后续 API 设计时单独评估：
+这两项不是 `api/client.ts` 路径问题，也未在本轮修改，但应在后续 API 设计时单独评估：
 
 - 公开 `GET /api/user/readers/{id}` 返回真实 email。依据：`apps/backend/src/routes/user.rs:28-31`、`apps/backend/src/handlers/users.rs:327-344`。公开列表却清空 email，两者的隐私边界不一致。
 - 公开友链详情未按审核状态过滤，并可能序列化申请 email。依据：`apps/backend/src/handlers/link.rs` 的 `get_link` 与 `apps/backend/src/models/link.rs` 的 Link 模型。后续应确认这些信息是否确需公开；本轮未做线上数据暴露测试。

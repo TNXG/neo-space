@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 /** 加载指示沿用项目图标集；减少动态效果时停转，仅保留静态图形。 */

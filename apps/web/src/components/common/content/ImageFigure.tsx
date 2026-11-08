@@ -3,7 +3,7 @@
 import ExifReader from "exifreader";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import type { ImageMetadata } from "@/types/api";
 import { getImageBounds, hasImageDimensions } from "@/utils/images/bounds";
 import { BlurhashPlaceholder } from "./BlurhashPlaceholder";

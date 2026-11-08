@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/common/theme/ThemeToggle";
 import { SigninWallpaperProvider } from "@/components/dashboard/sign/SigninWallpaperProvider";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { WallpaperBackdrop } from "./WallpaperBackdrop";
 
 /** 全屏壁纸 + 玻璃导航；壁纸随机选择发生在客户端，不进入服务端渲染。 */

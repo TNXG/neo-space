@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { clsx } from "clsx";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface BannerProps {
   type: "info" | "success" | "warn" | "error";

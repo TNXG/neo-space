@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { TOCItem } from "@/lib/toc";
+import type { TOCItem } from "@/lib/content/toc";
 import { toBcp47 } from "@/locales/lang";
 import { ArticleContent } from "./ArticleContent";
 import { ArticleNavButtons } from "./ArticleNavButtons";

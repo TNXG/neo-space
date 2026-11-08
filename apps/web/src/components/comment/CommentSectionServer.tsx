@@ -1,8 +1,8 @@
 import type { Comment } from "@/types/api";
 import { getTranslations } from "next-intl/server";
 import { CommentMarkdown } from "@/components/common/markdown";
-import { getComments } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { getComments } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { CommentSectionLazy } from "./CommentSectionLazy";
 

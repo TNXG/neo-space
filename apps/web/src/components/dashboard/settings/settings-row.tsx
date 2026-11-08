@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { FieldError, FieldLabel } from "@/components/ui/field";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface SettingsRowProps {

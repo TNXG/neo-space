@@ -3,8 +3,8 @@ import type { Post } from "@/types/api";
 import { getTranslations } from "next-intl/server";
 import { CategoryInteractiveList } from "@/components/common/InteractiveList";
 import { PageHero } from "@/components/common/PageHero";
-import { getCategories, getPosts } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { getCategories, getPosts } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 
 export const revalidate = 57600;
 

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 /** 集合条目需先展开才渲染输入，逐帧重试直到字段出现，再滚动居中并高亮。 */
 export function focusSettingsField(root: HTMLElement | null, path: string, attempt = 0) {

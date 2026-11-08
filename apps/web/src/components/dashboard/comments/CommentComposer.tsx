@@ -4,8 +4,8 @@ import type { Comment } from "@/types/api";
 import type { RunCommentAction } from "./CommentToolbar";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { editDashboardComment, replyDashboardComment } from "@/lib/dashboard-comments";
-import { getUAInfo } from "@/lib/ua-parse";
+import { editDashboardComment, replyDashboardComment } from "@/lib/dashboard/comments";
+import { getUAInfo } from "@/lib/utils/ua-parse";
 import { commentReplyInput } from "./comment-model";
 
 /** Keep drafts on failed writes; clear only after Rust confirms the reply or edit. */

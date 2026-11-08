@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { CommentMarkdown } from "@/components/common/markdown";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { CommentForm } from "../CommentForm";

@@ -2,7 +2,7 @@
 
 import type { TurnstileStatus as TurnstileStatusType } from "./types";
 import { useTranslations } from "next-intl";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface TurnstileStatusProps {
   status: TurnstileStatusType;

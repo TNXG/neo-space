@@ -4,8 +4,8 @@ import type { ContentKind } from "./content-model";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { Badge } from "@/components/ui/badge";
-import { dashboardNewDraftsKey, deleteDashboardDraft, getDashboardNewDrafts } from "@/lib/dashboard-content";
-import { Icon } from "@/lib/inline-icon";
+import { dashboardNewDraftsKey, deleteDashboardDraft, getDashboardNewDrafts } from "@/lib/dashboard/content";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton";
 

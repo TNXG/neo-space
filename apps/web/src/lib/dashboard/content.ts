@@ -1,5 +1,5 @@
 import type { Category, DashboardDraft, DashboardDraftInput, DashboardPageInput, DashboardPostInput, DashboardUploadResult, Page, PaginatedData, Post, TagSummary } from "@/types/api";
-import { dashboardRequest } from "./dashboard-api";
+import { dashboardRequest } from "./api";
 
 export const DASHBOARD_CATEGORIES_KEY = "dashboard-categories";
 export const DASHBOARD_TAGS_KEY = "dashboard-tags";

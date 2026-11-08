@@ -5,7 +5,7 @@ import type { DashboardCommentState } from "@/types/dashboard-comments";
 import { ConfirmDeleteButton } from "@/components/dashboard/content/ConfirmDeleteButton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { setDashboardCommentStates, toggleDashboardComment } from "@/lib/dashboard-comments";
+import { setDashboardCommentStates, toggleDashboardComment } from "@/lib/dashboard/comments";
 
 export type RunCommentAction = (label: string, action: () => Promise<unknown>) => Promise<boolean>;
 

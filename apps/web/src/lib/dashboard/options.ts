@@ -1,5 +1,5 @@
 import type { DashboardOptions, DashboardProxyTestResult, ManagedOptionKey, OptionDocument } from "@/types/api";
-import { dashboardRequest } from "./dashboard-api";
+import { dashboardRequest } from "./api";
 
 export const DASHBOARD_OPTIONS_KEY = "dashboard-options";
 

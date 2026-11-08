@@ -1,5 +1,5 @@
 import { Feed } from "feed";
-import { getCategories, getNotes, getPosts, getSiteConfig, getUserProfile } from "@/lib/api-client";
+import { getCategories, getNotes, getPosts, getSiteConfig, getUserProfile } from "@/lib/api/client";
 
 export const revalidate = 57600;
 

@@ -3,10 +3,10 @@
 import type { ImageMetadata } from "@/types/api";
 import { hashImageUrl } from "@/utils/images/common";
 
-import { blurhashFromCoefficients, linearizePixels } from "./image-scan-blurhash";
-import { downloadScanImage, IMAGE_TIMEOUT_MS, ImageScanError } from "./image-scan-download";
-import { createCoefficientProcessor } from "./image-scan-gpu";
-import { collectContentImageSources } from "./image-scan-sources";
+import { blurhashFromCoefficients, linearizePixels } from "./blurhash";
+import { downloadScanImage, IMAGE_TIMEOUT_MS, ImageScanError } from "./download";
+import { createCoefficientProcessor } from "./gpu";
+import { collectContentImageSources } from "./sources";
 
 export interface ImageScanResult {
   images: Record<string, ImageMetadata>;

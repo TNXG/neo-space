@@ -6,7 +6,7 @@ import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { PageHero } from "@/components/common/PageHero";
 import { FriendsBoard } from "@/components/layouts/friends/FriendsBoard";
 import { LinkApplyForm } from "@/components/layouts/friends/LinkApplyForm";
-import { getLinks, getSiteConfig } from "@/lib/api-client";
+import { getLinks, getSiteConfig } from "@/lib/api/client";
 import { LinkType } from "@/types/api";
 
 interface FriendsPageProps {

@@ -3,7 +3,7 @@
 import type { Link } from "@/types/api";
 import type { FeaturedLink } from "@/utils/friends";
 import { useLocale, useTranslations } from "next-intl";
-import { formatSmartDate } from "@/lib/date";
+import { formatSmartDate } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import { FriendAvatar, FriendPing, FriendTechStack, hostnameOf } from "./FriendMeta";
 

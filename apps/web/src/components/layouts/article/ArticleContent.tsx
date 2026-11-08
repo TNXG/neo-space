@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { TOCItem } from "@/lib/toc";
+import type { TOCItem } from "@/lib/content/toc";
 import { useCallback, useEffect, useRef } from "react";
+import { decodeAnchor, scrollToAnchor } from "@/lib/content/anchor";
 import { useTOCStore } from "@/stores/toc-store";
 
 interface ArticleContentProps {

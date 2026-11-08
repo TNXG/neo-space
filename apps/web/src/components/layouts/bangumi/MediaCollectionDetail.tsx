@@ -3,7 +3,7 @@
 import type { BangumiMediaCollection } from "@/types/bangumi";
 import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { BangumiArtwork } from "./BangumiArtwork";
 

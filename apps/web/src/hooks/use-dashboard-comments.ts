@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import useSWR, { useSWRConfig } from "swr";
 import { commentPageAfterRefresh } from "@/components/dashboard/comments/comment-model";
-import { dashboardCommentsKey, getDashboardComments, isDashboardCommentsKey } from "@/lib/dashboard-comments";
+import { dashboardCommentsKey, getDashboardComments, isDashboardCommentsKey } from "@/lib/dashboard/comments";
 
 /** Owner comment list, page-local selection, mutation feedback and coherent cache refresh. */
 export function useDashboardComments() {

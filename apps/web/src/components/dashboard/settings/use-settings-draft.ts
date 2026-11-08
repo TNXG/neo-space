@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import useSWR from "swr";
 import { create } from "zustand";
 import type { DashboardOptions, ManagedOptionKey, OptionDocument, OptionValue } from "@/types/api";
-import { DASHBOARD_OPTIONS_KEY, getDashboardOption, getDashboardOptions, saveDashboardOption } from "@/lib/dashboard-options";
+import { DASHBOARD_OPTIONS_KEY, getDashboardOption, getDashboardOptions, saveDashboardOption } from "@/lib/dashboard/options";
 import type { ProfileDraft } from "./profile-model";
 import type { SettingGroup } from "./settings-schema";
 import { failureMessage, isDocument, readValue, sameValue, writeValue } from "./settings-model";

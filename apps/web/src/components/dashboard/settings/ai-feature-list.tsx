@@ -7,7 +7,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { AI_FEATURES, providerLabel, resolveProvider, supportsFeature, type AiFeature, type AiProvider } from "./ai-model";
 import { readValue, type SettingsIssue } from "./settings-model";

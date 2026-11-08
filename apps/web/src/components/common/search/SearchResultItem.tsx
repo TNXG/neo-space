@@ -5,7 +5,7 @@ import type { SearchItem } from "./types";
 import type { SearchNoteResult, SearchPostResult } from "@/types/api";
 
 import { useTranslations } from "next-intl";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { formatDate, sanitizeHighlight } from "./utils";
 
 interface SearchResultItemProps {

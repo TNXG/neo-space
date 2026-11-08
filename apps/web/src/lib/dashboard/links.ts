@@ -1,5 +1,5 @@
 import type { DashboardLinkInput, Link, LinkStateCount, LinkStateType, PaginatedData } from "@/types/api";
-import { dashboardRequest } from "./dashboard-api";
+import { dashboardRequest } from "./api";
 
 export const DASHBOARD_LINK_COUNT_KEY = "dashboard-link-count";
 

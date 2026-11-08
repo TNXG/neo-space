@@ -1,7 +1,7 @@
 import type { TimeCapsuleResponse } from "@/types/api";
 import { getTranslations } from "next-intl/server";
-import { getTimeCapsule } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { getTimeCapsule } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface OutdatedAlertProps {
   /** 文章 ID */

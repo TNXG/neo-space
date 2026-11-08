@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useSearch } from "@/lib/api-client.client";
+import { useSearch } from "@/lib/api/client.client";
 import { SearchFooter } from "./SearchFooter";
 import { SearchInput } from "./SearchInput";
 import { SearchResults } from "./SearchResults";

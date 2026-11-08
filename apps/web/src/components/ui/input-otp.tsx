@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 import { cn } from "@/lib/utils";
 

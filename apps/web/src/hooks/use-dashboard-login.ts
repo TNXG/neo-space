@@ -3,9 +3,9 @@
 import type { ApiResponse, DashboardLoginOptions, DashboardOwnerIdentification, DashboardOwnerProfile, Reader } from "@/types/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
-import { loginDashboardWithPassword, DASHBOARD_SESSION_KEY } from "@/lib/dashboard-api";
+import { loginDashboardWithPassword, DASHBOARD_SESSION_KEY } from "@/lib/dashboard/api";
 import { encryptDashboardPassword } from "@/utils/auth/password-transport";
-import { getDashboardLoginOptions, identifyDashboardOwner } from "@/lib/api-client";
+import { getDashboardLoginOptions, identifyDashboardOwner } from "@/lib/api/client";
 import { useDashboardPasskey } from "./use-dashboard-passkey";
 import { useDashboardSession } from "./use-dashboard-session";
 

@@ -4,7 +4,7 @@ import type { ContentMeta } from "@/types/api";
 import { useSourceEditor } from "@neo-space/editor";
 import { useEffect, useRef } from "react";
 import { MarkdownRendererClient } from "@/components/common/markdown/MarkdownRenderer.client";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { ToolbarButton } from "./FloatingToolbar";
 

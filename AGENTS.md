@@ -22,7 +22,7 @@
   - 分页结构固定为 `{ items: T[], pagination: { total, current_page, total_page, size, has_next_page, has_prev_page } }`。
 - **遇到 `id` / `_id` 不一致时的处置顺序**（不可绕过）：
   1. 修改前端 TypeScript 模型（`apps/web/src/types/api.ts`）；
-  2. 修改 API 封装 / adapter（如 `apps/web/src/lib/api-client.ts`）；
+  2. 修改 API 封装 / adapter（如 `src/lib/api/client.ts`）；
   3. 修改组件传参与 prop 名称；
   4. 永远不要为了让管理面板跑通而修改后端返回字段。
 - **派生字段的边界**：前端组件可以按需派生本地字段（例如把 `_id` 别名为表格的 `key`），但派生只发生在视图层，**离开组件即恢复 `_id`**。
@@ -52,10 +52,8 @@
     - 客户端专用：`client.ts` 文件标记 `"use client"`
     - 服务器专用：`server.ts` 文件标记 `"use server"` 和 `server-only`
     - 共享函数：`common.ts` 或 `index.ts` 文件
-  - **核心库函数 (`@/lib/`)**：核心框架和基础设施相关函数：
-    - `@/lib/api-client.ts` - 后端 API 客户端 + 所有 API 函数
-    - `@/lib/constants.ts` - 全局常量定义
-    - `@/lib/config.ts` - 配置管理
+  - **核心库函数 (`@/lib/`)**：核心框架和基础设施相关函数按域放在子目录（`api/`、`dashboard/`、`icons/`、`image-scan/`、`content/`、`utils/`、`realtime/`、`network/` 等），禁止在 `@/lib/` 根下平铺新增文件：
+    - `@/lib/api/client.ts` - 后端 API 客户端 + 所有 API 函数
     - 其他纯服务器端核心函数使用 `server-only` 包强制检查
 - **类型定义**：所有 TypeScript 类型定义按域分类放置在 `src/types/` 目录，其中 `src/types/api.ts` 承载所有后端响应类型。
 - **状态管理**：使用 Zustand 进行状态管理，状态文件放置在 `src/stores/` 目录。
@@ -167,7 +165,7 @@
 - **场景**：页面首屏渲染、SEO 关键内容。
 - **实现**：**必须**在 Server Components 中直接使用 `fetch` 调用后端 RESTful API。
 - **禁止**：**严禁**使用 Server Actions 来获取数据（Server Actions 串行化会导致不必要的性能开销）。
-- **工具封装**：使用 `@/lib/api-client` 封装 `fetch`，统一处理 Header（如透传 `cookies` 中的 Token）和 Base URL。
+- **工具封装**：使用 `@/lib/api/client` 封装 `fetch`，统一处理 Header（如透传 `cookies` 中的 Token）和 Base URL。
 
 ### 7.2 数据变更 (Mutations - Server Actions)
 
@@ -336,7 +334,7 @@
   - 避免直接导入具体文件：`import { functionName } from "@/utils/auth/client"`
 - **与 `@/lib/` 的分工**：
   - `@/utils/` - 业务功能域的工具函数
-  - `@/lib/` - 框架基础设施（含 `api-client.ts`）
+  - `@/lib/` - 框架基础设施（含 `api/client.ts`）
 
 ---
 
@@ -419,7 +417,7 @@
 - **目录结构**：在 `app` 目录组织路由和组件，严格遵循共置原则。
 - **渲染策略**：利用服务器组件进行初始渲染和 SEO 数据获取，但**仅作为编排者**，避免在其中编写复杂的业务计算逻辑。
 - **数据变更 (Mutations)**：**强制使用 Server Actions 处理所有数据提交、变更和表单操作**，作为后端 API 的安全代理。
-- **数据获取 (Reads)**：服务器组件用 `@/lib/api-client`；客户端组件用 SWR / TanStack Query。
+- **数据获取 (Reads)**：服务器组件用 `@/lib/api/client`；客户端组件用 SWR / TanStack Query。
 - **架构分层**：**使用组合模式**构建页面，将具体业务逻辑下沉到 `@/services` 或 `@/lib` 层。
 - **路由与加载**：使用 `next/link` 进行内部导航；使用 `loading.tsx` 和 `Suspense` 实现流式加载。
 - **边界分离**：仔细分离服务器和客户端逻辑，利用 `server-only` / `client-only` 包防止代码泄露。

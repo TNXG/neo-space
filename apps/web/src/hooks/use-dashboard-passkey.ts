@@ -2,7 +2,7 @@
 
 import type { ApiResponse, Reader } from "@/types/api";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { finishDashboardPasskey, startDashboardPasskey } from "@/lib/dashboard-api";
+import { finishDashboardPasskey, startDashboardPasskey } from "@/lib/dashboard/api";
 import { authenticateDashboardPasskey, cancelDashboardPasskey, getDashboardPasskeyError, isDashboardPasskeyCancellation } from "@/utils/auth/client";
 
 /** 自动凭据请求与密码表单独立；取消旧挑战后忽略迟到结果。 */

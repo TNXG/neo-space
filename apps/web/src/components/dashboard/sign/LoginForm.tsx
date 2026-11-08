@@ -4,7 +4,7 @@ import type { DashboardLoginState } from "@/hooks/use-dashboard-login";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 const INPUT_CLASS = "h-12 rounded-xl border-border bg-background/70 px-3.5 text-base backdrop-blur-sm transition-colors md:text-base";

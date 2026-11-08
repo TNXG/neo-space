@@ -1,5 +1,5 @@
-import type { AdjacentNotes } from "@/lib/api-client";
-import type { TOCItem } from "@/lib/toc";
+import type { AdjacentNotes } from "@/lib/api/client";
+import type { TOCItem } from "@/lib/content/toc";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -7,8 +7,8 @@ import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout, NoteHeader, OutdatedAlert, ProtectedNoteContent } from "@/components/layouts/article";
 import { generateArticleJsonLd, JsonLd } from "@/components/seo/JsonLd";
-import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getProtectedNoteMetadata, getSiteConfig } from "@/lib/api-client";
-import { extractTOC } from "@/lib/toc";
+import { ApiClientError, getAdjacentNotes, getNoteByNid, getNotes, getProtectedNoteMetadata, getSiteConfig } from "@/lib/api/client";
+import { extractTOC } from "@/lib/content/toc";
 import { buildSeoDescription } from "@/utils/seo";
 
 // ISR 配置：16小时过期

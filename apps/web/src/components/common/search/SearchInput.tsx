@@ -3,7 +3,7 @@
 import type { RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { KbdShortcut } from "@/components/ui/kbd";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface SearchInputProps {
   inputRef: RefObject<HTMLInputElement | null>;

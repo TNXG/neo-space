@@ -1,5 +1,6 @@
-import type { TOCItem } from "@/lib/toc";
+import type { TOCItem } from "@/lib/content/toc";
 import { create } from "zustand";
+import { scrollToAnchor } from "@/lib/content/anchor";
 
 interface TOCState {
   activeId: string;

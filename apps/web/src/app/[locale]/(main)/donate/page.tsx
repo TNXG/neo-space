@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PageHero } from "@/components/common/PageHero";
 import { DonateQrCode } from "@/components/layouts/donate/DonateQrCode";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface DonatePageProps {
   params: Promise<{ locale: string }>;

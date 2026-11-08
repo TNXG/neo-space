@@ -98,7 +98,7 @@ Neo-Space 是一个功能丰富、性能卓越的现代化博客系统。仓库�
 
 ### 用户资料设置
 
-- 设置父菜单下的「用户」对应原后台用户设置页。外侧分组复用 shadcn `Collapsible` 与现有 `Button`，图标统一使用项目 `@/lib/inline-icon`；不在内容区重复设置列表。资料页与配置分组共用固定操作栏、字段行、未保存提示和帮助弹层。移动导航继续使用现有 shadcn Drawer。
+- 设置父菜单下的「用户」对应原后台用户设置页。外侧分组复用 shadcn `Collapsible` 与现有 `Button`，图标统一使用项目 `@/lib/icons/inline-icon`；不在内容区重复设置列表。资料页与配置分组共用固定操作栏、字段行、未保存提示和帮助弹层。移动导航继续使用现有 shadcn Drawer。
 - 复用 `GET/PATCH /api/user/profile`；基本字段仅提交修改值，社交变更提交完整 `socialIds`，删除平台时显式清空，保留其他平台。保存失败保留输入；保存成功但回读失败时只重试读取，避免重复提交。昵称、用户名及邮箱必填，URL/邮箱在提交前就地校验。头像当前通过 URL 维护，不提供未接入的上传按钮。
 - 会话建立与资料读取各有匹配布局的 shadcn `Skeleton`，预留侧栏、头像、字段行、社交区及保存按钮位置；移动端改为单列。后台 401 不会清除公共站独立的 Reader Bearer 会话。
 
@@ -211,7 +211,7 @@ neo-space/
 │   │   ├── src/
 │   │   │   ├── app/         # App Router
 │   │   │   ├── components/  # 组件库
-│   │   │   ├── lib/         # 工具库与 api-client
+│   │   │   ├── lib/         # 工具库（按域分子目录）
 │   │   │   ├── hooks/       # 自定义 Hooks
 │   │   │   ├── stores/      # Zustand 状态
 │   │   │   ├── types/       # TypeScript 类型
@@ -290,7 +290,7 @@ CDN / 反向代理层 (Nginx / Cloudflare)
 - **状态**：Zustand（auth / theme / search / comment）+ SWR + URL state
 - **主题**：CSS 变量驱动，`light / dark / system` 三模式持久化
 - **渲染策略**：SSR（首页、文章、分类）/ SSG（RSS）/ CSR（评论、搜索弹窗等）
-- **API**：统一通过 `src/lib/api-client.ts` 调用，类型定义在 `src/types/api.ts`
+- **API**：统一通过 `src/lib/api/client.ts` 调用，类型定义在 `src/types/api.ts`
 - **响应包装**：所有接口返回 `ApiResponse<T> = { code, status, message, data }`
 
 ### 管理能力

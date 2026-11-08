@@ -4,7 +4,7 @@ import type { CargoDepInfo, CargoInfo } from "./types";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { API_BASE_URL } from "@/lib/api-client";
+import { API_BASE_URL } from "@/lib/api/client";
 import {
   CargoLink,
   CargoLoadingSkeleton,

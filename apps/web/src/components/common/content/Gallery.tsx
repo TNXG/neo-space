@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { KbdShortcut } from "@/components/ui/kbd";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { MetadataImage } from "./MetadataImage";
 
 interface GalleryImage {

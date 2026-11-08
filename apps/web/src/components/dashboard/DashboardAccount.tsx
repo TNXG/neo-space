@@ -8,11 +8,11 @@ import { useSWRConfig } from "swr";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/locales/navigation";
-import { logoutDashboard, DASHBOARD_SESSION_KEY, DASHBOARD_PROFILE_KEY } from "@/lib/dashboard-api";
-import { DASHBOARD_OPTIONS_KEY } from "@/lib/dashboard-options";
+import { logoutDashboard, DASHBOARD_SESSION_KEY, DASHBOARD_PROFILE_KEY } from "@/lib/dashboard/api";
+import { DASHBOARD_OPTIONS_KEY } from "@/lib/dashboard/options";
 import { clearContentDrafts } from "./content/use-content-editor";
 import { clearAllDrafts, useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
 

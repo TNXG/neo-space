@@ -1,6 +1,6 @@
 "use client";
 
-import type { ConnectionStatus } from "@/lib/ws-connection";
+import type { ConnectionStatus } from "@/lib/realtime/ws-connection";
 import type {
   MediaMetadata,
   NeteaseNowPlaying,
@@ -10,8 +10,8 @@ import type {
 } from "@/stores/ws-store";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCallback, useEffect, useRef } from "react";
-import { WS_BASE_URL, WS_FALLBACK_URL } from "@/lib/api-client";
-import { SmartWebSocket } from "@/lib/ws-connection";
+import { WS_BASE_URL, WS_FALLBACK_URL } from "@/lib/api/client";
+import { SmartWebSocket } from "@/lib/realtime/ws-connection";
 import { useWSStore } from "@/stores/ws-store";
 
 // Export types for other components to use

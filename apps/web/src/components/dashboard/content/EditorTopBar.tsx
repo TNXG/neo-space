@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { KbdShortcut } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { Link } from "@/locales/navigation";
 import { cn } from "@/lib/utils";
 import { EditorModeSwitch } from "./EditorModeSwitch";

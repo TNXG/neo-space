@@ -6,7 +6,7 @@ import { BlurhashPlaceholder } from "@/components/common/content/BlurhashPlaceho
 import { Button } from "@/components/ui/button";
 import { useDashboardLogin } from "@/hooks/use-dashboard-login";
 import { useDashboardSession } from "@/hooks/use-dashboard-session";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { useRouter } from "@/locales/navigation";
 import { useSigninWallpaperState } from "@/components/dashboard/sign/SigninWallpaperProvider";
 import { LoginForm } from "./LoginForm";

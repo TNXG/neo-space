@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface VerificationStepProps {
   register: UseFormRegister<LinkApplyFormData>;

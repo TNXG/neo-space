@@ -4,8 +4,8 @@ import type { Comment } from "@/types/api";
 import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { deleteAuthComment, hideComment, pinComment, showComment, unpinComment } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 
 interface CommentActionsProps {

@@ -1,11 +1,11 @@
 "use server";
 
 import type { ReactNode } from "react";
-import type { TOCItem } from "@/lib/toc";
+import type { TOCItem } from "@/lib/content/toc";
 import { unstable_cache } from "next/cache";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
-import { unlockNoteByNid } from "@/lib/api-client";
-import { extractTOC } from "@/lib/toc";
+import { unlockNoteByNid } from "@/lib/api/client";
+import { extractTOC } from "@/lib/content/toc";
 
 const renderProtectedNoteMarkdown = unstable_cache(
   async (_renderKey: string, content: string) => {

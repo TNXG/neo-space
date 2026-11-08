@@ -1,4 +1,4 @@
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 
 interface BangumiUnavailableProps {
   title: string;

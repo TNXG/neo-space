@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { clearDashboardResponseCache } from "@/lib/dashboard-api";
+import { clearDashboardResponseCache } from "@/lib/dashboard/api";
 import { failureMessage } from "./settings-model";
 import { SettingsSection } from "./settings-section";
 

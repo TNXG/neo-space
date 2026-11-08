@@ -10,7 +10,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/locales/navigation";
 

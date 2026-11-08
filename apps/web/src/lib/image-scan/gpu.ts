@@ -1,4 +1,4 @@
-import { COMPONENTS_X, COMPONENTS_Y, computeCpuCoefficients } from "./image-scan-blurhash";
+import { COMPONENTS_X, COMPONENTS_Y, computeCpuCoefficients } from "./blurhash";
 
 export interface CoefficientProcessor {
   readonly kind: "gpu" | "cpu";

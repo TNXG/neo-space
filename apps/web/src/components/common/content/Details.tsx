@@ -9,7 +9,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { Icon } from "@/lib/inline-icon";
+import { Icon } from "@/lib/icons/inline-icon";
 import styles from "./Details.module.scss";
 
 export function Details({ children, open = false }: { children: ReactNode; open?: boolean }) {

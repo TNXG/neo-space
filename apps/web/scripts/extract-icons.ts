@@ -3,7 +3,7 @@
 /**
  * 按需提取图标脚本（自动扫描版）
  * 自动扫描 src/ 下所有 .tsx/.ts 文件，收集用到的图标，
- * 生成 src/lib/icon-data.ts（纯静态数据，无运行时 JSON 加载）。
+ * 生成 src/lib/icons/icon-data.ts（纯静态数据，无运行时 JSON 加载）。
  *
  * 扫描来源：
  *  1. icon="collection:name" 属性（覆盖 @iconify/react/offline 用法）
@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const SRC = resolve(ROOT, "src");
-const GENERATED_ICON_DATA_PATH = resolve(SRC, "lib/icon-data.ts");
+const GENERATED_ICON_DATA_PATH = resolve(SRC, "lib/icons/icon-data.ts");
 
 // ─── 递归枚举源文件 ───────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ for (const file of allFiles) {
 
 // ─── 额外扫描 file-icons.tsx 中的 createXxxIcon("key") ───────────────────────
 
-const FILE_ICONS_PATH = resolve(SRC, "lib/file-icons.tsx");
+const FILE_ICONS_PATH = resolve(SRC, "lib/icons/file-icons.tsx");
 const fileIconsSrc = stripComments(readFileSync(FILE_ICONS_PATH, "utf-8"));
 
 const CREATE_SI_RE = /createSimpleIcon\(["']([\w.-]+)["']/g;
@@ -276,7 +276,7 @@ for (const col of Object.keys(extracted)) {
 }
 tsBody += `};\n`;
 
-const outPath = resolve(ROOT, "src/lib/icon-data.ts");
+const outPath = resolve(ROOT, "src/lib/icons/icon-data.ts");
 writeFileSync(outPath, tsBody, "utf-8");
-console.log(`\n📄 已生成 src/lib/icon-data.ts（共 ${totalIcons} 个图标）`);
+console.log(`\n📄 已生成 src/lib/icons/icon-data.ts（共 ${totalIcons} 个图标）`);
 console.log(`   ${relative(ROOT, outPath)}`);

@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { CommentMarkdown } from "@/components/common/markdown";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { VerticalSlider } from "@/components/ui/toggle-switch";
-import { updateAuthComment } from "@/lib/api-client";
-import { Icon } from "@/lib/inline-icon";
+import { updateAuthComment } from "@/lib/api/client";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
 import { fetchOwOData } from "../hooks";
 

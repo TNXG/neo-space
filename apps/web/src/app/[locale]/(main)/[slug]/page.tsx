@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { CommentSectionServer, CommentSkeleton } from "@/components/comment";
 import { MarkdownRenderer } from "@/components/common/markdown/MarkdownRenderer";
 import { ArticleLayout } from "@/components/layouts/article";
-import { getPageBySlug } from "@/lib/api-client";
-import { extractTOC } from "@/lib/toc";
+import { getPageBySlug } from "@/lib/api/client";
+import { extractTOC } from "@/lib/content/toc";
 import { markdownToPlainText, truncateDescription } from "@/utils/seo";
 
 export const revalidate = 57600;

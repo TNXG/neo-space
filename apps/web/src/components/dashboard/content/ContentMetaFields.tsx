@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { DASHBOARD_CATEGORIES_KEY, DASHBOARD_TAGS_KEY, getDashboardCategories, getDashboardTags } from "@/lib/dashboard-content";
+import { DASHBOARD_CATEGORIES_KEY, DASHBOARD_TAGS_KEY, getDashboardCategories, getDashboardTags } from "@/lib/dashboard/content";
 import { suggestSlug } from "./content-model";
 import { TagInput } from "./TagInput";
 

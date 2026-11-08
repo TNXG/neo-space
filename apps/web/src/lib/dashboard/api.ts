@@ -1,6 +1,6 @@
 import type { AuthenticationResponseJSON } from "@simplewebauthn/browser";
 import type { ApiResponse, DashboardEncryptedPassword, DashboardPasskeyChallenge, DashboardProfileUpdate, Reader, User } from "@/types/api";
-import { apiClient, ApiClientError } from "./api-client";
+import { apiClient, ApiClientError } from "../api/client";
 
 export const DASHBOARD_SESSION_KEY = "dashboard-session";
 export const DASHBOARD_PROFILE_KEY = "dashboard-profile";

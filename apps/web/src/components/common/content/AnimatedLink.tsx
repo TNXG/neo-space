@@ -1,9 +1,12 @@
 "use client";
 
+import type { AnchorHTMLAttributes, MouseEvent } from "react";
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Icon } from "@/lib/inline-icon";
+import { decodeAnchor } from "@/lib/content/anchor";
+import { Icon } from "@/lib/icons/inline-icon";
 import { cn } from "@/lib/utils";
+import { useTOCStore } from "@/stores/toc-store";
 import styles from "./AnimatedLink.module.scss";
 
 // 平台图标配置

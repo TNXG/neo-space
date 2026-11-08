@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHero } from "@/components/common/PageHero";
 import { BangumiLibrary } from "@/components/layouts/bangumi/BangumiLibrary";
 import { BangumiUnavailable } from "@/components/layouts/bangumi/BangumiUnavailable";
-import { getBangumiLibrary } from "@/lib/bangumi";
+import { getBangumiLibrary } from "@/lib/api/bangumi";
 
 interface BangumiPageProps {
   params: Promise<{ locale: string }>;

@@ -2,7 +2,7 @@ import { FloatingNav } from "@/components/common/navigation";
 import { PageTransition } from "@/components/common/PageTransition";
 import { Footer } from "@/components/layouts/Footer";
 import { PageProvider } from "@/contexts/PageContext";
-import { getUserProfile } from "@/lib/api-client";
+import { getUserProfile } from "@/lib/api/client";
 
 /**
  * 主站布局 - 包含 Footer、FloatingNav
