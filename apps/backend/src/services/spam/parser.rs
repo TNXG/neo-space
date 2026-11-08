@@ -84,15 +84,19 @@ pub(super) fn parse_score_response(
     response: &str,
     threshold: u8,
 ) -> Result<SpamCheckResult, String> {
+    if !(1..=10).contains(&threshold) {
+        return Err("Spam score threshold must be between 1 and 10".into());
+    }
     let json_str = extract_json(response);
-    serde_json::from_str::<ScoreResponse>(&json_str)
-        .map(|result| {
-            let score = result.score.min(10);
-            SpamCheckResult {
-                is_spam: score >= threshold,
-                confidence: f32::from(score) / 10.0,
-                reason: Some(format!("Score: {score}/10 - {}", result.reason)),
-            }
-        })
-        .map_err(|error| format!("JSON parse error: {error}, input: {json_str}"))
+    let result = serde_json::from_str::<ScoreResponse>(&json_str)
+        .map_err(|error| format!("JSON parse error: {error}, input: {json_str}"))?;
+    if result.score > 10 {
+        return Err("Spam score must be between 0 and 10".into());
+    }
+    let score = result.score;
+    Ok(SpamCheckResult {
+        is_spam: score >= threshold,
+        confidence: f32::from(score) / 10.0,
+        reason: Some(format!("Score: {score}/10 - {}", result.reason)),
+    })
 }
