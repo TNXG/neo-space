@@ -59,12 +59,12 @@ export function PostList() {
       <header className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight">
-            文章归档
+            文章
             {pagination && <span className="text-sm font-normal text-muted-foreground tabular-nums">{pagination.total}</span>}
           </h2>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Icon icon="mingcute:calendar-line" className="size-3.5" aria-hidden="true" />
-            按发布时间 · 最新在前
+            按发布时间倒序排列
           </p>
         </div>
         <Button asChild size="sm" className="rounded-lg">

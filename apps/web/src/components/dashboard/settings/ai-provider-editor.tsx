@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Icon } from "@/lib/inline-icon";
 import type { AiProvider } from "./ai-model";
 import { SecretInput } from "./settings-inputs";
@@ -23,20 +24,33 @@ export function AiProviderEditor({ provider, index, disabled, errorFor, onUpdate
   const errors = {
     endpoint: errorFor(`${base}.endpoint`),
     id: errorFor(`${base}.id`),
+    apiKey: errorFor(`${base}.apiKey`),
   };
 
   return (
     <FieldGroup className="gap-5 border-t border-border/60 bg-muted/30 px-4 py-5 lg:px-5">
+      <Field data-path={`${base}.type`}>
+        <FieldLabel htmlFor={fieldId("type")}>接口类型</FieldLabel>
+        <Select value={provider.type || "openai-compatible"} disabled={disabled} onValueChange={value => onUpdate("type", value)}>
+          <SelectTrigger id={fieldId("type")} className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectGroup>
+            <SelectItem value="openai-compatible">OpenAI 兼容</SelectItem>
+            <SelectItem value="openai">OpenAI</SelectItem>
+            <SelectItem value="jev">Jev 反垃圾</SelectItem>
+          </SelectGroup></SelectContent>
+        </Select>
+        <FieldDescription>常规大模型请选择「OpenAI 兼容」；Jev 仅用于评论反垃圾。</FieldDescription>
+      </Field>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field data-path={`${base}.name`}>
           <FieldLabel htmlFor={fieldId("name")}>显示名称</FieldLabel>
           <Input id={fieldId("name")} value={provider.name ?? ""} disabled={disabled} placeholder="例如 DeepSeek" onChange={event => onUpdate("name", event.target.value)} />
-          <FieldDescription className="text-[0.8125rem]">仅在后台显示。</FieldDescription>
+          <FieldDescription className="text-[0.8125rem]">方便你在列表中区分不同服务商。</FieldDescription>
         </Field>
         <Field data-path={`${base}.defaultModel`}>
           <FieldLabel htmlFor={fieldId("defaultModel")}>默认模型</FieldLabel>
-          <Input id={fieldId("defaultModel")} value={provider.defaultModel ?? ""} disabled={disabled} placeholder="例如 deepseek-chat" spellCheck={false} className="font-mono text-[0.8125rem]" onChange={event => onUpdate("defaultModel", event.target.value)} />
-          <FieldDescription className="text-[0.8125rem]">功能未单独指定模型时使用。</FieldDescription>
+          <Input id={fieldId("defaultModel")} value={provider.defaultModel ?? ""} disabled={disabled} placeholder={provider.type === "jev" ? "jev-latest" : "例如 deepseek-chat"} spellCheck={false} className="font-mono text-[0.8125rem]" onChange={event => onUpdate("defaultModel", event.target.value)} />
+          <FieldDescription className="text-[0.8125rem]">具体功能未单独填写模型时默认使用。</FieldDescription>
         </Field>
       </div>
 
@@ -49,23 +63,24 @@ export function AiProviderEditor({ provider, index, disabled, errorFor, onUpdate
           value={provider.endpoint ?? ""}
           disabled={disabled}
           aria-invalid={Boolean(errors.endpoint)}
-          placeholder="https://api.example.com/v1"
+          placeholder={provider.type === "jev" ? "https://api.typesafe.ai/v1" : "https://api.example.com/v1"}
           spellCheck={false}
           className="font-mono text-[0.8125rem]"
           onChange={event => onUpdate("endpoint", event.target.value)}
         />
-        {errors.endpoint ? <FieldError>{errors.endpoint}</FieldError> : <FieldDescription className="text-[0.8125rem]">填写含 /v1 的基础地址，请求时自动追加 /chat/completions。</FieldDescription>}
+        {errors.endpoint ? <FieldError>{errors.endpoint}</FieldError> : <FieldDescription className="text-[0.8125rem]">{provider.type === "jev" ? "默认使用 https://api.typesafe.ai/v1。" : "填写包含 /v1 的接口地址，例如 https://api.deepseek.com/v1。"}</FieldDescription>}
       </Field>
 
-      <Field data-path={`${base}.apiKey`}>
+      <Field data-path={`${base}.apiKey`} data-invalid={Boolean(errors.apiKey) || undefined}>
         <FieldLabel htmlFor={fieldId("apiKey")}>API 密钥</FieldLabel>
-        <SecretInput id={fieldId("apiKey")} value={provider.apiKey ?? ""} disabled={disabled} placeholder="sk-…" onChange={value => onUpdate("apiKey", value)} />
-        <FieldDescription className="text-[0.8125rem]">仅后端使用，以 Bearer 令牌发送；清空并保存即删除。</FieldDescription>
+        <SecretInput id={fieldId("apiKey")} value={provider.apiKey ?? ""} disabled={disabled} invalid={Boolean(errors.apiKey)} placeholder="sk-…" onChange={value => onUpdate("apiKey", value)} />
+        <FieldDescription className="text-[0.8125rem]">服务商提供的接口密钥；清空后保存即可移除。</FieldDescription>
+        {errors.apiKey && <FieldError>{errors.apiKey}</FieldError>}
       </Field>
 
       <div className="flex flex-col gap-4 border-t border-border/60 pt-4 sm:flex-row sm:items-end sm:justify-between">
         <Field data-path={`${base}.id`} data-invalid={Boolean(errors.id) || undefined} className="sm:max-w-xs">
-          <FieldLabel htmlFor={fieldId("id")} className="text-[0.8125rem] text-muted-foreground">技术标识</FieldLabel>
+          <FieldLabel htmlFor={fieldId("id")} className="text-[0.8125rem] text-muted-foreground">服务商标识</FieldLabel>
           <Input id={fieldId("id")} value={provider.id} disabled={disabled} aria-invalid={Boolean(errors.id)} spellCheck={false} className="h-8 font-mono text-xs" onChange={event => onUpdate("id", event.target.value)} />
           {errors.id && <FieldError>{errors.id}</FieldError>}
         </Field>

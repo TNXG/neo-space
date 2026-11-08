@@ -111,7 +111,7 @@ export function SettingsChoice({ id, value, options, onChange, disabled, invalid
   const stale = Boolean(value) && !options.some(option => option.value === value);
   const label = value
     ? options.find(option => option.value === value)?.label ?? (stale ? `当前值已失效：${value}` : value)
-    : "使用默认（不覆盖）";
+    : "使用默认设置";
   return (
     <Select
       value={value || "__unset__"}
@@ -123,7 +123,7 @@ export function SettingsChoice({ id, value, options, onChange, disabled, invalid
       </SelectTrigger>
       <SelectContent position="popper">
         <SelectGroup>
-          <SelectItem value="__unset__">使用默认（不覆盖）</SelectItem>
+          <SelectItem value="__unset__">使用默认设置</SelectItem>
           {stale && <SelectItem value={value}>当前值已失效：{value}</SelectItem>}
           {options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
         </SelectGroup>

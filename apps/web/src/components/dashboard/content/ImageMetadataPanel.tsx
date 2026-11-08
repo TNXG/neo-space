@@ -16,11 +16,11 @@ interface ImageMetadataPanelProps {
 }
 
 const STATUS_LABEL = {
-  idle: "未匹配",
-  queued: "等待处理",
-  processing: "处理中",
-  success: "已匹配",
-  failed: "失败",
+  idle: "待解析",
+  queued: "排队中",
+  processing: "解析中",
+  success: "已就绪",
+  failed: "无法读取",
 } as const;
 
 /** 将原图文件大小转换为便于阅读的单位，缺失时不显示。 */
@@ -47,15 +47,15 @@ export function ImageMetadataPanel({ draft, matching, disabled }: ImageMetadataP
   return (
     <section aria-labelledby="content-images-title" className="flex min-w-0 flex-col gap-3 border-t border-border/50 pt-5">
       <div className="flex items-center justify-between gap-2">
-        <h3 id="content-images-title" className="text-sm font-medium">图片链接</h3>
-        <span className="text-xs tabular-nums text-muted-foreground">{sources.length} 个</span>
+        <h3 id="content-images-title" className="text-sm font-medium">正文图片</h3>
+        <span className="text-xs tabular-nums text-muted-foreground">{sources.length} 张</span>
       </div>
       <Button type="button" variant="outline" size="sm" className="w-full cursor-pointer" disabled={matching.matching || disabled || !sources.length} onClick={() => { void matching.match(); }}>
         {matching.matching ? <Spinner data-icon="inline-start" aria-hidden="true" /> : <Icon icon="mingcute:pic-line" data-icon="inline-start" aria-hidden="true" />}
-        {matching.matching ? `正在匹配 ${matching.progress?.done ?? 0}/${matching.progress?.total ?? sources.length}` : "匹配图片链接"}
+        {matching.matching ? `正在解析 ${matching.progress?.done ?? 0}/${matching.progress?.total ?? sources.length}` : "生成图片预览信息"}
       </Button>
       <p role="status" aria-live="polite" className="text-xs leading-relaxed text-muted-foreground">
-        {!sources.length ? "正文中暂无图片链接。" : `${succeeded} 个已匹配${failed ? `，${failed} 个失败` : ""}${matching.processor ? ` · ${matching.processor.toUpperCase()}` : ""}`}
+        {!sources.length ? "正文中还没有插入图片。" : `已解析 ${succeeded} 张图片${failed ? `，${failed} 张读取失败` : ""}`}
       </p>
       {matching.error && <p role="alert" className="text-xs leading-relaxed wrap-anywhere text-destructive">{matching.error}</p>}
       {!!sources.length && (
@@ -80,7 +80,7 @@ export function ImageMetadataPanel({ draft, matching, disabled }: ImageMetadataP
           ))}
         </ul>
       )}
-      {!!sources.length && <p className="text-xs leading-relaxed text-muted-foreground">匹配结果随文档保存。跨域图片需允许 CORS 读取。</p>}
+      {!!sources.length && <p className="text-xs leading-relaxed text-muted-foreground">提前记录图片尺寸与模糊预览图，让读者打开文章时排版更稳定。</p>}
     </section>
   );
 }

@@ -106,7 +106,7 @@ export function useGroupSettings(group: SettingGroup) {
     discard(group.key);
     setAwaitingRead(false);
     setFailure("");
-    if (adjusted) toast.warning(`${group.title}已保存`, { description: "部分值被后端调整或被部署环境变量覆盖，页面已显示最终生效值。", duration: 8000 });
+    if (adjusted) toast.warning(`${group.title}已保存`, { description: "部分设置受服务器环境配置限制，已更新为实际生效值。", duration: 8000 });
     else toast.success(`${group.title}已保存`);
   }
 
@@ -124,7 +124,7 @@ export function useGroupSettings(group: SettingGroup) {
       setAwaitingRead(true);
       await readSaved();
     } catch (cause) {
-      setFailure(written ? `配置已保存，但回读失败；请只重试读取。${failureMessage(cause)}` : `保存失败，修改已保留。${failureMessage(cause)}`);
+      setFailure(written ? `设置已保存，但未能刷新最新状态；请点击重试加载。${failureMessage(cause)}` : `保存失败，你填写的内容已保留。${failureMessage(cause)}`);
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -151,7 +151,7 @@ export function useGroupSettings(group: SettingGroup) {
   }
 
   return {
-    document, dirty, pending, awaitingRead, busy,
+    document, options: data, dirty, pending, awaitingRead, busy,
     failure: failure || (incompatible ? "该分组的数据格式与表单不兼容，已停止覆盖。" : error ? failureMessage(error) : ""),
     loading: !data && !error,
     change, reset, save, retry,

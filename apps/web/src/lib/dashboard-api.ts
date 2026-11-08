@@ -37,7 +37,7 @@ export async function getDashboardSession(): Promise<Reader | null> {
 async function finishAuthentication(path: string, body: unknown): Promise<ApiResponse<Reader | null>> {
   await dashboardRequest<unknown>(path, { method: "POST", body: JSON.stringify(body) });
   const user = await getDashboardSession();
-  if (!user) throw new Error("会话未建立，请检查后端 Cookie 与跨域部署配置。");
+  if (!user) throw new Error("登录状态未生效，请检查浏览器 Cookie 设置后重试。");
   return { code: 200, status: "success", message: "登录成功", data: user };
 }
 

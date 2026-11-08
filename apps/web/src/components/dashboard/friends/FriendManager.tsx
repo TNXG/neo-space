@@ -24,11 +24,11 @@ const TABS: { state: LinkStateType; count: "pass" | "audit" | "outdate" | "rejec
 ];
 
 const EMPTY_HINT: Record<LinkStateType, string> = {
-  [LinkState.NORMAL]: "添加第一位朋友，或等待访客提交申请。",
-  [LinkState.PENDING]: "没有待处理的申请。",
-  [LinkState.OUTDATED]: "没有被标记为过时的站点。",
-  [LinkState.REJECTED]: "没有被拒绝的申请。",
-  [LinkState.BANNED]: "没有被屏蔽的站点。",
+  [LinkState.NORMAL]: "添加第一位朋友，或等待访客提交友链申请。",
+  [LinkState.PENDING]: "目前没有待审核的友链申请。",
+  [LinkState.OUTDATED]: "所有友链均可正常访问。",
+  [LinkState.REJECTED]: "没有已拒绝的申请记录。",
+  [LinkState.BANNED]: "没有已屏蔽的站点。",
 };
 
 const parseState = (raw: string | null): LinkStateType => {
@@ -69,12 +69,12 @@ export function FriendManager() {
             友链
             {counts.data && <span className="text-sm font-normal text-muted-foreground tabular-nums">{counts.data.pass}</span>}
           </h2>
-          <p className="text-xs text-muted-foreground">站点可用性与订阅源会定期在后台检测，也可以手动触发。</p>
+          <p className="text-xs text-muted-foreground">管理友情链接、处理交换申请，并自动跟进友站动态。</p>
         </div>
         <div className="flex items-center gap-2">
           <Button type="button" size="sm" variant="outline" className="rounded-lg" disabled={checkingAll} onClick={runRecheckAll}>
             <Icon icon="mingcute:radar-2-line" data-icon="inline-start" className={cn(checkingAll && "animate-pulse")} aria-hidden="true" />
-            {checkingAll ? "检测中…" : "检测全部"}
+            {checkingAll ? "巡检中…" : "巡检全部"}
           </Button>
           <Button type="button" size="sm" className="rounded-lg" onClick={() => setEditing(null)}>
             <Icon icon="mingcute:add-line" data-icon="inline-start" aria-hidden="true" />添加友链

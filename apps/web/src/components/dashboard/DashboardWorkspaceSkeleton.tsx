@@ -1,11 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileSkeleton } from "./settings/profile-skeleton";
-import { findSettingGroup } from "./settings/settings-groups";
+import { findSettingPage } from "./settings/settings-groups";
 import { SettingsSkeleton } from "./settings/settings-skeleton";
 
 /** 会话建立前保持工作区比例；设置路由同时预留资料布局。 */
 export function DashboardWorkspaceSkeleton({ settings, groupSlug }: { settings: boolean; groupSlug?: string }) {
-  const group = groupSlug ? findSettingGroup(groupSlug) : undefined;
+  const group = groupSlug ? findSettingPage(groupSlug)?.groups[0] : undefined;
   return (
     <main role="status" aria-label="正在验证会话" aria-busy="true" className="flex h-svh overflow-hidden bg-muted">
       <span className="sr-only">正在验证会话…</span>

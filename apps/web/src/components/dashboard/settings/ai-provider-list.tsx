@@ -64,13 +64,13 @@ export function AiProviderList({ providers, disabled, issues, onAdd, onUpdate, o
   );
 
   return (
-    <SettingsSection title="服务商" icon="mingcute:server-line" description="OpenAI 兼容接口的连接信息，下方各功能从这里选择。" action={providers.length > 0 && addButton} framed={false} index={0}>
+    <SettingsSection title="模型服务商" icon="mingcute:server-line" description="添加常用的大模型服务商，供下方各项 AI 功能调用。" action={providers.length > 0 && addButton} framed={false} index={0}>
       {providers.length === 0 ? (
         <Empty className="rounded-2xl border border-dashed border-border bg-card/60 md:p-10">
           <EmptyHeader>
             <EmptyMedia variant="icon"><Icon icon="mingcute:sparkles-line" aria-hidden="true" /></EmptyMedia>
-            <EmptyTitle className="text-base">还没有 AI 服务商</EmptyTitle>
-            <EmptyDescription>添加 OpenAI 兼容接口（如 OpenAI、DeepSeek、Moonshot）后，即可为下方功能分配模型。</EmptyDescription>
+            <EmptyTitle className="text-base">还没有添加服务商</EmptyTitle>
+            <EmptyDescription>添加 OpenAI 兼容服务或 Jev 反垃圾服务后，即可开启翻译、时效提醒与评论审核。</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>{addButton}</EmptyContent>
         </Empty>

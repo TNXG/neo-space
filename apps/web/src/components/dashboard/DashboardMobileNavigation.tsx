@@ -40,7 +40,7 @@ export function DashboardMobileNavigation({ user, open, onOpenChange }: Dashboar
           <div className="px-3 pt-2">
             <Button variant="ghost" asChild className="h-11 w-full justify-start px-2.5">
               <Link href="/" onClick={() => onOpenChange(false)}>
-                <Icon icon="mingcute:external-link-line" data-icon="inline-start" aria-hidden="true" />访问站点
+                <Icon icon="mingcute:external-link-line" data-icon="inline-start" aria-hidden="true" />查看前台网站
               </Link>
             </Button>
           </div>

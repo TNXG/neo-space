@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { OptionDocument, OptionValue } from "@/types/api";
 import { Badge } from "@/components/ui/badge";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { Switch } from "@/components/ui/switch";
 import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
-import { AI_FEATURES, providerLabel, resolveProvider, type AiFeature, type AiProvider } from "./ai-model";
+import { AI_FEATURES, providerLabel, resolveProvider, supportsFeature, type AiFeature, type AiProvider } from "./ai-model";
 import { readValue, type SettingsIssue } from "./settings-model";
 import { SettingsSection } from "./settings-section";
 
@@ -35,6 +35,8 @@ export function AiFeatureList({ document, providers, disabled, issues, onChange 
 }
 
 function AiFeatureRow({ feature, document, providers, disabled, issues, onChange }: AiFeatureListProps & { feature: AiFeature }) {
+  const reduce = useReducedMotion();
+  const compatible = providers.filter(provider => supportsFeature(provider, feature));
   const enabled = feature.toggle ? document[feature.toggle] === true : true;
   const providerPath = `${feature.key}.providerId`;
   const modelPath = `${feature.key}.model`;
@@ -44,14 +46,14 @@ function AiFeatureRow({ feature, document, providers, disabled, issues, onChange
   const providerError = issues.find(issue => issue.path === providerPath)?.message;
   const modelError = issues.find(issue => issue.path === modelPath)?.message;
   const selected = typeof providerId === "string" ? providerId : "";
-  const missing = Boolean(selected) && !providers.some(provider => provider.id === selected);
+  const missing = Boolean(selected) && !compatible.some(provider => provider.id === selected);
   const id = `ai-feature-${feature.key}`;
   const defaultLabel = feature.fallback ? "自动（第一个已启用的服务商）" : "未分配";
-  const triggerLabel = missing ? "服务商已删除" : selected ? providerLabel(providers.find(provider => provider.id === selected)!) : defaultLabel;
+  const triggerLabel = missing ? "服务商已删除或不适用" : selected ? providerLabel(providers.find(provider => provider.id === selected)!) : defaultLabel;
   const modelPlaceholder = resolved?.defaultModel ? `默认：${resolved.defaultModel}` : "填写模型名称";
 
   return (
-    <div data-path={feature.key} className="flex flex-col py-4">
+    <div id={feature.key} data-path={feature.key} className="flex scroll-mt-6 flex-col py-4">
       <div className="flex items-start gap-3.5">
         <span className={cn("mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/60 transition-colors duration-(--motion-duration-fast)", enabled ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground")} aria-hidden="true">
           <Icon icon={feature.icon} className="size-4.5" />
@@ -75,13 +77,13 @@ function AiFeatureRow({ feature, document, providers, disabled, issues, onChange
       <AnimatePresence initial={false}>
         {enabled && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: reduce ? "auto" : 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            exit={{ height: reduce ? "auto" : 0, opacity: 0 }}
+            transition={{ duration: reduce ? 0.1 : 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:pl-12.5">
+            <div className="grid gap-4 pt-4 lg:grid-cols-2 lg:pl-12.5">
               <Field data-path={providerPath} data-invalid={Boolean(providerError) || undefined}>
                 <FieldLabel htmlFor={`${id}-provider`} className="text-[0.8125rem] text-muted-foreground">服务商</FieldLabel>
                 <Select
@@ -98,14 +100,14 @@ function AiFeatureRow({ feature, document, providers, disabled, issues, onChange
                   <SelectContent position="popper">
                     <SelectGroup>
                       <SelectItem value={UNSET}>{defaultLabel}</SelectItem>
-                      {missing && <SelectItem value={selected}>服务商已删除</SelectItem>}
+                      {missing && <SelectItem value={selected} disabled>服务商已删除或不适用</SelectItem>}
                     </SelectGroup>
-                    {providers.length > 0 && (
+                    {compatible.length > 0 && (
                       <>
                         <SelectSeparator />
                         <SelectGroup>
                           <SelectLabel>服务商</SelectLabel>
-                          {providers.map(provider => (
+                          {compatible.map(provider => (
                             <SelectItem key={provider.id} value={provider.id} disabled={!provider.id}>
                               {providerLabel(provider)}
                               {provider.enabled !== true && <span className="text-xs text-muted-foreground">未启用</span>}

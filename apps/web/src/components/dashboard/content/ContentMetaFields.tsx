@@ -53,12 +53,12 @@ export function ContentMetaFields({ kind, draft, issues, onChange }: ContentMeta
       )}
 
       <Field data-invalid={Boolean(issueOf("slug")) || undefined} data-field="slug">
-        <FieldLabel htmlFor="content-slug">路径</FieldLabel>
+        <FieldLabel htmlFor="content-slug">访问路径</FieldLabel>
         <Input
           id="content-slug"
           value={draft.slug}
           onChange={event => onChange("slug", event.target.value.toLowerCase().replace(/\s+/g, "-"))}
-          placeholder={slugHint || (kind === "post" ? "留空自动生成" : "about")}
+          placeholder={slugHint || (kind === "post" ? "留空则自动生成" : "例如 about")}
           aria-invalid={Boolean(issueOf("slug")) || undefined}
           spellCheck={false}
           className="font-mono text-[0.8125rem]"
@@ -81,7 +81,7 @@ export function ContentMetaFields({ kind, draft, issues, onChange }: ContentMeta
           </Field>
           <Field>
             <FieldLabel htmlFor="content-summary">摘要</FieldLabel>
-            <Textarea id="content-summary" value={post.summary} onChange={event => onChange("summary", event.target.value)} placeholder="留空则在列表中使用 AI 摘要或正文开头" rows={4} className="resize-none" />
+            <Textarea id="content-summary" value={post.summary} onChange={event => onChange("summary", event.target.value)} placeholder="简短概括文章内容，留空则自动截取正文开头" rows={4} className="resize-none" />
             <FieldDescription className="tabular-nums">{post.summary.length} 字</FieldDescription>
           </Field>
           <Field orientation="horizontal" className="items-center justify-between">

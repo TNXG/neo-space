@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils";
 import { Link, usePathname } from "@/locales/navigation";
 import { useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
 import { useContentDraftStore } from "./content/use-content-editor";
-import { settingGroups } from "./settings/settings-groups";
+import { settingPages } from "./settings/settings-groups";
 
 export const settingLinks = [
-  { href: "/dashboard/settings/profile", title: "用户", icon: "mingcute:user-3-line", key: "profile", help: "昵称、头像与社交链接" },
-  ...settingGroups.map(group => ({ href: `/dashboard/settings/${group.slug}`, title: group.title, icon: group.icon, key: group.key as string, help: group.help })),
+  { href: "/dashboard/settings/profile", title: "个人资料", icon: "mingcute:user-3-line", key: "profile", keys: [] as string[], help: "昵称、头像、简介与社交账号" },
+  ...settingPages.map(page => ({ href: `/dashboard/settings/${page.slug}`, title: page.title, icon: page.icon, key: page.slug, keys: page.groups.map(group => group.key), help: page.help })),
 ];
 
 interface DashboardNavigationProps {
@@ -73,15 +73,16 @@ export function DashboardNavigation({ collapsed = false, onNavigate, layoutScope
   const contentDrafts = useContentDraftStore(state => state.drafts);
   const settingsActive = pathname.startsWith("/dashboard/settings");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const unsaved = new Set([...Object.keys(drafts), ...(profileDirty ? ["profile"] : [])]);
+  const unsaved = new Set(settingLinks.filter(item => item.key === "profile" ? profileDirty : item.keys.some(key => key in drafts)).map(item => item.key));
   const anyUnsaved = unsaved.size > 0;
 
   return (
     <nav aria-label="后台导航" className="flex flex-col gap-0.5 px-3 py-1">
-      <NavItem href="/dashboard" title="仪表盘" icon="mingcute:home-3-line" active={pathname === "/dashboard"} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
+      <NavItem href="/dashboard" title="总览" icon="mingcute:home-3-line" active={pathname === "/dashboard"} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       <NavItem href="/dashboard/posts" title="文章" icon="mingcute:document-2-line" active={pathname.startsWith("/dashboard/posts")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("post:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       <NavItem href="/dashboard/pages" title="页面" icon="mingcute:file-line" active={pathname.startsWith("/dashboard/pages")} unsaved={Object.keys(contentDrafts).some(key => key.startsWith("page:"))} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       <NavItem href="/dashboard/friends" title="友链" icon="mingcute:link-2-line" active={pathname.startsWith("/dashboard/friends")} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
+      <NavItem href="/dashboard/comments" title="评论" icon="mingcute:comment-line" active={pathname.startsWith("/dashboard/comments")} collapsed={collapsed} layoutScope={layoutScope} onNavigate={onNavigate} />
       {collapsed ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -16,7 +16,7 @@ import { TagInput } from "../content/TagInput";
 export const STATE_LABELS: Record<LinkStateType, string> = {
   [LinkState.NORMAL]: "朋友们",
   [LinkState.PENDING]: "待审核",
-  [LinkState.OUTDATED]: "过时的",
+  [LinkState.OUTDATED]: "无法访问",
   [LinkState.REJECTED]: "已拒绝",
   [LinkState.BANNED]: "已屏蔽",
 };
@@ -118,11 +118,11 @@ function EditorForm({ link, onClose, onSave }: { link: Link | null; onClose: () 
             <Textarea id="friend-description" rows={2} value={draft.description} onChange={event => update("description", event.target.value)} />
           </Field>
           <Field data-invalid={Boolean(issueOf("rssurl")) || undefined}>
-            <FieldLabel htmlFor="friend-rssurl">订阅源</FieldLabel>
+            <FieldLabel htmlFor="friend-rssurl">RSS 订阅地址</FieldLabel>
             <Input id="friend-rssurl" value={draft.rssurl ?? ""} placeholder="https://example.com/feed.xml" aria-invalid={Boolean(issueOf("rssurl")) || undefined} onChange={event => update("rssurl", event.target.value)} />
             {issueOf("rssurl")
               ? <FieldError>{issueOf("rssurl")}</FieldError>
-              : <FieldDescription>填写后，友链页会以对方最新文章展示；抓取失败时自动降级为名片。</FieldDescription>}
+              : <FieldDescription>选填。填写后可在友链页展示对方的最新文章。</FieldDescription>}
           </Field>
           <Field>
             <FieldLabel htmlFor="friend-techstack">技术栈</FieldLabel>
@@ -166,7 +166,7 @@ export function FriendEditor({ target, onClose, onSave }: FriendEditorProps) {
       <DrawerContent className="flex flex-col data-[vaul-drawer-direction=right]:sm:max-w-md data-[vaul-drawer-direction=bottom]:max-h-[90vh]">
         <DrawerHeader className="text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
           <DrawerTitle>{target ? `编辑「${target.name}」` : "添加友链"}</DrawerTitle>
-          <DrawerDescription>保存后会在后台检测站点可用性与订阅源。</DrawerDescription>
+          <DrawerDescription>填写友站信息；如提供 RSS 地址，友链页会自动展示对方的最新文章。</DrawerDescription>
         </DrawerHeader>
         {target !== undefined && <EditorForm key={target?._id ?? "new"} link={target} onClose={onClose} onSave={onSave} />}
       </DrawerContent>

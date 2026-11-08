@@ -22,7 +22,7 @@ export function LoginPanel({ initialError }: LoginPanelProps) {
   useEffect(() => {
     if (login.user) router.replace("/dashboard");
   }, [login.user, router]);
-  const message = login.error || login.queryError || login.optionsError || login.passkeyError || (session.error ? "暂时无法验证会话，请检查后台连接。" : "");
+  const message = login.error || login.queryError || login.optionsError || login.passkeyError || (session.error ? "暂时无法确认登录状态，请稍后重试。" : "");
 
   return (
     <section aria-labelledby="dashboard-login-title" className="mx-auto grid w-full max-w-md overflow-hidden rounded-3xl border border-border bg-background text-foreground shadow-lg lg:max-w-3xl lg:grid-cols-[0.85fr_1fr]">
@@ -50,7 +50,7 @@ export function LoginPanel({ initialError }: LoginPanelProps) {
         {!login.user && <OwnerIdentity profile={login.profile} identifying={login.identifying} unmatched={login.unmatched} />}
         {login.user ? (
           <p role="status" className="flex min-h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Icon icon="mingcute:check-line" aria-hidden="true" />登录成功，正在进入工作区…
+            <Icon icon="mingcute:check-line" aria-hidden="true" />登录成功，正在进入后台…
           </p>
         ) : <LoginForm login={login} />}
         {(message || (!login.user && (login.queryError || login.optionsError))) && (

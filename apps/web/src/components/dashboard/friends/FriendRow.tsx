@@ -21,8 +21,8 @@ interface FriendRowProps {
 
 /** 订阅源状态：成功给出文章数与最新标题，失败给出原因，未配置时安静提示。 */
 function FeedStatus({ link }: { link: Link }) {
-  if (!link.rssurl) return <span className="text-muted-foreground/60">未配置订阅源</span>;
-  if (!link.feed) return <span className="text-muted-foreground">订阅源待检测</span>;
+  if (!link.rssurl) return <span className="text-muted-foreground/60">未填 RSS</span>;
+  if (!link.feed) return <span className="text-muted-foreground">等待同步文章</span>;
   if (link.feed.error_message) {
     return (
       <span className="flex min-w-0 items-center gap-1 text-destructive">
@@ -105,7 +105,7 @@ export function FriendRow({ link, onEdit, onState, onRecheck, onDelete }: Friend
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => onEdit(link)}><Icon icon="mingcute:edit-2-line" aria-hidden="true" />编辑</DropdownMenuItem>
               {link.state !== LinkState.NORMAL && <DropdownMenuItem onSelect={() => onState(link, LinkState.NORMAL, `已恢复「${link.name}」`)}><Icon icon="mingcute:check-circle-line" aria-hidden="true" />设为通过</DropdownMenuItem>}
-              {link.state !== LinkState.OUTDATED && <DropdownMenuItem onSelect={() => onState(link, LinkState.OUTDATED, `已标记「${link.name}」为过时`)}><Icon icon="mingcute:time-line" aria-hidden="true" />标记过时</DropdownMenuItem>}
+              {link.state !== LinkState.OUTDATED && <DropdownMenuItem onSelect={() => onState(link, LinkState.OUTDATED, `已将「${link.name}」标记为无法访问`)}><Icon icon="mingcute:time-line" aria-hidden="true" />标记无法访问</DropdownMenuItem>}
               {link.state !== LinkState.BANNED && <DropdownMenuItem onSelect={() => onState(link, LinkState.BANNED, `已屏蔽「${link.name}」`)}><Icon icon="mingcute:forbid-circle-line" aria-hidden="true" />屏蔽</DropdownMenuItem>}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

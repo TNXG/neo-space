@@ -1,12 +1,17 @@
-import type { OptionDocument, OptionValue } from "@/types/api";
+import type { DashboardOptions, OptionDocument, OptionValue } from "@/types/api";
 import type { SettingField, SettingGroup } from "./settings-schema";
 import { isDocument, readValue, type SettingsIssue } from "./settings-model";
+import { resolveCommentReview } from "./comment-review-model";
 
 /** 遍历分组声明，返回可直接定位到字段的问题列表。 */
-export function validateSettings(group: SettingGroup, document: OptionDocument): SettingsIssue[] {
+export function validateSettings(group: SettingGroup, document: OptionDocument, savedOptions?: DashboardOptions): SettingsIssue[] {
   const issues: SettingsIssue[] = [];
   for (const section of group.sections) validateFields(section.fields, document, document, issues);
   if (group.key === "ai") validateAiAssignments(document, issues);
+  if (group.key === "commentOptions" && document.antiSpam === true && document.aiReview === true) {
+    const review = resolveCommentReview(savedOptions?.ai);
+    if (!review.ready) issues.push({ path: "aiReview", message: review.reason });
+  }
   return issues;
 }
 
@@ -63,10 +68,15 @@ function validateCollection(field: SettingField, value: OptionValue | undefined,
 /** 服务商是唯一连接来源；启用的功能必须能解析到有效服务商和模型。 */
 function validateAiAssignments(document: OptionDocument, issues: SettingsIssue[]) {
   const providers = Array.isArray(document.providers) ? document.providers.filter(isDocument) : [];
+  providers.forEach((provider, index) => {
+    if (provider.type === "jev" && provider.enabled === true && !(typeof provider.apiKey === "string" && provider.apiKey.trim())) {
+      issues.push({ path: `providers.${index}.apiKey`, message: "Jev 需要 API 密钥。" });
+    }
+  });
   const assignments = [
-    { path: "summaryModel", label: "时间胶囊分析", enabled: document.enableSummary === true, fallback: true },
-    { path: "translationModel", label: "内容翻译", enabled: document.enableTranslation === true, fallback: true },
-    { path: "commentReviewModel", label: "评论 AI 审核", enabled: Boolean(readValue(document, "commentReviewModel.providerId") || readValue(document, "commentReviewModel.model")), fallback: false },
+    { path: "summaryModel", label: "文章时效提醒", enabled: document.enableSummary === true, fallback: true },
+    { path: "translationModel", label: "文章与随记翻译", enabled: document.enableTranslation === true, fallback: true },
+    { path: "commentReviewModel", label: "评论智能审核", enabled: Boolean(readValue(document, "commentReviewModel.providerId") || readValue(document, "commentReviewModel.model")), fallback: false },
   ];
   for (const assignment of assignments) {
     if (!assignment.enabled) continue;
@@ -74,11 +84,15 @@ function validateAiAssignments(document: OptionDocument, issues: SettingsIssue[]
     const providerId = readValue(document, providerPath);
     const provider = providerId
       ? providers.find(item => item.id === providerId)
-      : assignment.fallback ? providers.find(item => item.enabled === true) : undefined;
+      : assignment.fallback ? providers.find(item => item.enabled === true && item.type !== "jev") : undefined;
     if (!provider) {
       if (!issues.some(issue => issue.path === providerPath)) {
         issues.push({ path: providerPath, message: `请为${assignment.label}选择有效的服务商，或先关闭该功能。` });
       }
+      continue;
+    }
+    if (provider.type === "jev" && assignment.path !== "commentReviewModel") {
+      issues.push({ path: providerPath, message: "Jev 仅支持评论反垃圾，请为此功能选择 OpenAI 兼容服务商。" });
       continue;
     }
     if (provider.enabled !== true) {

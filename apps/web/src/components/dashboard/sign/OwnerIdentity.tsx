@@ -14,7 +14,7 @@ interface OwnerIdentityProps {
 /** 在身份卡片中呈现等待、识别中、未匹配及公开资料状态。 */
 export function OwnerIdentity({ profile, identifying, unmatched }: OwnerIdentityProps) {
   const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
-  const name = identifying ? "正在确认账号…" : unmatched ? "未找到该账号" : profile?.name || profile?.username || "等待身份识别";
+  const name = identifying ? "正在确认账号…" : unmatched ? "未找到该账号" : profile?.name || profile?.username || "输入账号以继续";
   const avatar = profile?.avatar || "/favicon.webp";
 
   return (
@@ -36,7 +36,7 @@ export function OwnerIdentity({ profile, identifying, unmatched }: OwnerIdentity
             <motion.span key={name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="absolute inset-0 truncate text-sm font-medium">{name}</motion.span>
           </AnimatePresence>
         </div>
-        <span className="text-sm text-foreground/75">{identifying ? "正在连接你的空间" : unmatched ? "检查你的登录凭据" : profile ? "已找到空间主人" : "输入用户名或邮箱以连接"}</span>
+        <span className="text-sm text-foreground/75">{identifying ? "正在连接你的空间" : unmatched ? "请检查用户名或邮箱是否正确" : profile ? "已确认空间主人身份" : "输入用户名或邮箱以继续"}</span>
       </div>
     </div>
   );

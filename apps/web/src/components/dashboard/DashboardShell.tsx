@@ -16,6 +16,8 @@ const COLLAPSE_KEY = "neo-dashboard-sidebar-collapsed";
 const CONTENT_SECTIONS = [
   { href: "/dashboard/posts", title: "文章" },
   { href: "/dashboard/pages", title: "页面" },
+  { href: "/dashboard/friends", title: "友链" },
+  { href: "/dashboard/comments", title: "评论" },
 ];
 
 /** 侧栏与内嵌内容面板；外壳跨路由常驻，仅内容区执行进出场过渡。 */
@@ -42,10 +44,12 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
       if (!(event.metaKey || event.ctrlKey) || event.isComposing || event.repeat) return;
       const key = event.key.toLowerCase();
       if (key === "s") {
-        const form = document.querySelector<HTMLFormElement>("form[data-settings-form]");
-        if (!form) return;
-        event.preventDefault();
-        form.requestSubmit();
+        const focused = event.target instanceof HTMLElement ? event.target.closest<HTMLFormElement>("form[data-settings-form]") : null;
+        const forms = document.querySelectorAll<HTMLFormElement>("form[data-settings-form]");
+        const dirty = document.querySelectorAll<HTMLFormElement>("form[data-settings-form][data-dirty=true]");
+        const form = focused ?? (dirty.length === 1 ? dirty[0] : forms.length === 1 ? forms[0] : null);
+        if (forms.length) event.preventDefault();
+        form?.requestSubmit();
         return;
       }
       if (key !== "b" || !window.matchMedia("(min-width: 1024px)").matches) return;
@@ -85,7 +89,7 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
           <DashboardMobileNavigation user={user} open={mobileOpen} onOpenChange={setMobileOpen} />
           <nav aria-label="当前位置" className="flex min-w-0 items-center gap-1.5 text-[0.8125rem]">
             {settings ? <>
-              <Link href="/dashboard" className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">仪表盘</Link>
+              <Link href="/dashboard" className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">总览</Link>
               <Icon icon="mingcute:right-line" className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
               <span className="text-muted-foreground">设置</span>
               <Icon icon="mingcute:right-line" className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
@@ -93,7 +97,7 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
                 <motion.h1 key={pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="truncate font-medium">{page?.title ?? "设置"}</motion.h1>
               </AnimatePresence>
             </> : section ? <>
-              <Link href="/dashboard" className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">仪表盘</Link>
+              <Link href="/dashboard" className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">总览</Link>
               <Icon icon="mingcute:right-line" className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
               {editing
                 ? <>
@@ -102,7 +106,7 @@ export function DashboardShell({ user, children }: { user: Reader; children?: Re
                   <h1 className="truncate font-medium">{pathname.endsWith("/new") ? "新建" : "编辑"}</h1>
                 </>
                 : <h1 className="font-medium">{section.title}</h1>}
-            </> : <h1 className="font-medium">仪表盘</h1>}
+            </> : <h1 className="font-medium">总览</h1>}
           </nav>
         </header>
         <main id="main-content" tabIndex={-1} className="relative min-h-0 flex-1 overflow-hidden outline-none">

@@ -27,24 +27,24 @@ export interface AiFeature {
 export const AI_FEATURES: readonly AiFeature[] = [
   {
     key: "summaryModel",
-    title: "时间胶囊分析",
-    description: "识别文章里的版本号、日期与统计数据，提示内容是否可能已过时。",
+    title: "文章时效提醒",
+    description: "识别文章中的软件版本、时间与数据，在内容可能过时时向读者展示温和提示。",
     icon: "mingcute:time-line",
     toggle: "enableSummary",
     fallback: true,
   },
   {
     key: "translationModel",
-    title: "内容翻译",
-    description: "允许在后台为文章与日记生成译文，不会自动触发。",
+    title: "文章与随记翻译",
+    description: "支持在后台为文章与随记生成多语言译文。",
     icon: "mingcute:translate-2-line",
     toggle: "enableTranslation",
     fallback: true,
   },
   {
     key: "commentReviewModel",
-    title: "评论 AI 审核",
-    description: "为评论反垃圾提供判定与评分；需在评论设置中同时开启反垃圾与 AI 审核。",
+    title: "评论智能审核",
+    description: "自动识别广告与垃圾评论；需同时在「评论设置」中开启 AI 审核。",
     icon: "mingcute:shield-shape-line",
     fallback: false,
   },
@@ -60,7 +60,8 @@ export function readProviders(document: OptionDocument): AiProvider[] {
 /** 未命名服务商用类型加短标识，避免列表里只剩一截 UUID。 */
 export function providerLabel(provider: AiProvider): string {
   if (provider.name?.trim()) return provider.name.trim();
-  return provider.id ? `OpenAI 兼容 · ${provider.id.slice(0, 6)}` : "OpenAI 兼容";
+  const kind = provider.type === "jev" ? "Jev" : "OpenAI 兼容";
+  return provider.id ? `${kind} · ${provider.id.slice(0, 6)}` : kind;
 }
 
 /** 去掉协议前缀，列表摘要只需要主机与路径。 */
@@ -72,5 +73,10 @@ export function endpointHost(endpoint?: string): string {
 export function resolveProvider(document: OptionDocument, providers: readonly AiProvider[], feature: AiFeature): AiProvider | undefined {
   const id = readValue(document, `${feature.key}.providerId`);
   if (typeof id === "string" && id) return providers.find(provider => provider.id === id);
-  return feature.fallback ? providers.find(provider => provider.enabled === true) : undefined;
+  return feature.fallback ? providers.find(provider => provider.enabled === true && supportsFeature(provider, feature)) : undefined;
+}
+
+/** Jev 是结构化判断服务，不进入文章分析与翻译的可选列表。 */
+export function supportsFeature(provider: AiProvider, feature: AiFeature): boolean {
+  return provider.type !== "jev" || feature.key === "commentReviewModel";
 }

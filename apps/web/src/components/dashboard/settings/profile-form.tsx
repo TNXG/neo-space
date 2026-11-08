@@ -115,7 +115,7 @@ export function ProfileForm() {
       await readFresh();
       toast.success("个人资料已保存");
     } catch (cause) {
-      setFailure(saved ? `资料已保存，但未能重新读取最新资料；请只重试读取。${failureMessage(cause)}` : `保存失败，输入内容已保留。${failureMessage(cause)}`);
+      setFailure(saved ? `资料已保存，但未能刷新最新状态；请点击重试。${failureMessage(cause)}` : `保存失败，填写的内容已保留。${failureMessage(cause)}`);
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -173,10 +173,10 @@ export function ProfileForm() {
       <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 pt-5 lg:px-6 lg:pt-8">
           <SettingsNotice show={Boolean(error) && !failure}>
-            <Alert variant="destructive"><AlertTitle>无法读取资料</AlertTitle><AlertDescription><p>{failureMessage(error)}</p><Button type="button" variant="outline" size="sm" onClick={() => { void retry(); }}>重试读取</Button></AlertDescription></Alert>
+            <Alert variant="destructive"><AlertTitle>无法加载个人资料</AlertTitle><AlertDescription><p>{failureMessage(error)}</p><Button type="button" variant="outline" size="sm" onClick={() => { void retry(); }}>重试</Button></AlertDescription></Alert>
           </SettingsNotice>
           <SettingsNotice show={Boolean(failure)}>
-            <Alert variant="destructive"><AlertTitle>{awaitingRead ? "已保存，等待确认最新资料" : "保存失败"}</AlertTitle><AlertDescription><p>{failure}</p>{awaitingRead && <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => { void retry(); }}>重新读取已保存资料</Button>}</AlertDescription></Alert>
+            <Alert variant="destructive"><AlertTitle>{awaitingRead ? "已保存，正在同步最新资料" : "保存失败"}</AlertTitle><AlertDescription><p>{failure}</p>{awaitingRead && <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => { void retry(); }}>重新加载资料</Button>}</AlertDescription></Alert>
           </SettingsNotice>
           <SettingsNotice show={issues.length > 0}>
             <Alert variant="destructive"><AlertTitle>还有 {issues.length} 项需要处理</AlertTitle><AlertDescription><SettingsIssueList issues={issues} onSelect={path => focusSettingsField(form.current, path)} /></AlertDescription></Alert>
@@ -198,9 +198,9 @@ export function ProfileForm() {
               <div className="divide-y divide-border/50 rounded-xl border border-border px-3 lg:px-4">
                 {basic("name", "昵称")}
                 {basic("handle", "用户名")}
-                {basic("email", "邮箱", "展示在公开主页的邮件入口。", "email")}
+                {basic("email", "联系邮箱", "用于接收通知，并作为主页的邮箱联系入口。", "email")}
                 {basic("url", "个人网站", "以 http:// 或 https:// 开头。", "url")}
-                {basic("image", "头像地址", "公开图片链接，或以 / 开头的站内路径。", "url")}
+                {basic("image", "头像链接", "填写图片网址，或以 / 开头的站内路径。", "url")}
                 {basic("introduce", "个人简介", undefined, "text", true)}
               </div>
             </motion.section>

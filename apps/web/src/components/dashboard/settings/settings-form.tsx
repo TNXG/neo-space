@@ -4,21 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/lib/inline-icon";
+import { cn } from "@/lib/utils";
 import { AiSettings } from "./ai-settings";
-import { CacheSettings } from "./cache-settings";
+import { CommentReviewLink } from "./comment-review-link";
 import { OAuthSettings } from "./oauth-settings";
 import { SettingsField } from "./settings-field";
 import { focusSettingsField, SettingsIssueList, SettingsNotice, SettingsSaveBar } from "./settings-savebar";
 import { SettingsSection } from "./settings-section";
 import { SettingsSkeleton } from "./settings-skeleton";
 import type { SettingGroup } from "./settings-schema";
-import { type SettingsIssue } from "./settings-model";
+import { sameValue, type SettingsIssue } from "./settings-model";
 import { validateSettings } from "./settings-validation";
-import { useGroupSettings } from "./use-settings-draft";
+import { useGroupSettings, useSettingsDrafts } from "./use-settings-draft";
 
 /** 浮动操作条 + 紧凑分组；离开页面前保留草稿，保存只提交当前分组。 */
-export function SettingsForm({ group }: { group: SettingGroup }) {
+export function SettingsForm({ group, embedded = false }: { group: SettingGroup; embedded?: boolean }) {
   const state = useGroupSettings(group);
+  const drafts = useSettingsDrafts();
+  const aiDirty = Boolean(drafts.ai && !sameValue(drafts.ai.base, drafts.ai.draft));
   const [issues, setIssues] = useState<SettingsIssue[]>([]);
   const [attention, setAttention] = useState(0);
   const form = useRef<HTMLFormElement>(null);
@@ -34,7 +37,7 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
   /** 保存前校验并定位第一个问题字段。 */
   function submit() {
     if (!state.document || state.busy || !state.dirty) return;
-    const found = validateSettings(group, state.document);
+    const found = validateSettings(group, state.document, state.options);
     setIssues(found);
     if (found.length) {
       setAttention(value => value + 1);
@@ -55,16 +58,17 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
       ref={form}
       aria-label={group.title}
       aria-busy={state.loading || state.pending}
-      className="flex h-full min-h-0 min-w-0 flex-col"
+      className={cn("flex min-h-0 min-w-0 flex-col", !embedded && "h-full")}
       onKeyDown={event => {
         if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing) event.preventDefault();
       }}
       onSubmit={event => { event.preventDefault(); submit(); }}
       onReset={event => { event.preventDefault(); state.reset(); setIssues([]); }}
       data-settings-form
+      data-dirty={state.dirty || undefined}
     >
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pt-6 lg:px-6 lg:pt-10">
+      <div className={cn("relative flex min-h-0 flex-col", !embedded && "flex-1 overflow-y-auto overscroll-contain")}>
+        <div className={cn("mx-auto flex w-full max-w-3xl flex-col gap-8", embedded ? "px-1" : "flex-1 px-4 pt-6 lg:px-6 lg:pt-10")}>
           <header className="flex items-start gap-3.5 px-1">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-card text-foreground/80 shadow-xs" aria-hidden="true">
               <Icon icon={group.icon} className="size-5" />
@@ -77,11 +81,11 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
 
           <SettingsNotice show={Boolean(state.failure)}>
             <Alert variant="destructive">
-              <AlertTitle>{state.awaitingRead ? "已保存，等待确认生效值" : "配置请求失败"}</AlertTitle>
+              <AlertTitle>{state.awaitingRead ? "已保存，正在同步最新状态" : "读取或保存失败"}</AlertTitle>
               <AlertDescription>
                 <p>{state.failure}</p>
                 <Button type="button" variant="outline" size="sm" disabled={state.pending} onClick={() => { void state.retry(); }}>
-                  {state.awaitingRead ? "重新读取已保存配置" : "重试读取"}
+                  {state.awaitingRead ? "重新加载最新设置" : "重试"}
                 </Button>
               </AlertDescription>
             </Alert>
@@ -92,6 +96,14 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
               <AlertDescription><SettingsIssueList issues={issues} onSelect={path => focusSettingsField(form.current, path)} /></AlertDescription>
             </Alert>
           </SettingsNotice>
+          {(group.key === "commentOptions" || group.key === "ai") && state.document && (
+            <CommentReviewLink
+              from={group.key === "ai" ? "ai" : "comments"}
+              comments={state.options?.commentOptions}
+              ai={state.options?.ai}
+              aiDirty={aiDirty}
+            />
+          )}
 
           {state.document ? (
             group.key === "ai" ? (
@@ -121,9 +133,17 @@ export function SettingsForm({ group }: { group: SettingGroup }) {
           ) : (
             state.loading && <SettingsSkeleton group={group} />
           )}
-          {group.key === "seo" && <CacheSettings index={group.sections.length} />}
         </div>
-        <SettingsSaveBar dirty={dirty} pending={state.pending} disabled={state.busy} attention={attention} saveLabel="保存" />
+        {embedded ? (
+          <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border/60 py-5">
+            <span role="status" className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
+              {state.dirty && <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />}
+              {state.dirty ? "有未保存的修改" : "已保存最新设置"}
+            </span>
+            <Button type="reset" variant="ghost" size="sm" disabled={state.busy || !state.dirty}>放弃</Button>
+            <Button type="submit" size="sm" disabled={state.busy || !state.dirty}>{state.pending ? "保存中…" : `保存${group.title}`}</Button>
+          </div>
+        ) : <SettingsSaveBar dirty={dirty} pending={state.pending} disabled={state.busy} attention={attention} saveLabel="保存" />}
       </div>
     </form>
   );

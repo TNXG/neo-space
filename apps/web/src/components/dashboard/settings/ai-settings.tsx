@@ -29,6 +29,11 @@ export function AiSettings({ document, disabled, issues, onChange }: AiSettingsP
   function update(index: number, key: keyof AiProvider, value: string | boolean) {
     const previous = providers[index];
     write(providers.map((provider, current) => current === index ? { ...provider, [key]: value } : provider));
+    if (key === "type" && value === "jev") {
+      write(providers.map((provider, current) => current === index
+        ? { ...provider, type: "jev", endpoint: provider.endpoint || "https://api.typesafe.ai/v1", defaultModel: provider.defaultModel || "jev-latest" }
+        : provider));
+    }
     if (key !== "id" || !previous.id) return;
     for (const feature of AI_FEATURES) {
       const assignment = document[feature.key];

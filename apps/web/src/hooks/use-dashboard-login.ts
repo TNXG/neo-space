@@ -62,9 +62,9 @@ export function useDashboardLogin(initialError = ""): DashboardLoginState {
   const profile = identification?.matched ? identification.profile : null;
   const allow = options.data?.status === "success" ? options.data.data : null;
   const identifying = Boolean(identifier.trim()) && (query !== identifier.trim() || identity.isLoading);
-  const queryError = identity.error ? "无法获取博主信息，请检查后台连接后重试。"
+  const queryError = identity.error ? "无法连接服务器，请稍后重试。"
     : identity.data?.status === "failed" ? identity.data.message : "";
-  const optionsError = options.error ? "无法获取登录方式，请检查后台连接后重试。"
+  const optionsError = options.error ? "无法加载登录方式，请稍后重试。"
     : options.data?.status === "failed" ? options.data.message : "";
 
   /** 两种认证方式成功后进入同一会话状态，不显示账号明细。 */
@@ -105,7 +105,7 @@ export function useDashboardLogin(initialError = ""): DashboardLoginState {
       }
       completeSignIn(result.data);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "登录请求失败，请检查后台连接后重试。");
+      setError(error instanceof Error ? error.message : "网络异常，请稍后重试。");
     } finally {
       inFlight.current = false;
       setPending(null);

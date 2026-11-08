@@ -10,8 +10,8 @@ import { settingLinks } from "./DashboardNavigation";
 import { useProfileDraftStore, useSettingsDrafts } from "./settings/use-settings-draft";
 
 const CONTENT_LINKS = [
-  { href: "/dashboard/posts", title: "文章", help: "写作、发布与管理文章", icon: "mingcute:document-2-line", create: "写文章" },
-  { href: "/dashboard/pages", title: "页面", help: "关于等独立页面", icon: "mingcute:file-line", create: "新建页面" },
+  { href: "/dashboard/posts", title: "文章", help: "撰写、发布与整理博客文章", icon: "mingcute:document-2-line", create: "写文章" },
+  { href: "/dashboard/pages", title: "独立页面", help: "管理「关于」等固定页面", icon: "mingcute:file-line", create: "新建页面" },
 ];
 
 const greetings = [[5, "凌晨好"], [11, "早上好"], [13, "中午好"], [18, "下午好"], [24, "晚上好"]] as const;
@@ -23,7 +23,7 @@ export function DashboardOverview() {
   const profileDirty = useProfileDraftStore(state => state.draft !== undefined);
   const linkCount = useSWR(DASHBOARD_LINK_COUNT_KEY, getDashboardLinkCount);
   const pendingLinks = linkCount.data?.audit ?? 0;
-  const unsaved = settingLinks.filter(item => item.key === "profile" ? profileDirty : item.key in drafts);
+  const unsaved = settingLinks.filter(item => item.key === "profile" ? profileDirty : item.keys.some(key => key in drafts));
   const hour = new Date().getHours();
   const greeting = greetings.find(([until]) => hour < until)?.[1] ?? "你好";
 
@@ -36,7 +36,7 @@ export function DashboardOverview() {
 
       {unsaved.length > 0 && (
         <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05, ease: [0.23, 1, 0.32, 1] }} aria-labelledby="overview-unsaved" className="flex flex-col gap-2">
-          <h3 id="overview-unsaved" className="flex items-center gap-2 text-sm font-semibold"><span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />继续编辑</h3>
+          <h3 id="overview-unsaved" className="flex items-center gap-2 text-sm font-semibold"><span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />待保存的更改</h3>
           <ul className="flex flex-wrap gap-2">
             {unsaved.map(item => (
               <li key={item.key}>
@@ -71,18 +71,30 @@ export function DashboardOverview() {
       </section>
 
       <section aria-labelledby="overview-community" className="flex flex-col gap-3">
-        <h3 id="overview-community" className="text-sm font-semibold">社区</h3>
-        <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}>
-          <Link href={pendingLinks > 0 ? "/dashboard/friends?state=1" : "/dashboard/friends"} className="group/card flex cursor-pointer items-center gap-3 rounded-xl border border-border p-3 outline-none transition-colors duration-(--motion-duration-fast) hover:border-foreground/20 hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring sm:max-w-[calc(50%-0.25rem)]">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground/75 transition-colors group-hover/card:text-foreground" aria-hidden="true"><Icon icon="mingcute:link-2-line" className="size-4.5" /></span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-sm font-medium">友链</span>
-              <span className="truncate text-xs text-muted-foreground tabular-nums">{linkCount.data ? `${linkCount.data.pass} 位朋友` : "审核、订阅与可用性"}</span>
-            </span>
-            {pendingLinks > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary tabular-nums">{pendingLinks} 待审核</span>}
-            <Icon icon="mingcute:right-line" className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) group-hover/card:translate-x-0.5" aria-hidden="true" />
-          </Link>
-        </motion.div>
+        <h3 id="overview-community" className="text-sm font-semibold">互动与友链</h3>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}>
+            <Link href="/dashboard/comments" className="group/card flex h-full cursor-pointer items-center gap-3 rounded-xl border border-border p-3 outline-none transition-colors duration-(--motion-duration-fast) hover:border-foreground/20 hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground/75 transition-colors group-hover/card:text-foreground" aria-hidden="true"><Icon icon="mingcute:comment-line" className="size-4.5" /></span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium">评论</span>
+                <span className="truncate text-xs text-muted-foreground">查看与回复读者留言</span>
+              </span>
+              <Icon icon="mingcute:right-line" className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) group-hover/card:translate-x-0.5" aria-hidden="true" />
+            </Link>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, delay: 0.11, ease: [0.23, 1, 0.32, 1] }}>
+            <Link href={pendingLinks > 0 ? "/dashboard/friends?state=1" : "/dashboard/friends"} className="group/card flex h-full cursor-pointer items-center gap-3 rounded-xl border border-border p-3 outline-none transition-colors duration-(--motion-duration-fast) hover:border-foreground/20 hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground/75 transition-colors group-hover/card:text-foreground" aria-hidden="true"><Icon icon="mingcute:link-2-line" className="size-4.5" /></span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium">友链</span>
+                <span className="truncate text-xs text-muted-foreground tabular-nums">{linkCount.data ? `${linkCount.data.pass} 位朋友` : "管理友情链接与交换申请"}</span>
+              </span>
+              {pendingLinks > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary tabular-nums">{pendingLinks} 待审核</span>}
+              <Icon icon="mingcute:right-line" className="size-4 shrink-0 text-muted-foreground transition-transform duration-(--motion-duration-fast) group-hover/card:translate-x-0.5" aria-hidden="true" />
+            </Link>
+          </motion.div>
+        </div>
       </section>
 
       <section aria-labelledby="overview-settings" className="flex flex-col gap-3">

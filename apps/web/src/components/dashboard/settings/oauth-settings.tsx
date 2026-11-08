@@ -17,8 +17,8 @@ import type { SettingGroup } from "./settings-schema";
 import { SettingsSection } from "./settings-section";
 
 const PROVIDERS = [
-  { type: "github", name: "GitHub", icon: "mingcute:github-line", description: "访客使用 GitHub 账号登录评论。需要在 GitHub 创建 OAuth App。" },
-  { type: "qq", name: "QQ", icon: "mingcute:qq-line", description: "通过既定中转服务登录，无需在此填写凭据。" },
+  { type: "github", name: "GitHub", icon: "mingcute:github-line", description: "访客可使用 GitHub 账号登录并发表评论，需在 GitHub 创建 OAuth App。" },
+  { type: "qq", name: "QQ", icon: "mingcute:qq-line", description: "访客可使用 QQ 账号快捷登录，无需额外申请密钥。" },
 ] as const;
 
 interface OAuthSettingsProps {
@@ -45,7 +45,7 @@ export function OAuthSettings({ group, document, disabled, issues, onChange }: O
 
   return (
     <div className="flex flex-col gap-8">
-      <SettingsSection title="登录方式" icon="mingcute:user-3-line" description="开关决定评论区是否显示对应的登录入口，不会阻止已有的回调请求。" framed={false}>
+      <SettingsSection title="登录方式" icon="mingcute:user-3-line" description="开启后，访客可在评论区使用对应账号快捷登录。" framed={false}>
         <div className="flex flex-col gap-3">
           {PROVIDERS.map(provider => {
             const enabled = entries.some(entry => entry.type === provider.type && entry.enabled === true);
@@ -73,14 +73,14 @@ export function OAuthSettings({ group, document, disabled, issues, onChange }: O
                       {callback ? (
                         <>
                           <CopyField id="oauth-github-callback" value={callback} label="回调地址" />
-                          <FieldDescription className="text-[0.8125rem]">复制到 GitHub OAuth App 的 Authorization callback URL。</FieldDescription>
+                          <FieldDescription className="text-[0.8125rem]">在 GitHub 创建 OAuth App 时，将此地址填入 Authorization callback URL。</FieldDescription>
                         </>
                       ) : (
                         <Alert>
                           <Icon icon="mingcute:information-line" aria-hidden="true" />
                           <AlertDescription>
-                            尚未设置服务端地址，无法生成回调地址。
-                            <Link href="/dashboard/settings/url" className="cursor-pointer font-medium text-primary underline-offset-4 hover:underline">前往地址设置</Link>
+                            请先填写后端服务地址，以自动生成回调链接。
+                            <Link href="/dashboard/settings/site#url" className="cursor-pointer font-medium text-primary underline-offset-4 hover:underline">前往站点地址设置</Link>
                           </AlertDescription>
                         </Alert>
                       )}
