@@ -20,6 +20,7 @@ const MANAGED_OPTION_KEYS: &[&str] = &[
     "commentOptions",
     "friendLinkOptions",
     "mailOptions",
+    "networkOptions",
     "oauth",
     "searchOptions",
     "securityOptions",
@@ -143,6 +144,7 @@ pub async fn get_all_options(
             map.insert(name.to_string(), val);
         }
     }
+    map.entry("networkOptions".to_string()).or_insert_with(|| serde_json::json!({ "proxyUrl": "" }));
     Ok(Json(ApiResponse::success(map)))
 }
 

@@ -1,0 +1,131 @@
+//! Explicit server HTTP transport. Settings take effect after a backend restart.
+use std::{net::IpAddr, time::Duration};
+use bson::doc;
+use mongodb::Database;
+use reqwest::{Client, Url};
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NetworkOptions {
+    pub proxy_url: String,
+}
+
+/// SOCKS5 authenticates via RFC 1929 credentials read from the proxy URL, unlike HTTP CONNECT auth.
+fn is_socks(url: &Url) -> bool {
+    matches!(url.scheme(), "socks5" | "socks5h")
+}
+
+impl NetworkOptions {
+    /// Validate without ever embedding the supplied URL or its credentials in errors.
+    pub fn validate(&self) -> Result<Option<Url>, String> {
+        if self.proxy_url.is_empty() {
+            return Ok(None);
+        }
+        let invalid = || "Proxy must be an HTTP, HTTPS, SOCKS5 or SOCKS5H origin URL (optional credentials, no path/query/fragment)".to_string();
+        let mut url = Url::parse(&self.proxy_url).map_err(|_| invalid())?;
+        if !matches!(url.scheme(), "http" | "https" | "socks5" | "socks5h") || url.host_str().is_none()
+            || !matches!(url.path(), "" | "/") || url.query().is_some() || url.fragment().is_some()
+            || self.proxy_url.trim() != self.proxy_url
+        {
+            return Err(invalid());
+        }
+        for credential in [url.username(), url.password().unwrap_or_default()] {
+            if credential.as_bytes().iter().enumerate().any(|(index, byte)| {
+                *byte == b'%' && (!credential.as_bytes().get(index + 1).is_some_and(u8::is_ascii_hexdigit)
+                    || !credential.as_bytes().get(index + 2).is_some_and(u8::is_ascii_hexdigit))
+            }) || urlencoding::decode(credential).is_err() {
+                return Err(invalid());
+            }
+        }
+        if is_socks(&url) {
+            // Both runtimes resolve SOCKS5 targets at the proxy, so socks5 is the same as socks5h.
+            if url.scheme() == "socks5" {
+                url.set_scheme("socks5h").map_err(|_| invalid())?;
+            }
+            // Next's SOCKS client only offers authentication when both parts are present.
+            let has_username = !url.username().is_empty();
+            let has_password = url.password().is_some_and(|password| !password.is_empty());
+            if has_username != has_password {
+                return Err("SOCKS5 credentials require both a username and a password".into());
+            }
+            // Normalize to the origin form and the conventional SOCKS port so every runtime agrees.
+            url.set_path("/");
+            if url.port().is_none() {
+                url.set_port(Some(1080)).map_err(|_| invalid())?;
+            }
+        }
+        reqwest::Proxy::all(url.clone()).map_err(|_| invalid())?;
+        Ok(Some(url))
+    }
+
+    /// A configured proxy needs the existing server-to-server trust secret in both runtimes.
+    pub fn validate_deployment(&self, secret: Option<&str>) -> Result<(), String> {
+        self.validate()?;
+        if !self.proxy_url.is_empty() && secret.is_none_or(str::is_empty) {
+            return Err("Configure matching REVALIDATION_SECRET in backend and Next before enabling the proxy".into());
+        }
+        Ok(())
+    }
+}
+
+/// Missing options mean explicitly direct; malformed persisted options or database failures abort startup.
+pub async fn load_options(database: &Database) -> Result<NetworkOptions, std::io::Error> {
+    let document = database.collection::<bson::Document>("options")
+        .find_one(doc! { "name": "networkOptions" }).await
+        .map_err(|_| std::io::Error::other("Unable to load outbound network configuration"))?;
+    let options = match document {
+        None => NetworkOptions::default(),
+        Some(document) => bson::from_bson(document.get("value").cloned().unwrap_or(bson::Bson::Null))
+            .map_err(|_| std::io::Error::other("Invalid outbound network configuration"))?,
+    };
+    options.validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
+        .map_err(std::io::Error::other)?;
+    Ok(options)
+}
+
+/// Bypass literal private/local addresses, local names, and the configured application origins.
+/// DNS names are not resolved for bypass; public FQDNs still traverse the proxy even if DNS resolves privately.
+pub fn bypass_proxy(url: &Url, origins: &[String]) -> bool {
+    if origins.iter().any(|origin| url.origin().ascii_serialization() == *origin) {
+        return true;
+    }
+    let host = url.host_str().unwrap_or_default().trim_matches(['[', ']']);
+    if let Ok(ip) = host.parse::<IpAddr>() {
+        return match ip {
+            IpAddr::V4(ip) => ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified(),
+            IpAddr::V6(ip) => ip.is_loopback() || ip.is_unique_local() || ip.is_unicast_link_local() || ip.is_unspecified()
+                || ip.to_ipv4_mapped().is_some_and(|ip| ip.is_loopback() || ip.is_private() || ip.is_link_local() || ip.is_unspecified()),
+        };
+    }
+    !host.contains('.') || host.ends_with(".localhost") || host.ends_with(".local")
+}
+
+/// Construct the only production reqwest transport; ambient HTTP_PROXY/NO_PROXY are intentionally ignored.
+pub fn build_client(options: &NetworkOptions, origins: &[String]) -> Result<Client, String> {
+    let proxy_url = options.validate()?;
+    let mut builder = Client::builder().no_proxy().timeout(Duration::from_secs(30))
+        .user_agent("Mozilla/5.0 (compatible; MaigoStarlightChecker/1.0; +mailto:tnxg@outlook.jp; ) AppleWebKit/99 (KHTML, like Gecko) Chrome/99 MyGO/5 (KiraKira/DokiDoki; Bananice/Protected) Giraffe/4.11 (Wakarimasu/; Haruhikage/Stop)");
+    if let Some(mut proxy_url) = proxy_url {
+        let username = urlencoding::decode(proxy_url.username()).map_err(|_| "Invalid proxy credentials")?.into_owned();
+        let password = urlencoding::decode(proxy_url.password().unwrap_or_default()).map_err(|_| "Invalid proxy credentials")?.into_owned();
+        let socks = is_socks(&proxy_url);
+        if socks {
+            // Keep the credentials in the URL: the SOCKS connector reads them from there.
+            proxy_url.set_username(&username).map_err(|_| "Invalid proxy credentials")?;
+            proxy_url.set_password((!password.is_empty()).then_some(password.as_str())).map_err(|_| "Invalid proxy credentials")?;
+        } else {
+            proxy_url.set_username("").map_err(|_| "Invalid proxy origin")?;
+            proxy_url.set_password(None).map_err(|_| "Invalid proxy origin")?;
+        }
+        let origins = origins.to_vec();
+        let mut proxy = reqwest::Proxy::custom(move |target| {
+            (!bypass_proxy(target, &origins)).then(|| proxy_url.clone())
+        });
+        if !socks && (!username.is_empty() || !password.is_empty()) {
+            proxy = proxy.basic_auth(&username, &password);
+        }
+        builder = builder.proxy(proxy);
+    }
+    builder.build().map_err(|_| "Unable to initialize outbound HTTP transport".into())
+}

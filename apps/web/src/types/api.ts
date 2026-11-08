@@ -618,7 +618,7 @@ export interface UpdateCommentRequest {
 /** 后台 options 使用的 JSON 数据，不将敏感配置持久化到浏览器存储。 */
 export type OptionValue = string | number | boolean | null | OptionValue[] | OptionDocument;
 export interface OptionDocument { [key: string]: OptionValue; }
-export type ManagedOptionKey = "seo" | "url" | "commentOptions" | "friendLinkOptions" | "mailOptions" | "oauth" | "ai" | "searchOptions" | "bangumiOptions" | "securityOptions";
+export type ManagedOptionKey = "seo" | "url" | "commentOptions" | "friendLinkOptions" | "mailOptions" | "oauth" | "ai" | "searchOptions" | "bangumiOptions" | "securityOptions" | "networkOptions";
 export type DashboardOptions = Partial<Record<ManagedOptionKey, OptionDocument>>;
 
 /** 后台编辑草稿；refId 为空表示尚未创建的新内容。 */

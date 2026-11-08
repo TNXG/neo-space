@@ -19,12 +19,16 @@ impl MeilisearchAdminClient {
     /// 从应用运行时配置创建客户端。
     pub fn from_state(state: &SharedState) -> Self {
         let config = state.config();
-        Self {
-            base_url: config.meilisearch_host.trim_end_matches('/').to_string(),
-            api_key: (!config.meilisearch_api_key.is_empty())
-                .then(|| config.meilisearch_api_key.clone()),
-            http_client: state.http_client.clone(),
-        }
+        Self::new(
+            config.meilisearch_host.clone(),
+            (!config.meilisearch_api_key.is_empty()).then(|| config.meilisearch_api_key.clone()),
+            state.http_client.clone(),
+        )
+    }
+
+    /// Reuse an explicitly configured transport, including for remote search/indexing.
+    pub fn new(base_url: String, api_key: Option<String>, http_client: reqwest::Client) -> Self {
+        Self { base_url: base_url.trim_end_matches('/').to_string(), api_key, http_client }
     }
 
     /// 发送无请求体的管理请求。

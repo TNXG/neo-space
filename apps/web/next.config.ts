@@ -21,20 +21,11 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: resolve(__dirname, "../../"),
   allowedDevOrigins: ["192.168.3.3"],
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "lain.bgm.tv",
-      },
-      {
-        protocol: "https",
-        hostname: "api-space.tnxg.top",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.tnxg.top",
-      },
-    ],
+    // Keep the default optimizer, but require remote sources to use our managed fetch route.
+    // The former remotePatterns allowlist lives in src/lib/network/image-policy.ts.
+    loader: "default",
+    loaderFile: "./src/lib/network/image-loader.ts",
+    remotePatterns: [],
   },
   experimental: {
     useTypeScriptCli: true

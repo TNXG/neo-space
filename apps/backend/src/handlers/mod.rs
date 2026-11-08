@@ -9,6 +9,7 @@ pub mod bangumi;
 pub mod comment;
 pub mod link;
 pub mod misc;
+pub mod network;
 pub mod note;
 pub mod oauth;
 pub mod owner;

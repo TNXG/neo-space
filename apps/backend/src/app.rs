@@ -39,6 +39,11 @@ pub struct AppState {
     pub event_bus: broadcast::Sender<Event>,
     /// HTTP client for external requests
     pub http_client: Client,
+    /// Internal ISR always uses explicit direct transport, including after live frontend URL changes.
+    pub internal_http_client: Client,
+    /// Active startup network settings; persisted changes require a backend restart.
+    pub network_options: crate::external::network::NetworkOptions,
+    pub network_bypass_origins: Vec<String>,
     /// Shared email service (preserves verification code cache across requests)
     pub email_service: EmailService,
     /// NetEase Cloud Music now playing service
@@ -168,32 +173,21 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
     let (config_events, _) = broadcast::channel(16);
     tracing::info!("EventBus 初始化完成 - 频道容量: 100");
 
-    // Create HTTP client with default User-Agent
-    let default_user_agent = "Mozilla/5.0 (compatible; MaigoStarlightChecker/1.0; +mailto:tnxg@outlook.jp; ) AppleWebKit/99 (KHTML, like Gecko) Chrome/99 MyGO/5 (KiraKira/DokiDoki; Bananice/Protected) Giraffe/4.11 (Wakarimasu/; Haruhikage/Stop)";
-    let http_client = match Client::builder()
-        .timeout(Duration::from_secs(30))
-        .user_agent(default_user_agent)
-        .build()
-    {
-        Ok(client) => {
-            tracing::info!("HTTP 客户端初始化完成 - 超时: 30秒");
-            client
-        }
-        Err(e) => {
-            tracing::error!("Failed to create HTTP client: {}, using default", e);
-            Client::builder()
-                .user_agent(default_user_agent)
-                .build()
-                .unwrap_or_else(|_| Client::new())
-        }
-    };
+    let network_options = crate::external::network::load_options(&db).await?;
+    let network_bypass_origins = [&config.frontend_url, &config.backend_url]
+        .iter().filter_map(|value| reqwest::Url::parse(value).ok())
+        .map(|url| url.origin().ascii_serialization()).collect::<Vec<_>>();
+    let http_client = crate::external::network::build_client(&network_options, &network_bypass_origins)
+        .map_err(std::io::Error::other)?;
+    let internal_http_client = crate::external::network::build_client(&Default::default(), &[])
+        .map_err(std::io::Error::other)?;
 
     // Create shared email service (preserves verification code cache)
     let email_service = EmailService::new(db.clone());
     tracing::info!("邮件服务初始化完成");
 
     // Create NetEase now playing service
-    let ncm_np_service = NeteaseNowPlayingService::new(db.clone());
+    let ncm_np_service = NeteaseNowPlayingService::new(db.clone(), http_client.clone());
     tracing::info!("网易云音乐服务初始化完成");
 
     let passkey_service = PasskeyService::from_frontend_url(&config.frontend_url);
@@ -214,6 +208,9 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
         config_events,
         event_bus,
         http_client,
+        internal_http_client,
+        network_options,
+        network_bypass_origins,
         email_service,
         ncm_np_service,
         passkey_service: Arc::new(RwLock::new(passkey_service)),
@@ -267,6 +264,8 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/admin/meilisearch", routes::meilisearch_admin::routes())
         .nest("/files", routes::files::routes())
         .merge(routes::admin_dashboard::routes())
+        .route("/internal/network", axum::routing::get(crate::handlers::network::get_network_options))
+        .route("/internal/network/status", axum::routing::get(crate::handlers::network::get_network_status))
         .merge(routes::misc::routes())
         .nest("/admin/cache", routes::cache::routes())
         .layer(axum::middleware::from_fn_with_state(

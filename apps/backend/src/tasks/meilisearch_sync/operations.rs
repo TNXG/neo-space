@@ -17,12 +17,7 @@ fn boxed_error(message: impl Into<String>) -> Box<dyn std::error::Error> {
 pub(super) fn build_search_service(
     state: &SharedState,
 ) -> Result<SearchService, Box<dyn std::error::Error>> {
-    let config = state.config();
-    let api_key =
-        (!config.meilisearch_api_key.is_empty()).then(|| config.meilisearch_api_key.clone());
-
-    SearchService::new(config.meilisearch_host.clone(), api_key)
-        .map_err(|error| boxed_error(format!("{error:?}")))
+    Ok(SearchService::new(state))
 }
 
 pub(super) async fn replace_post_documents_for_ref(

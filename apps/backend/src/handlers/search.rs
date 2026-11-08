@@ -80,14 +80,6 @@ pub async fn search(
     State(state): State<SharedState>,
     AppQuery(params): AppQuery<SearchParams>,
 ) -> AppResult<Json<ApiResponse<SearchResults>>> {
-    // Check if Meilisearch is configured
-    let config = state.config();
-    let search_host = config.meilisearch_host.clone();
-    let api_key = if config.meilisearch_api_key.is_empty() {
-        None
-    } else {
-        Some(config.meilisearch_api_key.clone())
-    };
 
     // Validate query parameter
     let query = params
@@ -101,7 +93,7 @@ pub async fn search(
     let _semantic = params.semantic.unwrap_or(false);
     let lang = params.lang.as_deref().unwrap_or("zh");
 
-    let search_service = SearchService::new(search_host, api_key)?;
+    let search_service = SearchService::new(&state);
 
     let mut results = SearchResults {
         posts: vec![],
