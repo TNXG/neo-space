@@ -12,6 +12,8 @@ use serde::{Deserialize, Deserializer};
 
 /// Profile fields accepted by the existing profile mutation endpoint.
 #[derive(Debug, Deserialize)]
+// Nested options preserve omitted, explicit-null, and supplied profile values.
+#[allow(clippy::option_option)]
 pub struct UpdateProfileRequest {
     name: Option<String>,
     #[serde(alias = "username")]
@@ -33,6 +35,8 @@ pub struct UpdateProfileRequest {
 }
 
 /// Keep explicit null distinguishable from omission for owner authorization.
+// Serde must preserve omission separately from an explicitly supplied null.
+#[allow(clippy::option_option)]
 fn deserialize_supplied<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
 where
     T: Deserialize<'de>,
@@ -43,7 +47,7 @@ where
 
 impl UpdateProfileRequest {
     /// Reject owner-only fields before applying any ordinary reader updates.
-    fn authorize(&self, auth_user: &AuthUser) -> AppResult<()> {
+    const fn authorize(&self, auth_user: &AuthUser) -> AppResult<()> {
         if !auth_user.is_owner
             && (self.introduce.is_some() || self.url.is_some() || self.social_ids.is_some())
         {
@@ -147,9 +151,7 @@ pub async fn update_user_profile(
         .find_one(doc! { "_id": auth_user.user_id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal(
-            "Failed to fetch updated profile".to_string(),
-        ))?;
+        .ok_or_else(|| AppError::Internal("Failed to fetch updated profile".to_string()))?;
 
     notify_user_profile_changed(state, &auth_user.user_id, auth_user.is_owner).await;
 

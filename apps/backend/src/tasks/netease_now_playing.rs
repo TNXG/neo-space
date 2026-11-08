@@ -1,6 +1,6 @@
-//! NetEase Cloud Music Now Playing background task
+//! `NetEase` Cloud Music Now Playing background task
 //!
-//! Periodically polls the NetEase API for the owner's current playing status
+//! Periodically polls the `NetEase` API for the owner's current playing status
 //! and broadcasts updates to WebSocket readers.
 
 use crate::app::SharedState;
@@ -10,10 +10,10 @@ use crate::services::ncm_np::{NeteaseError, NeteaseNowPlayingService};
 use std::time::Duration;
 use tokio::time::interval;
 
-/// Polling interval for NetEase now playing (30 seconds)
+/// Polling interval for `NetEase` now playing (30 seconds)
 const POLL_INTERVAL_SECS: u64 = 5;
 
-/// Start the NetEase now playing polling task
+/// Start the `NetEase` now playing polling task
 pub fn start_netease_now_playing_task(_state: SharedState, service: NeteaseNowPlayingService) {
     tokio::spawn(async move {
         // Initial load of owner NetEase ID
@@ -106,16 +106,14 @@ async fn fetch_and_broadcast(service: &NeteaseNowPlayingService) -> Result<bool,
 
                 if prev_song_name.is_some_and(|n| n != song_name) {
                     tracing::info!("[NetEase] 切换歌曲: {} - {}", song_name, artist);
-                } else if prev_status.is_none()
-                    || !prev_status.as_ref().map(|p| p.active).unwrap_or(false)
-                {
+                } else if prev_status.is_none() || !prev_status.as_ref().is_some_and(|p| p.active) {
                     tracing::info!("[NetEase] 开始播放: {} - {}", song_name, artist);
                 } else {
                     tracing::info!("[NetEase] 播放状态更新: {} - {}", song_name, artist);
                 }
             }
         } else {
-            let was_active = prev_status.as_ref().map(|p| p.active).unwrap_or(false);
+            let was_active = prev_status.as_ref().is_some_and(|p| p.active);
             if was_active {
                 tracing::info!("[NetEase] 停止播放");
             } else if prev_status.is_none() {

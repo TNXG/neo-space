@@ -63,8 +63,10 @@ impl CommentService {
 
     /// 站长身份需要兼容历史评论邮箱与旧数据中的 source 空值。
     ///
-    /// 这里会读取 owner_profiles、当前绑定账号以及历史 owner 评论，
+    /// 这里会读取 `owner_profiles、当前绑定账号以及历史` owner 评论，
     /// 把可确认属于站长的邮箱都回填成站长身份与 OAuth 来源。
+    // Keep the owner identity reconciliation flow together.
+    #[allow(clippy::too_many_lines)]
     async fn enrich_owner_mappings(
         &self,
         email_to_avatar: &mut HashMap<String, String>,
@@ -199,13 +201,31 @@ impl CommentService {
     }
 
     /// Build comment tree structure - O(n) with parent index
+    // Keep the ordered tree construction passes together.
+    #[allow(clippy::too_many_lines)]
     pub fn build_comment_tree(
-        &self,
         comments: &[Comment],
         email_to_avatar: &HashMap<String, String>,
         email_to_is_owner: &HashMap<String, bool>,
         email_to_source: &HashMap<String, String>,
     ) -> Vec<CommentTree> {
+        fn build_subtree(
+            node_id: &str,
+            comment_map: &mut HashMap<String, CommentTree>,
+            children_index: &HashMap<String, Vec<String>>,
+        ) -> Option<CommentTree> {
+            let mut node = comment_map.remove(node_id)?;
+
+            if let Some(children) = children_index.get(node_id) {
+                node.children = children
+                    .iter()
+                    .filter_map(|child_id| build_subtree(child_id, comment_map, children_index))
+                    .collect();
+            }
+
+            Some(node)
+        }
+
         let mut ordered_comments: Vec<&Comment> = comments
             .iter()
             .filter(|comment| comment.id.is_some() && !comment.is_deleted)
@@ -229,7 +249,7 @@ impl CommentService {
                 continue;
             };
             let id_str = id.to_hex();
-            let parent_id = comment.parent.map(|parent| parent.to_hex());
+            let parent_id = comment.parent.map(bson::oid::ObjectId::to_hex);
 
             let avatar_url = email_to_avatar
                 .get(&comment.mail)
@@ -251,12 +271,12 @@ impl CommentService {
             let tree_node = CommentTree {
                 id: id_str.clone(),
                 r#ref: comment.reference_string(),
-                ref_type: CommentService::normalize_ref_type(&comment.ref_type),
+                ref_type: Self::normalize_ref_type(&comment.ref_type),
                 author: comment.author.clone(),
                 text: comment.text.clone(),
                 state: comment.effective_state(),
                 children: vec![],
-                comments_index: (index + 1) as i32,
+                comments_index: i32::try_from(index + 1).unwrap_or(i32::MAX),
                 key: String::new(),
                 pin: comment.pin,
                 is_whispers: comment.is_whispers,
@@ -296,7 +316,7 @@ impl CommentService {
 
         while let Some((node_id, key)) = stack.pop() {
             if let Some(node) = comment_map.get_mut(&node_id) {
-                node.key = key.clone();
+                node.key.clone_from(&key);
             }
 
             if let Some(children) = children_index.get(&node_id) {
@@ -304,23 +324,6 @@ impl CommentService {
                     stack.push((child_id.clone(), format!("{key}#{}", index + 1)));
                 }
             }
-        }
-
-        fn build_subtree(
-            node_id: &str,
-            comment_map: &mut HashMap<String, CommentTree>,
-            children_index: &HashMap<String, Vec<String>>,
-        ) -> Option<CommentTree> {
-            let mut node = comment_map.remove(node_id)?;
-
-            if let Some(children) = children_index.get(node_id) {
-                node.children = children
-                    .iter()
-                    .filter_map(|child_id| build_subtree(child_id, comment_map, children_index))
-                    .collect();
-            }
-
-            Some(node)
         }
 
         root_ids

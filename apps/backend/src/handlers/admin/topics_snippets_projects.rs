@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, PaginatedData, Pagination, Project, Snippet, Topic},
 };
 use axum::{
     extract::{Path, State},
@@ -35,6 +35,8 @@ pub struct UpsertTopicRequest {
     pub icon: Option<String>,
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_topics(
     State(state): State<SharedState>,
     AppQuery(q): AppQuery<PageQuery>,
@@ -64,7 +66,12 @@ pub async fn list_topics(
     {
         items.push(t);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(PaginatedData {
         items,
         pagination,
@@ -82,7 +89,7 @@ pub async fn get_topic(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Topic not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Topic not found".into()))?;
     Ok(Json(ApiResponse::success(t)))
 }
 
@@ -126,7 +133,7 @@ pub async fn create_topic(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Topic not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Topic not found after insert".into()))?;
     Ok(Json(ApiResponse::success(t)))
 }
 
@@ -165,7 +172,7 @@ pub async fn update_topic(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Topic not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Topic not found".into()))?;
     Ok(Json(ApiResponse::success(t)))
 }
 
@@ -258,7 +265,7 @@ pub async fn create_snippet(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Snippet not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Snippet not found after insert".into()))?;
     Ok(Json(ApiResponse::success(s)))
 }
 
@@ -297,6 +304,8 @@ pub struct UpsertProjectRequest {
     pub avatar: Option<String>,
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_projects(
     State(state): State<SharedState>,
     AppQuery(q): AppQuery<PageQuery>,
@@ -326,7 +335,12 @@ pub async fn list_projects(
     {
         items.push(p);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(PaginatedData {
         items,
         pagination,
@@ -363,7 +377,7 @@ pub async fn create_project(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Project not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Project not found after insert".into()))?;
     Ok(Json(ApiResponse::success(p)))
 }
 

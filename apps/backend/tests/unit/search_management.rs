@@ -44,8 +44,7 @@ fn maintenance_task_reads_legacy_string_values() -> Result<(), Box<dyn std::erro
 
 /// 验证 HTTP 响应继续输出字符串主键和 ISO 日期。
 #[test]
-fn maintenance_task_response_preserves_api_contract() -> Result<(), Box<dyn std::error::Error>>
-{
+fn maintenance_task_response_preserves_api_contract() -> Result<(), Box<dyn std::error::Error>> {
     let task = SearchMaintenanceTask::queued(false, None);
     let task_id = task.id.to_hex();
     let response = serde_json::to_value(SearchMaintenanceTaskResponse::from(task))?;

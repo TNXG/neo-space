@@ -14,10 +14,8 @@ fn boxed_error(message: impl Into<String>) -> Box<dyn std::error::Error> {
     message.into().into()
 }
 
-pub(super) fn build_search_service(
-    state: &SharedState,
-) -> Result<SearchService, Box<dyn std::error::Error>> {
-    Ok(SearchService::new(state))
+pub(super) fn build_search_service(state: &SharedState) -> SearchService {
+    SearchService::new(state)
 }
 
 pub(super) async fn replace_post_documents_for_ref(

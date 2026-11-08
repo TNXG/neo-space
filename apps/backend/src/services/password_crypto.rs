@@ -26,7 +26,7 @@ pub struct PasswordCrypto {
 #[serde(rename_all = "camelCase")]
 pub struct PasswordKeyResponse {
     pub key_id: String,
-    /// SPKI PEM suitable for WebCrypto importKey("spki", ..., RSA-OAEP/SHA-256).
+    /// SPKI PEM suitable for `WebCrypto` importKey("spki", ..., RSA-OAEP/SHA-256).
     pub public_key: String,
     #[schema(example = "RSA-OAEP-256")]
     pub algorithm: &'static str,

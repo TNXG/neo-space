@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OptionalAuth,
     error::{AppError, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Post, PostWithCategory},
 };
 use axum::{
     extract::{Path, State},
@@ -39,7 +39,7 @@ pub async fn get_post(
         .find_one(filter)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Post not found".to_string()))?;
 
     let lang = params.lang.as_deref().unwrap_or("zh");
     let enriched = enrich_single_post(&state, post, &id, lang).await?;
@@ -58,7 +58,7 @@ pub async fn get_post_by_slug(
         .find_one(doc! { "slug": &slug, "isPublished": true })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Post not found".to_string()))?;
 
     let post_id = post.id.to_hex();
     let lang = params.lang.as_deref().unwrap_or("zh");

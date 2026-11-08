@@ -7,7 +7,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::{ApiResponse, Post},
     tasks::content_change::{notify_post_changed, notify_posts_deleted},
 };
 use axum::{
@@ -71,7 +71,7 @@ pub struct BatchIdsRequest {
     pub ids: Vec<String>,
 }
 
-fn default_true() -> bool {
+const fn default_true() -> bool {
     true
 }
 
@@ -134,7 +134,7 @@ pub async fn create_post(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
     {
-        return Err(AppError::BadRequest(format!("Slug '{}' 已被使用", slug)));
+        return Err(AppError::BadRequest(format!("Slug '{slug}' 已被使用")));
     }
 
     let id = ObjectId::new();
@@ -186,7 +186,7 @@ pub async fn create_post(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Post not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Post not found after insert".into()))?;
 
     Ok(Json(ApiResponse::success(inserted)))
 }
@@ -260,7 +260,7 @@ pub async fn update_post(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
 
     Ok(Json(ApiResponse::success(updated)))
 }
@@ -277,7 +277,7 @@ pub async fn delete_post(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
     let result = collection
         .delete_one(doc! { "_id": oid })
         .await

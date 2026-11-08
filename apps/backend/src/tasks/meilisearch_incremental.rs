@@ -86,7 +86,7 @@ pub fn event_collection(state: &SharedState) -> Collection<SearchSyncEvent> {
     state.db.collection(EVENT_COLLECTION)
 }
 
-/// 同时匹配新版 ObjectId 与旧版字符串主键。
+/// 同时匹配新版 `ObjectId` 与旧版字符串主键。
 pub fn event_id_filter(event_id: ObjectId) -> bson::Document {
     doc! { "_id": { "$in": [event_id, event_id.to_hex()] } }
 }
@@ -124,7 +124,7 @@ async fn process_event(state: &SharedState, event: SearchSyncEvent) {
         }
         Err(error) => {
             let attempts = event.attempts + 1;
-            let retry_seconds = 2_i64.pow(attempts.clamp(1, 10) as u32);
+            let retry_seconds = 2_i64.pow(attempts.clamp(1, 10).cast_unsigned());
             let next_attempt =
                 DateTime::from_millis(DateTime::now().timestamp_millis() + retry_seconds * 1000);
             let message = format!("{error:?}");

@@ -1,5 +1,7 @@
 //! Bangumi 收藏分页代理与人物图片裁切缓存。
 
+use std::fmt::Write as _;
+
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
@@ -151,7 +153,7 @@ pub async fn get_library(
 
 impl BangumiLibrarySection {
     /// 返回人物类型对应的裁切缓存来源；作品收藏不参与人物检测。
-    fn source_type(self) -> Option<&'static str> {
+    const fn source_type(self) -> Option<&'static str> {
         match self {
             Self::Characters => Some("character"),
             Self::Persons => Some("person"),
@@ -195,11 +197,11 @@ fn library_path(
     Ok(path)
 }
 
-/// 构造作品收藏路径，状态值直接对应 Bangumi SubjectCollectionType。
+/// 构造作品收藏路径，状态值直接对应 Bangumi `SubjectCollectionType`。
 fn media_library_path(username: &str, subject_type: u8, status: Option<u8>) -> String {
     let mut path = format!("/users/{username}/collections?subject_type={subject_type}");
     if let Some(status) = status {
-        path.push_str(&format!("&type={status}"));
+        let _ = write!(path, "&type={status}");
     }
     path
 }
@@ -451,6 +453,7 @@ async fn enqueue_missing_crops(
         };
         match sender.try_send(task) {
             Ok(()) => {
+                drop(queued_keys);
                 summary.enqueued_tasks += 1;
                 tracing::info!(
                     source = %key,
@@ -461,6 +464,7 @@ async fn enqueue_missing_crops(
             Err(error) => {
                 summary.queue_full_tasks += 1;
                 queued_keys.remove(&key);
+                drop(queued_keys);
                 tracing::warn!(
                     source = %key,
                     queue_remaining_capacity = sender.capacity(),

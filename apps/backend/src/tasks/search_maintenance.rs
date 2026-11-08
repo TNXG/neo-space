@@ -120,7 +120,7 @@ pub fn task_collection(state: &SharedState) -> Collection<SearchMaintenanceTask>
     state.db.collection(TASK_COLLECTION)
 }
 
-/// 同时匹配新版 ObjectId 与旧版字符串主键。
+/// 同时匹配新版 `ObjectId` 与旧版字符串主键。
 pub fn task_id_filter(task_id: ObjectId) -> bson::Document {
     doc! { "_id": { "$in": [task_id, task_id.to_hex()] } }
 }

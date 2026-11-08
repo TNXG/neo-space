@@ -4,7 +4,10 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{
+        ApiResponse, Link, LinkFeedSummary, LinkHealthStatus, LinkState, LinkWithHealth,
+        PaginatedData, Pagination,
+    },
     tasks::content_change::{notify_link_changed, notify_link_deleted},
     tasks::link_health::{cached_feed, cached_health, check_link, check_links, load_active_links},
 };
@@ -42,6 +45,8 @@ pub struct CreateLinkRequest {
 }
 
 #[derive(Debug, Deserialize, Default)]
+// Nested options distinguish omitted fields from explicit null updates.
+#[allow(clippy::option_option)]
 pub struct UpdateLinkRequest {
     pub name: Option<String>,
     pub url: Option<String>,
@@ -86,6 +91,8 @@ async fn attach_health(state: &SharedState, link: Link) -> LinkWithHealth {
     LinkWithHealth { link, health, feed }
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_links(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -95,10 +102,9 @@ pub async fn list_links(
     let size = q.size.unwrap_or(50).clamp(1, 100);
     let skip = (page - 1) * size;
     let collection = state.db.collection::<Link>("links");
-    let filter = match q.state {
-        Some(state) => doc! { "state": state },
-        None => doc! {},
-    };
+    let filter = q
+        .state
+        .map_or_else(|| doc! {}, |state| doc! { "state": state });
     let total = collection
         .count_documents(filter.clone())
         .await
@@ -126,7 +132,12 @@ pub async fn list_links(
     for link in links {
         items.push(attach_health(&state, link).await);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(PaginatedData {
         items,
         pagination,
@@ -165,7 +176,7 @@ pub async fn create_link(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Link not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Link not found after insert".into()))?;
     notify_link_changed(&state, &link, None).await;
     Ok(Json(ApiResponse::success(link)))
 }
@@ -181,7 +192,7 @@ pub async fn update_link(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Link not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Link not found".into()))?;
     let mut set_doc = doc! {};
     if let Some(v) = req.name {
         set_doc.insert("name", v);
@@ -228,7 +239,7 @@ pub async fn update_link(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Link not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Link not found".into()))?;
     notify_link_changed(&state, &link, Some(previous.state)).await;
     Ok(Json(ApiResponse::success(link)))
 }
@@ -243,7 +254,7 @@ pub async fn delete_link(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Link not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Link not found".into()))?;
     let r = collection
         .delete_one(link_id_filter(&id))
         .await
@@ -272,7 +283,7 @@ pub async fn send_link_notification(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|error| AppError::Database(error.to_string()))?
-        .ok_or(AppError::NotFound("Link not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Link not found".into()))?;
     let recipient = link
         .email
         .as_deref()
@@ -326,6 +337,8 @@ fn validate_link_notification(subject: &str, content: &str) -> AppResult<()> {
     Ok(())
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn link_state_count(
     State(state): State<SharedState>,
 ) -> AppResult<Json<ApiResponse<LinkStateCount>>> {
@@ -357,7 +370,9 @@ pub async fn check_link_health(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
 ) -> AppResult<Json<ApiResponse<HashMap<String, LinkWithHealth>>>> {
-    let links = load_active_links(&state).await.map_err(AppError::Database)?;
+    let links = load_active_links(&state)
+        .await
+        .map_err(AppError::Database)?;
     let checked = check_links(&state, links.clone()).await;
     let mut by_id: HashMap<String, (LinkHealthStatus, Option<LinkFeedSummary>)> = checked
         .into_iter()
@@ -393,7 +408,7 @@ pub async fn check_single_link(
         .find_one(link_id_filter(&id))
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Link not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Link not found".into()))?;
     let (health, feed) = check_link(&state, &link).await;
     if link.state == LinkState::NORMAL {
         crate::tasks::isr::trigger_isr_revalidation(&state, "links", None).await;

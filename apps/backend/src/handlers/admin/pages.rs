@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::{ApiResponse, Page},
     tasks::content_change::{notify_page_changed, notify_page_deleted},
 };
 use axum::{
@@ -77,7 +77,7 @@ pub async fn get_page_by_id(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Page not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Page not found".into()))?;
     Ok(Json(ApiResponse::success(page)))
 }
 
@@ -132,7 +132,7 @@ pub async fn create_page(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Page not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Page not found after insert".into()))?;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -176,7 +176,7 @@ pub async fn update_page(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Page not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Page not found".into()))?;
     Ok(Json(ApiResponse::success(updated)))
 }
 

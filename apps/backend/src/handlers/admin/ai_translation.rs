@@ -1,5 +1,7 @@
 //! AI 内容翻译生成接口。
 
+use std::fmt::Write as _;
+
 use axum::{Json, extract::State};
 use bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
@@ -207,8 +209,10 @@ pub async fn generate_translations(
     let hash = hasher
         .finalize()
         .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
+        .fold(String::with_capacity(64), |mut hash, byte| {
+            let _ = write!(hash, "{byte:02x}");
+            hash
+        });
     let collection = state.db.collection::<AiTranslation>("ai_translations");
     let mut translations = Vec::new();
 

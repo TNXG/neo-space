@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use super::*;
 use serde_json::json;
 
@@ -10,7 +12,6 @@ fn options(provider_type: &str, enabled: bool) -> AiOptionsValue {
         "enableSummary":true,"enableTranslation":true
     })).unwrap()
 }
-
 
 #[test]
 fn jev_only_supports_comment_review() {
@@ -31,9 +32,13 @@ fn review_does_not_fall_back_to_another_provider() {
 
 #[test]
 fn disabled_provider_and_empty_credentials_do_not_become_enabled() {
-    assert!(!to_ai_config(options("openai", false), AiUsage::CommentReview).unwrap().enabled);
+    assert!(
+        !to_ai_config(options("openai", false), AiUsage::CommentReview)
+            .unwrap()
+            .enabled
+    );
     let mut value = options("jev", true);
-    value.providers[0].api_key.clear();
+    value.providers.first_mut().unwrap().api_key.clear();
     assert!(to_ai_config(value, AiUsage::CommentReview).is_err());
 }
 

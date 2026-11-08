@@ -39,12 +39,9 @@ impl PasskeyService {
                 return None;
             }
         };
-        let relying_party_id = match origin.host_str() {
-            Some(host) => host,
-            None => {
-                tracing::error!("FRONTEND_URL 缺少主机名，Passkey 已禁用");
-                return None;
-            }
+        let Some(relying_party_id) = origin.host_str() else {
+            tracing::error!("FRONTEND_URL 缺少主机名，Passkey 已禁用");
+            return None;
         };
         // 库仅保存 Origin，不校验安全上下文；HTTP 仅允许本机开发。
         let is_localhost = relying_party_id == "localhost"
@@ -55,7 +52,9 @@ impl PasskeyService {
             || (origin.scheme() == "http" && !is_localhost)
             || relying_party_id.contains(':')
         {
-            tracing::error!("FRONTEND_URL 必须是 HTTPS 或本机 HTTP，且使用合法 RP 主机名，Passkey 已禁用");
+            tracing::error!(
+                "FRONTEND_URL 必须是 HTTPS 或本机 HTTP，且使用合法 RP 主机名，Passkey 已禁用"
+            );
             return None;
         }
         // WebAuthn 校验的是浏览器 Origin，不包含路径和尾部斜杠。

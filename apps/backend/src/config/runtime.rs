@@ -337,6 +337,8 @@ async fn backfill_comment_review_model(database: &Database) -> Result<(), mongod
 }
 
 /// 将旧环境变量迁移到 options 集合，并清除后端不再消费的历史配置。
+// Keep the ordered legacy-option migration together.
+#[allow(clippy::too_many_lines)]
 pub async fn migrate_options(
     database: &Database,
     config: &AppConfig,
@@ -493,20 +495,20 @@ pub async fn migrate_options(
 pub async fn apply_database_options(database: &Database, config: &mut AppConfig) {
     if let Some(url) = option_value(database, "url").await {
         config.frontend_url =
-            nested_string(&url, &["webUrl"]).unwrap_or(config.frontend_url.clone());
+            nested_string(&url, &["webUrl"]).unwrap_or_else(|| config.frontend_url.clone());
         config.backend_url =
-            nested_string(&url, &["serverUrl"]).unwrap_or(config.backend_url.clone());
+            nested_string(&url, &["serverUrl"]).unwrap_or_else(|| config.backend_url.clone());
     }
     if let Some(search) = option_value(database, "searchOptions").await {
         config.meilisearch_host = nested_string(&search, &["endpoint"])
             .filter(|value| !value.is_empty())
-            .unwrap_or(config.meilisearch_host.clone());
-        config.meilisearch_api_key =
-            nested_string(&search, &["apiKey"]).unwrap_or(config.meilisearch_api_key.clone());
+            .unwrap_or_else(|| config.meilisearch_host.clone());
+        config.meilisearch_api_key = nested_string(&search, &["apiKey"])
+            .unwrap_or_else(|| config.meilisearch_api_key.clone());
     }
     if let Some(bangumi) = option_value(database, "bangumiOptions").await {
-        config.bangumi_username =
-            nested_string(&bangumi, &["username"]).unwrap_or(config.bangumi_username.clone());
+        config.bangumi_username = nested_string(&bangumi, &["username"])
+            .unwrap_or_else(|| config.bangumi_username.clone());
     }
     if let Some(comment) = option_value(database, "commentOptions").await {
         config.comments_disabled =
@@ -522,7 +524,7 @@ pub async fn apply_database_options(database: &Database, config: &mut AppConfig)
         config.comments_spam_keywords = nested_strings(&comment, &["spamKeywords"])
             .unwrap_or_else(|| config.comments_spam_keywords.clone());
         config.turnstile_secret = nested_string(&comment, &["turnstileSecret"])
-            .unwrap_or(config.turnstile_secret.clone());
+            .unwrap_or_else(|| config.turnstile_secret.clone());
     }
     if let Some(friend) = option_value(database, "friendLinkOptions").await {
         config.friend_link_allow_apply =
@@ -536,13 +538,13 @@ pub async fn apply_database_options(database: &Database, config: &mut AppConfig)
     }
     if let Some(oauth) = option_value(database, "oauth").await {
         config.github_client_id = nested_string(&oauth, &["public", "github", "clientId"])
-            .unwrap_or(config.github_client_id.clone());
+            .unwrap_or_else(|| config.github_client_id.clone());
         config.github_client_secret = nested_string(&oauth, &["secrets", "github", "clientSecret"])
-            .unwrap_or(config.github_client_secret.clone());
+            .unwrap_or_else(|| config.github_client_secret.clone());
     }
     if let Some(security) = option_value(database, "securityOptions").await {
         config.owner_desktop_token = nested_string(&security, &["ownerDesktopToken"])
-            .unwrap_or(config.owner_desktop_token.clone());
+            .unwrap_or_else(|| config.owner_desktop_token.clone());
     }
     apply_environment_overrides(config);
 }

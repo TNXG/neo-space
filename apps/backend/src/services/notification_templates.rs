@@ -18,32 +18,22 @@ pub fn generate_notification_url(
     parent_comment_id: Option<&str>,
 ) -> String {
     let base = match ref_type {
-        "post" | "posts" => {
-            if let Some(slug) = ref_title {
-                format!("{}/archives/{}", site_url, slug)
-            } else {
-                format!("{}/archives/{}", site_url, ref_id)
-            }
-        }
-        "note" | "notes" => {
-            if let Some(slug) = ref_title {
-                format!("{}/notes/{}", site_url, slug)
-            } else {
-                format!("{}/notes/{}", site_url, ref_id)
-            }
-        }
+        "post" | "posts" => ref_title.map_or_else(
+            || format!("{site_url}/archives/{ref_id}"),
+            |slug| format!("{site_url}/archives/{slug}"),
+        ),
+        "note" | "notes" => ref_title.map_or_else(
+            || format!("{site_url}/notes/{ref_id}"),
+            |slug| format!("{site_url}/notes/{slug}"),
+        ),
         "page" | "pages" => {
-            if let Some(slug) = ref_title {
-                format!("{}/{}", site_url, slug)
-            } else {
-                site_url.to_string()
-            }
+            ref_title.map_or_else(|| site_url.to_string(), |slug| format!("{site_url}/{slug}"))
         }
         _ => site_url.to_string(),
     };
 
     if let Some(pid) = parent_comment_id.filter(|s| !s.is_empty()) {
-        format!("{}?comment={}#comment-{}", base, pid, pid)
+        format!("{base}?comment={pid}#comment-{pid}")
     } else {
         base
     }
@@ -142,7 +132,7 @@ fn build_email_view(
             ref_type_name(&notification.ref_type),
             comment_type,
         ),
-        cta: format!("查看{}", comment_type),
+        cta: format!("查看{comment_type}"),
         high_priority,
     }
 }
@@ -249,11 +239,11 @@ pub fn build_text_email(
     let parent_info = notification
         .parent_author
         .as_ref()
-        .map_or(String::new(), |parent| format!("回复给: {}\n", parent));
+        .map_or(String::new(), |parent| format!("回复给: {parent}\n"));
     let location_info = notification
         .location
         .as_ref()
-        .map_or(String::new(), |loc| format!("来自: {}\n", loc));
+        .map_or(String::new(), |loc| format!("来自: {loc}\n"));
     let created_formatted = notification
         .created
         .to_chrono()

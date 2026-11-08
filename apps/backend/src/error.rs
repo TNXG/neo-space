@@ -26,18 +26,18 @@ pub enum AppError {
 impl std::fmt::Debug for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NotFound(msg) => write!(f, "NotFound: {}", msg),
-            Self::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
+            Self::NotFound(msg) => write!(f, "NotFound: {msg}"),
+            Self::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
             Self::Unauthorized => write!(f, "Unauthorized"),
             Self::Forbidden => write!(f, "Forbidden"),
-            Self::Database(msg) => write!(f, "Database: {}", msg),
-            Self::Internal(msg) => write!(f, "Internal: {}", msg),
+            Self::Database(msg) => write!(f, "Database: {msg}"),
+            Self::Internal(msg) => write!(f, "Internal: {msg}"),
             Self::SpamDetected => write!(f, "SpamDetected"),
-            Self::OAuthFailed(msg) => write!(f, "OAuthFailed: {}", msg),
+            Self::OAuthFailed(msg) => write!(f, "OAuthFailed: {msg}"),
             Self::InvalidToken => write!(f, "InvalidToken"),
             Self::TokenExpired => write!(f, "TokenExpired"),
             Self::MissingAuthHeader => write!(f, "MissingAuthHeader"),
-            Self::ConfigError(msg) => write!(f, "ConfigError: {}", msg),
+            Self::ConfigError(msg) => write!(f, "ConfigError: {msg}"),
         }
     }
 }
@@ -66,11 +66,11 @@ impl IntoResponse for AppError {
                 )
             }
             Self::SpamDetected => (StatusCode::FORBIDDEN, "Spam detected".to_string()),
-            Self::OAuthFailed(msg) => (StatusCode::BAD_REQUEST, format!("OAuth failed: {}", msg)),
+            Self::OAuthFailed(msg) => (StatusCode::BAD_REQUEST, format!("OAuth failed: {msg}")),
             Self::TokenExpired => (StatusCode::UNAUTHORIZED, "Token expired".to_string()),
             Self::ConfigError(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Config error: {}", msg),
+                format!("Config error: {msg}"),
             ),
         };
 
@@ -86,20 +86,20 @@ impl IntoResponse for AppError {
     }
 }
 
-/// Type alias for Result with AppError
+/// Type alias for Result with `AppError`
 pub type AppResult<T> = Result<T, AppError>;
 
 // Implement From implementations for common error types
 
 impl From<mongodb::error::Error> for AppError {
     fn from(err: mongodb::error::Error) -> Self {
-        AppError::Database(err.to_string())
+        Self::Database(err.to_string())
     }
 }
 
 impl From<serde_json::Error> for AppError {
     fn from(err: serde_json::Error) -> Self {
-        AppError::Internal(format!("JSON error: {}", err))
+        Self::Internal(format!("JSON error: {err}"))
     }
 }
 
@@ -125,7 +125,7 @@ where
 
     async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
         match axum::Json::<T>::from_request(req, state).await {
-            Ok(axum::Json(value)) => Ok(AppJson(value)),
+            Ok(axum::Json(value)) => Ok(Self(value)),
             Err(rejection) => {
                 use axum::extract::rejection::JsonRejection;
                 let msg = match &rejection {
@@ -169,7 +169,7 @@ where
         state: &S,
     ) -> Result<Self, Self::Rejection> {
         match axum::extract::Query::<T>::from_request_parts(parts, state).await {
-            Ok(axum::extract::Query(value)) => Ok(AppQuery(value)),
+            Ok(axum::extract::Query(value)) => Ok(Self(value)),
             Err(rejection) => Err(AppError::BadRequest(format!(
                 "Invalid query parameters: {}",
                 rejection.body_text()
@@ -181,6 +181,8 @@ where
 // ─── Fallback handler ────────────────────────────────────────────────────────
 
 /// 404 fallback for unmatched routes – always returns JSON.
+// Axum handlers must return a future even when constructing an immediate response.
+#[allow(clippy::unused_async)]
 pub async fn fallback_404(uri: axum::http::Uri) -> impl axum::response::IntoResponse {
     AppError::NotFound(format!("Endpoint not found: {}", uri.path()))
 }

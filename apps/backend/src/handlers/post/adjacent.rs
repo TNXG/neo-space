@@ -3,7 +3,7 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
-    models::*,
+    models::ApiResponse,
     services::helpers::get_ai_translation,
 };
 use axum::{
@@ -60,7 +60,7 @@ pub async fn get_adjacent_posts(
         .find_one(doc! { "slug": &slug, "isPublished": true })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Post not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Post not found".to_string()))?;
 
     // Find previous and next posts
     let prev = find_adjacent_post(&state, &current_post, true, lang).await?;

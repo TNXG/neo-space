@@ -3,7 +3,7 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
-    models::*,
+    models::ApiResponse,
     services::helpers::{
         get_ai_translation, get_category_name_translation_map, localize_category_names,
     },
@@ -88,6 +88,8 @@ pub struct AggregateNavParams {
 
 /// GET /aggregate/nav
 /// Returns merged recent posts+notes and all categories with post counts.
+// Keep the endpoint orchestration together to preserve the request flow.
+#[allow(clippy::too_many_lines)]
 pub async fn aggregate_nav(
     State(state): State<SharedState>,
     AppQuery(params): AppQuery<AggregateNavParams>,

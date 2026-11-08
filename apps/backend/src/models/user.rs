@@ -1,8 +1,8 @@
 //! User and OAuth provider models
 //!
 //! Reader and Account models are split into separate files:
-//! - `reader.rs` — Reader, ReaderResponse
-//! - `account.rs` — Account, AccountResponse
+//! - `reader.rs` — Reader, `ReaderResponse`
+//! - `account.rs` — Account, `AccountResponse`
 
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +12,7 @@ use super::serializers::{serialize_datetime, serialize_object_id};
 pub use super::account::{Account, AccountResponse};
 pub use super::reader::{Reader, ReaderResponse};
 
-/// Blog owner user profile (aggregated from owner_profiles + readers)
+/// Blog owner user profile (aggregated from `owner_profiles` + readers)
 #[derive(Debug, Serialize, Clone)]
 pub struct User {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]

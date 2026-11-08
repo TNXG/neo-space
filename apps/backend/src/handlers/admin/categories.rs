@@ -6,7 +6,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Category, Post},
     tasks::isr::trigger_isr_revalidation,
     tasks::meilisearch_incremental::enqueue_category_posts,
 };
@@ -130,7 +130,7 @@ pub async fn create_category(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Category not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Category not found after insert".into()))?;
     trigger_isr_revalidation(&state, "categories", None).await;
     Ok(Json(ApiResponse::success(cat)))
 }
@@ -166,7 +166,7 @@ pub async fn update_category(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Category not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Category not found".into()))?;
     enqueue_category_posts(&state, oid).await?;
     // 分类名称或 slug 会被文章列表与详情页消费，因此两个标签都需要失效。
     trigger_isr_revalidation(&state, "categories", None).await;
@@ -189,8 +189,7 @@ pub async fn delete_category(
         .map_err(|e| AppError::Database(e.to_string()))?;
     if used > 0 {
         return Err(AppError::BadRequest(format!(
-            "该分类下尚有 {} 篇文章，无法删除",
-            used
+            "该分类下尚有 {used} 篇文章，无法删除"
         )));
     }
     let result = state
@@ -234,7 +233,7 @@ async fn load_tags(state: &SharedState) -> AppResult<Vec<TagItem>> {
         .map_err(|e| AppError::Database(e.to_string()))?
     {
         let name = d.get_str("_id").unwrap_or("").to_string();
-        let count = d.get_i32("count").map(|v| v as i64).unwrap_or(0);
+        let count = d.get_i32("count").map_or(0, i64::from);
         if !name.is_empty() {
             items.push(TagItem { name, count });
         }

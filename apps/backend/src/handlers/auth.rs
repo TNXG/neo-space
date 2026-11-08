@@ -7,12 +7,15 @@ use crate::{
     app::SharedState,
     auth::{extractors::AuthUser, jwt::generate_jwt},
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::{Account, AccountResponse, ApiResponse, Reader, ReaderResponse, ResponseStatus},
 };
 use axum::{
     Json,
     extract::State,
-    http::{HeaderMap, HeaderValue, header::{CACHE_CONTROL, SET_COOKIE}},
+    http::{
+        HeaderMap, HeaderValue,
+        header::{CACHE_CONTROL, SET_COOKIE},
+    },
 };
 use bson::{Bson, Document, doc};
 use futures::stream::TryStreamExt;
@@ -57,7 +60,12 @@ pub async fn get_password_key(
 ) -> (HeaderMap, Json<ApiResponse<PasswordKeyResponse>>) {
     let mut headers = HeaderMap::new();
     headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    (headers, Json(ApiResponse::success(state.password_crypto.public_key_response())))
+    (
+        headers,
+        Json(ApiResponse::success(
+            state.password_crypto.public_key_response(),
+        )),
+    )
 }
 
 /// Issue an admin JWT after decrypting and verifying the encrypted password.
@@ -72,11 +80,10 @@ pub async fn create_token(
     let stored_hash = account_password_hash(&account)?.to_owned();
 
     let crypto = state.password_crypto.clone();
-    let password_matches = tokio::task::spawn_blocking(move || {
-        crypto.verify_password(&ciphertext, &stored_hash)
-    })
-    .await
-    .map_err(|_| AppError::Internal("Password verification worker failed".to_string()))??;
+    let password_matches =
+        tokio::task::spawn_blocking(move || crypto.verify_password(&ciphertext, &stored_hash))
+            .await
+            .map_err(|_| AppError::Internal("Password verification worker failed".to_string()))??;
     if !password_matches {
         return Err(AppError::Unauthorized);
     }
@@ -84,8 +91,8 @@ pub async fn create_token(
     issue_admin_session(&state, reader)
 }
 
-/// 为已完成强认证的 Owner 签发统一的后台 JWT 与 HttpOnly Cookie。
-pub(crate) fn issue_admin_session(
+/// 为已完成强认证的 Owner 签发统一的后台 JWT 与 `HttpOnly` Cookie。
+pub fn issue_admin_session(
     state: &SharedState,
     reader: Reader,
 ) -> AppResult<(HeaderMap, Json<ApiResponse<TokenResponse>>)> {
@@ -105,7 +112,9 @@ pub(crate) fn issue_admin_session(
 }
 
 /// Remove the admin JWT cookie. The token itself remains stateless.
-pub async fn delete_token(State(state): State<SharedState>) -> AppResult<(HeaderMap, Json<ApiResponse<()>>)> {
+pub async fn delete_token(
+    State(state): State<SharedState>,
+) -> AppResult<(HeaderMap, Json<ApiResponse<()>>)> {
     let mut headers = HeaderMap::new();
     headers.insert(SET_COOKIE, build_admin_auth_cookie("", &state)?);
 
@@ -172,13 +181,13 @@ pub async fn get_user_accounts(
     let mut cursor = accounts_collection
         .find(doc! { "userId": auth_user.user_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find accounts: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to find accounts: {e}")))?;
 
     let mut accounts = Vec::new();
     while let Some(account) = cursor
         .try_next()
         .await
-        .map_err(|e| AppError::Database(format!("Failed to iterate accounts: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to iterate accounts: {e}")))?
     {
         accounts.push(AccountResponse::from(account));
     }
@@ -205,7 +214,7 @@ pub async fn update_user_avatar(
             doc! { "$set": { "image": &payload.avatar } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to update avatar: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to update avatar: {e}")))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -245,7 +254,7 @@ async fn find_owner_credential_account(
     Ok((reader, account))
 }
 
-pub(crate) async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Reader> {
+pub async fn find_owner_reader(state: &SharedState, username: &str) -> AppResult<Reader> {
     let readers = state.db.collection::<Reader>("readers");
     if let Some(reader) = readers
         .find_one(doc! {
@@ -272,7 +281,7 @@ pub(crate) async fn find_owner_reader(state: &SharedState, username: &str) -> Ap
 }
 
 /// 读取站点 Owner 对应的 Reader，不依赖用户输入。
-pub(crate) async fn load_owner_reader(state: &SharedState) -> AppResult<Reader> {
+pub async fn load_owner_reader(state: &SharedState) -> AppResult<Reader> {
     let readers = state.db.collection::<Reader>("readers");
     let owner_profiles = state.db.collection::<Document>("owner_profiles");
     let owner_profile = owner_profiles
@@ -308,8 +317,13 @@ fn account_password_hash(account: &Document) -> AppResult<&str> {
 
 fn build_admin_auth_cookie(token: &str, state: &SharedState) -> AppResult<HeaderValue> {
     let config = state.config();
-    let secure = config.backend_url.starts_with("https://") || config.frontend_url.starts_with("https://");
-    let max_age = if token.is_empty() { 0 } else { 7 * 24 * 60 * 60 };
+    let secure =
+        config.backend_url.starts_with("https://") || config.frontend_url.starts_with("https://");
+    let max_age = if token.is_empty() {
+        0
+    } else {
+        7 * 24 * 60 * 60
+    };
     let same_site = if secure { "None" } else { "Lax" };
     let cookie = format!(
         "{ADMIN_AUTH_COOKIE}={token}; Path=/; Max-Age={max_age}; HttpOnly; SameSite={same_site}{}",

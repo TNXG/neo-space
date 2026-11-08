@@ -7,7 +7,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, PaginatedData, Pagination, Recently, Say},
 };
 use axum::{
     extract::{Path, State},
@@ -45,6 +45,8 @@ pub struct UpdateSayRequest {
     pub author: Option<String>,
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_says(
     State(state): State<SharedState>,
     AppQuery(q): AppQuery<PageQuery>,
@@ -75,7 +77,12 @@ pub async fn list_says(
     {
         items.push(s);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(PaginatedData {
         items,
         pagination,
@@ -111,7 +118,7 @@ pub async fn create_say(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Say not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Say not found after insert".into()))?;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -144,7 +151,7 @@ pub async fn update_say(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Say not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Say not found".into()))?;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -198,7 +205,7 @@ pub async fn create_recently(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Recently not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Recently not found after insert".into()))?;
     Ok(Json(ApiResponse::success(inserted)))
 }
 
@@ -224,7 +231,7 @@ pub async fn update_recently(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Recently not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Recently not found".into()))?;
     Ok(Json(ApiResponse::success(updated)))
 }
 

@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::{OptionalAuth, OwnerOnly},
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::{ApiResponse, Comment, CommentTree, Reader, ResponseStatus, UpdateCommentRequest},
     services::comment::CommentService,
 };
 use axum::{
@@ -29,8 +29,8 @@ pub async fn update_comment(
     let existing_comment = collection
         .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find comment: {}", e)))?
-        .ok_or(AppError::NotFound("Comment not found".to_string()))?;
+        .map_err(|e| AppError::Database(format!("Failed to find comment: {e}")))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
 
     // Check ownership
     let can_edit = if auth.is_owner {
@@ -58,20 +58,20 @@ pub async fn update_comment(
             doc! { "$set": { "text": &payload.text }, "$inc": { "moderationRevision": 1 } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to update comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to update comment: {e}")))?;
 
     // Get updated comment
     let updated_comment = collection
         .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to retrieve updated comment: {}", e)))?
-        .ok_or(AppError::Internal("Updated comment not found".to_string()))?;
+        .map_err(|e| AppError::Database(format!("Failed to retrieve updated comment: {e}")))?
+        .ok_or_else(|| AppError::Internal("Updated comment not found".to_string()))?;
 
     let comment = CommentService::new(state.db.clone());
     let (email_to_avatar, email_to_is_owner, email_to_source) = comment
         .build_reader_mappings(vec![updated_comment.mail.clone()])
         .await;
-    let comment_trees = comment.build_comment_tree(
+    let comment_trees = CommentService::build_comment_tree(
         std::slice::from_ref(&updated_comment),
         &email_to_avatar,
         &email_to_is_owner,
@@ -109,8 +109,8 @@ pub async fn delete_comment(
         .find_one(doc! { "_id": object_id, "isDeleted": { "$ne": true } })
         .projection(doc! { "_id": 1 })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find comment: {}", e)))?
-        .ok_or(AppError::NotFound("Comment not found".to_string()))?;
+        .map_err(|e| AppError::Database(format!("Failed to find comment: {e}")))?
+        .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
 
     // Check ownership (only admin can delete)
     if !auth.is_owner {
@@ -122,7 +122,7 @@ pub async fn delete_comment(
     let comment_ids = comment_service
         .collect_comment_subtree_ids(object_id)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to collect comment subtree: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to collect comment subtree: {e}")))?;
 
     collection
         .update_many(
@@ -137,7 +137,7 @@ pub async fn delete_comment(
         )
         .await
         .map_err(|e| {
-            AppError::Database(format!("Failed to mark comment subtree as deleted: {}", e))
+            AppError::Database(format!("Failed to mark comment subtree as deleted: {e}"))
         })?;
 
     collection
@@ -154,7 +154,7 @@ pub async fn delete_comment(
         )
         .await
         .map_err(|e| {
-            AppError::Database(format!("Failed to clear deleted comment timestamps: {}", e))
+            AppError::Database(format!("Failed to clear deleted comment timestamps: {e}"))
         })?;
 
     tracing::info!("Comment {} and its children marked as deleted", id);
@@ -183,7 +183,7 @@ pub async fn hide_comment(
             doc! { "$set": { "isWhispers": true }, "$inc": { "moderationRevision": 1 } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to hide comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to hide comment: {e}")))?;
 
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Comment not found".to_string()));
@@ -208,7 +208,7 @@ pub async fn unhide_comment(
             doc! { "$set": { "isWhispers": false }, "$inc": { "moderationRevision": 1 } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to unhide comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to unhide comment: {e}")))?;
 
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Comment not found".to_string()));
@@ -233,7 +233,7 @@ pub async fn pin_comment(
             doc! { "$set": { "pin": true }, "$inc": { "moderationRevision": 1 } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to pin comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to pin comment: {e}")))?;
 
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Comment not found".to_string()));
@@ -258,7 +258,7 @@ pub async fn unpin_comment(
             doc! { "$set": { "pin": false }, "$inc": { "moderationRevision": 1 } },
         )
         .await
-        .map_err(|e| AppError::Database(format!("Failed to unpin comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to unpin comment: {e}")))?;
 
     if result.matched_count == 0 {
         return Err(AppError::NotFound("Comment not found".to_string()));

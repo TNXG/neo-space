@@ -201,6 +201,8 @@ const UPLOAD_BATCH_SIZE: usize = 50;
 ///
 /// 这样单篇文档的向量化错误（如内容过长、embedding 服务参数拒绝）不会让整个重建失败，
 /// 只损失问题文档本身，其余文档仍能正常索引。
+// Generic document batches are only borrowed by locally awaited uploads.
+#[allow(clippy::future_not_send)]
 async fn upload_documents<T: Serialize>(
     state: &SharedState,
     task_id: ObjectId,
@@ -272,10 +274,7 @@ async fn upload_documents<T: Serialize>(
                         let message = format!(
                             "索引 {} 单文档 3 次重试均失败，已跳过：{}",
                             index.uid,
-                            last_error
-                                .as_ref()
-                                .map(|e| format!("{e:?}"))
-                                .unwrap_or_default(),
+                            last_error.as_ref().map_or_default(|e| format!("{e:?}")),
                         );
                         tracing::warn!(index_uid = %index.uid, %message, "跳过向量化失败文档");
                         append_log(state, task_id, &message).await;

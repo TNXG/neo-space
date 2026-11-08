@@ -23,11 +23,10 @@ fn extract_json(response: &str) -> String {
             .trim_start_matches("json")
             .trim_start();
 
-        if let Some(end) = stripped.rfind("```") {
-            stripped.get(..end).unwrap_or(stripped).trim()
-        } else {
-            stripped.trim()
-        }
+        stripped.rfind("```").map_or_else(
+            || stripped.trim(),
+            |end| stripped.get(..end).unwrap_or(stripped).trim(),
+        )
     } else {
         response
     };

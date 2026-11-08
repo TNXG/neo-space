@@ -83,7 +83,7 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
         .trim();
 
     let parsed: serde_json::Value = serde_json::from_str(clean_content).map_err(|error| {
-        AppError::Internal(format!("Failed to parse AI JSON response: {}", error))
+        AppError::Internal(format!("Failed to parse AI JSON response: {error}"))
     })?;
 
     let sensitivity = match parsed
@@ -104,13 +104,12 @@ Respond with ONLY valid JSON, no markdown or explanations."#,
     let markers = parsed
         .get("markers")
         .and_then(|value| value.as_array())
-        .map(|items| {
+        .map_or_default(|items| {
             items
                 .iter()
                 .filter_map(|item| item.as_str().map(String::from))
                 .collect()
-        })
-        .unwrap_or_default();
+        });
 
     Ok(TimeCapsuleResult {
         sensitivity,
@@ -222,8 +221,7 @@ pub async fn get_time_capsule(
 
     if AiService::from_database_for_usage(&state.db, state.http_client.clone(), AiUsage::Summary)
         .await
-        .map(|service| !service.is_enabled())
-        .unwrap_or(true)
+        .map_or(true, |service| !service.is_enabled())
     {
         return Ok(Json(crate::models::ApiResponse::success(None)));
     }

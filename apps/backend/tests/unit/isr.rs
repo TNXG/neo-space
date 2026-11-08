@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use super::sign_revalidation_request;
 
 /// 固定向量用于防止前后端签名字段顺序被单边修改。

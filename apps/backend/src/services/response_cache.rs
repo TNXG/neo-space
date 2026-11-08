@@ -1,6 +1,9 @@
 //! Process-local public API responses with bounded weight and generation-safe invalidation.
 use std::{
-    sync::{Arc, atomic::{AtomicU64, Ordering}},
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
     time::Duration,
 };
 
@@ -33,21 +36,36 @@ impl Default for ResponseCache {
 
 impl ResponseCache {
     /// Construct a cache with explicit expiry, weighted to approximately 64 MiB including metadata.
+    #[must_use]
     pub fn new(ttl: Duration, idle: Duration) -> Self {
         let entries = Cache::builder()
             .max_capacity(64 * 1024 * 1024)
             .weigher(|key: &ResponseCacheKey, response: &CachedResponse| {
-                let headers = response.headers.iter().map(|(name, value)| name.as_str().len() + value.len()).sum::<usize>();
-                u32::try_from(key.1.len().saturating_add(response.body.len()).saturating_add(headers).saturating_add(256))
-                    .unwrap_or(u32::MAX)
+                let headers = response
+                    .headers
+                    .iter()
+                    .map(|(name, value)| name.as_str().len() + value.len())
+                    .sum::<usize>();
+                u32::try_from(
+                    key.1
+                        .len()
+                        .saturating_add(response.body.len())
+                        .saturating_add(headers)
+                        .saturating_add(256),
+                )
+                .unwrap_or(u32::MAX)
             })
             .time_to_live(ttl)
             .time_to_idle(idle)
             .build();
-        Self { entries, generation: Arc::new(AtomicU64::new(0)) }
+        Self {
+            entries,
+            generation: Arc::new(AtomicU64::new(0)),
+        }
     }
 
     /// Capture the current generation before starting any database work.
+    #[must_use]
     pub fn key(&self, uri: &str) -> ResponseCacheKey {
         (self.generation.load(Ordering::Acquire), uri.to_owned())
     }

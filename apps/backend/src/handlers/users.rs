@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::AuthUser,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Reader, ReaderResponse, ResponseStatus, User, UserSocialIds},
     services::user_profile::{self, UpdateProfileRequest},
 };
 use axum::{
@@ -99,7 +99,7 @@ pub async fn check_handle_availability(
     }))
 }
 
-/// Get the blog owner's public profile (joins owner_profiles + readers via readerId)
+/// Get the blog owner's public profile (joins `owner_profiles` + readers via readerId)
 pub async fn get_owner_profile(
     State(state): State<SharedState>,
 ) -> AppResult<Json<ApiResponse<User>>> {
@@ -137,12 +137,12 @@ pub async fn get_owner_profile(
     let mut cursor = owner_collection
         .aggregate(pipeline)
         .await
-        .map_err(|e| AppError::Database(format!("Aggregation failed: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Aggregation failed: {e}")))?;
 
     let doc = cursor
         .try_next()
         .await
-        .map_err(|e| AppError::Database(format!("Failed to read profile: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to read profile: {e}")))?
         .ok_or_else(|| AppError::NotFound("Owner profile not found".to_string()))?;
 
     let owner_id = doc
@@ -201,13 +201,13 @@ pub async fn list_readers_public(
         .find(doc! {})
         .with_options(find_options)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find readers: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to find readers: {e}")))?;
 
     let mut items = Vec::new();
     while let Some(reader) = cursor
         .try_next()
         .await
-        .map_err(|e| AppError::Database(format!("Failed to iterate readers: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to iterate readers: {e}")))?
     {
         let mut response = ReaderResponse::from(reader);
         response.email = String::new(); // Always hide email in list
@@ -229,7 +229,7 @@ pub async fn get_reader_by_id_public(
     let reader = collection
         .find_one(doc! { "_id": object_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to find reader: {e}")))?
         .ok_or_else(|| AppError::NotFound("Reader not found".to_string()))?;
 
     let response = ReaderResponse::from(reader); // email included

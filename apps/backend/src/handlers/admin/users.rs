@@ -4,7 +4,10 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppQuery, AppResult},
-    models::*,
+    models::{
+        Account, AccountResponse, ApiResponse, PaginatedData, Pagination, Reader, ReaderResponse,
+        ResponseStatus,
+    },
 };
 use axum::{
     Json,
@@ -22,6 +25,13 @@ pub struct ListUsersQuery {
 }
 
 /// List all readers (admin only)
+// MongoDB counts fit i64; pagination retains its existing floating-point rounding.
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss
+)]
 pub async fn list_users(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -65,7 +75,8 @@ pub async fn list_users(
     let total_page = ((total as f64) / (size as f64)).ceil() as i64;
     let pagination = Pagination {
         total: total as i64,
-        current_page: page as i64,
+        current_page: i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
         total_page,
         size: size as i64,
         has_next_page: page < total_page as u64,
@@ -97,7 +108,7 @@ pub async fn get_user_by_id(
         .find_one(doc! { "_id": object_id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("User not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -118,7 +129,7 @@ pub async fn get_user_by_email(
         .find_one(doc! { "email": &email })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("User not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -144,7 +155,7 @@ pub async fn delete_user(
         .find_one(doc! { "_id": object_id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("User not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     // Prevent deleting owner account
     if reader.is_owner {
@@ -157,14 +168,14 @@ pub async fn delete_user(
     collection
         .delete_one(doc! { "_id": object_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to delete user: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to delete user: {e}")))?;
 
     // Also delete associated accounts
     let accounts_collection = state.db.collection::<Account>("accounts");
     accounts_collection
         .delete_many(doc! { "userId": object_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to delete user accounts: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to delete user accounts: {e}")))?;
 
     tracing::info!("User {} deleted", id);
 
@@ -191,7 +202,7 @@ pub async fn list_user_accounts(
         .find_one(doc! { "_id": object_id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("User not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
     // Fetch accounts
     let accounts_collection = state.db.collection::<Account>("accounts");
@@ -223,25 +234,25 @@ pub async fn delete_user_account(
     _owner: OwnerOnly,
     Path((user_id, account_id)): Path<(String, String)>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let user_oid = ObjectId::parse_str(&user_id)
+    let reader_object_id = ObjectId::parse_str(&user_id)
         .map_err(|_| AppError::BadRequest("Invalid user ID format".to_string()))?;
-    let account_oid = ObjectId::parse_str(&account_id)
+    let identity_object_id = ObjectId::parse_str(&account_id)
         .map_err(|_| AppError::BadRequest("Invalid account ID format".to_string()))?;
 
     let collection = state.db.collection::<Account>("accounts");
 
     // Verify account exists and belongs to user
     let _account = collection
-        .find_one(doc! { "_id": account_oid, "userId": user_oid })
+        .find_one(doc! { "_id": identity_object_id, "userId": reader_object_id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Account not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Account not found".to_string()))?;
 
     // Delete account
     collection
-        .delete_one(doc! { "_id": account_oid })
+        .delete_one(doc! { "_id": identity_object_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to delete account: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to delete account: {e}")))?;
 
     tracing::info!("Account {} for user {} deleted", account_id, user_id);
 

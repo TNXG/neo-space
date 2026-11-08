@@ -122,7 +122,7 @@ pub fn render_template(template: &str, variables: &[(&str, &str)]) -> String {
 }
 
 /// 品牌邮件骨架所需的展示内容。
-pub(crate) struct BrandedEmailTemplate<'a> {
+pub struct BrandedEmailTemplate<'a> {
     pub site_name: &'a str,
     pub category: &'a str,
     pub title: &'a str,
@@ -136,7 +136,9 @@ pub(crate) struct BrandedEmailTemplate<'a> {
 /// 构建兼容主流邮件客户端的品牌 HTML 外壳。
 ///
 /// 邮件客户端会移除部分网页 CSS，因此布局使用 table，关键视觉样式全部内联。
-pub(crate) fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
+// Callers pass a short-lived template descriptor by value.
+#[allow(clippy::needless_pass_by_value)]
+pub fn build_branded_html(template: BrandedEmailTemplate<'_>) -> String {
     let site_name = html_escape::encode_text(template.site_name);
     let category = html_escape::encode_text(template.category);
     let title = html_escape::encode_text(template.title);

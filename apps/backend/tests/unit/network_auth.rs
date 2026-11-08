@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use super::*;
 
 #[test]
@@ -10,7 +12,12 @@ fn internal_config_rejects_missing_secret_invalid_signature_and_expired_requests
     assert!(authorize(&headers, "secret", 100).is_err());
     let mut mac = Hmac::<Sha256>::new_from_slice(b"secret").expect("HMAC");
     mac.update(b"network-config:100");
-    headers.insert("x-network-signature", hex::encode(mac.finalize().into_bytes()).parse().expect("signature"));
+    headers.insert(
+        "x-network-signature",
+        hex::encode(mac.finalize().into_bytes())
+            .parse()
+            .expect("signature"),
+    );
     assert!(authorize(&headers, "secret", 100).is_ok());
     assert!(authorize(&headers, "secret", 161).is_err());
 }

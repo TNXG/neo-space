@@ -11,7 +11,7 @@ use futures::stream::TryStreamExt;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-/// Create an OAuthService from shared application state.
+/// Create an `OAuthService` from shared application state.
 /// Centralizes construction to avoid duplicating this in multiple handlers.
 pub fn make_oauth_service(state: &SharedState) -> OAuthService {
     let config = state.config();
@@ -24,9 +24,9 @@ pub fn make_oauth_service(state: &SharedState) -> OAuthService {
     )
 }
 
-/// 基于 owner_profiles.readerId 与 readers.isOwner 双重判定站长身份。
+/// 基于 `owner_profiles.readerId` 与 readers.isOwner 双重判定站长身份。
 ///
-/// 当前线上数据里真实站长挂在 owner_profiles.readerId 上，
+/// 当前线上数据里真实站长挂在 `owner_profiles.readerId` 上，
 /// 不能只依赖 readers.isOwner，否则评论区会漏掉站长标识。
 pub async fn is_owner_user_id(
     database: &mongodb::Database,
@@ -50,7 +50,7 @@ pub async fn is_owner_user_id(
         .unwrap_or(false))
 }
 
-/// Create an OAuthService and backfill credentials from database options when
+/// Create an `OAuthService` and backfill credentials from database options when
 /// deployment-time environment variables are unavailable.
 pub async fn make_runtime_oauth_service(state: &SharedState) -> Result<OAuthService, AppError> {
     let config = state.config();
@@ -310,7 +310,7 @@ pub async fn get_dict_translation_map(
     translation_map
 }
 
-/// Fetch localized category names by category ObjectId.
+/// Fetch localized category names by category `ObjectId`.
 pub async fn get_category_name_translation_map(
     state: &SharedState,
     category_ids: &[ObjectId],
@@ -330,7 +330,7 @@ pub fn localize_category_names<'a>(
 ) {
     for category in categories {
         if let Some(translated_name) = translation_map.get(&category.id.to_hex()) {
-            category.name = translated_name.clone();
+            category.name.clone_from(translated_name);
         }
     }
 }
@@ -359,29 +359,29 @@ pub fn localize_note_taxonomy_fields<'a>(
 /// Apply translation fields onto a post payload.
 pub fn apply_translation_to_post(post: &mut PostWithCategory, translation: &AiTranslation) {
     if let Some(title) = &translation.title {
-        post.title = title.clone();
+        post.title.clone_from(title);
     }
     if let Some(text) = &translation.text {
-        post.text = text.clone();
+        post.text.clone_from(text);
     }
     if let Some(summary) = &translation.summary {
         post.ai_summary = Some(summary.clone());
     }
     if !translation.tags.is_empty() {
-        post.tags = translation.tags.clone();
+        post.tags.clone_from(&translation.tags);
     }
-    post.lang = translation.lang.clone();
-    post.source_lang = translation.source_lang.clone();
+    post.lang.clone_from(&translation.lang);
+    post.source_lang.clone_from(&translation.source_lang);
     post.is_ai_translated = true;
 }
 
 /// Apply translation fields onto a note payload.
 pub fn apply_translation_to_note(note: &mut Note, translation: &AiTranslation) {
     if let Some(title) = &translation.title {
-        note.title = title.clone();
+        note.title.clone_from(title);
     }
     if let Some(text) = &translation.text {
-        note.text = text.clone();
+        note.text.clone_from(text);
     }
     if let Some(summary) = &translation.summary {
         note.ai_summary = Some(summary.clone());
@@ -389,8 +389,8 @@ pub fn apply_translation_to_note(note: &mut Note, translation: &AiTranslation) {
     if !translation.tags.is_empty() {
         // Note model currently has no tags field. Ignore intentionally.
     }
-    note.lang = translation.lang.clone();
-    note.source_lang = translation.source_lang.clone();
+    note.lang.clone_from(&translation.lang);
+    note.source_lang.clone_from(&translation.source_lang);
     note.is_ai_translated = true;
 }
 
@@ -412,7 +412,7 @@ pub async fn verify_turnstile(
 
     if json
         .get("success")
-        .and_then(|v| v.as_bool())
+        .and_then(serde_json::Value::as_bool)
         .unwrap_or(false)
     {
         Ok(())

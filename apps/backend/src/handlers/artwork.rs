@@ -21,16 +21,16 @@ pub async fn serve_artwork(Path(filename): Path<String>) -> AppResult<Response<B
         return Err(AppError::BadRequest("Unsupported file type".to_string()));
     }
 
-    let filepath = format!("./.cache/artworks/{}", filename);
+    let filepath = format!("./.cache/artworks/{filename}");
 
     let mut file = tokio::fs::File::open(&filepath)
         .await
-        .map_err(|_| AppError::NotFound(format!("Artwork not found: {}", filename)))?;
+        .map_err(|_| AppError::NotFound(format!("Artwork not found: {filename}")))?;
 
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)
         .await
-        .map_err(|e| AppError::Internal(format!("Failed to read artwork: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Failed to read artwork: {e}")))?;
 
     let content_type = match ext.as_str() {
         "png" => "image/png",
@@ -47,7 +47,7 @@ pub async fn serve_artwork(Path(filename): Path<String>) -> AppResult<Response<B
             HeaderValue::from_static("public, max-age=86400"),
         )
         .body(Body::from(contents))
-        .map_err(|e| AppError::Internal(format!("Failed to build response: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("Failed to build response: {e}")))?;
 
     Ok(response)
 }

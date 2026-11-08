@@ -25,11 +25,11 @@ fn sign_revalidation_request(
     timestamp: i64,
 ) -> Result<String, String> {
     // Construct message: secret + timestamp + salt + tag + path
-    let message = format!("{}{}{}{}{}", secret, timestamp, salt, tag, path);
+    let message = format!("{secret}{timestamp}{salt}{tag}{path}");
 
     // Create HMAC-SHA256
     let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
-        .map_err(|e| format!("Failed to create HMAC: {}", e))?;
+        .map_err(|e| format!("Failed to create HMAC: {e}"))?;
 
     mac.update(message.as_bytes());
     let result = mac.finalize();
@@ -37,7 +37,7 @@ fn sign_revalidation_request(
 }
 
 /// Trigger ISR revalidation for Next.js
-pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, path: Option<&str>) {
+pub async fn trigger_isr_revalidation(state: &SharedState, tag: &str, path: Option<&str>) {
     let frontend_url = state.config().frontend_url.clone();
     let frontend_url = frontend_url.trim_end_matches('/');
 
@@ -48,7 +48,7 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
     }
 
     let timestamp = chrono::Utc::now().timestamp();
-    let url = format!("{}/api/revalidate", frontend_url);
+    let url = format!("{frontend_url}/api/revalidate");
     tracing::info!(
         "Preparing ISR revalidation request: url={}, tag={}, path={:?}",
         url,
@@ -92,7 +92,7 @@ pub(crate) async fn trigger_isr_revalidation(state: &SharedState, tag: &str, pat
 }
 
 /// Send revalidation request to Next.js with proper authentication
-pub(crate) async fn send_revalidation_request(
+pub async fn send_revalidation_request(
     client: &reqwest::Client,
     url: &str,
     tag: Option<&str>,
@@ -118,7 +118,7 @@ pub(crate) async fn send_revalidation_request(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        return Err(format!("Revalidation failed: {} - {}", status, body).into());
+        return Err(format!("Revalidation failed: {status} - {body}").into());
     }
 
     let response_body: serde_json::Value = response.json().await?;

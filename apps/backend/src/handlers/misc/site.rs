@@ -6,7 +6,7 @@ use crate::services::options;
 use crate::{
     app::SharedState,
     error::{AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Pagination, Recently, ResponseStatus},
 };
 use axum::{Json, extract::State};
 use bson::doc;
@@ -21,7 +21,7 @@ pub async fn get_config(
 ) -> AppResult<Json<ApiResponse<SiteConfig>>> {
     let config = options::get_site_config(&state.db)
         .await
-        .map_err(|e| crate::error::AppError::Internal(format!("Failed to fetch config: {}", e)))?;
+        .map_err(|e| crate::error::AppError::Internal(format!("Failed to fetch config: {e}")))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -38,7 +38,7 @@ pub async fn list_recentlies(
 ) -> AppResult<Json<ApiResponse<PaginatedList<Recently>>>> {
     let page = params.page.max(1);
     let size = params.size.clamp(1, 100);
-    let skip = ((page - 1) * size).max(0) as u64;
+    let skip = ((page - 1) * size).max(0).cast_unsigned();
 
     let collection: Collection<Recently> = state.db.collection("recentlies");
 
@@ -49,25 +49,29 @@ pub async fn list_recentlies(
         .build();
 
     let total = collection.count_documents(doc! {}).await.map_err(|e| {
-        crate::error::AppError::Internal(format!("Failed to count recentlies: {}", e))
+        crate::error::AppError::Internal(format!("Failed to count recentlies: {e}"))
     })?;
 
     let mut cursor = collection
         .find(doc! {})
         .with_options(find_options)
         .await
-        .map_err(|e| {
-            crate::error::AppError::Internal(format!("Failed to find recentlies: {}", e))
-        })?;
+        .map_err(|e| crate::error::AppError::Internal(format!("Failed to find recentlies: {e}")))?;
 
     let mut items = Vec::new();
     while let Some(result) = cursor.try_next().await.map_err(|e| {
-        crate::error::AppError::Internal(format!("Failed to iterate recentlies: {}", e))
+        crate::error::AppError::Internal(format!("Failed to iterate recentlies: {e}"))
     })? {
         items.push(result);
     }
 
-    let pagination = Pagination::new(total as i64, page, size);
+    let pagination = Pagination::new(
+        i64::try_from(total).map_err(|_| {
+            crate::error::AppError::Internal("Recently count exceeds supported range".to_string())
+        })?,
+        page,
+        size,
+    );
 
     Ok(Json(ApiResponse {
         code: 200,

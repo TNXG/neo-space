@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OptionalAuth,
     error::{AppError, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Category, PaginatedData, Pagination, Post, PostWithCategory},
 };
 use axum::{extract::State, response::Json};
 use bson::{Regex, doc, oid::ObjectId};
@@ -103,8 +103,7 @@ pub async fn list_posts(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     let sort_field = match params.sort_by.as_deref() {
-        Some("createdAt") | Some("created") => "created",
-        Some("modifiedAt") | Some("modified") => "modified",
+        Some("modifiedAt" | "modified") => "modified",
         Some("title") => "title",
         _ => "created",
     };
@@ -112,7 +111,9 @@ pub async fn list_posts(
     let find_options = mongodb::options::FindOptions::builder()
         .sort(doc! { sort_field: sort_order })
         .skip(skip)
-        .limit(size as i64)
+        .limit(i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?)
         .build();
 
     let mut cursor = posts_collection
@@ -132,13 +133,21 @@ pub async fn list_posts(
 
     let items = enrich_posts_with_data(&state, posts, lang).await?;
 
-    let total_page = ((total as f64) / (size as f64)).ceil() as i64;
+    let total_page = total.div_ceil(size);
     let pagination = Pagination {
-        total: total as i64,
-        current_page: page as i64,
-        total_page,
-        size: size as i64,
-        has_next_page: page < total_page as u64,
+        total: i64::try_from(total).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        current_page: i64::try_from(page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        total_page: i64::try_from(total_page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        size: i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        has_next_page: page < total_page,
         has_prev_page: page > 1,
     };
 

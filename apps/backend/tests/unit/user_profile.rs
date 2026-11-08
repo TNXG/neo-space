@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use super::UpdateProfileRequest;
 use crate::{auth::extractors::AuthUser, error::AppError};
 use bson::oid::ObjectId;

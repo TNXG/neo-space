@@ -11,7 +11,7 @@ use super::OAuthUserInfo;
 
 impl OAuthService {
     /// 生成 QQ 中转登录地址；回调始终使用 `options.url.serverUrl`。
-    pub fn qq_authorize_url(&self, state: &str) -> Result<String, AppError> {
+    pub fn qq_authorize_url(&self, state: &str) -> String {
         // 中转服务不会原样回传 state，因此把 state 直接拼进 return_url，
         // 让最终落到本地 callback 时仍然能拿到 ?state=...。
         let redirect_uri = if state.is_empty() {
@@ -23,10 +23,10 @@ impl OAuthService {
                 urlencoding::encode(state),
             )
         };
-        Ok(format!(
+        format!(
             "https://api-space.tnxg.top/oauth/qq/authorize?redirect=true&return_url={}",
             urlencoding::encode(&redirect_uri)
-        ))
+        )
     }
 
     /// 通过中转服务交换 QQ 授权码，不读取 App ID / App Key。
@@ -113,14 +113,14 @@ impl OAuthService {
         let existing_account = accounts_collection
             .find_one(filter)
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find account: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to find account: {e}")))?;
 
         if let Some(account) = existing_account {
             let user_id = account.user_id.to_hex();
             let reader = readers_collection
                 .find_one(doc! { "_id": account.user_id })
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to find reader: {e}")))?;
             let is_owner = match is_owner_user_id(&self.db, account.user_id).await {
                 Ok(value) => value,
                 Err(error) => {
@@ -139,7 +139,7 @@ impl OAuthService {
             let handle = Reader::generate_handle(&nickname);
             let new_reader = Reader {
                 id: user_id,
-                email: format!("{}@qq.oauth", openid),
+                email: format!("{openid}@qq.oauth"),
                 name: nickname.clone(),
                 handle: handle.clone(),
                 image: avatar.clone(),
@@ -152,7 +152,7 @@ impl OAuthService {
             readers_collection
                 .insert_one(&new_reader)
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to create reader: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to create reader: {e}")))?;
 
             let profile = crate::models::account::OAuthUserProfile {
                 name: nickname,
@@ -165,7 +165,7 @@ impl OAuthService {
             accounts_collection
                 .insert_one(&new_account)
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to create account: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to create account: {e}")))?;
 
             tracing::info!("Created new user via QQ OAuth: {}", user_id.to_hex());
             Ok((user_id.to_hex(), false, true))

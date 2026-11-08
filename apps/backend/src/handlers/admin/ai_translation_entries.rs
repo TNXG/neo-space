@@ -36,6 +36,8 @@ pub struct UpdateEntryRequest {
     pub translated_text: String,
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_entries(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -76,7 +78,12 @@ pub async fn list_entries(
 
     Ok(Json(ApiResponse::success(EntryListResponse {
         items,
-        pagination: Pagination::new(total as i64, page as i64, size as i64),
+        pagination: Pagination::new(
+            total as i64,
+            i64::try_from(page)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+            size as i64,
+        ),
     })))
 }
 

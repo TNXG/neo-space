@@ -3,7 +3,10 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{
+        ApiResponse, Link, LinkApplyRequest, LinkState, LinkType, LinkWithHealth, PaginatedData,
+        Pagination, ResponseStatus, SendCodeRequest,
+    },
     tasks::link_health::{cached_feed, cached_health},
 };
 use axum::{
@@ -86,27 +89,29 @@ pub async fn list_links(
     let find_options = mongodb::options::FindOptions::builder()
         .sort(doc! { "created": -1 })
         .skip(skip)
-        .limit(size as i64)
+        .limit(i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?)
         .build();
 
     // Get total count
     let total = collection
         .count_documents(filter.clone())
         .await
-        .map_err(|e| AppError::Database(format!("Failed to count links: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to count links: {e}")))?;
 
     // Fetch links
     let mut cursor = collection
         .find(filter)
         .with_options(find_options)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find links: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to find links: {e}")))?;
 
     let mut links = Vec::new();
     while let Some(link) = cursor
         .try_next()
         .await
-        .map_err(|e| AppError::Database(format!("Failed to deserialize link: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to deserialize link: {e}")))?
     {
         links.push(link);
     }
@@ -119,13 +124,21 @@ pub async fn list_links(
         items.push(LinkWithHealth { link, health, feed });
     }
 
-    let total_page = ((total as f64) / (size as f64)).ceil() as i64;
+    let total_page = total.div_ceil(size);
     let pagination = Pagination {
-        total: total as i64,
-        current_page: page as i64,
-        total_page,
-        size: size as i64,
-        has_next_page: page < total_page as u64,
+        total: i64::try_from(total).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        current_page: i64::try_from(page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        total_page: i64::try_from(total_page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        size: i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        has_next_page: page < total_page,
         has_prev_page: page > 1,
     };
 
@@ -147,8 +160,8 @@ pub async fn get_link(
     let link = collection
         .find_one(link_id_filter(&id))
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find link: {}", e)))?
-        .ok_or(AppError::NotFound("Link not found".to_string()))?;
+        .map_err(|e| AppError::Database(format!("Failed to find link: {e}")))?
+        .ok_or_else(|| AppError::NotFound("Link not found".to_string()))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -221,7 +234,7 @@ pub async fn apply_link(
     let existing = collection
         .find_one(doc! { "url": &payload.url })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to check existing link: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to check existing link: {e}")))?;
 
     if existing.is_some() {
         return Err(AppError::BadRequest("URL already exists".to_string()));
@@ -245,7 +258,7 @@ pub async fn apply_link(
     collection
         .insert_one(&new_link)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to create link: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to create link: {e}")))?;
     state.response_cache.invalidate_all();
 
     tracing::info!("New friend link application from: {}", payload.email);

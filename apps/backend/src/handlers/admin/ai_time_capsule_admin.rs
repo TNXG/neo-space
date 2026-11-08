@@ -138,6 +138,8 @@ async fn append_collection(
     Ok(())
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap, clippy::too_many_lines)]
 pub async fn list_contents(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -169,8 +171,14 @@ pub async fn list_contents(
     let total = contents.len() as i64;
     let mut items: Vec<TimeCapsuleContent> = contents
         .into_iter()
-        .skip(((page - 1) * size) as usize)
-        .take(size as usize)
+        .skip(
+            usize::try_from((page - 1) * size)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        )
+        .take(
+            usize::try_from(size)
+                .map_err(|_| AppError::BadRequest("Page size exceeds supported range".into()))?,
+        )
         .collect();
     let content_ids: Vec<String> = items.iter().map(|content| content.id.clone()).collect();
     let mut capsule_map: HashMap<(String, String), Vec<CapsuleSummary>> = HashMap::new();
@@ -240,6 +248,11 @@ pub async fn list_contents(
 
     Ok(Json(ApiResponse::success(TimeCapsuleContentsResponse {
         items,
-        pagination: Pagination::new(total, page as i64, size as i64),
+        pagination: Pagination::new(
+            total,
+            i64::try_from(page)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+            size as i64,
+        ),
     })))
 }

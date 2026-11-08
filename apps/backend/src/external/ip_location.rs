@@ -2,7 +2,7 @@
 
 use serde::Deserialize;
 
-/// Get IP geolocation using Bilibili API (matches Rocket's IpService)
+/// Get IP geolocation using Bilibili API (matches Rocket's `IpService`)
 pub async fn get_ip_location(ip: &str, http_client: &reqwest::Client) -> Option<String> {
     let url = format!("https://api.live.bilibili.com/client/v1/Ip/getInfoNew?ip={ip}");
     match http_client

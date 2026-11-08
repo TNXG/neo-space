@@ -25,8 +25,7 @@ pub async fn log_request(
                 .get("cf-connecting-ip")
                 .and_then(|v| v.to_str().ok())
         })
-        .map(str::to_owned)
-        .unwrap_or_else(|| peer.ip().to_string());
+        .map_or_else(|| peer.ip().to_string(), str::to_owned);
 
     // Extract User-Agent
     let ua = req

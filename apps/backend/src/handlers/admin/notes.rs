@@ -6,7 +6,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::{ApiResponse, Note},
     tasks::content_change::{notify_note_changed, notify_notes_deleted},
 };
 use axum::{
@@ -57,7 +57,7 @@ pub struct BatchIdsRequest {
     pub ids: Vec<String>,
 }
 
-fn default_true() -> bool {
+const fn default_true() -> bool {
     true
 }
 
@@ -78,8 +78,7 @@ async fn next_nid(state: &SharedState) -> AppResult<i32> {
         .map_err(|e| AppError::Database(e.to_string()))?;
     Ok(last
         .and_then(|d| d.get_i32("nid").ok())
-        .map(|n| n + 1)
-        .unwrap_or(1))
+        .map_or(1, |n| n + 1))
 }
 
 /// POST /notes
@@ -98,7 +97,7 @@ pub async fn create_note(
         "isPublished": req.is_published,
         "bookmark": req.bookmark,
         "allowComment": true,
-        "isEncrypted": req.password.as_deref().map(|p| !p.is_empty()).unwrap_or(false),
+        "isEncrypted": req.password.as_deref().is_some_and(|p| !p.is_empty()),
         "lang": "zh",
         "sourceLang": "zh",
         "isAiTranslated": false,
@@ -136,7 +135,7 @@ pub async fn create_note(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Note not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Note not found after insert".into()))?;
 
     Ok(Json(ApiResponse::success(inserted)))
 }
@@ -197,7 +196,7 @@ pub async fn update_note(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Note not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Note not found".into()))?;
     Ok(Json(ApiResponse::success(updated)))
 }
 
@@ -213,7 +212,7 @@ pub async fn delete_note(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Note not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Note not found".into()))?;
     let result = collection
         .delete_one(doc! { "_id": oid })
         .await

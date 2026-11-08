@@ -30,7 +30,7 @@ pub struct OAuthService {
 
 impl OAuthService {
     /// Create a new OAuth service
-    pub fn new(
+    pub const fn new(
         db: Database,
         http_client: Arc<reqwest::Client>,
         github_client_id: String,
@@ -56,7 +56,7 @@ impl OAuthService {
         collection
             .find_one(doc! { "_id": object_id })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find user: {}", e)))?
+            .map_err(|e| AppError::Database(format!("Failed to find user: {e}")))?
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))
     }
 }

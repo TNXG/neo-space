@@ -167,8 +167,7 @@ async fn hydrate_page_anchors(
                 title: document_string(&document, &["title"]),
                 path: slug
                     .as_ref()
-                    .map(|slug| format!("/pages/{slug}"))
-                    .unwrap_or_else(|| format!("/pages/{id}")),
+                    .map_or_else(|| format!("/pages/{id}"), |slug| format!("/pages/{slug}")),
                 slug,
                 category_slug: None,
                 nid: None,
@@ -209,9 +208,7 @@ async fn hydrate_note_anchors(
                 slug: None,
                 category_slug: None,
                 nid,
-                path: nid
-                    .map(|nid| format!("/notes/{nid}"))
-                    .unwrap_or_else(|| format!("/notes/{id}")),
+                path: nid.map_or_else(|| format!("/notes/{id}"), |nid| format!("/notes/{nid}")),
             },
         );
     }

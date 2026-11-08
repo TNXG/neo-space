@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
-    models::*,
+    models::ApiResponse,
 };
 use axum::{
     extract::{Path, State},
@@ -76,20 +76,25 @@ async fn write_option(
 ) -> AppResult<Json<ApiResponse<Value>>> {
     let bson_val = bson::to_bson(&value).map_err(|e| AppError::Internal(format!("encode: {e}")))?;
     if key == "networkOptions" {
-        let options: crate::external::network::NetworkOptions = serde_json::from_value(value.clone())
-            .map_err(|_| AppError::BadRequest("networkOptions requires a proxyUrl string".into()))?;
-        options.validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
+        let options: crate::external::network::NetworkOptions =
+            serde_json::from_value(value.clone()).map_err(|_| {
+                AppError::BadRequest("networkOptions requires a proxyUrl string".into())
+            })?;
+        options
+            .validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
             .map_err(AppError::BadRequest)?;
         crate::external::network::build_client(&options, &state.network_bypass_origins)
             .map_err(AppError::BadRequest)?;
     }
     if key == "commentOptions" {
         crate::services::spam::validate_comment_review_options(&state.db, &bson_val)
-            .await.map_err(AppError::BadRequest)?;
+            .await
+            .map_err(AppError::BadRequest)?;
     }
     if key == "ai" {
         crate::external::ai::validate_ai_options(&state.db, &bson_val)
-            .await.map_err(AppError::BadRequest)?;
+            .await
+            .map_err(AppError::BadRequest)?;
     }
     let collection = state.db.collection::<bson::Document>("options");
     let opts = mongodb::options::UpdateOptions::builder()
@@ -106,8 +111,7 @@ async fn write_option(
     state.response_cache.invalidate_all();
 
     // 环境变量是部署级最高优先级；保存后立即回写覆盖值并刷新运行时快照。
-    let synchronization =
-        crate::config::runtime::synchronize_environment_options(&state.db).await;
+    let synchronization = crate::config::runtime::synchronize_environment_options(&state.db).await;
     // 环境覆盖可能部分写入后失败，也必须淘汰同步期间填充的响应。
     state.response_cache.invalidate_all();
     synchronization.map_err(|error| AppError::Database(error.to_string()))?;
@@ -156,11 +160,12 @@ pub async fn get_all_options(
             && let Some(v) = d.get("value")
         {
             let val: Value = bson::from_bson(v.clone())
-                .map_err(|e| AppError::Internal(format!("Bson decode: {}", e)))?;
+                .map_err(|e| AppError::Internal(format!("Bson decode: {e}")))?;
             map.insert(name.to_string(), val);
         }
     }
-    map.entry("networkOptions".to_string()).or_insert_with(|| serde_json::json!({ "proxyUrl": "" }));
+    map.entry("networkOptions".to_string())
+        .or_insert_with(|| serde_json::json!({ "proxyUrl": "" }));
     Ok(Json(ApiResponse::success(map)))
 }
 
@@ -176,13 +181,13 @@ pub async fn get_option(
         .find_one(doc! { "name": &key })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound(format!("option '{}' not found", key)))?;
+        .ok_or_else(|| AppError::NotFound(format!("option '{key}' not found")))?;
     let value = d
         .get("value")
         .cloned()
         .map(bson::from_bson::<Value>)
         .transpose()
-        .map_err(|e| AppError::Internal(format!("Bson decode: {}", e)))?
+        .map_err(|e| AppError::Internal(format!("Bson decode: {e}")))?
         .unwrap_or(Value::Null);
     Ok(Json(ApiResponse::success(value)))
 }
@@ -233,7 +238,7 @@ pub async fn get_url_options(
         .map_err(|e| AppError::Database(e.to_string()))?;
     let value = match d.and_then(|d| d.get("value").cloned()) {
         Some(v) => {
-            bson::from_bson::<Value>(v).map_err(|e| AppError::Internal(format!("decode: {}", e)))?
+            bson::from_bson::<Value>(v).map_err(|e| AppError::Internal(format!("decode: {e}")))?
         }
         None => serde_json::json!({
             "webUrl": state.config().frontend_url,

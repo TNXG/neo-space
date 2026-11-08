@@ -14,6 +14,8 @@ where
 }
 
 /// Serialize Option<ObjectId> as an optional string
+// Serde serialize_with requires a reference to the field's exact type.
+#[allow(clippy::ref_option)]
 pub fn serialize_optional_object_id<S>(
     oid: &Option<ObjectId>,
     serializer: S,
@@ -27,7 +29,7 @@ where
     }
 }
 
-/// Deserialize Mongo `_id` values that may be stored as either ObjectId or String.
+/// Deserialize Mongo `_id` values that may be stored as either `ObjectId` or String.
 pub fn deserialize_id_to_string<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: Deserializer<'de>,
@@ -45,6 +47,8 @@ where
 }
 
 /// Serialize `bson::DateTime` as ISO 8601 string
+// Serde serialize_with requires a reference to the field's exact type.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn serialize_datetime<S>(dt: &bson::DateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -53,6 +57,8 @@ where
 }
 
 /// Serialize Option<bson::DateTime> as optional ISO 8601 string
+// Serde serialize_with requires a reference to the field's exact type.
+#[allow(clippy::ref_option)]
 pub fn serialize_optional_datetime<S>(
     dt: &Option<bson::DateTime>,
     serializer: S,

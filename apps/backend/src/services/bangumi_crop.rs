@@ -225,8 +225,7 @@ fn validate_image_url(image_url: &str) -> AppResult<()> {
 /// 返回可由部署环境覆盖的持久化模型缓存目录。
 fn model_cache_root() -> PathBuf {
     env::var_os("BANGUMI_MODEL_CACHE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("./.cache/models/bangumi"))
+        .map_or_else(|| PathBuf::from("./.cache/models/bangumi"), PathBuf::from)
 }
 
 /// 将模型或图片下载到缓存；临时文件写完后再原子替换，避免并发读到半文件。
@@ -359,6 +358,8 @@ fn render_progress_bar(percentage: u64) -> String {
 }
 
 /// 使用紧凑的二进制单位展示当前下载字节数。
+// Byte counts are rendered to one decimal place; sub-unit precision is intentionally discarded.
+#[allow(clippy::cast_precision_loss)]
 fn format_bytes(bytes: u64) -> String {
     const KIB: f64 = 1024.0;
     const MIB: f64 = KIB * 1024.0;
@@ -401,6 +402,7 @@ fn detect_anime_from_file(
     let results = model
         .predict(image_path)
         .map_err(|error| AppError::Internal(format!("Anime head detection failed: {error}")))?;
+    drop(model_guard);
     let result = results
         .first()
         .ok_or_else(|| AppError::BadRequest("No anime head was detected".to_string()))?;
@@ -424,26 +426,26 @@ fn detect_anime_from_file(
         let height = (box_value(index, 3) - box_value(index, 1)).max(0.0);
         let center_x = f32::midpoint(box_value(index, 0), box_value(index, 2));
         let center_y = f32::midpoint(box_value(index, 1), box_value(index, 3));
-        let center_distance = ((center_x - 0.5).powi(2) + (center_y - 0.42).powi(2)).sqrt();
+        let center_distance = (center_x - 0.5).hypot(center_y - 0.42);
         box_confidence(index) * (width * height).sqrt() * (1.25 - center_distance.min(1.0))
     };
     let best_index = (0..boxes.len())
         .max_by(|left, right| detection_score(*left).total_cmp(&detection_score(*right)))
         .ok_or_else(|| AppError::BadRequest("No anime head was detected".to_string()))?;
 
-    let head_left = box_value(best_index, 0) as f64;
-    let head_top = box_value(best_index, 1) as f64;
-    let head_right = box_value(best_index, 2) as f64;
-    let head_bottom = box_value(best_index, 3) as f64;
+    let head_left = f64::from(box_value(best_index, 0));
+    let head_top = f64::from(box_value(best_index, 1));
+    let head_right = f64::from(box_value(best_index, 2));
+    let head_bottom = f64::from(box_value(best_index, 3));
     let head_width = (head_right - head_left).max(0.01);
     let head_height = (head_bottom - head_top).max(0.01);
     let head_center_x = f64::midpoint(head_left, head_right);
 
     // 以约 1.9 个头宽和 3.1 个头高聚焦头部至胸部，并为长发与侧身姿态保留余量。
-    let crop_left = (head_center_x - head_width * 0.95).max(0.0);
-    let crop_right = (head_center_x + head_width * 0.95).min(1.0);
-    let crop_top = (head_top - head_height * 0.45).max(0.0);
-    let crop_bottom = (head_bottom + head_height * 1.65).min(1.0);
+    let crop_left = head_width.mul_add(-0.95, head_center_x).max(0.0);
+    let crop_right = head_width.mul_add(0.95, head_center_x).min(1.0);
+    let crop_top = head_height.mul_add(-0.45, head_top).max(0.0);
+    let crop_bottom = head_height.mul_add(1.65, head_bottom).min(1.0);
     let crop = fit_crop_to_portrait(image_path, crop_left, crop_top, crop_right, crop_bottom)?;
 
     Ok(DetectedImageCrop {
@@ -454,13 +456,15 @@ fn detect_anime_from_file(
         crop_top: Some(crop.top),
         crop_width: Some(crop.width),
         crop_height: Some(crop.height),
-        confidence: box_confidence(best_index) as f64,
+        confidence: f64::from(box_confidence(best_index)),
         detector_version: ANIME_DETECTOR_VERSION.to_string(),
         image_url_hash,
     })
 }
 
 /// 以 COCO 姿态的脸部、肩部和髋部关键点计算现实人物的上半身区域。
+// Keep pose selection and its crop geometry together.
+#[allow(clippy::too_many_lines)]
 fn detect_person_from_file(
     model_path: &Path,
     image_path: &Path,
@@ -489,6 +493,7 @@ fn detect_person_from_file(
     let results = model
         .predict(image_path)
         .map_err(|error| AppError::Internal(format!("Person pose detection failed: {error}")))?;
+    drop(model_guard);
     let result = results
         .first()
         .ok_or_else(|| AppError::BadRequest("No person pose was detected".to_string()))?;
@@ -534,8 +539,8 @@ fn detect_person_from_file(
             .filter(|index| confidence_at(**index) >= 0.25)
             .map(|index| {
                 (
-                    point_value(best_index, *index, 0) as f64,
-                    point_value(best_index, *index, 1) as f64,
+                    f64::from(point_value(best_index, *index, 0)),
+                    f64::from(point_value(best_index, *index, 1)),
                 )
             })
             .collect::<Vec<_>>()
@@ -560,14 +565,14 @@ fn detect_person_from_file(
     let torso_height = (shoulder_center.1 - face_center.1).abs().max(0.08);
     let hip_points = visible_points(&[11, 12]);
     let crop_bottom = if hip_points.is_empty() {
-        shoulder_center.1 + torso_height * 3.2
+        torso_height.mul_add(3.2, shoulder_center.1)
     } else {
-        average_point(&hip_points).1 + torso_height * 0.35
+        torso_height.mul_add(0.35, average_point(&hip_points).1)
     }
     .min(1.0);
-    let crop_top = (face_center.1 - torso_height * 0.9).max(0.0);
-    let crop_left = (shoulder_center.0 - shoulder_width * 0.85).max(0.0);
-    let crop_right = (shoulder_center.0 + shoulder_width * 0.85).min(1.0);
+    let crop_top = torso_height.mul_add(-0.9, face_center.1).max(0.0);
+    let crop_left = f64::mul_add(shoulder_width, -0.85, shoulder_center.0).max(0.0);
+    let crop_right = f64::mul_add(shoulder_width, 0.85, shoulder_center.0).min(1.0);
     let crop = fit_crop_to_portrait(image_path, crop_left, crop_top, crop_right, crop_bottom)?;
 
     Ok(DetectedImageCrop {
@@ -578,13 +583,15 @@ fn detect_person_from_file(
         crop_top: Some(crop.top),
         crop_width: Some(crop.width),
         crop_height: Some(crop.height),
-        confidence: pose_score(best_index) as f64,
+        confidence: f64::from(pose_score(best_index)),
         detector_version: PERSON_DETECTOR_VERSION.to_string(),
         image_url_hash,
     })
 }
 
 /// 计算可见关键点的几何中心。
+// Callers pass at most five visible keypoints, exactly representable as f64.
+#[allow(clippy::cast_precision_loss)]
 fn average_point(points: &[(f64, f64)]) -> (f64, f64) {
     let (x_sum, y_sum) = points
         .iter()

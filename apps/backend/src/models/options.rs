@@ -69,10 +69,10 @@ pub struct CommentOptionsPublic {
 /// OAuth public configuration (safe to expose)
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct OAuthPublicOptions {
-    /// OAuth提供商列表
+    /// `OAuth提供商列表`
     #[serde(default)]
     pub providers: Vec<OAuthProvider>,
-    /// GitHub客户端ID
+    /// `GitHub客户端ID`
     #[serde(default)]
     pub github_client_id: Option<String>,
 }
@@ -91,7 +91,7 @@ pub struct OAuthProvider {
 // ============================================================================
 
 /// Aggregated site configuration that is safe to expose to frontend.
-/// Matches Rocket's SiteConfig structure for data consistency.
+/// Matches Rocket's `SiteConfig` structure for data consistency.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct SiteConfig {
     /// SEO配置
@@ -102,6 +102,6 @@ pub struct SiteConfig {
     pub friend_link: FriendLinkOptions,
     /// 评论配置
     pub comment: CommentOptionsPublic,
-    /// OAuth配置
+    /// `OAuth配置`
     pub oauth: OAuthPublicOptions,
 }

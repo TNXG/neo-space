@@ -46,9 +46,9 @@ pub struct AppState {
     pub network_bypass_origins: Vec<String>,
     /// Shared email service (preserves verification code cache across requests)
     pub email_service: EmailService,
-    /// NetEase Cloud Music now playing service
+    /// `NetEase` Cloud Music now playing service
     pub ncm_np_service: NeteaseNowPlayingService,
-    /// Passkey 服务；仅在 FRONTEND_URL 可作为合法 WebAuthn Origin 时启用
+    /// Passkey 服务；仅在 `FRONTEND_URL` 可作为合法 WebAuthn Origin 时启用
     pub passkey_service: Arc<RwLock<Option<PasskeyService>>>,
     /// Process-local RSA transport key; never persisted or exposed to Next.
     pub password_crypto: Arc<PasswordCrypto>,
@@ -103,26 +103,27 @@ impl AppState {
 
     /// 获取当前 Passkey 服务快照，避免在请求期间持有同步锁。
     pub fn passkey_service(&self) -> Option<PasskeyService> {
-        self.passkey_service
-            .read()
-            .map(|passkey_service| passkey_service.clone())
-            .unwrap_or_else(|error| {
+        self.passkey_service.read().map_or_else(
+            |error| {
                 tracing::error!(%error, "Passkey 配置锁已损坏");
                 None
-            })
+            },
+            |passkey_service| passkey_service.clone(),
+        )
     }
 }
 
 /// Create the application state with all dependencies
 pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<SharedState> {
+    const CACHE_CAPACITY: u64 = 10_000;
+    const CACHE_TTL_SECS: u64 = 300;
+    const LINK_FEED_CACHE_MAX_BYTES: u64 = 4 * 1024 * 1024;
     tracing::info!("开始初始化应用服务...");
     let password_crypto = tokio::task::spawn_blocking(PasswordCrypto::new)
         .await
         .map_err(std::io::Error::other)??;
 
     // Create cache with default settings
-    const CACHE_CAPACITY: u64 = 10_000;
-    const CACHE_TTL_SECS: u64 = 300;
     let cache = Cache::builder()
         .max_capacity(CACHE_CAPACITY)
         .time_to_live(Duration::from_secs(CACHE_TTL_SECS))
@@ -146,7 +147,6 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
     );
 
     // 每个摘要已在抓取端截断，按估算字节加权后整体不超过 4 MiB
-    const LINK_FEED_CACHE_MAX_BYTES: u64 = 4 * 1024 * 1024;
     let link_feed_cache = Cache::builder()
         .weigher(|key: &String, summary: &crate::models::LinkFeedSummary| {
             let latest = summary.latest.as_ref().map_or(0, |entry| {
@@ -175,12 +175,18 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
 
     let network_options = crate::external::network::load_options(&db).await?;
     let network_bypass_origins = [&config.frontend_url, &config.backend_url]
-        .iter().filter_map(|value| reqwest::Url::parse(value).ok())
-        .map(|url| url.origin().ascii_serialization()).collect::<Vec<_>>();
-    let http_client = crate::external::network::build_client(&network_options, &network_bypass_origins)
-        .map_err(std::io::Error::other)?;
-    let internal_http_client = crate::external::network::build_client(&Default::default(), &[])
-        .map_err(std::io::Error::other)?;
+        .iter()
+        .filter_map(|value| reqwest::Url::parse(value).ok())
+        .map(|url| url.origin().ascii_serialization())
+        .collect::<Vec<_>>();
+    let http_client =
+        crate::external::network::build_client(&network_options, &network_bypass_origins)
+            .map_err(std::io::Error::other)?;
+    let internal_http_client = crate::external::network::build_client(
+        &crate::external::network::NetworkOptions::default(),
+        &[],
+    )
+    .map_err(std::io::Error::other)?;
 
     // Create shared email service (preserves verification code cache)
     let email_service = EmailService::new(db.clone());
@@ -201,7 +207,7 @@ pub async fn create_state(db: Database, config: AppConfig) -> std::io::Result<Sh
     Ok(Arc::new(AppState {
         db,
         cache,
-        response_cache: Default::default(),
+        response_cache: crate::services::response_cache::ResponseCache::default(),
         link_health_cache,
         link_feed_cache,
         config: Arc::new(ArcSwap::from_pointee(config)),
@@ -264,8 +270,14 @@ pub fn create_router(state: SharedState) -> axum::Router {
         .nest("/admin/meilisearch", routes::meilisearch_admin::routes())
         .nest("/files", routes::files::routes())
         .merge(routes::admin_dashboard::routes())
-        .route("/internal/network", axum::routing::get(crate::handlers::network::get_network_options))
-        .route("/internal/network/status", axum::routing::get(crate::handlers::network::get_network_status))
+        .route(
+            "/internal/network",
+            axum::routing::get(crate::handlers::network::get_network_options),
+        )
+        .route(
+            "/internal/network/status",
+            axum::routing::get(crate::handlers::network::get_network_status),
+        )
         .merge(routes::misc::routes())
         .nest("/admin/cache", routes::cache::routes())
         .layer(axum::middleware::from_fn_with_state(

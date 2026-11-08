@@ -5,7 +5,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppResult},
     handlers::admin::comments_data::{state_filter, state_update_doc},
-    models::*,
+    models::{ApiResponse, Comment},
 };
 use axum::{extract::State, response::Json};
 use bson::{doc, oid::ObjectId};
@@ -53,7 +53,7 @@ pub async fn batch_update_state(
             let mut oids = Vec::with_capacity(ids.len());
             for id in &ids {
                 let oid = ObjectId::parse_str(id)
-                    .map_err(|_| AppError::BadRequest(format!("Invalid id: {}", id)))?;
+                    .map_err(|_| AppError::BadRequest(format!("Invalid id: {id}")))?;
                 oids.push(oid);
             }
             (doc! { "_id": { "$in": oids } }, s)
@@ -120,12 +120,18 @@ pub async fn update_state(
     let oid = ObjectId::parse_str(&id).map_err(|_| AppError::BadRequest("Invalid id".into()))?;
     let new_state = payload
         .get("state")
-        .and_then(|v| v.as_i64())
+        .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| AppError::BadRequest("state 必填".into()))?;
     state
         .db
         .collection::<Comment>("comments")
-        .update_one(doc! { "_id": oid }, state_update_doc(new_state as i32))
+        .update_one(
+            doc! { "_id": oid },
+            state_update_doc(
+                i32::try_from(new_state)
+                    .map_err(|_| AppError::BadRequest("state exceeds supported range".into()))?,
+            ),
+        )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     Ok(Json(ApiResponse::success(())))

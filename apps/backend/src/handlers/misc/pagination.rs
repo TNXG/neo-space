@@ -11,10 +11,10 @@ pub struct PaginationParams {
     pub size: i64,
 }
 
-fn default_page() -> i64 {
+const fn default_page() -> i64 {
     1
 }
 
-fn default_size() -> i64 {
+const fn default_size() -> i64 {
     10
 }

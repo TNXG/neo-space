@@ -92,11 +92,12 @@ impl Reader {
 
     /// Create a new anonymous Reader
     pub fn new_anonymous(name: String, email: String) -> Self {
+        let handle = Self::generate_handle(&name);
         Self {
             id: ObjectId::new(),
             email,
-            name: name.clone(),
-            handle: Self::generate_handle(&name),
+            name,
+            handle,
             image: String::new(),
             is_owner: false,
             email_verified: Some(false),

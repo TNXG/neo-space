@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{AiSummary, ApiResponse, Pagination},
 };
 use axum::{
     extract::{Path, State},
@@ -95,7 +95,7 @@ pub async fn writer_generate(
                 slug: Some(slug),
             }
         }
-        other => return Err(AppError::BadRequest(format!("不支持的 type: {}", other))),
+        other => return Err(AppError::BadRequest(format!("不支持的 type: {other}"))),
     };
     Ok(Json(ApiResponse::success(resp)))
 }
@@ -114,6 +114,8 @@ pub struct SummaryListResponse {
     pub pagination: Pagination,
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_summaries(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -144,7 +146,12 @@ pub async fn list_summaries(
     {
         items.push(d);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(SummaryListResponse {
         items,
         pagination,

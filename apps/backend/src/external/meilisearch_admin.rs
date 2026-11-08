@@ -27,8 +27,14 @@ impl MeilisearchAdminClient {
     }
 
     /// Reuse an explicitly configured transport, including for remote search/indexing.
+    // Keep the owned constructor contract while normalizing the endpoint.
+    #[allow(clippy::needless_pass_by_value)]
     pub fn new(base_url: String, api_key: Option<String>, http_client: reqwest::Client) -> Self {
-        Self { base_url: base_url.trim_end_matches('/').to_string(), api_key, http_client }
+        Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            api_key,
+            http_client,
+        }
     }
 
     /// 发送无请求体的管理请求。
@@ -37,6 +43,8 @@ impl MeilisearchAdminClient {
     }
 
     /// 发送 JSON 管理请求。
+    // Generic serialized bodies need not be Sync for locally awaited requests.
+    #[allow(clippy::future_not_send)]
     pub async fn request_json<T: Serialize + ?Sized>(
         &self,
         method: Method,
@@ -91,14 +99,14 @@ impl MeilisearchAdminClient {
     pub async fn wait_for_task(&self, task_uid: u64) -> Result<Value, AppError> {
         // 外部向量服务可能让单批次向量化持续十几分钟（Meilisearch 自身 embedding 超时约 13 分钟），
         // 20 分钟足以覆盖；超过则判定 Meilisearch 任务卡死，避免重建执行器被无限挂起。
-        let deadline = Instant::now() + Duration::from_secs(20 * 60);
+        let deadline = Instant::now() + Duration::from_mins(20);
         loop {
             let task = self
                 .request(Method::GET, &format!("/tasks/{task_uid}"))
                 .await?;
             match task.get("status").and_then(Value::as_str) {
                 Some("succeeded") => return Ok(task),
-                Some("failed") | Some("canceled") => {
+                Some("failed" | "canceled") => {
                     return Err(AppError::BadRequest(format!(
                         "Meilisearch 任务 {task_uid} 未成功: {task}"
                     )));
@@ -113,6 +121,8 @@ impl MeilisearchAdminClient {
     }
 
     /// 执行异步请求并等待其任务完成。
+    // Generic serialized bodies need not be Sync for locally awaited requests.
+    #[allow(clippy::future_not_send)]
     pub async fn request_task<T: Serialize + ?Sized>(
         &self,
         method: Method,

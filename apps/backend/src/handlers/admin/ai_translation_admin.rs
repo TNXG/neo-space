@@ -4,7 +4,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{AiTranslation, ApiResponse, Note, Page, Pagination, Post, Recently},
     tasks::content_change::notify_translation_changed,
 };
 use axum::{
@@ -99,9 +99,8 @@ async fn load_translation_article(
     ref_id: &str,
     ref_type: &str,
 ) -> AppResult<Option<TranslationArticle>> {
-    let object_id = match ObjectId::parse_str(ref_id) {
-        Ok(object_id) => object_id,
-        Err(_) => return Ok(None),
+    let Ok(object_id) = ObjectId::parse_str(ref_id) else {
+        return Ok(None);
     };
 
     match ref_type {
@@ -172,6 +171,8 @@ fn fallback_translation_article(translation: &AiTranslation) -> TranslationArtic
     }
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_translations_grouped(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -213,35 +214,43 @@ pub async fn list_translations_grouped(
             group.article.id == translation.ref_id && group.article.ref_type == translation.ref_type
         });
 
-        match group_index {
-            Some(index) => {
-                if let Some(group) = groups.get_mut(index) {
-                    group.translations.push(translation);
-                }
+        if let Some(index) = group_index {
+            if let Some(group) = groups.get_mut(index) {
+                group.translations.push(translation);
             }
-            None => {
-                let article =
-                    load_translation_article(&state, &translation.ref_id, &translation.ref_type)
-                        .await?
-                        .unwrap_or_else(|| fallback_translation_article(&translation));
-                groups.push(GroupedTranslationData {
-                    article,
-                    translations: vec![translation],
-                });
-            }
+        } else {
+            let article =
+                load_translation_article(&state, &translation.ref_id, &translation.ref_type)
+                    .await?
+                    .unwrap_or_else(|| fallback_translation_article(&translation));
+            groups.push(GroupedTranslationData {
+                article,
+                translations: vec![translation],
+            });
         }
     }
 
     let total = groups.len() as i64;
     let items = groups
         .into_iter()
-        .skip(((page - 1) * size) as usize)
-        .take(size as usize)
+        .skip(
+            usize::try_from((page - 1) * size)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        )
+        .take(
+            usize::try_from(size)
+                .map_err(|_| AppError::BadRequest("Page size exceeds supported range".into()))?,
+        )
         .collect();
 
     Ok(Json(ApiResponse::success(GroupedTranslationResponse {
         items,
-        pagination: Pagination::new(total, page as i64, size as i64),
+        pagination: Pagination::new(
+            total,
+            i64::try_from(page)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+            size as i64,
+        ),
     })))
 }
 

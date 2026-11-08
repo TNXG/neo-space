@@ -45,6 +45,8 @@ pub async fn read_crate_size(name: &str, version: &str) -> AppResult<Option<Opti
     Ok(Some(entry.size))
 }
 
+// Keep the cache-writing API aligned with its optional-value callers.
+#[allow(clippy::ref_option)]
 pub async fn write_crate_size(name: &str, version: &str, size: &Option<u64>) {
     write_json(
         crate_size_path(name, version),
@@ -72,6 +74,8 @@ where
     }
 }
 
+// Serialization accepts values that are only used on the local request task.
+#[allow(clippy::future_not_send)]
 async fn write_json<T>(path: PathBuf, data: &T)
 where
     T: Serialize + ?Sized,

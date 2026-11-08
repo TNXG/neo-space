@@ -41,7 +41,7 @@ pub fn start_link_health_task(state: SharedState) {
         loop {
             let check_interval_hours = state.config().link_health_interval_hours.max(1);
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(check_interval_hours * 3600)) => {
+                () = tokio::time::sleep(Duration::from_secs(check_interval_hours * 3600)) => {
                     run_link_health_check(&state).await;
                 }
                 event = config_events.recv() => {
@@ -132,7 +132,9 @@ pub async fn check_link(
     let health_future = perform_health_check(&link.id, &link.url, &state.http_client, timeout_secs);
     let feed_future = async {
         match feed_url {
-            Some(url) => Some(fetch_feed_summary(&link.id, url, &state.http_client, timeout_secs).await),
+            Some(url) => {
+                Some(fetch_feed_summary(&link.id, url, &state.http_client, timeout_secs).await)
+            }
             None => None,
         }
     };

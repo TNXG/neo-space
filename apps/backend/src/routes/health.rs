@@ -2,7 +2,7 @@
 
 use crate::app::SharedState;
 
-/// Create health check routes (with SharedState type for compatibility)
+/// Create health check routes (with `SharedState` type for compatibility)
 pub fn routes() -> axum::Router<SharedState> {
     axum::Router::new().route("/health", axum::routing::get(health_check))
 }

@@ -1,10 +1,13 @@
 //! Options service - Site configuration queries
 //!
-//! Aggregates multiple option documents from MongoDB into a single SiteConfig.
+//! Aggregates multiple option documents from MongoDB into a single `SiteConfig`.
 //! Only safe fields are extracted and exposed - sensitive data is NEVER exposed.
-//! Matches Rocket's options_service.rs behavior for data consistency.
+//! Matches Rocket's `options_service.rs` behavior for data consistency.
 
-use crate::models::options::*;
+use crate::models::options::{
+    CommentOptionsPublic, FriendLinkOptions, OAuthProvider, OAuthPublicOptions, RawOption,
+    SeoOptions, SiteConfig, UrlOptions,
+};
 use futures::stream::TryStreamExt;
 use mongodb::{Collection, Database, bson::doc};
 

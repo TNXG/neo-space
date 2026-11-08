@@ -106,12 +106,10 @@ fn to_entry(entry: feed_rs::model::Entry) -> LinkFeedEntry {
         .iter()
         .find(|link| link.rel.as_deref().is_none_or(|rel| rel == "alternate"))
         .or_else(|| entry.links.first())
-        .map(|link| link.href.clone())
-        .unwrap_or_default();
+        .map_or_default(|link| link.href.clone());
     let title = entry
         .title
-        .map(|text| truncate(&text.content, MAX_TITLE_CHARS))
-        .unwrap_or_default();
+        .map_or_default(|text| truncate(&text.content, MAX_TITLE_CHARS));
     let summary = entry
         .summary
         .map(|text| text.content)
@@ -120,9 +118,16 @@ fn to_entry(entry: feed_rs::model::Entry) -> LinkFeedEntry {
         .filter(|text| !text.is_empty());
     LinkFeedEntry {
         title,
-        url: if is_http_url(&url) { url } else { String::new() },
+        url: if is_http_url(&url) {
+            url
+        } else {
+            String::new()
+        },
         summary,
-        published: entry.published.or(entry.updated).map(|date| date.to_rfc3339()),
+        published: entry
+            .published
+            .or(entry.updated)
+            .map(|date| date.to_rfc3339()),
     }
 }
 

@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use super::*;
 
 fn notification(author_email: &str, parent_email: Option<&str>) -> CommentNotification {
@@ -13,7 +15,7 @@ fn notification(author_email: &str, parent_email: Option<&str>) -> CommentNotifi
         is_reply: parent_email.is_some(),
         parent_comment_id: Some("parent-id".to_string()),
         parent_author: Some("parent".to_string()),
-        parent_author_email: parent_email.map(|e| e.to_string()),
+        parent_author_email: parent_email.map(std::string::ToString::to_string),
         ua: None,
         location: None,
     }
@@ -24,9 +26,9 @@ fn top_level_notifies_admin_only() {
     let n = notification("user@x.com", None);
     let rs = build_recipients(&n, "admin@x.com");
     assert_eq!(rs.len(), 1);
-    assert_eq!(rs[0].email, "admin@x.com");
-    assert_eq!(rs[0].roles, vec![NotificationRole::Admin]);
-    assert!(!rs[0].is_high_priority());
+    assert_eq!(rs.first().unwrap().email, "admin@x.com");
+    assert_eq!(rs.first().unwrap().roles, vec![NotificationRole::Admin]);
+    assert!(!rs.first().unwrap().is_high_priority());
 }
 
 #[test]
@@ -53,7 +55,7 @@ fn reply_to_self_skips_parent() {
     let n = notification("user@x.com", Some("user@x.com"));
     let rs = build_recipients(&n, "admin@x.com");
     assert_eq!(rs.len(), 1);
-    assert_eq!(rs[0].email, "admin@x.com");
+    assert_eq!(rs.first().unwrap().email, "admin@x.com");
 }
 
 #[test]
@@ -62,10 +64,15 @@ fn merged_roles_get_high_priority() {
     let n = notification("user@x.com", Some("admin@x.com"));
     let rs = build_recipients(&n, "admin@x.com");
     assert_eq!(rs.len(), 1, "must merge admin + parent author");
-    assert_eq!(rs[0].email, "admin@x.com");
-    assert!(rs[0].is_high_priority());
-    assert!(rs[0].roles.contains(&NotificationRole::Admin));
-    assert!(rs[0].roles.contains(&NotificationRole::ParentAuthor));
+    assert_eq!(rs.first().unwrap().email, "admin@x.com");
+    assert!(rs.first().unwrap().is_high_priority());
+    assert!(rs.first().unwrap().roles.contains(&NotificationRole::Admin));
+    assert!(
+        rs.first()
+            .unwrap()
+            .roles
+            .contains(&NotificationRole::ParentAuthor)
+    );
 }
 
 #[test]
@@ -73,5 +80,5 @@ fn email_case_insensitive_dedup() {
     let n = notification("user@x.com", Some("Admin@X.com"));
     let rs = build_recipients(&n, "ADMIN@X.com");
     assert_eq!(rs.len(), 1);
-    assert!(rs[0].is_high_priority());
+    assert!(rs.first().unwrap().is_high_priority());
 }

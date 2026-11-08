@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use crate::{
     error::{AppError, AppResult},
     handlers::admin::comments_anchor,
-    models::*,
+    models::{CommentState, PaginatedData, Pagination},
     services::comment::CommentService,
 };
 use bson::{Bson, Document, doc, oid::ObjectId};
@@ -145,9 +145,9 @@ fn document_datetime(document: &Document, keys: &[&str]) -> Option<String> {
 
 fn effective_state(document: &Document) -> i32 {
     match document.get_str("status").ok() {
-        Some("approved") | Some("read") => CommentState::READ,
+        Some("approved" | "read") => CommentState::READ,
         Some("pending") => CommentState::PENDING,
-        Some("spam") | Some("rejected") => CommentState::SPAM,
+        Some("spam" | "rejected") => CommentState::SPAM,
         _ => document.get_i32("state").unwrap_or(CommentState::UNREAD),
     }
 }
@@ -156,8 +156,7 @@ fn normalize_ref_type(document: &Document) -> String {
     match document
         .get_str("refType")
         .or_else(|_| document.get_str("ref_type"))
-        .map(CommentService::normalize_ref_type)
-        .unwrap_or_default()
+        .map_or_default(CommentService::normalize_ref_type)
         .as_str()
     {
         "posts" => "post".to_string(),
@@ -167,35 +166,37 @@ fn normalize_ref_type(document: &Document) -> String {
     }
 }
 
-fn admin_comment_from_document(document: Document) -> AdminCommentItem {
+fn admin_comment_from_document(document: &Document) -> AdminCommentItem {
     AdminCommentItem {
-        id: document_string(&document, &["_id"]).unwrap_or_default(),
-        created_at: document_datetime(&document, &["created", "createdAt"]).unwrap_or_default(),
-        r#ref: document_string(&document, &["ref", "refId"]).unwrap_or_default(),
-        ref_type: normalize_ref_type(&document),
-        state: effective_state(&document),
+        id: document_string(document, &["_id"]).unwrap_or_default(),
+        created_at: document_datetime(document, &["created", "createdAt"]).unwrap_or_default(),
+        r#ref: document_string(document, &["ref", "refId"]).unwrap_or_default(),
+        ref_type: normalize_ref_type(document),
+        state: effective_state(document),
         author: document.get_str("author").unwrap_or_default().to_string(),
         text: document.get_str("text").unwrap_or_default().to_string(),
-        mail: document_string(&document, &["mail", "email"]),
-        url: document_string(&document, &["url"]),
-        ip: document_string(&document, &["ip"]),
-        agent: document_string(&document, &["agent", "userAgent"]),
+        mail: document_string(document, &["mail", "email"]),
+        url: document_string(document, &["url"]),
+        ip: document_string(document, &["ip"]),
+        agent: document_string(document, &["agent", "userAgent"]),
         pin: document.get_bool("pin").unwrap_or(false),
-        avatar: document_string(&document, &["avatar"]).or_else(|| {
-            document_string(&document, &["mail", "email"])
+        avatar: document_string(document, &["avatar"]).or_else(|| {
+            document_string(document, &["mail", "email"])
                 .map(|mail| CommentService::generate_avatar_url(&mail))
         }),
         is_whispers: document.get_bool("isWhispers").unwrap_or(false),
-        parent_comment_id: document_string(&document, &["parentCommentId", "parent", "parentId"]),
+        parent_comment_id: document_string(document, &["parentCommentId", "parent", "parentId"]),
         parent: None,
-        root_comment_id: document_string(&document, &["rootCommentId"]),
+        root_comment_id: document_string(document, &["rootCommentId"]),
         reply_count: document.get_i32("replyCount").unwrap_or(0),
-        latest_reply_at: document_datetime(&document, &["latestReplyAt"]),
+        latest_reply_at: document_datetime(document, &["latestReplyAt"]),
         is_deleted: document.get_bool("isDeleted").unwrap_or(false),
         anchor: None,
     }
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_comments_admin_data(
     db: &Database,
     query: ListCommentsAdminQuery,
@@ -237,7 +238,7 @@ pub async fn list_comments_admin_data(
         .await
         .map_err(|error| AppError::Database(error.to_string()))?
     {
-        items.push(admin_comment_from_document(document));
+        items.push(admin_comment_from_document(&document));
     }
 
     hydrate_parent_previews(db, &mut items).await?;
@@ -245,7 +246,12 @@ pub async fn list_comments_admin_data(
 
     Ok(PaginatedData {
         items,
-        pagination: Pagination::new(total as i64, page as i64, size as i64),
+        pagination: Pagination::new(
+            total as i64,
+            i64::try_from(page)
+                .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+            size as i64,
+        ),
     })
 }
 

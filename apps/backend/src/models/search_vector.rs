@@ -23,7 +23,7 @@ pub struct SearchVectorConfig {
 }
 
 impl Default for SearchVectorConfig {
-    /// 返回适用于 OpenAI 兼容 Embeddings API 的默认配置。
+    /// 返回适用于 `OpenAI` 兼容 Embeddings API 的默认配置。
     fn default() -> Self {
         Self {
             configured: false,
@@ -81,11 +81,11 @@ impl From<&SearchVectorConfig> for SearchVectorConfigResponse {
 }
 
 /// 返回默认向量维度。
-fn default_dimensions() -> u32 {
+const fn default_dimensions() -> u32 {
     1024
 }
 
 /// 返回默认文档模板字节上限。
-fn default_document_template_max_bytes() -> u32 {
+const fn default_document_template_max_bytes() -> u32 {
     400
 }

@@ -12,8 +12,8 @@ use serde::Deserialize;
 
 use crate::app::SharedState;
 use crate::external::ai::{AiService, AiUsage, get_ai_config_for_usage};
-use crate::models::{Comment, CommentState};
 use crate::models::options::RawOption;
+use crate::models::{Comment, CommentState};
 
 use self::parser::{parse_binary_response, parse_score_response};
 use self::prompts::{build_binary_messages, build_score_messages};
@@ -31,8 +31,12 @@ struct CommentOptions {
     ai_review_threshold: u8,
 }
 
-fn default_ai_review_type() -> String { "binary".to_string() }
-fn default_ai_review_threshold() -> u8 { 5 }
+fn default_ai_review_type() -> String {
+    "binary".to_string()
+}
+const fn default_ai_review_threshold() -> u8 {
+    5
+}
 
 impl CommentOptions {
     fn validate(&self) -> Result<(), String> {
@@ -47,7 +51,10 @@ impl CommentOptions {
 }
 
 /// Validate enabling comment review against the saved shared AI assignment.
-pub async fn validate_comment_review_options(db: &Database, value: &bson::Bson) -> Result<(), String> {
+pub async fn validate_comment_review_options(
+    db: &Database,
+    value: &bson::Bson,
+) -> Result<(), String> {
     let options: CommentOptions = bson::from_bson(value.clone())
         .map_err(|error| format!("Invalid comment options: {error}"))?;
     if options.anti_spam && options.ai_review {
@@ -78,7 +85,15 @@ impl SpamDetector {
         if !matches!(comment.state, CommentState::UNREAD | CommentState::PENDING) {
             return;
         }
-        match Self::check(&state.db, state.http_client.clone(), &comment.text, &comment.author, &comment.mail).await {
+        match Self::check(
+            &state.db,
+            state.http_client.clone(),
+            &comment.text,
+            &comment.author,
+            &comment.mail,
+        )
+        .await
+        {
             Ok(Some(result)) => {
                 tracing::info!(%id, is_spam = result.is_spam, confidence = result.confidence, reason = ?result.reason, "AI comment review completed");
                 if let Err(error) = moderation::apply(&state, id, &comment, &result).await {
@@ -103,13 +118,18 @@ impl SpamDetector {
             return Ok(None);
         }
         options.validate()?;
-        let ai_service = AiService::from_database_for_usage(db, http_client, AiUsage::CommentReview).await?;
+        let ai_service =
+            AiService::from_database_for_usage(db, http_client, AiUsage::CommentReview).await?;
         if !ai_service.is_enabled() {
             return Err("AI comment-review provider is disabled".into());
         }
         let result = if ai_service.is_jev() {
             let probability = ai_service.spam_probability(text, author, email).await?;
-            let threshold = if options.ai_review_type == "binary" { 0.5 } else { f32::from(options.ai_review_threshold) / 10.0 };
+            let threshold = if options.ai_review_type == "binary" {
+                0.5
+            } else {
+                f32::from(options.ai_review_threshold) / 10.0
+            };
             SpamCheckResult {
                 is_spam: probability >= threshold,
                 confidence: probability,
@@ -128,8 +148,10 @@ impl SpamDetector {
     }
 
     async fn get_comment_options(db: &Database) -> Result<CommentOptions, String> {
-        let option = db.collection::<RawOption>("options")
-            .find_one(doc! { "name": "commentOptions" }).await
+        let option = db
+            .collection::<RawOption>("options")
+            .find_one(doc! { "name": "commentOptions" })
+            .await
             .map_err(|error| format!("Database error: {error}"))?
             .ok_or_else(|| "commentOptions not found in database".to_string())?;
         bson::from_bson(option.value)

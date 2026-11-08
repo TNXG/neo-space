@@ -6,8 +6,8 @@
 //!
 //! 旧版 `keys` 方案已弃用，楼层 key 改为在读取时动态计算。
 
-mod tree;
 pub mod submission;
+mod tree;
 
 use crate::auth::extractors::OptionalAuth;
 use crate::error::{AppError, AppResult};
@@ -23,7 +23,7 @@ pub struct CommentService {
 
 impl CommentService {
     /// Create a new comment service
-    pub fn new(db: Database) -> Self {
+    pub const fn new(db: Database) -> Self {
         Self { db }
     }
 
@@ -245,7 +245,7 @@ impl CommentService {
         Ok(all_ids)
     }
 
-    /// Find or create anonymous Reader by name and email (matches Rocket's find_or_create_anonymous)
+    /// Find or create anonymous Reader by name and email (matches Rocket's `find_or_create_anonymous`)
     pub async fn find_or_create_anonymous_reader(
         db: &Database,
         name: &str,
@@ -256,7 +256,7 @@ impl CommentService {
         if let Some(existing) = collection
             .find_one(doc! { "email": email, "name": name })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?
+            .map_err(|e| AppError::Database(format!("Failed to find reader: {e}")))?
         {
             return Ok(existing.id);
         }
@@ -267,13 +267,13 @@ impl CommentService {
         collection
             .insert_one(&new_reader)
             .await
-            .map_err(|e| AppError::Database(format!("Failed to create anonymous reader: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to create anonymous reader: {e}")))?;
 
         tracing::info!("Created anonymous reader: {} <{}>", name, email);
         Ok(reader_id)
     }
 
-    /// Determine OAuth source from user's accounts (matches Rocket's determine_oauth_source)
+    /// Determine OAuth source from user's accounts (matches Rocket's `determine_oauth_source`)
     pub async fn determine_oauth_source(db: &Database, user_id: ObjectId) -> String {
         let collection = db.collection::<Account>("accounts");
 

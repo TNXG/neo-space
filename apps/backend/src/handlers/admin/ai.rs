@@ -17,7 +17,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::ApiResponse,
 };
 use axum::{
     extract::{Path, State},
@@ -120,6 +120,8 @@ pub async fn list_conversations(
     Ok(Json(ApiResponse::success(items)))
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn create_conversation(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -162,10 +164,12 @@ pub async fn get_conversation(
         .find_one(doc! { "id": &id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Conversation not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Conversation not found".into()))?;
     Ok(Json(ApiResponse::success(c)))
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn append_messages(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -194,6 +198,8 @@ pub async fn append_messages(
     Ok(Json(ApiResponse::success(())))
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn replace_messages(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -201,7 +207,7 @@ pub async fn replace_messages(
     AppJson(payload): AppJson<MessagesPayload>,
 ) -> AppResult<Json<ApiResponse<()>>> {
     let bson_msgs = bson::to_bson(&payload.messages)
-        .map_err(|e| AppError::Internal(format!("bson encode: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("bson encode: {e}")))?;
     let count = payload.messages.len() as i64;
     let now = chrono::Utc::now().to_rfc3339();
     state

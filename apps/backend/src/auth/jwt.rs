@@ -16,11 +16,11 @@ pub enum JwtError {
 impl std::fmt::Display for JwtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            JwtError::TokenGenerationFailed(msg) => write!(f, "Token generation failed: {}", msg),
-            JwtError::TokenVerificationFailed(msg) => {
-                write!(f, "Token verification failed: {}", msg)
+            Self::TokenGenerationFailed(msg) => write!(f, "Token generation failed: {msg}"),
+            Self::TokenVerificationFailed(msg) => {
+                write!(f, "Token verification failed: {msg}")
             }
-            JwtError::TokenExpired => write!(f, "Token expired"),
+            Self::TokenExpired => write!(f, "Token expired"),
         }
     }
 }
@@ -54,7 +54,7 @@ impl JwtClaims {
         self.exp < now
     }
 
-    /// Get user_id as ObjectId
+    /// Get `user_id` as `ObjectId`
     pub fn user_id(&self) -> Result<ObjectId, bson::oid::Error> {
         ObjectId::parse_str(&self.sub)
     }

@@ -72,12 +72,21 @@ pub struct SearchService {
 
 impl SearchService {
     pub fn new(state: &crate::app::SharedState) -> Self {
-        Self { client: crate::external::meilisearch_admin::MeilisearchAdminClient::from_state(state) }
+        Self {
+            client: crate::external::meilisearch_admin::MeilisearchAdminClient::from_state(state),
+        }
     }
 
+    // Generic serialized bodies are only used by locally awaited requests.
+    #[allow(clippy::future_not_send)]
     async fn enqueue(&self, path: &str, body: &impl Serialize) -> Result<(), AppError> {
-        let task = self.client.request_json(reqwest::Method::POST, path, body).await?;
-        let uid = task.get("taskUid").and_then(Value::as_u64)
+        let task = self
+            .client
+            .request_json(reqwest::Method::POST, path, body)
+            .await?;
+        let uid = task
+            .get("taskUid")
+            .and_then(Value::as_u64)
             .ok_or_else(|| AppError::Internal("Meilisearch omitted taskUid".into()))?;
         self.client.wait_for_task(uid).await?;
         Ok(())
@@ -85,12 +94,18 @@ impl SearchService {
 
     /// Bulk indexing preserves the existing primary key and waits for task completion.
     pub async fn index_posts(&self, docs: Vec<PostDocument>) -> Result<(), AppError> {
-        if !docs.is_empty() { self.enqueue("/indexes/posts/documents?primaryKey=id", &docs).await?; }
+        if !docs.is_empty() {
+            self.enqueue("/indexes/posts/documents?primaryKey=id", &docs)
+                .await?;
+        }
         Ok(())
     }
 
     pub async fn index_notes(&self, docs: Vec<NoteDocument>) -> Result<(), AppError> {
-        if !docs.is_empty() { self.enqueue("/indexes/notes/documents?primaryKey=id", &docs).await?; }
+        if !docs.is_empty() {
+            self.enqueue("/indexes/notes/documents?primaryKey=id", &docs)
+                .await?;
+        }
         Ok(())
     }
 
@@ -107,33 +122,83 @@ impl SearchService {
             &serde_json::json!({ "filter": format!("ref_id = \"{}\"", ref_id.replace('"', "\\\"")) })).await
     }
 
-    async fn search(&self, index: &str, query: &str, limit: usize, offset: usize, lang: &str) -> Result<Vec<Value>, AppError> {
+    async fn search(
+        &self,
+        index: &str,
+        query: &str,
+        limit: usize,
+        offset: usize,
+        lang: &str,
+    ) -> Result<Vec<Value>, AppError> {
         let result = self.client.request_json(reqwest::Method::POST, &format!("/indexes/{index}/search"), &serde_json::json!({
             "q": query, "limit": limit, "offset": offset,
             "filter": format!("lang = \"{}\"", lang.replace('"', "\\\"")),
             "attributesToHighlight": ["title", "text"], "attributesToCrop": ["text:80"],
             "highlightPreTag": "<mark>", "highlightPostTag": "</mark>", "showRankingScore": true,
         })).await?;
-        result.get("hits").and_then(Value::as_array).cloned()
+        result
+            .get("hits")
+            .and_then(Value::as_array)
+            .cloned()
             .ok_or_else(|| AppError::Internal("Meilisearch omitted search hits".into()))
     }
 
-    pub async fn search_posts(&self, query: &str, limit: usize, offset: usize, lang: &str) -> Result<Vec<PostSearchHit>, AppError> {
-        self.search("posts", query, limit, offset, lang).await?.into_iter().map(|hit| {
-            let formatted = extract_formatted_strings(hit.get("_formatted").and_then(Value::as_object).cloned());
-            let score = hit.get("_rankingScore").and_then(Value::as_f64).unwrap_or(0.0);
-            let doc = serde_json::from_value(hit).map_err(|_| AppError::Internal("Invalid Meilisearch post hit".into()))?;
-            Ok(PostSearchHit { formatted, score, doc })
-        }).collect()
+    pub async fn search_posts(
+        &self,
+        query: &str,
+        limit: usize,
+        offset: usize,
+        lang: &str,
+    ) -> Result<Vec<PostSearchHit>, AppError> {
+        self.search("posts", query, limit, offset, lang)
+            .await?
+            .into_iter()
+            .map(|hit| {
+                let formatted = extract_formatted_strings(
+                    hit.get("_formatted").and_then(Value::as_object).cloned(),
+                );
+                let score = hit
+                    .get("_rankingScore")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(0.0);
+                let doc = serde_json::from_value(hit)
+                    .map_err(|_| AppError::Internal("Invalid Meilisearch post hit".into()))?;
+                Ok(PostSearchHit {
+                    doc,
+                    formatted,
+                    score,
+                })
+            })
+            .collect()
     }
 
-    pub async fn search_notes(&self, query: &str, limit: usize, offset: usize, lang: &str) -> Result<Vec<NoteSearchHit>, AppError> {
-        self.search("notes", query, limit, offset, lang).await?.into_iter().map(|hit| {
-            let formatted = extract_formatted_strings(hit.get("_formatted").and_then(Value::as_object).cloned());
-            let score = hit.get("_rankingScore").and_then(Value::as_f64).unwrap_or(0.0);
-            let doc = serde_json::from_value(hit).map_err(|_| AppError::Internal("Invalid Meilisearch note hit".into()))?;
-            Ok(NoteSearchHit { formatted, score, doc })
-        }).collect()
+    pub async fn search_notes(
+        &self,
+        query: &str,
+        limit: usize,
+        offset: usize,
+        lang: &str,
+    ) -> Result<Vec<NoteSearchHit>, AppError> {
+        self.search("notes", query, limit, offset, lang)
+            .await?
+            .into_iter()
+            .map(|hit| {
+                let formatted = extract_formatted_strings(
+                    hit.get("_formatted").and_then(Value::as_object).cloned(),
+                );
+                let score = hit
+                    .get("_rankingScore")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(0.0);
+                let doc = serde_json::from_value(hit)
+                    .map_err(|_| AppError::Internal("Invalid Meilisearch note hit".into()))?;
+                Ok(NoteSearchHit {
+                    doc,
+                    formatted,
+                    score,
+                })
+            })
+            .collect()
     }
 }
 

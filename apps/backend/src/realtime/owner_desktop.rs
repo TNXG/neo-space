@@ -5,7 +5,9 @@
 
 use super::common::broadcast_to_all_readers;
 use crate::app::SharedState;
-use crate::models::realtime::*;
+use crate::models::realtime::{
+    OwnerDesktopMessage, ServerToOwnerDesktopMessage, ServerToReaderMessage,
+};
 use axum::{
     extract::{
         Query, State,
@@ -130,7 +132,7 @@ async fn handle_message(
     state: &SharedState,
 ) -> Result<Option<ServerToOwnerDesktopMessage>, String> {
     let desktop_msg: OwnerDesktopMessage =
-        serde_json::from_str(text).map_err(|e| format!("Failed to parse message: {}", e))?;
+        serde_json::from_str(text).map_err(|e| format!("Failed to parse message: {e}"))?;
 
     match desktop_msg {
         OwnerDesktopMessage::WindowInfo { data } => {
@@ -224,9 +226,9 @@ async fn handle_artwork_upload(
     mime_type: &str,
     backend_url: &str,
 ) -> Result<String, String> {
+    const MAX_ARTWORK_SIZE: usize = 10 * 1024 * 1024;
     // Determine file extension from MIME type
     let ext = match mime_type {
-        "image/jpeg" | "image/jpg" => "jpg",
         "image/png" => "png",
         "image/webp" => "webp",
         "image/gif" => "gif",
@@ -234,7 +236,6 @@ async fn handle_artwork_upload(
     };
 
     // Reject files larger than 10 MB
-    const MAX_ARTWORK_SIZE: usize = 10 * 1024 * 1024;
     if artwork_data.len() > MAX_ARTWORK_SIZE {
         return Err(format!(
             "Artwork too large: {} bytes (max {} bytes)",
@@ -253,7 +254,7 @@ async fn handle_artwork_upload(
     if !artwork_dir.exists() {
         tokio::fs::create_dir_all(artwork_dir)
             .await
-            .map_err(|e| format!("Failed to create artwork directory: {}", e))?;
+            .map_err(|e| format!("Failed to create artwork directory: {e}"))?;
     }
 
     let filepath = artwork_dir.join(&filename);
@@ -261,12 +262,12 @@ async fn handle_artwork_upload(
     // Save file using tokio::fs for async I/O
     tokio::fs::write(&filepath, &artwork_data)
         .await
-        .map_err(|e| format!("Failed to save artwork file: {}", e))?;
+        .map_err(|e| format!("Failed to save artwork file: {e}"))?;
 
     tracing::info!("Artwork saved: {}", filepath.display());
 
     // Generate full URL
-    let artwork_url = format!("{}/api/static/artworks/{}", backend_url, filename);
+    let artwork_url = format!("{backend_url}/api/static/artworks/{filename}");
 
     Ok(artwork_url)
 }

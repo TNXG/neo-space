@@ -33,7 +33,7 @@ impl OAuthService {
 
     /// Generate GitHub OAuth authorization URL
     ///
-    /// `state` 由调用方编好（含 return_to 等业务字段），原样转发给 GitHub，
+    /// `state` 由调用方编好（含 `return_to` 等业务字段），原样转发给 GitHub，
     /// 第三方会在 callback 时把它回传过来。
     pub fn github_authorize_url(&self, state: &str) -> Result<String, AppError> {
         let client_id = self.github_client_id();
@@ -81,19 +81,18 @@ impl OAuthService {
             .header("Accept", "application/json")
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("GitHub token request failed: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("GitHub token request failed: {e}")))?;
 
         if !token_response.status().is_success() {
             let status = token_response.status();
             let text = token_response.text().await.unwrap_or_default();
             return Err(AppError::Internal(format!(
-                "GitHub token request failed ({}): {}",
-                status, text
+                "GitHub token request failed ({status}): {text}"
             )));
         }
 
         let token_data: GitHubTokenResponse = token_response.json().await.map_err(|e| {
-            AppError::Internal(format!("Failed to parse GitHub token response: {}", e))
+            AppError::Internal(format!("Failed to parse GitHub token response: {e}"))
         })?;
 
         // 2. Get user info
@@ -108,21 +107,20 @@ impl OAuthService {
             )
             .send()
             .await
-            .map_err(|e| AppError::Internal(format!("GitHub user info request failed: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("GitHub user info request failed: {e}")))?;
 
         if !user_response.status().is_success() {
             let status = user_response.status();
             let text = user_response.text().await.unwrap_or_default();
             return Err(AppError::Internal(format!(
-                "GitHub user info request failed ({}): {}",
-                status, text
+                "GitHub user info request failed ({status}): {text}"
             )));
         }
 
         let user: crate::models::GitHubUser = user_response
             .json()
             .await
-            .map_err(|e| AppError::Internal(format!("Failed to parse GitHub user info: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("Failed to parse GitHub user info: {e}")))?;
 
         Ok(OAuthUserInfo {
             provider: "github".to_string(),
@@ -150,7 +148,7 @@ impl OAuthService {
         let existing_account = accounts_collection
             .find_one(filter)
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find account: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to find account: {e}")))?;
 
         if let Some(account) = existing_account {
             let user_id = account.user_id.to_hex();
@@ -158,7 +156,7 @@ impl OAuthService {
             let reader = readers_collection
                 .find_one(doc! { "_id": account.user_id })
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to find reader: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to find reader: {e}")))?;
 
             let is_owner = match is_owner_user_id(&self.db, account.user_id).await {
                 Ok(value) => value,
@@ -182,7 +180,7 @@ impl OAuthService {
                 id: user_id,
                 email: email
                     .clone()
-                    .unwrap_or_else(|| format!("{}@github.local", nickname)),
+                    .unwrap_or_else(|| format!("{nickname}@github.local")),
                 name: nickname.clone(),
                 handle: Reader::generate_handle(&nickname),
                 image: avatar.clone(),
@@ -195,7 +193,7 @@ impl OAuthService {
             readers_collection
                 .insert_one(&new_reader)
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to create reader: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to create reader: {e}")))?;
 
             let handle = Reader::generate_handle(&nickname);
 
@@ -216,7 +214,7 @@ impl OAuthService {
             accounts_collection
                 .insert_one(&new_account)
                 .await
-                .map_err(|e| AppError::Database(format!("Failed to create account: {}", e)))?;
+                .map_err(|e| AppError::Database(format!("Failed to create account: {e}")))?;
 
             tracing::info!("Created new user via GitHub OAuth: {}", user_id.to_hex());
 

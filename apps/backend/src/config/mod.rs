@@ -7,6 +7,8 @@ use std::env;
 
 /// Application configuration loaded from environment variables
 #[derive(Debug, Clone)]
+// Independent environment switches are part of the configuration contract.
+#[allow(clippy::struct_excessive_bools)]
 pub struct AppConfig {
     /// JWT secret key for token signing
     pub jwt_secret: String,
@@ -66,8 +68,8 @@ pub enum ConfigError {
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ConfigError::MissingEnvVar(var) => write!(f, "Missing environment variable: {}", var),
-            ConfigError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+            Self::MissingEnvVar(var) => write!(f, "Missing environment variable: {var}"),
+            Self::InvalidConfig(msg) => write!(f, "Invalid configuration: {msg}"),
         }
     }
 }
@@ -147,7 +149,7 @@ impl AppConfig {
 }
 
 /// 解析常见的环境变量布尔值。
-pub(crate) fn parse_env_bool(value: &str) -> bool {
+pub fn parse_env_bool(value: &str) -> bool {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
         "1" | "true" | "yes" | "on"

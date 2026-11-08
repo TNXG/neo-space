@@ -117,19 +117,18 @@ pub(super) async fn fetch_category_map(
     let filter = doc! { "_id": { "$in": category_ids } };
 
     match categories_collection.find(filter).await {
-        Ok(cursor) => cursor
-            .try_collect::<Vec<Category>>()
-            .await
-            .map(|categories| {
+        Ok(cursor) => cursor.try_collect::<Vec<Category>>().await.map_or_else(
+            |error| {
+                tracing::error!("Failed to read categories for Meilisearch sync: {}", error);
+                HashMap::new()
+            },
+            |categories| {
                 categories
                     .into_iter()
                     .map(|category| (category.id, category))
                     .collect()
-            })
-            .unwrap_or_else(|error| {
-                tracing::error!("Failed to read categories for Meilisearch sync: {}", error);
-                HashMap::new()
-            }),
+            },
+        ),
         Err(error) => {
             tracing::error!("Failed to fetch categories for Meilisearch sync: {}", error);
             HashMap::new()

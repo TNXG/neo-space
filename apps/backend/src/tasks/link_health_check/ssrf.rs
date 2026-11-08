@@ -29,9 +29,8 @@ pub fn is_ssrf_url(url: &str) -> bool {
             || addr.is_unspecified();
     }
 
-    if host == "169.254.169.254" || host.ends_with(".local") {
-        return true;
-    }
-
-    false
+    host == "169.254.169.254"
+        || std::path::Path::new(host)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("local"))
 }

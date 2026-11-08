@@ -3,8 +3,8 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppQuery, AppResult},
-    external::search::*,
-    models::*,
+    external::search::SearchService,
+    models::{ApiResponse, Category, ResponseStatus},
     services::helpers::{get_category_name_translation_map, localize_category_names},
 };
 use axum::{Json, extract::State};
@@ -76,11 +76,12 @@ pub struct SearchResults {
 }
 
 /// Search across posts and notes
+// Keep the endpoint orchestration together to preserve the request flow.
+#[allow(clippy::too_many_lines)]
 pub async fn search(
     State(state): State<SharedState>,
     AppQuery(params): AppQuery<SearchParams>,
 ) -> AppResult<Json<ApiResponse<SearchResults>>> {
-
     // Validate query parameter
     let query = params
         .q

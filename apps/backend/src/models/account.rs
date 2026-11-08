@@ -16,6 +16,8 @@ pub struct OAuthUserProfile {
 
 /// Account model for OAuth provider linking
 #[derive(Debug, Serialize, Deserialize, Clone)]
+// Retain the OAuth account identifier field name.
+#[allow(clippy::struct_field_names)]
 pub struct Account {
     #[serde(rename = "_id")]
     pub id: ObjectId,
@@ -120,15 +122,16 @@ impl Account {
         access_token: String,
         profile: OAuthUserProfile,
     ) -> Self {
+        let oauth_email = Some(format!("{openid}@qq.oauth"));
         Self {
             id: ObjectId::new(),
             user_id,
             provider: "qq".to_string(),
-            account_id: openid.clone(),
+            account_id: openid,
             access_token,
             scope: None,
             oauth_name: Some(profile.name.clone()),
-            oauth_email: Some(format!("{openid}@qq.oauth")),
+            oauth_email,
             oauth_avatar: Some(profile.avatar),
             oauth_handle: Some(profile.handle),
             created_at: bson::DateTime::now(),

@@ -61,7 +61,7 @@ pub struct NotificationService {
 
 impl NotificationService {
     /// Create a new notification service
-    pub fn new(db: Database) -> Self {
+    pub const fn new(db: Database) -> Self {
         Self { db }
     }
 
@@ -72,12 +72,12 @@ impl NotificationService {
         let option_docs = collection
             .find(doc! { "name": { "$in": ["seo", "url", "mailOptions"] } })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load site options: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to load site options: {e}")))?;
 
         let option_docs: Vec<bson::Document> = option_docs
             .try_collect()
             .await
-            .map_err(|e| AppError::Database(format!("Failed to iterate site options: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to iterate site options: {e}")))?;
 
         let mut site_name = "Neo Space".to_string();
         let mut site_url = "https://example.com".to_string();
@@ -85,9 +85,8 @@ impl NotificationService {
 
         for doc in option_docs {
             let name = doc.get_str("name").unwrap_or_default();
-            let value = match doc.get_document("value") {
-                Ok(value) => value,
-                Err(_) => continue,
+            let Ok(value) = doc.get_document("value") else {
+                continue;
             };
 
             match name {
@@ -117,7 +116,7 @@ impl NotificationService {
         let owner_profile = owner_profiles
             .find_one(doc! {})
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load owner profile: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to load owner profile: {e}")))?;
 
         let owner_profile = owner_profile
             .ok_or_else(|| AppError::Internal("Owner profile not configured".to_string()))?;
@@ -151,16 +150,14 @@ impl NotificationService {
         let mail_options = options_collection
             .find_one(doc! { "name": "mailOptions" })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load email config: {}", e)))?;
+            .map_err(|e| AppError::Database(format!("Failed to load email config: {e}")))?;
 
-        let email_enabled = match mail_options.as_ref() {
-            Some(doc) => doc
-                .get_document("value")
+        let email_enabled = mail_options.as_ref().is_some_and(|doc| {
+            doc.get_document("value")
                 .ok()
                 .and_then(|value| value.get_bool("enable").ok())
-                .unwrap_or(false),
-            None => false,
-        };
+                .unwrap_or(false)
+        });
         if !email_enabled {
             tracing::info!("Email service is disabled, skipping notification");
             return Ok(None);
@@ -251,7 +248,7 @@ impl NotificationService {
 
         let creds = Credentials::new(smtp.user.clone(), smtp.password.clone());
         let mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&smtp.host)
-            .map_err(|e| AppError::Internal(format!("Failed to create mailer: {}", e)))?
+            .map_err(|e| AppError::Internal(format!("Failed to create mailer: {e}")))?
             .port(smtp.port)
             .credentials(creds)
             .timeout(Some(Duration::from_secs(30)))
@@ -282,7 +279,7 @@ impl NotificationService {
                                 .body(html_body),
                         ),
                 )
-                .map_err(|e| AppError::Internal(format!("Failed to build email: {}", e)))?;
+                .map_err(|e| AppError::Internal(format!("Failed to build email: {e}")))?;
 
             tracing::info!(
                 "Sending comment notification to {} (priority={:?}) for comment {} by {}",

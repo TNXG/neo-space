@@ -45,6 +45,8 @@ pub fn index_path(name: &str) -> String {
     }
 }
 
+// The initial cache guard is scoped around a borrowed lookup and early return.
+#[allow(clippy::significant_drop_tightening)]
 pub async fn fetch_index_entries(
     state: &SharedState,
     index_cache: &IndexCache,
@@ -67,12 +69,14 @@ pub async fn fetch_index_entries(
 
         let mut cache = index_cache.lock().await;
         cache.insert(cache_key.clone(), entries.clone());
+        drop(cache);
         return Ok(entries);
     }
 
     if let Some(entries) = cache::read_index_entries(name).await? {
         let mut cache = index_cache.lock().await;
         cache.insert(cache_key.clone(), entries.clone());
+        drop(cache);
 
         if let Ok(serialized) = serde_json::to_vec(&entries) {
             state.cache.insert(shared_cache_key, serialized).await;
@@ -113,6 +117,7 @@ pub async fn fetch_index_entries(
 
     let mut cache = index_cache.lock().await;
     cache.insert(cache_key, entries.clone());
+    drop(cache);
 
     if let Ok(serialized) = serde_json::to_vec(&entries) {
         state.cache.insert(shared_cache_key, serialized).await;

@@ -110,6 +110,8 @@ async fn load_content(
     Ok(contents)
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn dashboard_overview(
     State(state): State<SharedState>,
     _owner: OwnerOnly,

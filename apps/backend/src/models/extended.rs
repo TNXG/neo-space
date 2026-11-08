@@ -53,6 +53,8 @@ pub struct Topic {
 // ==================== Snippet ====================
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Retain the persisted snippet field names.
+#[allow(clippy::struct_field_names)]
 pub struct Snippet {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
@@ -81,6 +83,8 @@ pub struct Snippet {
 // ==================== Project ====================
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Retain the public project URL field name.
+#[allow(clippy::struct_field_names)]
 pub struct Project {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
@@ -183,6 +187,6 @@ pub struct Draft {
     pub published_version: Option<i32>,
 }
 
-fn default_draft_version() -> i32 {
+const fn default_draft_version() -> i32 {
     1
 }

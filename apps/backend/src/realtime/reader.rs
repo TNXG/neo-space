@@ -21,6 +21,8 @@ use tokio::sync::mpsc;
 
 /// WebSocket query parameters for readers (no authentication)
 #[derive(Debug, Deserialize)]
+// Preserve the page-prefixed WebSocket query contract.
+#[allow(clippy::struct_field_names)]
 pub struct ReaderWsQueryParams {
     #[serde(rename = "pageType")]
     pub page_type: Option<String>,
@@ -40,11 +42,14 @@ pub async fn reader_ws(
 }
 
 /// Handle reader WebSocket connection
+// Keep the connection lifecycle and its cleanup in one handler.
+#[allow(clippy::too_many_lines)]
 async fn handle_reader_connection(
     mut socket: WebSocket,
     params: ReaderWsQueryParams,
     state: SharedState,
 ) {
+    use super::common::get_reader_registry;
     // Unique ID for this specific connection
     let connection_id = generate_connection_id();
 
@@ -105,7 +110,6 @@ async fn handle_reader_connection(
     };
 
     // Get reader registry
-    use super::common::get_reader_registry;
     let registry = get_reader_registry().clone();
 
     // Register reader with fingerprint as key (deduplication)
@@ -246,13 +250,12 @@ async fn handle_reader_connection(
     // Unregister reader - only if still the current connection for this fingerprint
     let was_current = {
         let mut reg = registry_clone.write().await;
-        if let Some(conn) = reg.get(&fingerprint_clone) {
-            if conn.connection_id == connection_id_clone {
-                reg.remove(&fingerprint_clone);
-                true
-            } else {
-                false
-            }
+        if reg
+            .get(&fingerprint_clone)
+            .is_some_and(|conn| conn.connection_id == connection_id_clone)
+        {
+            reg.remove(&fingerprint_clone);
+            true
         } else {
             false
         }

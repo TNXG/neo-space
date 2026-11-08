@@ -5,7 +5,7 @@ use crate::{
     app::SharedState,
     auth::{extractors::OptionalAuth, jwt::generate_jwt},
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{Account, ApiResponse, Reader, ReaderResponse, ResponseStatus},
 };
 use axum::{Json, extract::State, response::Redirect};
 use bson::{doc, oid::ObjectId};
@@ -45,7 +45,7 @@ pub async fn qq_oauth(
 ) -> AppResult<Redirect> {
     let oauth_service = make_runtime_oauth_service(&state).await?;
     let state_token = encode_oauth_state(&query.return_to.unwrap_or_default());
-    let url = oauth_service.qq_authorize_url(&state_token)?;
+    let url = oauth_service.qq_authorize_url(&state_token);
 
     Ok(Redirect::to(&url))
 }
@@ -272,7 +272,7 @@ pub struct OAuthAuthorizeQuery {
 #[derive(Debug, Deserialize)]
 pub struct OAuthCallbackQuery {
     pub code: String,
-    /// 第三方原样回传的 state（含 return_to 等业务字段）。
+    /// 第三方原样回传的 state（含 `return_to` 等业务字段）。
     pub state: Option<String>,
 }
 
@@ -308,7 +308,7 @@ async fn handle_oauth_callback(
     let oauth_service = match make_runtime_oauth_service(state).await {
         Ok(service) => service,
         Err(error) => {
-            return build_oauth_error_redirect(state, &return_to, &app_error_message(&error));
+            return build_oauth_error_redirect(state, return_to, &app_error_message(&error));
         }
     };
 
@@ -320,7 +320,7 @@ async fn handle_oauth_callback(
     let user_info = match user_info_result {
         Ok(user_info) => user_info,
         Err(error) => {
-            return build_oauth_error_redirect(state, &return_to, &app_error_message(&error));
+            return build_oauth_error_redirect(state, return_to, &app_error_message(&error));
         }
     };
 
@@ -332,13 +332,12 @@ async fn handle_oauth_callback(
     let (user_id, is_owner, is_new_user) = match login_result {
         Ok(result) => result,
         Err(error) => {
-            return build_oauth_error_redirect(state, &return_to, &app_error_message(&error));
+            return build_oauth_error_redirect(state, return_to, &app_error_message(&error));
         }
     };
 
-    let object_id = match ObjectId::parse_str(&user_id) {
-        Ok(object_id) => object_id,
-        Err(_) => return build_oauth_error_redirect(state, &return_to, "Invalid user ID"),
+    let Ok(object_id) = ObjectId::parse_str(&user_id) else {
+        return build_oauth_error_redirect(state, return_to, "Invalid user ID");
     };
 
     let token = match generate_jwt(object_id, is_owner, &state.config().jwt_secret) {
@@ -346,7 +345,7 @@ async fn handle_oauth_callback(
         Err(error) => {
             return build_oauth_error_redirect(
                 state,
-                &return_to,
+                return_to,
                 &format!("Failed to generate token: {error}"),
             );
         }
@@ -354,7 +353,7 @@ async fn handle_oauth_callback(
 
     let url = format!(
         "{}?token={}&new_user={}",
-        callback_base_url(state, &return_to),
+        callback_base_url(state, return_to),
         urlencoding::encode(&token),
         is_new_user
     );
@@ -364,7 +363,7 @@ async fn handle_oauth_callback(
 
 fn build_oauth_error_redirect(
     state: &SharedState,
-    return_to: &OAuthReturnTo,
+    return_to: OAuthReturnTo,
     message: &str,
 ) -> Redirect {
     let url = format!(
@@ -375,7 +374,7 @@ fn build_oauth_error_redirect(
     Redirect::to(&url)
 }
 
-/// 把 `state` query 编码成"return_to=xxx"形式。空 return_to 时返回空串，让上游
+/// 把 `state` query `编码成"return_to=xxx"形式。空` `return_to` 时返回空串，让上游
 /// 决定要不要拼到第三方 URL（OAuth 第三方都接受空 state）。
 fn encode_oauth_state(return_to: &str) -> String {
     let trimmed = return_to.trim();
@@ -387,12 +386,12 @@ fn encode_oauth_state(return_to: &str) -> String {
 
 /// 解析 callback 拿到的原始 `state` 字符串。旧面板的 `return_to=admin`
 /// 分支随 admin 面板一并移除，当前所有登录都回到 web 回调页。
-fn decode_oauth_state(_raw_state: Option<&str>) -> OAuthReturnTo {
+const fn decode_oauth_state(_raw_state: Option<&str>) -> OAuthReturnTo {
     OAuthReturnTo::Web
 }
 
-/// 根据 return_to 拼出最终承接 token 的 callback 页 URL（不含 query）。
-fn callback_base_url(state: &SharedState, _return_to: &OAuthReturnTo) -> String {
+/// 根据 `return_to` 拼出最终承接 token 的 callback 页 URL（不含 query）。
+fn callback_base_url(state: &SharedState, _return_to: OAuthReturnTo) -> String {
     format!("{}/auth/callback", state.config().frontend_url)
 }
 

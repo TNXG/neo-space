@@ -49,11 +49,11 @@ pub async fn overview(
     let client = MeilisearchAdminClient::from_state(&state);
     let health = client.request(Method::GET, "/health").await?;
     let version = client.request(Method::GET, "/version").await?;
-    let stats = client.request(Method::GET, "/stats").await?;
+    let statistics = client.request(Method::GET, "/stats").await?;
     Ok(Json(ApiResponse::success(json!({
         "health": health,
         "version": version,
-        "stats": stats,
+        "stats": statistics,
     }))))
 }
 

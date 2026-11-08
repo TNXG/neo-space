@@ -90,6 +90,8 @@ pub struct TranslationEntry {
 
 /// Category model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Retain the persisted category field names.
+#[allow(clippy::struct_field_names)]
 pub struct Category {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
@@ -107,6 +109,8 @@ pub struct Category {
 
 /// Post (Article) model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Independent persisted article flags are not a single state machine.
+#[allow(clippy::struct_excessive_bools)]
 pub struct Post {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
@@ -164,6 +168,8 @@ pub struct Post {
 
 /// Post with populated category information
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Mirrors the independent persisted article flags.
+#[allow(clippy::struct_excessive_bools)]
 pub struct PostWithCategory {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]
@@ -271,6 +277,8 @@ pub struct PostImage {
 
 /// Note (Diary) model
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// Independent persisted diary flags are not a single state machine.
+#[allow(clippy::struct_excessive_bools)]
 pub struct Note {
     #[serde(rename = "_id", serialize_with = "serialize_object_id")]
     #[schema(value_type = String)]

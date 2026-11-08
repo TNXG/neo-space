@@ -1,5 +1,8 @@
 //! Common data structures for API responses
 
+// Derive expansions on the generic response wrappers report a bogus if-let/else suggestion.
+#![allow(clippy::option_if_let_else)]
+
 use serde::{Deserialize, Serialize};
 
 /// Standard API response wrapper
@@ -54,6 +57,8 @@ pub struct Pagination {
 
 impl Pagination {
     /// Create pagination metadata
+    // Preserve floating-point pagination rounding; positive i64 operands bound the result.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     pub fn new(total: i64, current_page: i64, size: i64) -> Self {
         let total_page = if total > 0 && size > 0 {
             (total as f64 / size as f64).ceil() as i64
@@ -72,7 +77,7 @@ impl Pagination {
     }
 }
 
-/// Paginated response wrapper (alias for PaginatedData)
+/// Paginated response wrapper (alias for `PaginatedData`)
 pub type PaginatedList<T> = PaginatedData<T>;
 
 /// Paginated response wrapper

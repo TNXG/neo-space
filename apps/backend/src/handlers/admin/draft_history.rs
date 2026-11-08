@@ -5,7 +5,7 @@ use crate::{
     auth::extractors::OwnerOnly,
     error::{AppError, AppResult},
     models::serializers::serialize_datetime,
-    models::*,
+    models::{ApiResponse, Draft, DraftHistoryEntry},
 };
 use axum::{
     Json,
@@ -82,9 +82,7 @@ fn draft_snapshot(draft: &Draft) -> bson::Document {
 }
 
 fn decode_patch_segment(segment: &str) -> String {
-    urlencoding::decode(segment)
-        .map(|decoded| decoded.into_owned())
-        .unwrap_or_else(|_| segment.to_string())
+    urlencoding::decode(segment).map_or_else(|_| segment.to_string(), std::borrow::Cow::into_owned)
 }
 
 fn apply_dmp_patch(source: &str, patch: &str) -> String {
@@ -155,7 +153,7 @@ fn resolve_history_text(draft: &Draft, entry: &DraftHistoryEntry) -> String {
 
     for patch_entry in patches {
         if patch_entry.is_full_snapshot {
-            text = patch_entry.text.clone();
+            text.clone_from(&patch_entry.text);
         } else {
             text = apply_dmp_patch(&text, &patch_entry.text);
         }
@@ -168,9 +166,11 @@ fn apply_history_entry(mut draft: Draft, entry: &DraftHistoryEntry) -> Draft {
     draft.version = entry.version;
     draft.title = Some(entry.title.clone());
     draft.text = Some(resolve_history_text(&draft, entry));
-    draft.content_format = entry.content_format.clone();
-    draft.content = entry.content.clone();
-    draft.type_specific_data = entry.type_specific_data.clone();
+    draft.content_format.clone_from(&entry.content_format);
+    draft.content.clone_from(&entry.content);
+    draft
+        .type_specific_data
+        .clone_from(&entry.type_specific_data);
     draft.updated = Some(entry.saved_at);
     draft.modified = Some(entry.saved_at);
     draft
@@ -184,7 +184,7 @@ async fn load_draft(state: &SharedState, id: &str) -> AppResult<Draft> {
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Draft not found".into()))
+        .ok_or_else(|| AppError::NotFound("Draft not found".into()))
 }
 
 pub async fn list_draft_history(
@@ -216,7 +216,7 @@ pub async fn get_draft_history_version(
         .iter()
         .find(|item| item.version == version)
         .cloned()
-        .ok_or(AppError::NotFound("Draft history version not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft history version not found".into()))?;
 
     Ok(Json(ApiResponse::success(apply_history_entry(
         draft, &entry,
@@ -238,7 +238,7 @@ pub async fn restore_draft_version(
         .history
         .iter()
         .find(|item| item.version == version)
-        .ok_or(AppError::NotFound("Draft history version not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft history version not found".into()))?;
     let restored = apply_history_entry(current.clone(), entry);
     let now = bson::DateTime::now();
     let mut set_doc = doc! {
@@ -283,7 +283,7 @@ pub async fn restore_draft_version(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Draft not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft not found".into()))?;
 
     Ok(Json(ApiResponse::success(draft)))
 }

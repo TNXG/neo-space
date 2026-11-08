@@ -1,5 +1,14 @@
-use super::*;
+use std::fmt::Write as _;
+
+use super::{
+    ApiResponse, AppError, AppJson, AppResult, Comment, CommentService, CommentState, CommentTree,
+    ConnectInfo, CreateCommentRequest, HeaderMap, Json, ObjectId, OptionalAuth, Reader,
+    ResponseStatus, SharedState, SocketAddr, State, doc, extract_client_ip,
+    extract_request_user_agent, get_ip_location, verify_turnstile,
+};
 /// Create a new comment
+// Keep the endpoint orchestration together to preserve the request flow.
+#[allow(clippy::too_many_lines)]
 pub async fn create_comment(
     State(state): State<SharedState>,
     auth: OptionalAuth,
@@ -97,8 +106,8 @@ pub async fn create_comment(
         let reader = collection
             .find_one(doc! { "_id": user_id })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find user: {}", e)))?
-            .ok_or(AppError::NotFound("User not found".to_string()))?;
+            .map_err(|e| AppError::Database(format!("Failed to find user: {e}")))?
+            .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
         let avatar = if reader.image.is_empty() {
             CommentService::generate_avatar_url(&reader.email)
@@ -141,7 +150,9 @@ pub async fn create_comment(
             if !secret.is_empty() && secret != "THISISTURNSTILEKEY" {
                 verify_turnstile(token, secret, &state.http_client)
                     .await
-                    .map_err(|_| AppError::BadRequest("CAPTCHA verification failed".to_string()))?;
+                    .map_err(|()| {
+                        AppError::BadRequest("CAPTCHA verification failed".to_string())
+                    })?;
             }
         } else if !config.turnstile_secret.is_empty()
             && config.turnstile_secret != "THISISTURNSTILEKEY"
@@ -175,12 +186,11 @@ pub async fn create_comment(
         parent_collection
             .find_one(doc! { "_id": parent_id })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to find parent comment: {}", e)))?
+            .map_err(|e| AppError::Database(format!("Failed to find parent comment: {e}")))?
             .ok_or_else(|| AppError::BadRequest("Parent comment not found".to_string()))?
     } else {
         Comment::default()
     };
-
 
     // Clone UA info for notification before it's moved into comment
     let request_user_agent = extract_request_user_agent(&headers);
@@ -189,7 +199,7 @@ pub async fn create_comment(
         if let Some(raw_user_agent) = &ua.raw_user_agent
             && !raw_user_agent.is_empty()
         {
-            details.push_str(&format!(" | UA: {}", raw_user_agent));
+            let _ = write!(details, " | UA: {raw_user_agent}");
         }
         if let Some(client_hints) = &ua.client_hints {
             let platform = client_hints.platform.as_deref().unwrap_or("unknown");
@@ -197,7 +207,7 @@ pub async fn create_comment(
                 .platform_version
                 .as_deref()
                 .unwrap_or("unknown");
-            details.push_str(&format!(" | CH: {} {}", platform, platform_version));
+            let _ = write!(details, " | CH: {platform} {platform_version}");
         }
         details
     });
@@ -260,7 +270,7 @@ pub async fn create_comment(
     let insert_result = collection
         .insert_one(&new_comment)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to create comment: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to create comment: {e}")))?;
 
     let new_id = insert_result
         .inserted_id
@@ -272,14 +282,14 @@ pub async fn create_comment(
         comment
             .register_reply(parent_id, root_comment_id, created_at)
             .await
-            .map_err(|e| AppError::Internal(format!("Failed to update reply metadata: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("Failed to update reply metadata: {e}")))?;
     }
 
     let inserted_comment = collection
         .find_one(doc! { "_id": new_id })
         .await
-        .map_err(|e| AppError::Database(format!("Failed to retrieve inserted comment: {}", e)))?
-        .ok_or(AppError::Internal("Inserted comment not found".to_string()))?;
+        .map_err(|e| AppError::Database(format!("Failed to retrieve inserted comment: {e}")))?
+        .ok_or_else(|| AppError::Internal("Inserted comment not found".to_string()))?;
 
     let comment_tree = crate::services::comment::submission::finish_submission(
         state.clone(),
@@ -289,7 +299,8 @@ pub async fn create_comment(
         &payload.r#ref,
         &normalized_ref_type,
         is_owner,
-    ).await?;
+    )
+    .await?;
 
     tracing::info!("New comment created by {}", new_comment.mail);
 

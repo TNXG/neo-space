@@ -166,13 +166,14 @@ pub async fn cancel_rebuild(
         "cancelRequested": true,
         "updatedAt": now,
     };
-    let mut push_log = "管理员已请求取消任务";
-    if force_complete {
+    let push_log = if force_complete {
         set_fields.insert("status", "canceled");
         set_fields.insert("phase", "canceled");
         set_fields.insert("finishedAt", now);
-        push_log = "任务长时间无更新，已强制标记为已取消以解除阻塞";
-    }
+        "任务长时间无更新，已强制标记为已取消以解除阻塞"
+    } else {
+        "管理员已请求取消任务"
+    };
     collection
         .update_one(
             task_id_filter(task_id),
@@ -291,7 +292,7 @@ async fn ensure_no_active_task(state: &SharedState) -> AppResult<()> {
     Ok(())
 }
 
-/// 把超过 ZOMBIE_THRESHOLD 未更新的 running/queued 任务标记为失败。
+/// 把超过 `ZOMBIE_THRESHOLD` 未更新的 running/queued 任务标记为失败。
 ///
 /// 阈值大于单批次最长等待（20 分钟）+ Meilisearch embedding 超时（约 13 分钟），
 /// 因此正常任务不会被误判；只有执行器已失活或被无限挂起的任务才会被回收。

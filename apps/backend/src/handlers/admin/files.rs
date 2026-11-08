@@ -7,7 +7,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppResult},
-    models::*,
+    models::ApiResponse,
 };
 use axum::{
     extract::{Multipart, State},
@@ -42,11 +42,10 @@ fn safe_filename(input: &str) -> String {
 fn unique_name(original: &str) -> String {
     let cleaned = safe_filename(original);
     let ts = chrono::Utc::now().timestamp_millis();
-    if let Some(dot) = cleaned.rfind('.') {
-        format!("{}-{}{}", &cleaned[..dot], ts, &cleaned[dot..])
-    } else {
-        format!("{}-{}", cleaned, ts)
-    }
+    cleaned.rfind('.').map_or_else(
+        || format!("{cleaned}-{ts}"),
+        |dot| format!("{}-{}{}", &cleaned[..dot], ts, &cleaned[dot..]),
+    )
 }
 
 async fn ensure_dir(dir: &PathBuf) -> std::io::Result<()> {
@@ -66,25 +65,25 @@ pub async fn upload_file(
     while let Some(field) = multipart
         .next_field()
         .await
-        .map_err(|e| AppError::BadRequest(format!("multipart: {}", e)))?
+        .map_err(|e| AppError::BadRequest(format!("multipart: {e}")))?
     {
         match field.name() {
             Some("file") => {
                 file_name = field
                     .file_name()
-                    .map(|s| s.to_string())
+                    .map(std::string::ToString::to_string)
                     .or_else(|| Some(format!("upload-{}", chrono::Utc::now().timestamp())));
                 let data = field
                     .bytes()
                     .await
-                    .map_err(|e| AppError::BadRequest(format!("read field: {}", e)))?;
+                    .map_err(|e| AppError::BadRequest(format!("read field: {e}")))?;
                 file_bytes = Some(data.to_vec());
             }
             Some("type") => {
                 kind = field
                     .text()
                     .await
-                    .map_err(|e| AppError::BadRequest(format!("read type: {}", e)))?;
+                    .map_err(|e| AppError::BadRequest(format!("read type: {e}")))?;
             }
             _ => {}
         }
@@ -95,26 +94,25 @@ pub async fn upload_file(
     let unique = unique_name(&name);
 
     let storage_dir: PathBuf = std::env::var("UPLOAD_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("./storage/uploads"));
+        .map_or_else(|_| PathBuf::from("./storage/uploads"), PathBuf::from);
     let sub = match kind.as_str() {
         "image" => storage_dir.join("images"),
         _ => storage_dir.join("files"),
     };
     ensure_dir(&sub)
         .await
-        .map_err(|e| AppError::Internal(format!("mkdir: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("mkdir: {e}")))?;
 
     let dest = sub.join(&unique);
     let mut f = tokio::fs::File::create(&dest)
         .await
-        .map_err(|e| AppError::Internal(format!("write: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("write: {e}")))?;
     f.write_all(&bytes)
         .await
-        .map_err(|e| AppError::Internal(format!("write: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("write: {e}")))?;
     f.flush()
         .await
-        .map_err(|e| AppError::Internal(format!("flush: {}", e)))?;
+        .map_err(|e| AppError::Internal(format!("flush: {e}")))?;
 
     let public_base = std::env::var("UPLOAD_PUBLIC_URL")
         .unwrap_or_else(|_| format!("{}/api/static/uploads", state.config().backend_url));

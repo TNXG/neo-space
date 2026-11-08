@@ -1,7 +1,8 @@
 pub fn build_crate_cache_key(name: &str, version: Option<&str>) -> String {
-    let version_part = version
-        .map(|value| format!("{}@{value}", name.to_lowercase()))
-        .unwrap_or_else(|| format!("{}@latest", name.to_lowercase()));
+    let version_part = version.map_or_else(
+        || format!("{}@latest", name.to_lowercase()),
+        |value| format!("{}@{value}", name.to_lowercase()),
+    );
 
     format!("cargo_crate_{version_part}")
 }

@@ -70,7 +70,7 @@ pub struct UAInfo {
 pub struct Comment {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    /// Reference ID - can be ObjectId (for posts/notes) or String (for custom identifiers like "friends")
+    /// Reference ID - can be `ObjectId` (for posts/notes) or String (for custom identifiers like "friends")
     #[serde(rename = "ref", default)]
     pub r#ref: Bson,
     #[serde(rename = "refType", default)]
@@ -168,9 +168,9 @@ impl Default for Comment {
 impl Comment {
     pub fn effective_state(&self) -> i32 {
         match self.status.as_deref() {
-            Some("approved") | Some("read") => CommentState::READ,
+            Some("approved" | "read") => CommentState::READ,
             Some("pending") => CommentState::PENDING,
-            Some("spam") | Some("rejected") => CommentState::SPAM,
+            Some("spam" | "rejected") => CommentState::SPAM,
             _ => self.state,
         }
     }
@@ -196,7 +196,7 @@ pub struct CommentTree {
     pub author: String,
     pub text: String,
     pub state: i32,
-    pub children: Vec<CommentTree>,
+    pub children: Vec<Self>,
     #[serde(rename = "commentsIndex")]
     pub comments_index: i32,
     pub key: String,

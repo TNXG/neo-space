@@ -7,8 +7,8 @@ fn builds_meilisearch_compatible_document_id() {
 
     assert_eq!(document_id, "507f1f77bcf86cd799439011_zh-CN");
     assert!(
-        document_id.chars().all(
-            |character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_')
-        )
+        document_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
     );
 }

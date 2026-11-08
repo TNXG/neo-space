@@ -107,7 +107,7 @@ pub async fn list_passkeys(
     State(state): State<SharedState>,
     owner: OwnerOnly,
 ) -> AppResult<Json<ApiResponse<Vec<PasskeySummary>>>> {
-    let passkeys = load_passkeys(&state, owner._user_id).await?;
+    let passkeys = load_passkeys(&state, owner.user_id).await?;
     let summaries = passkeys
         .into_iter()
         .map(|passkey| PasskeySummary {
@@ -131,14 +131,14 @@ pub async fn start_registration(
         return Err(AppError::BadRequest("Passkey name is required".to_string()));
     }
     let service = passkey_service(&state)?;
-    let reader = load_reader(&state, owner._user_id).await?;
-    let existing = load_passkeys(&state, owner._user_id).await?;
+    let reader = load_reader(&state, owner.user_id).await?;
+    let existing = load_passkeys(&state, owner.user_id).await?;
     let excluded = existing
         .iter()
         .map(|passkey| passkey.credential.id.clone())
         .collect::<Vec<CredentialId>>();
     let (options, registration_state) = service.webauthn.start_registration(
-        &owner._user_id.bytes(),
+        &owner.user_id.bytes(),
         &reader.handle,
         &reader.name,
         &excluded,
@@ -149,7 +149,7 @@ pub async fn start_registration(
         .insert(
             challenge_id.clone(),
             RegistrationChallenge {
-                user_id: owner._user_id,
+                user_id: owner.user_id,
                 state: registration_state,
             },
         )
@@ -179,7 +179,7 @@ pub async fn finish_registration(
         .registration_challenges
         .invalidate(&request.challenge_id)
         .await;
-    if challenge.user_id != owner._user_id {
+    if challenge.user_id != owner.user_id {
         return Err(AppError::Forbidden);
     }
 
@@ -191,7 +191,7 @@ pub async fn finish_registration(
     ensure_credential_is_unique(&state, &credential.id).await?;
     let passkey = StoredPasskey {
         id: ObjectId::new(),
-        user_id: owner._user_id,
+        user_id: owner.user_id,
         name: request.name.trim().to_string(),
         credential,
         created_at: bson::DateTime::now(),
@@ -223,7 +223,7 @@ pub async fn delete_passkey(
     let result = state
         .db
         .collection::<StoredPasskey>("passkeys")
-        .delete_one(doc! { "_id": object_id, "userId": owner._user_id })
+        .delete_one(doc! { "_id": object_id, "userId": owner.user_id })
         .await
         .map_err(|error| AppError::Database(error.to_string()))?;
     if result.deleted_count == 0 {
@@ -379,7 +379,7 @@ async fn ensure_credential_is_unique(
 }
 
 impl RegistrationCredential {
-    /// 将 SimpleWebAuthn 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
+    /// 将 `SimpleWebAuthn` 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
     fn into_response(self) -> RegistrationResponse {
         RegistrationResponse {
             id: self.id,
@@ -391,7 +391,7 @@ impl RegistrationCredential {
 }
 
 impl AuthenticationCredential {
-    /// 将 SimpleWebAuthn 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
+    /// 将 `SimpleWebAuthn` 的嵌套响应转换为纯 Rust 校验库使用的线性结构。
     fn into_response(self) -> AuthenticationResponse {
         AuthenticationResponse {
             id: self.id,

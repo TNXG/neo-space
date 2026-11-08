@@ -75,7 +75,7 @@ impl EmailService {
         let option = collection
             .find_one(doc! { "name": "mailOptions" })
             .await
-            .map_err(|e| AppError::Database(format!("Failed to load email config: {}", e)))?
+            .map_err(|e| AppError::Database(format!("Failed to load email config: {e}")))?
             .ok_or_else(|| AppError::Internal("Email configuration not found".to_string()))?;
 
         let value = option
@@ -124,7 +124,7 @@ impl EmailService {
                 .map_err(|_| AppError::Internal("SMTP host not configured".to_string()))?
                 .to_string(),
             port,
-            user: user.clone(),
+            user,
             password: smtp
                 .get_str("pass")
                 .map_err(|_| AppError::Internal("Email password not configured".to_string()))?
@@ -181,14 +181,14 @@ impl EmailService {
                             .body(html_body),
                     ),
             )
-            .map_err(|e| AppError::Internal(format!("Failed to build email: {}", e)))?;
+            .map_err(|e| AppError::Internal(format!("Failed to build email: {e}")))?;
 
         let creds = Credentials::new(config.user.clone(), config.password.clone());
 
         // Create SMTP transport based on encryption type
         let mailer = match config.encryption {
             SmtpEncryption::Tls => AsyncSmtpTransport::<Tokio1Executor>::relay(&config.host)
-                .map_err(|e| AppError::Internal(format!("Failed to create TLS mailer: {}", e)))?
+                .map_err(|e| AppError::Internal(format!("Failed to create TLS mailer: {e}")))?
                 .port(config.port)
                 .credentials(creds)
                 .timeout(Some(Duration::from_secs(30)))
@@ -196,7 +196,7 @@ impl EmailService {
             SmtpEncryption::StartTls => {
                 AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.host)
                     .map_err(|e| {
-                        AppError::Internal(format!("Failed to create STARTTLS mailer: {}", e))
+                        AppError::Internal(format!("Failed to create STARTTLS mailer: {e}"))
                     })?
                     .port(config.port)
                     .credentials(creds)
@@ -222,7 +222,7 @@ impl EmailService {
 
         mailer.send(email).await.map_err(|e| {
             tracing::error!("Email service error: {:?}", e);
-            AppError::Internal(format!("SMTP send failed: {}", e))
+            AppError::Internal(format!("SMTP send failed: {e}"))
         })?;
 
         tracing::info!("Email successfully sent to: {}", to_email);
@@ -341,14 +341,14 @@ impl EmailService {
         // Constant-time comparison to prevent timing attacks
         let expected_bytes = verification.code.as_bytes();
         let provided_bytes = code.as_bytes();
-        let matches = if expected_bytes.len() != provided_bytes.len() {
-            false
-        } else {
+        let matches = if expected_bytes.len() == provided_bytes.len() {
             expected_bytes
                 .iter()
                 .zip(provided_bytes.iter())
                 .fold(0u8, |acc, (a, b)| acc | (a ^ b))
                 == 0
+        } else {
+            false
         };
 
         if !matches {

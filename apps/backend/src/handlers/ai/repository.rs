@@ -6,7 +6,7 @@ use bson::{doc, oid::ObjectId};
 use crate::{
     app::SharedState,
     error::AppError,
-    models::{AiTranslation, *},
+    models::{AiTranslation, Note, Page, Post, Recently},
 };
 
 use super::types::TimeCapsule;
@@ -27,13 +27,10 @@ pub(super) async fn fetch_content_text(
     ref_type: &str,
     lang: &str,
 ) -> Result<(String, String, String), AppError> {
-    let object_id = match ObjectId::parse_str(ref_id) {
-        Ok(object_id) => object_id,
-        Err(_) => {
-            return Err(AppError::BadRequest(
-                "AI time capsule feature is only available for database content".to_string(),
-            ));
-        }
+    let Ok(object_id) = ObjectId::parse_str(ref_id) else {
+        return Err(AppError::BadRequest(
+            "AI time capsule feature is only available for database content".to_string(),
+        ));
     };
 
     let original_content = match ref_type {
@@ -75,8 +72,7 @@ pub(super) async fn fetch_content_text(
         }
         _ => {
             return Err(AppError::BadRequest(format!(
-                "Invalid ref type: {}",
-                ref_type
+                "Invalid ref type: {ref_type}"
             )));
         }
     };
@@ -108,7 +104,7 @@ pub(super) async fn fetch_content_text(
         && let (Some(title), Some(text)) = (translation.title, translation.text)
     {
         return Ok((
-            format!("{}\n\n{}", title, text),
+            format!("{title}\n\n{text}"),
             translation.lang,
             translation.source_lang,
         ));

@@ -45,7 +45,7 @@ impl NotificationRecipient {
     }
 
     /// 是否同时承担多个角色（用于高优先级合并）。
-    fn has_multiple_roles(&self) -> bool {
+    const fn has_multiple_roles(&self) -> bool {
         self.roles.len() > 1
     }
 }
@@ -68,25 +68,23 @@ pub fn build_recipients(
     // 1. admin 始终是候选收件人（文章作者总会收到新评论提醒）
     push_role(
         &mut roles_by_email,
-        admin_email_norm.clone(),
+        admin_email_norm,
         NotificationRole::Admin,
     );
 
     // 2. 回复场景：把直接父级评论作者加入候选——只看直接父级，不看 root
-    if notification.is_reply {
-        if let Some(parent_email) = notification
+    if notification.is_reply
+        && let Some(parent_email) = notification
             .parent_author_email
             .as_deref()
             .map(normalize_email)
-        {
-            if !parent_email.is_empty() {
-                push_role(
-                    &mut roles_by_email,
-                    parent_email,
-                    NotificationRole::ParentAuthor,
-                );
-            }
-        }
+        && !parent_email.is_empty()
+    {
+        push_role(
+            &mut roles_by_email,
+            parent_email,
+            NotificationRole::ParentAuthor,
+        );
     }
 
     // 3. 自回复去重：评论作者本人绝不收提醒

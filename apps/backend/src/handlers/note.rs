@@ -7,7 +7,9 @@ use crate::services::helpers::{
 use crate::{
     app::SharedState,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{
+        AiSummary, AiTranslation, ApiResponse, Note, PaginatedData, Pagination, ResponseStatus,
+    },
 };
 use axum::{
     extract::{Path, State},
@@ -78,6 +80,8 @@ fn redact_protected_note(note: &mut Note) {
 }
 
 /// List published notes with pagination
+// Keep the endpoint orchestration together to preserve the request flow.
+#[allow(clippy::too_many_lines)]
 pub async fn list_notes(
     State(state): State<SharedState>,
     AppQuery(params): AppQuery<ListNotesParams>,
@@ -93,7 +97,9 @@ pub async fn list_notes(
     let find_options = mongodb::options::FindOptions::builder()
         .sort(doc! { "created": -1 })
         .skip(skip)
-        .limit(size as i64)
+        .limit(i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?)
         .build();
 
     let total = collection
@@ -158,7 +164,7 @@ pub async fn list_notes(
                 if ai_summary.lang == lang {
                     summary_map
                         .entry(ai_summary.ref_id.clone())
-                        .or_insert(ai_summary.summary.clone());
+                        .or_insert(ai_summary.summary);
                     continue;
                 }
 
@@ -216,13 +222,21 @@ pub async fn list_notes(
         redact_protected_note(note);
     }
 
-    let total_page = ((total as f64) / (size as f64)).ceil() as i64;
+    let total_page = total.div_ceil(size);
     let pagination = Pagination {
-        total: total as i64,
-        current_page: page as i64,
-        total_page,
-        size: size as i64,
-        has_next_page: page < total_page as u64,
+        total: i64::try_from(total).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        current_page: i64::try_from(page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        total_page: i64::try_from(total_page).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        size: i64::try_from(size).map_err(|_| {
+            AppError::BadRequest("Pagination value exceeds supported range".to_string())
+        })?,
+        has_next_page: page < total_page,
         has_prev_page: page > 1,
     };
 
@@ -248,7 +262,7 @@ pub async fn get_note(
         .find_one(doc! { "_id": object_id, "isPublished": true })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Note not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Note not found".to_string()))?;
 
     let note_id = note.id.to_hex();
     let lang = params.lang.as_deref().unwrap_or("zh");
@@ -301,7 +315,7 @@ pub async fn get_note_by_nid(
         .find_one(doc! { "nid": nid, "isPublished": true })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Note not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Note not found".to_string()))?;
 
     let note_id = note.id.to_hex();
     let lang = params.lang.as_deref().unwrap_or("zh");
@@ -354,7 +368,7 @@ pub async fn unlock_note_by_nid(
         .find_one(doc! { "nid": nid, "isPublished": true })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Note not found".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Note not found".to_string()))?;
 
     let stored_password = note.password.as_deref().unwrap_or("");
     if stored_password.is_empty() || stored_password != request.password {

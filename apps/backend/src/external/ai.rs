@@ -135,6 +135,8 @@ fn get_selected_provider_id(ai_options: &AiOptionsValue, usage: AiUsage) -> Opti
     }
 }
 
+// Preserve the owned configuration boundary shared with validation.
+#[allow(clippy::needless_pass_by_value)]
 fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, String> {
     if ai_options.providers.is_empty() {
         return Err(
@@ -174,7 +176,11 @@ fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, 
     match provider.provider_type.as_str() {
         "openai" | "openai-compatible" => {}
         "jev" if usage == AiUsage::CommentReview => {}
-        other => return Err(format!("Unsupported AI provider type for {usage:?}: {other}")),
+        other => {
+            return Err(format!(
+                "Unsupported AI provider type for {usage:?}: {other}"
+            ));
+        }
     }
     if usage == AiUsage::CommentReview
         && (provider.api_key.trim().is_empty() || provider.endpoint.trim().is_empty())
@@ -233,7 +239,7 @@ pub struct AiService {
 
 impl AiService {
     /// Create from an existing config and HTTP client
-    pub fn new(config: AiConfig, client: Client) -> Self {
+    pub const fn new(config: AiConfig, client: Client) -> Self {
         Self { config, client }
     }
 
@@ -247,7 +253,7 @@ impl AiService {
         Ok(Self::new(config, client))
     }
 
-    pub fn is_enabled(&self) -> bool {
+    pub const fn is_enabled(&self) -> bool {
         self.config.enabled
     }
 
@@ -257,14 +263,25 @@ impl AiService {
     }
 
     /// Return Jev's probability that this comment is spam.
-    pub async fn spam_probability(&self, text: &str, author: &str, email: &str) -> Result<f32, String> {
+    pub async fn spam_probability(
+        &self,
+        text: &str,
+        author: &str,
+        email: &str,
+    ) -> Result<f32, String> {
         if !self.is_enabled() || !self.is_jev() {
             return Err("An enabled Jev provider is required".into());
         }
         super::jev::spam_probability(
-            &self.client, &self.config.endpoint, &self.config.api_key,
-            &self.config.model, text, author, email,
-        ).await
+            &self.client,
+            &self.config.endpoint,
+            &self.config.api_key,
+            &self.config.model,
+            text,
+            author,
+            email,
+        )
+        .await
     }
 
     /// Send a chat completion request and return the response text.
@@ -301,7 +318,8 @@ impl AiService {
             .send()
             .await
             .map_err(|e| format!("API request failed: {e}"))?;
-        let response = response.error_for_status()
+        let response = response
+            .error_for_status()
             .map_err(|error| format!("AI HTTP failure: {error}"))?;
 
         let result: OpenAIResponse = response

@@ -3,7 +3,7 @@
 use crate::{
     app::SharedState,
     error::{AppError, AppResult},
-    models::*,
+    models::{AiSummary, AiTranslation, Category, Post, PostWithCategory},
     services::helpers::{
         apply_translation_to_post, get_ai_summary, get_ai_translation,
         get_category_name_translation_map, localize_category_names,
@@ -52,6 +52,8 @@ pub async fn enrich_single_post(
 }
 
 /// Enrich multiple posts with category and AI summary (batch queries to avoid N+1)
+// Keep the endpoint orchestration together to preserve the request flow.
+#[allow(clippy::too_many_lines)]
 pub async fn enrich_posts_with_data(
     state: &SharedState,
     posts: Vec<Post>,
@@ -120,7 +122,7 @@ pub async fn enrich_posts_with_data(
                     if summary.lang == lang {
                         ai_summary_map
                             .entry(summary.ref_id.clone())
-                            .or_insert(summary.summary.clone());
+                            .or_insert(summary.summary);
                         continue;
                     }
 

@@ -2,7 +2,7 @@ use crate::{
     app::SharedState,
     auth::extractors::OwnerOnly,
     error::{AppError, AppJson, AppQuery, AppResult},
-    models::*,
+    models::{ApiResponse, Draft, PaginatedData, Pagination},
 };
 use axum::{
     extract::{Path, State},
@@ -85,6 +85,8 @@ fn draft_snapshot(draft: &Draft) -> bson::Document {
     snapshot
 }
 
+// Collection counts fit MongoDB signed counts; page sizes and allocated lengths are bounded.
+#[allow(clippy::cast_possible_wrap)]
 pub async fn list_drafts(
     State(state): State<SharedState>,
     _owner: OwnerOnly,
@@ -97,10 +99,10 @@ pub async fn list_drafts(
     if let Some(rt) = &q.ref_type {
         filter.insert("refType", rt);
     }
-    if let Some(true) = q.has_ref {
+    if q.has_ref == Some(true) {
         filter.insert("refId", doc! { "$ne": null });
     }
-    if let Some(false) = q.has_ref {
+    if q.has_ref == Some(false) {
         filter.insert("refId", doc! { "$eq": null });
     }
 
@@ -127,7 +129,12 @@ pub async fn list_drafts(
     {
         items.push(d);
     }
-    let pagination = Pagination::new(total as i64, page as i64, size as i64);
+    let pagination = Pagination::new(
+        total as i64,
+        i64::try_from(page)
+            .map_err(|_| AppError::BadRequest("Page exceeds supported range".into()))?,
+        size as i64,
+    );
     Ok(Json(ApiResponse::success(PaginatedData {
         items,
         pagination,
@@ -146,7 +153,7 @@ pub async fn get_draft(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Draft not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft not found".into()))?;
     Ok(Json(ApiResponse::success(d)))
 }
 
@@ -244,7 +251,7 @@ pub async fn create_draft(
         .find_one(doc! { "_id": id })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::Internal("Draft not found after insert".into()))?;
+        .ok_or_else(|| AppError::Internal("Draft not found after insert".into()))?;
     Ok(Json(ApiResponse::success(d)))
 }
 
@@ -260,7 +267,7 @@ pub async fn update_draft(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Draft not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft not found".into()))?;
     let now = bson::DateTime::now();
     let mut set_doc = doc! {
         "updated": now,
@@ -308,7 +315,7 @@ pub async fn update_draft(
         .find_one(doc! { "_id": oid })
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or(AppError::NotFound("Draft not found".into()))?;
+        .ok_or_else(|| AppError::NotFound("Draft not found".into()))?;
     Ok(Json(ApiResponse::success(d)))
 }
 

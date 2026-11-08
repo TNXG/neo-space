@@ -56,7 +56,7 @@ where
             }
         };
 
-        Ok(AuthUser { user_id, is_owner })
+        Ok(Self { user_id, is_owner })
     }
 }
 
@@ -85,7 +85,7 @@ where
                     match std::env::var("JWT_SECRET") {
                         Ok(s) => s,
                         Err(_) => {
-                            return Ok(OptionalAuth {
+                            return Ok(Self {
                                 user_id: None,
                                 is_owner: false,
                             });
@@ -111,15 +111,15 @@ where
                             false
                         };
 
-                        Ok(OptionalAuth { user_id, is_owner })
+                        Ok(Self { user_id, is_owner })
                     }
-                    Err(_) => Ok(OptionalAuth {
+                    Err(_) => Ok(Self {
                         user_id: None,
                         is_owner: false,
                     }),
                 }
             }
-            None => Ok(OptionalAuth {
+            None => Ok(Self {
                 user_id: None,
                 is_owner: false,
             }),
@@ -135,7 +135,7 @@ fn extract_bearer_token(parts: &Parts) -> Option<String> {
 
     auth_header
         .strip_prefix("Bearer ")
-        .map(|token| token.to_string())
+        .map(std::string::ToString::to_string)
 }
 
 fn extract_cookie_token(parts: &Parts) -> Option<String> {
@@ -150,7 +150,7 @@ fn extract_cookie_token(parts: &Parts) -> Option<String> {
 /// Owner-only extractor - requires authentication and owner role
 #[derive(Debug, Clone)]
 pub struct OwnerOnly {
-    pub _user_id: ObjectId,
+    pub user_id: ObjectId,
 }
 
 impl<S> FromRequestParts<S> for OwnerOnly
@@ -159,15 +159,15 @@ where
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let auth_user = AuthUser::from_request_parts(parts, _state).await?;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let auth_user = AuthUser::from_request_parts(parts, state).await?;
 
         if !auth_user.is_owner {
             return Err(AppError::Forbidden);
         }
 
-        Ok(OwnerOnly {
-            _user_id: auth_user.user_id,
+        Ok(Self {
+            user_id: auth_user.user_id,
         })
     }
 }

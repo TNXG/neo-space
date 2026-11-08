@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 
 // ==================== Shared Types ====================
 
-/// NetEase Cloud Music now playing status
+/// `NetEase` Cloud Music now playing status
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct NeteaseNowPlaying {
     pub active: bool,
@@ -13,7 +13,7 @@ pub struct NeteaseNowPlaying {
     pub song: Option<NeteaseSong>,
 }
 
-/// NetEase Cloud Music song information
+/// `NetEase` Cloud Music song information
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct NeteaseSong {
     pub id: String,

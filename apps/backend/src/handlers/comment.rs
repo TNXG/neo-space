@@ -105,13 +105,13 @@ pub async fn list_comments(
         .find(filter)
         .with_options(find_options)
         .await
-        .map_err(|e| AppError::Database(format!("Failed to find comments: {}", e)))?;
+        .map_err(|e| AppError::Database(format!("Failed to find comments: {e}")))?;
 
     let mut comments = Vec::new();
     while let Some(comment) = cursor
         .try_next()
         .await
-        .map_err(|e| AppError::Database(format!("Failed to deserialize comment: {}", e)))?
+        .map_err(|e| AppError::Database(format!("Failed to deserialize comment: {e}")))?
     {
         comments.push(comment);
     }
@@ -122,7 +122,7 @@ pub async fn list_comments(
         comment.build_reader_mappings(emails).await;
 
     // Build comment tree
-    let comment_trees = comment.build_comment_tree(
+    let comment_trees = CommentService::build_comment_tree(
         &comments,
         &email_to_avatar,
         &email_to_is_owner,
@@ -130,7 +130,8 @@ pub async fn list_comments(
     );
 
     // Count all comments (not just root trees) to match Rocket behavior
-    let count = comments.len() as i64;
+    let count = i64::try_from(comments.len())
+        .map_err(|_| AppError::Internal("Comment count exceeds supported range".to_string()))?;
 
     Ok(Json(ApiResponse {
         code: 200,
@@ -142,4 +143,3 @@ pub async fn list_comments(
         }),
     }))
 }
-
