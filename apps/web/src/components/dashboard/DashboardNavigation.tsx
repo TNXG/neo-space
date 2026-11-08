@@ -98,13 +98,13 @@ export function DashboardNavigation({ collapsed = false, onNavigate, layoutScope
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="group mt-4">
+        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="mt-4">
           <CollapsibleTrigger asChild>
-            <button type="button" className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[0.6875rem] font-medium tracking-[0.08em] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-lg:h-10">
+            <button type="button" className="group/settings flex h-7 w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[0.6875rem] font-medium tracking-[0.08em] text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:h-10">
               <Icon icon="mingcute:settings-3-line" className="size-4 shrink-0" aria-hidden="true" />
               <span className="flex-1 text-left">设置</span>
               {!settingsOpen && anyUnsaved && <span aria-label="有未保存修改" className="size-1.5 rounded-full bg-primary" />}
-              <Icon icon="mingcute:right-line" className="size-3.5 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-out) group-data-[state=open]:rotate-90" aria-hidden="true" />
+              <Icon icon="mingcute:right-line" className="size-3.5 transition-transform duration-(--motion-duration-fast) ease-(--motion-ease-out) group-hover/settings:translate-x-1 group-data-[state=open]/settings:rotate-90" aria-hidden="true" />
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="panel-collapsible">
