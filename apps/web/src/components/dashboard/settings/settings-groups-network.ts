@@ -10,13 +10,13 @@ export const networkGroup: SettingGroup = {
   sections: [{
     title: "代理服务器",
     icon: "mingcute:earth-line",
-    help: "支持 HTTP、HTTPS 与 SOCKS5 协议；保存后重启后端服务即可生效。",
+    help: "支持 HTTP、HTTPS 与 SOCKS5 协议；支持代理认证。保存后重启后端服务即可生效。",
     fields: [{
       path: "proxyUrl",
       label: "代理地址",
-      control: "password",
+      control: "text",
       placeholder: "http://127.0.0.1:7890 或 socks5://127.0.0.1:1080",
-      hint: "留空则直接连接网络，不使用代理。",
+      hint: "只填写协议、主机和端口；用户名与密码在下方单独填写。留空则直接连接网络。",
     }],
   }],
 };

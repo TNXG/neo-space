@@ -9,6 +9,10 @@ pub fn routes() -> Router<SharedState> {
         .route("/", routing::get(options::get_all_options))
         .route("/mailOptions/test", routing::post(options::send_test_email))
         .route(
+            "/networkOptions/test",
+            routing::post(crate::handlers::network::test_proxy),
+        )
+        .route(
             "/url",
             routing::get(options::get_url_options)
                 .patch(options::upsert_url_option)

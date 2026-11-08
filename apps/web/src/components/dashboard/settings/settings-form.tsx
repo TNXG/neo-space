@@ -7,6 +7,7 @@ import { Icon } from "@/lib/inline-icon";
 import { cn } from "@/lib/utils";
 import { AiSettings } from "./ai-settings";
 import { CommentReviewLink } from "./comment-review-link";
+import { NetworkSettings } from "./network-settings";
 import { OAuthSettings } from "./oauth-settings";
 import { SettingsField } from "./settings-field";
 import { focusSettingsField, SettingsIssueList, SettingsNotice, SettingsSaveBar } from "./settings-savebar";
@@ -110,6 +111,8 @@ export function SettingsForm({ group, embedded = false }: { group: SettingGroup;
               <AiSettings document={state.document} disabled={state.busy} issues={issues} onChange={change} />
             ) : group.key === "oauth" ? (
               <OAuthSettings group={group} document={state.document} disabled={state.busy} issues={issues} onChange={change} />
+            ) : group.key === "networkOptions" ? (
+              <NetworkSettings document={state.document} disabled={state.busy} issues={issues} onChange={change} />
             ) : (
               group.sections.map((section, index) => (
                 <SettingsSection key={section.title} title={section.title} icon={section.icon} description={section.help} index={index}>

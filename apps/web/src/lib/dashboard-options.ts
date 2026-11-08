@@ -1,4 +1,4 @@
-import type { DashboardOptions, ManagedOptionKey, OptionDocument } from "@/types/api";
+import type { DashboardOptions, DashboardProxyTestResult, ManagedOptionKey, OptionDocument } from "@/types/api";
 import { dashboardRequest } from "./dashboard-api";
 
 export const DASHBOARD_OPTIONS_KEY = "dashboard-options";
@@ -13,6 +13,15 @@ export async function getDashboardOptions(): Promise<DashboardOptions> {
 /** 独立回读一个配置分组，确认环境变量覆盖后的实际值。 */
 export async function getDashboardOption(key: ManagedOptionKey): Promise<OptionDocument> {
   return dashboardRequest<OptionDocument>(`/options/${encodeURIComponent(key)}`);
+}
+
+/** 用当前草稿探测代理，不必先保存；凭据只经过已认证的后台请求。 */
+export function testDashboardProxy(proxyUrl: string): Promise<DashboardProxyTestResult> {
+  return dashboardRequest<DashboardProxyTestResult>("/options/networkOptions/test", {
+    method: "POST",
+    body: JSON.stringify({ proxyUrl }),
+    timeout: 20_000,
+  });
 }
 
 /** 完整替换当前分组；保留未知字段，仅剔除已移除的 AI 独立接口配置。 */

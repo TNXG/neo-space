@@ -1,5 +1,6 @@
 import type { DashboardOptions, OptionDocument, OptionValue } from "@/types/api";
 import type { SettingField, SettingGroup } from "./settings-schema";
+import { parseProxyUrl } from "./network-model";
 import { isDocument, readValue, type SettingsIssue } from "./settings-model";
 import { resolveCommentReview } from "./comment-review-model";
 
@@ -8,11 +9,35 @@ export function validateSettings(group: SettingGroup, document: OptionDocument, 
   const issues: SettingsIssue[] = [];
   for (const section of group.sections) validateFields(section.fields, document, document, issues);
   if (group.key === "ai") validateAiAssignments(document, issues);
+  if (group.key === "networkOptions") validateNetwork(document, issues);
   if (group.key === "commentOptions" && document.antiSpam === true && document.aiReview === true) {
     const review = resolveCommentReview(savedOptions?.ai);
     if (!review.ready) issues.push({ path: "aiReview", message: review.reason });
   }
   return issues;
+}
+
+/** 代理只接受 origin URL；路径、查询和片段会被后端拒绝，提前指出具体原因。 */
+function validateNetwork(document: OptionDocument, issues: SettingsIssue[]) {
+  const proxyUrl = typeof document.proxyUrl === "string" ? document.proxyUrl : "";
+  if (!proxyUrl) return;
+  const url = parseProxyUrl(proxyUrl);
+  if (!url) {
+    issues.push({ path: "proxyUrl", message: "代理地址需要是完整 URL，例如 http://127.0.0.1:7890。" });
+    return;
+  }
+  if (!["http:", "https:", "socks5:", "socks5h:"].includes(url.protocol)) {
+    issues.push({ path: "proxyUrl", message: "代理仅支持 HTTP、HTTPS 或 SOCKS5。" });
+    return;
+  }
+  const path = url.pathname === "/" ? "" : url.pathname;
+  if (path || url.search || url.hash) {
+    issues.push({ path: "proxyUrl", message: "代理地址只需协议、主机和端口，不能包含路径、查询或片段。" });
+    return;
+  }
+  if ((url.protocol === "socks5:" || url.protocol === "socks5h:") && Boolean(url.username) !== Boolean(url.password)) {
+    issues.push({ path: "proxyUrl", message: "SOCKS5 代理需要同时填写用户名和密码。" });
+  }
 }
 
 /** 集合条目会拼接完整路径，让界面能展开并聚焦到具体输入。 */

@@ -621,6 +621,13 @@ export interface OptionDocument { [key: string]: OptionValue; }
 export type ManagedOptionKey = "seo" | "url" | "commentOptions" | "friendLinkOptions" | "mailOptions" | "oauth" | "ai" | "searchOptions" | "bangumiOptions" | "securityOptions" | "networkOptions";
 export type DashboardOptions = Partial<Record<ManagedOptionKey, OptionDocument>>;
 
+/** 后端使用真实出站传输探测代理后返回的结果；不包含代理地址或凭据。 */
+export interface DashboardProxyTestResult {
+  status: number;
+  latencyMs: number;
+  proxied: boolean;
+}
+
 /** 后台编辑草稿；refId 为空表示尚未创建的新内容。 */
 export interface DashboardDraft {
   _id: string;

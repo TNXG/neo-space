@@ -28,7 +28,9 @@ export function SecretInput({ id, value, disabled, invalid, describedBy, placeho
         aria-invalid={invalid}
         aria-describedby={describedBy}
         placeholder={placeholder ?? (value ? undefined : "未设置")}
-        autoComplete="new-password"
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
         spellCheck={false}
         className="font-mono"
         onChange={event => onChange(event.target.value)}
