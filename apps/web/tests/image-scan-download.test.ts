@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { downloadScanImage, ImageScanError } from "./image-scan-download";
+import { downloadScanImage, ImageScanError } from "../src/lib/image-scan-download";
 
 /** Supply only the browser URL base at the download boundary, restoring the original global afterward. */
 const withDocument = async (work: () => Promise<void>): Promise<void> => {

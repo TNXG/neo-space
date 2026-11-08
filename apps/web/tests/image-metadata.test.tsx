@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { hashImageUrl } from "@/utils/images/common";
-import { ImageMetadataProvider } from "./ImageMetadataProvider";
-import { MetadataImage } from "./MetadataImage";
+import { ImageMetadataProvider } from "../src/components/common/content/ImageMetadataProvider";
+import { MetadataImage } from "../src/components/common/content/MetadataImage";
 
 /** Removing context propagation or deferring metadata to an effect loses geometry from the initial HTML. */
 test("saved image dimensions and BlurHash are emitted in server HTML", () => {

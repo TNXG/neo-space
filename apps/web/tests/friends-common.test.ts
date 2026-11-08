@@ -1,8 +1,8 @@
 import type { Link } from "@/types/api";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { FeaturedLink } from "./common";
-import { groupFriends, hasLatestPost, recencyWeight, shuffle, weightedByRecency } from "./common";
+import type { FeaturedLink } from "../src/utils/friends/common";
+import { groupFriends, hasLatestPost, recencyWeight, shuffle, weightedByRecency } from "../src/utils/friends/common";
 
 const base: Link = {
   _id: "a",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { collectContentImageSources } from "./image-scan-sources";
+import { collectContentImageSources } from "../src/lib/image-scan-sources";
 
 test("collects references, inline images, HTML and gallery images once, ignoring code", () => {
   const text = [

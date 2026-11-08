@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { changedFields, emptyPage, pageToDraft, postToDraft } from "./content-model";
+import { changedFields, emptyPage, pageToDraft, postToDraft } from "../src/components/dashboard/content/content-model";
 
 /** Reordered JSON object keys must not create an unsaved change. */
 test("equivalent metadata does not produce a save patch", () => {

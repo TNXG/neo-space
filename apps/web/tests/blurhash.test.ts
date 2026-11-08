@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decodeBlurhash } from "./blurhash";
-import { getImageBounds } from "./bounds";
+import { decodeBlurhash } from "../src/utils/images/blurhash";
+import { getImageBounds } from "../src/utils/images/bounds";
 
 /** Missing alpha or incorrect DC conversion breaks even a flat black placeholder. */
 test("decodes a constant black BlurHash into opaque RGBA pixels", () => {

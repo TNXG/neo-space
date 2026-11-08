@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { decodeBlurhash } from "@/utils/images/blurhash";
-import { blurhashFromCoefficients, computeCpuCoefficients, linearizePixels } from "./image-scan-blurhash";
-import { createCoefficientProcessor } from "./image-scan-gpu";
+import { blurhashFromCoefficients, computeCpuCoefficients, linearizePixels } from "../src/lib/image-scan-blurhash";
+import { createCoefficientProcessor } from "../src/lib/image-scan-gpu";
 
 test("encoding and decoding preserve primary color channels", () => {
   for (const color of [[255, 0, 0], [0, 255, 0], [0, 0, 255]]) {

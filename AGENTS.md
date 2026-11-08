@@ -367,7 +367,7 @@
 - **Linting**：使用 `next lint` (ESLint) 并紧密集成 Prettier，确保代码质量和风格一致性。忽略一切 tailwindcss 相关的类名顺序警告。
 - **类型检查**：强制使用 TypeScript 编译器进行类型检查，确保无类型错误。`pnpm typecheck` 一键覆盖全 monorepo。
 - **测试框架**：优先选择 Jest 结合 React Testing Library 进行单元和集成测试，或 Cypress 进行端到端测试。
-- **文件位置**：测试文件应靠近相关组件或模块，遵循 `*.test.tsx` 或 `*.spec.tsx` 命名约定。
+- **文件位置**：测试代码与源码分离，统一放在 `apps/web/tests/`，遵循 `*.test.tsx` 或 `*.spec.tsx` 命名约定；禁止在 `src/` 下新增测试文件。
 - **覆盖目标**：优先覆盖关键业务行为、权限、安全边界与实际回归，不以覆盖率数字为目标堆砌测试。
 
 ### 15.1 避免过度测试

@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { decodeBlurhash } from "@/utils/images/blurhash";
 import { hashImageUrl } from "@/utils/images/common";
 
-import { scanContentImages } from "./image-scan";
+import { scanContentImages } from "../src/lib/image-scan";
 
 /** Replace browser decoding/canvas boundaries while leaving source parsing, download, transforms and orchestration real. */
 const withBrowser = async (work: () => Promise<void>, width = 320, height = 180): Promise<void> => {

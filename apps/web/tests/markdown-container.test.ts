@@ -4,7 +4,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import { markdownBaseRehypePlugins, markdownRemarkPlugins } from "../markdown-pipeline";
+import { markdownBaseRehypePlugins, markdownRemarkPlugins } from "../src/components/common/markdown/markdown-pipeline";
 
 /** Exercise the published and editor-preview parser chain without fetching external images. */
 const render = async (content: string) => {
