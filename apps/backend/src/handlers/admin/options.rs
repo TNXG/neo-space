@@ -75,6 +75,22 @@ async fn write_option(
     value: Value,
 ) -> AppResult<Json<ApiResponse<Value>>> {
     let bson_val = bson::to_bson(&value).map_err(|e| AppError::Internal(format!("encode: {e}")))?;
+    if key == "networkOptions" {
+        let options: crate::external::network::NetworkOptions = serde_json::from_value(value.clone())
+            .map_err(|_| AppError::BadRequest("networkOptions requires a proxyUrl string".into()))?;
+        options.validate_deployment(std::env::var("REVALIDATION_SECRET").ok().as_deref())
+            .map_err(AppError::BadRequest)?;
+        crate::external::network::build_client(&options, &state.network_bypass_origins)
+            .map_err(AppError::BadRequest)?;
+    }
+    if key == "commentOptions" {
+        crate::services::spam::validate_comment_review_options(&state.db, &bson_val)
+            .await.map_err(AppError::BadRequest)?;
+    }
+    if key == "ai" {
+        crate::external::ai::validate_ai_options(&state.db, &bson_val)
+            .await.map_err(AppError::BadRequest)?;
+    }
     let collection = state.db.collection::<bson::Document>("options");
     let opts = mongodb::options::UpdateOptions::builder()
         .upsert(true)
@@ -268,43 +284,5 @@ pub async fn send_test_email(
 }
 
 #[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::merge_option_value;
-
-    #[test]
-    fn merges_nested_option_objects() {
-        let mut current = json!({ "smtp": { "host": "old", "port": 587 }, "enable": true });
-        merge_option_value(&mut current, json!({ "smtp": { "host": "new" } }));
-
-        assert_eq!(
-            current,
-            json!({ "smtp": { "host": "new", "port": 587 }, "enable": true })
-        );
-    }
-
-    #[test]
-    fn merges_oauth_providers_by_type() {
-        let mut current = json!({
-            "providers": [
-                { "type": "github", "enabled": true },
-                { "type": "google", "enabled": false }
-            ]
-        });
-        merge_option_value(
-            &mut current,
-            json!({ "providers": [{ "type": "google", "enabled": true }] }),
-        );
-
-        assert_eq!(
-            current,
-            json!({
-                "providers": [
-                    { "type": "github", "enabled": true },
-                    { "type": "google", "enabled": true }
-                ]
-            })
-        );
-    }
-}
+#[path = "../../../tests/unit/admin_options.rs"]
+mod tests;
