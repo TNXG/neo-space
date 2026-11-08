@@ -163,8 +163,10 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
   const isShortTOC = items.length <= 8;
 
   const handleClick = (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    scrollToCenter(id);
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+      return;
+    if (scrollToCenter(id))
+      e.preventDefault();
   };
 
   return (
@@ -205,7 +207,7 @@ export function ArticleTOC({ className = "" }: ArticleTOCProps) {
                 <li key={item.id}>
                   <motion.a
                     id={`toc-link-${item.id}`}
-                    href={`#${item.id}`}
+                    href={`#${encodeURIComponent(item.id)}`}
                     onClick={e => handleClick(e, item.id)}
                     className={`
                       flex items-center py-1 px-2.5 rounded-md relative cursor-pointer origin-left transition-colors duration-200

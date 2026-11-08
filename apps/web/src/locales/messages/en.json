@@ -60,6 +60,8 @@
   "common.markdown.codeBlock": "[Code block]",
   "common.markdown.codeWithLanguage": "[{lang} code]",
   "common.markdown.tablePlaceholder": "[Table]",
+  "common.mermaid.renderError": "Unable to render this diagram. Check the Mermaid syntax in this language version.",
+  "common.mermaid.source": "View diagram source",
   "search.result.post": "Post",
   "search.result.note": "Note",
   "search.footer.navigate": "Navigate",

@@ -32,19 +32,17 @@ function getPlatformIcon(href: string): string | null {
   return null;
 }
 
-interface AnimatedLinkProps {
+interface AnimatedLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
-  children?: React.ReactNode;
-  title?: string;
   icon?: React.ReactNode;
-  className?: string;
-  target?: string;
-  rel?: string;
   showTooltip?: boolean;
+  name?: string;
   tooltipContentClassName?: string;
 }
 
 export function AnimatedLink({
+  id,
+  name,
   href,
   children,
   title,
@@ -54,16 +52,37 @@ export function AnimatedLink({
   rel = "noreferrer",
   showTooltip = true,
   tooltipContentClassName = "",
+  onClick,
+  ...anchorProps
 }: AnimatedLinkProps) {
   const iconName = useMemo(() => getPlatformIcon(href), [href]);
 
+  /** Handle only ordinary same-document fragment clicks; preserve new-tab and download semantics. */
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+    const link = event.currentTarget;
+    if (link.hasAttribute("download") || (link.target && link.target !== "_self"))
+      return;
+    const url = new URL(link.href);
+    if (!url.hash || url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search)
+      return;
+    if (useTOCStore.getState().scrollToCenter(decodeAnchor(url.hash)))
+      event.preventDefault();
+  };
+
   const link = (
     <a
+      {...anchorProps}
+      id={id}
+      {...(name ? { name } : {})}
       className={`${styles.linkWrapper} ${className}`}
       href={href}
       target={target}
       title={title}
       rel={rel}
+      onClick={handleClick}
     >
       {(customIcon || iconName) && (
         <span className={styles.icon}>

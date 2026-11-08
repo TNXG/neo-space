@@ -60,6 +60,8 @@
   "common.markdown.codeBlock": "[コードブロック]",
   "common.markdown.codeWithLanguage": "[{lang} コード]",
   "common.markdown.tablePlaceholder": "[表]",
+  "common.mermaid.renderError": "図を描画できません。この言語版の Mermaid 構文を確認してください。",
+  "common.mermaid.source": "図のソースを表示",
   "search.result.post": "記事",
   "search.result.note": "ノート",
   "search.footer.navigate": "移動",

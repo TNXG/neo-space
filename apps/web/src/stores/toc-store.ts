@@ -10,7 +10,7 @@ interface TOCState {
   setActiveId: (id: string) => void;
   setItems: (items: TOCItem[]) => void;
   setAutoScrollEnabled: (enabled: boolean) => void;
-  scrollToCenter: (id: string) => void;
+  scrollToCenter: (id: string) => boolean;
 }
 
 export const useTOCStore = create<TOCState>(set => ({
@@ -22,13 +22,9 @@ export const useTOCStore = create<TOCState>(set => ({
   setItems: (items: TOCItem[]) => set({ items, isInitialized: true }),
   setAutoScrollEnabled: (enabled: boolean) => set({ isAutoScrollEnabled: enabled }),
   scrollToCenter: (id: string) => {
+    if (!scrollToAnchor(id))
+      return false;
     set({ activeId: id });
-    const element = document.getElementById(id);
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const offsetTop = rect.top + window.scrollY;
-      const targetY = offsetTop - (window.innerHeight / 2) + (rect.height / 2);
-      window.scrollTo({ top: targetY, behavior: "smooth" });
-    }
+    return true;
   },
 }));

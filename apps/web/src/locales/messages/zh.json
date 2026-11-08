@@ -60,6 +60,8 @@
   "common.markdown.codeBlock": "[代码块]",
   "common.markdown.codeWithLanguage": "[{lang} 代码]",
   "common.markdown.tablePlaceholder": "[表格]",
+  "common.mermaid.renderError": "图表无法渲染，请检查此语言版本的 Mermaid 语法。",
+  "common.mermaid.source": "查看图表源码",
   "search.result.post": "文章",
   "search.result.note": "笔记",
   "search.footer.navigate": "导航",

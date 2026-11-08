@@ -7,7 +7,7 @@ import { useTOCStore } from "@/stores/toc-store";
 
 interface EnhancedHeadingProps {
   id?: string;
-  level: 1 | 2 | 3 | 4;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
   children: ReactNode;
   className: string;
 }
@@ -17,6 +17,8 @@ const levelLabels = {
   2: "H2",
   3: "H3",
   4: "H4",
+  5: "H5",
+  6: "H6",
 } as const;
 
 /**
@@ -37,8 +39,10 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
   }
 
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    scrollToCenter(id);
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+      return;
+    if (scrollToCenter(id))
+      e.preventDefault();
   };
 
   return (
@@ -76,9 +80,9 @@ export function EnhancedHeading({ id, level, children, className }: EnhancedHead
 
           {/* 锚点链接 */}
           <a
-            href={`#${id}`}
+            href={`#${encodeURIComponent(id)}`}
             onClick={handleClick}
-            className={`text-base font-sans font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 shrink-0 ${
+            className={`cursor-pointer text-base font-sans font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform,filter] duration-200 shrink-0 ${
               isActive
                 ? "text-accent-600 hover:text-accent-700"
                 : "text-muted-foreground/30 hover:text-muted-foreground/60"

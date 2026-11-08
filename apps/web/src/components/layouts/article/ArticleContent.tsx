@@ -31,6 +31,49 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
     setItems(items);
   }, [items, setItems]);
 
+  // HTML 片段可在流式正文或加密日记解锁后才出现；目标出现时再定位，不依赖固定延时。
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container)
+      return;
+    let observer: MutationObserver | undefined;
+    let frame = 0;
+
+    /** Resolve the current fragment within this article, including late-mounted content. */
+    const restoreAnchor = () => {
+      observer?.disconnect();
+      cancelAnimationFrame(frame);
+      const id = decodeAnchor(window.location.hash);
+      if (!id)
+        return;
+      const resolve = () => {
+        if (!scrollToAnchor(id, false, container))
+          return false;
+        setActiveId(id);
+        return true;
+      };
+      frame = requestAnimationFrame(() => {
+        if (resolve())
+          return;
+        observer = new MutationObserver(() => {
+          if (resolve())
+            observer?.disconnect();
+        });
+        observer.observe(container, { childList: true, subtree: true });
+      });
+    };
+
+    restoreAnchor();
+    window.addEventListener("hashchange", restoreAnchor);
+    window.addEventListener("popstate", restoreAnchor);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("hashchange", restoreAnchor);
+      window.removeEventListener("popstate", restoreAnchor);
+    };
+  }, [items, setActiveId]);
+
   // 防抖的 setActiveId，避免快速滚动时抖动
   const debouncedSetActiveId = useCallback((id: string) => {
     if (id === lastActiveIdRef.current)
@@ -64,7 +107,7 @@ export function ArticleContent({ children, items }: ArticleContentProps) {
         return;
 
       // 获取所有标题元素
-      const headings = [...container.querySelectorAll("h1[id], h2[id], h3[id], h4[id]")]
+      const headings = [...container.querySelectorAll("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]")]
         .filter(h => h.id);
 
       if (headings.length === 0)

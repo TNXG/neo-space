@@ -65,11 +65,25 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
       {children}
     </EnhancedHeading>
   ),
+  h5: ({ children, id }) => (
+    <EnhancedHeading id={id} level={5} className={PROSE_CLASSES.h4}>
+      {children}
+    </EnhancedHeading>
+  ),
+  h6: ({ children, id }) => (
+    <EnhancedHeading id={id} level={6} className={PROSE_CLASSES.h4}>
+      {children}
+    </EnhancedHeading>
+  ),
 
-  a: ({ href, children, ...props }) => {
+  a: ({ href, children, node, ...props }) => {
     const footnoteRef = (props as any)["data-footnote-ref"];
     const footnoteBackref = (props as any)["data-footnote-backref"];
     const isInternal = href?.startsWith("/") || href?.startsWith("#");
+
+    // 无 href 的 HTML 锚点不是链接；保留 id/name，不能变成指向 # 的可点击文本。
+    if (!href)
+      return <a {...props}>{children}</a>;
 
     // 脚注回跳按钮：使用 iconify 图标替代 ↩
     if (footnoteBackref) {
@@ -102,18 +116,21 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     // 普通链接（含脚注正文中的链接）：统一使用 AnimatedLink 保持渲染一致性
     return (
       <AnimatedLink
+        {...props}
         href={href || "#"}
+        id={props.id}
+        name={typeof node?.properties.name === "string" ? node.properties.name : undefined}
         className={PROSE_CLASSES.link}
-        target={isInternal ? "_self" : "_blank"}
-        rel={isInternal ? undefined : "noopener noreferrer"}
+        target={props.target ?? (isInternal ? "_self" : "_blank")}
+        rel={props.rel ?? (isInternal ? undefined : "noopener noreferrer")}
       >
         {children}
       </AnimatedLink>
     );
   },
 
-  ul: ({ children }) => (
-    <ul className={PROSE_CLASSES.ul}>
+  ul: ({ children, id }) => (
+    <ul id={id} className={PROSE_CLASSES.ul}>
       {children}
     </ul>
   ),
@@ -146,23 +163,23 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     );
   },
 
-  blockquote: ({ children }) => (
-    <blockquote className={PROSE_CLASSES.blockquote}>
+  blockquote: ({ children, id }) => (
+    <blockquote id={id} className={PROSE_CLASSES.blockquote}>
       {children}
     </blockquote>
   ),
 
-  code: ({ className, children }) => {
+  code: ({ className, children, id }) => {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className={PROSE_CLASSES.inlineCode}>
+        <code id={id} className={PROSE_CLASSES.inlineCode}>
           {children}
         </code>
       );
     }
     return (
-      <code className={className} suppressHydrationWarning>
+      <code id={id} className={className} suppressHydrationWarning>
         {children}
       </code>
     );
@@ -223,32 +240,32 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     );
   },
 
-  table: ({ children }) => (
+  table: ({ children, id }) => (
     <div className={PROSE_CLASSES.tableWrapper}>
-      <table className={PROSE_CLASSES.table}>{children}</table>
+      <table id={id} className={PROSE_CLASSES.table}>{children}</table>
     </div>
   ),
 
-  thead: ({ children }) => (
-    <thead className="bg-primary-50 font-semibold text-primary-900">{children}</thead>
+  thead: ({ children, id }) => (
+    <thead id={id} className="bg-primary-50 font-semibold text-primary-900">{children}</thead>
   ),
 
-  tbody: ({ children }) => (
-    <tbody className="divide-y divide-primary-200 bg-transparent">{children}</tbody>
+  tbody: ({ children, id }) => (
+    <tbody id={id} className="divide-y divide-primary-200 bg-transparent">{children}</tbody>
   ),
 
-  tr: ({ children }) => (
-    <tr className="transition-colors hover:bg-primary-50/50">
+  tr: ({ children, id }) => (
+    <tr id={id} className="transition-colors hover:bg-primary-50/50">
       {children}
     </tr>
   ),
 
-  th: ({ children }) => (
-    <th className="px-3 md:px-4 py-2 md:py-3 text-left font-medium tracking-wider whitespace-nowrap">{children}</th>
+  th: ({ children, id }) => (
+    <th id={id} className="px-3 md:px-4 py-2 md:py-3 text-left font-medium tracking-wider whitespace-nowrap">{children}</th>
   ),
 
-  td: ({ children }) => (
-    <td className={PROSE_CLASSES.td}>
+  td: ({ children, id }) => (
+    <td id={id} className={PROSE_CLASSES.td}>
       {children}
     </td>
   ),
@@ -317,7 +334,7 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     return <ClientOnlyScript scriptContent={scriptContent} {...htmlAttrs} />;
   },
 
-  p: ({ children }) => {
+  p: ({ children, id }) => {
     const standaloneImage = getStandaloneImageProps(children);
 
     if (standaloneImage) {
@@ -331,7 +348,7 @@ export const createMarkdownComponents = (mediaCards: Map<string, MediaCardData> 
     }
 
     return (
-      <p className={PROSE_CLASSES.p}>
+      <p id={id} className={PROSE_CLASSES.p}>
         {children}
       </p>
     );

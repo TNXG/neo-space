@@ -1,78 +1,97 @@
 "use client";
 
+import type { Mermaid } from "mermaid";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { ZoomableContainer } from "./ZoomableContainer";
 
 interface MermaidDiagramProps {
-  /** Mermaid 图表代码 */
   chart: string;
-  /** 自定义 className */
   className?: string;
 }
 
-/**
- * Mermaid 图表渲染组件（客户端）
- * 支持缩放和拖拽功能
- */
+let mermaidReady: Promise<Mermaid> | undefined;
+
+/** Initialize the shared Mermaid runtime once, without resetting configuration during another render. */
+const loadMermaid = () => {
+  mermaidReady ??= import("mermaid").then(({ default: mermaid }) => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      securityLevel: "loose",
+      // The component owns the error UI; Mermaid must not leave an error SVG in the document.
+      suppressErrorRendering: true,
+      fontFamily: "var(--font-noto-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+    });
+    return mermaid;
+  });
+  return mermaidReady;
+};
+
+/** Render each source in an owned staging node and discard results from superseded locale/content renders. */
 export function MermaidDiagram({ chart, className = "" }: MermaidDiagramProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [svg, setSvg] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const t = useTranslations();
+  const stagingRef = useRef<HTMLDivElement>(null);
+  const [result, setResult] = useState<{ chart: string; svg?: string; error?: string }>();
+  const current = result?.chart === chart ? result : undefined;
 
   useEffect(() => {
+    const staging = document.createElement("div");
+    stagingRef.current?.append(staging);
+    let active = true;
+
+    /** Render into a private, measurable DOM subtree, never Mermaid's default document.body host. */
     const renderDiagram = async () => {
       try {
-        // 动态导入 mermaid，避免将其 Node.js 依赖（langium → @chevrotain/regexp-to-ast）打包到客户端
-        const mermaid = (await import("mermaid")).default;
-
-        // 初始化 Mermaid 配置
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "default",
-          securityLevel: "loose",
-          // 使用与全站一致的字体栈
-          fontFamily: "var(--font-noto-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
-        });
-
-        // 生成唯一 ID
-        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
-
-        // 渲染图表
-        const { svg: renderedSvg } = await mermaid.render(id, chart);
-        setSvg(renderedSvg);
-        setError("");
-      } catch (err) {
-        console.error("Mermaid rendering error:", err);
-        setError(err instanceof Error ? err.message : "Failed to render diagram");
+        const mermaid = await loadMermaid();
+        if (!active)
+          return;
+        const { svg } = await mermaid.render(`mermaid-${crypto.randomUUID()}`, chart, staging);
+        if (active)
+          setResult({ chart, svg });
+      } catch (error) {
+        if (active)
+          setResult({ chart, error: error instanceof Error ? error.message : String(error) });
+      } finally {
+        staging.remove();
       }
     };
 
-    renderDiagram();
+    void renderDiagram();
+    return () => {
+      active = false;
+      staging.remove();
+    };
   }, [chart]);
 
-  if (error) {
-    return (
-      <div className="my-6 p-4 rounded-xl border border-red-200 bg-red-50/50 backdrop-blur-sm">
-        <p className="text-sm font-medium text-red-800 mb-2">Mermaid 渲染错误</p>
-        <pre className="text-xs text-red-600 overflow-x-auto">{error}</pre>
-      </div>
-    );
-  }
-
   return (
-    <ZoomableContainer
-      className={`my-8 ${className}`}
-      // 框架（边框/圆角/背景/内边距/阴影）放在不参与缩放的视口上，
-      // 只让内部的 SVG 内容随缩放变大变小，边框保持固定粗细
-      viewportClassName="flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm"
-    >
-      <div
-        ref={containerRef}
-        className="flex justify-center items-center"
-        // 可信内容
-        // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
-    </ZoomableContainer>
+    <>
+      <div ref={stagingRef} aria-hidden="true" className="pointer-events-none invisible fixed -left-[10000px] top-0" />
+      {current?.error
+        ? (
+            <div role="status" className={`my-6 min-w-0 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-foreground ${className}`}>
+              <p className="mb-2 text-sm font-medium">{t("common.mermaid.renderError")}</p>
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">{current.error}</pre>
+              <details className="mt-3 text-sm">
+                <summary className="cursor-pointer">{t("common.mermaid.source")}</summary>
+                <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs">{chart}</pre>
+              </details>
+            </div>
+          )
+        : (
+            <ZoomableContainer
+              className={`my-8 ${className}`}
+              viewportClassName="flex justify-center items-center p-6 rounded-2xl bg-surface-100/50 backdrop-blur-sm border border-primary-200 shadow-sm"
+            >
+              <div
+                className="flex justify-center items-center"
+                aria-busy={!current?.svg}
+                // Mermaid produces the SVG from the authored diagram source.
+                // eslint-disable-next-line react-dom/no-dangerously-set-innerhtml
+                dangerouslySetInnerHTML={{ __html: current?.svg ?? "" }}
+              />
+            </ZoomableContainer>
+          )}
+    </>
   );
 }
