@@ -3,6 +3,9 @@
 //! Reads AI configuration from the database (options collection, name="ai")
 //! and calls any OpenAI-compatible API endpoint.
 
+mod validation;
+pub use validation::validate_ai_options;
+
 use mongodb::Database;
 use mongodb::bson::doc;
 use reqwest::Client;
@@ -17,6 +20,7 @@ pub struct AiConfig {
     pub endpoint: String,
     pub model: String,
     pub api_key: String,
+    pub provider_type: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -167,14 +171,15 @@ fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, 
         })
         .ok_or_else(|| "No enabled AI provider found".to_string())?;
 
-    if !matches!(
-        provider.provider_type.as_str(),
-        "openai" | "openai-compatible"
-    ) {
-        return Err(format!(
-            "Unsupported AI provider type for current backend: {}",
-            provider.provider_type
-        ));
+    match provider.provider_type.as_str() {
+        "openai" | "openai-compatible" => {}
+        "jev" if usage == AiUsage::CommentReview => {}
+        other => return Err(format!("Unsupported AI provider type for {usage:?}: {other}")),
+    }
+    if usage == AiUsage::CommentReview
+        && (provider.api_key.trim().is_empty() || provider.endpoint.trim().is_empty())
+    {
+        return Err("Comment review provider endpoint and API key are required".into());
     }
 
     let model = selected_model
@@ -195,6 +200,7 @@ fn to_ai_config(ai_options: AiOptionsValue, usage: AiUsage) -> Result<AiConfig, 
         endpoint: provider.endpoint.clone(),
         model,
         api_key: provider.api_key.clone(),
+        provider_type: provider.provider_type.clone(),
     })
 }
 
@@ -245,6 +251,22 @@ impl AiService {
         self.config.enabled
     }
 
+    /// Jev is a structured classifier and cannot be used as a chat model.
+    pub fn is_jev(&self) -> bool {
+        self.config.provider_type == "jev"
+    }
+
+    /// Return Jev's probability that this comment is spam.
+    pub async fn spam_probability(&self, text: &str, author: &str, email: &str) -> Result<f32, String> {
+        if !self.is_enabled() || !self.is_jev() {
+            return Err("An enabled Jev provider is required".into());
+        }
+        super::jev::spam_probability(
+            &self.client, &self.config.endpoint, &self.config.api_key,
+            &self.config.model, text, author, email,
+        ).await
+    }
+
     /// Send a chat completion request and return the response text.
     pub async fn chat(
         &self,
@@ -254,6 +276,9 @@ impl AiService {
     ) -> Result<String, String> {
         if !self.config.enabled {
             return Err("AI service is disabled".to_string());
+        }
+        if self.is_jev() {
+            return Err("Jev only supports structured comment-review decisions".into());
         }
 
         let endpoint = format!(
@@ -276,6 +301,8 @@ impl AiService {
             .send()
             .await
             .map_err(|e| format!("API request failed: {e}"))?;
+        let response = response.error_for_status()
+            .map_err(|error| format!("AI HTTP failure: {error}"))?;
 
         let result: OpenAIResponse = response
             .json()
@@ -290,3 +317,7 @@ impl AiService {
             .ok_or_else(|| "No response content returned by AI".to_string())
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/unit/ai.rs"]
+mod tests;
