@@ -70,3 +70,4 @@ apps/backend/target/
 # agant
 .claude
 .agents
+.ryugi
