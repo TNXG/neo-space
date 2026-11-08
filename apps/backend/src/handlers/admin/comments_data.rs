@@ -67,27 +67,41 @@ pub struct AdminCommentItem {
     pub anchor: Option<AdminCommentAnchor>,
 }
 
+/// Filter by the same status-first value returned by `effective_state`.
+/// Comparing the resolved value prevents contradictory legacy fields from
+/// matching several moderation buckets or inflating their pagination totals.
 pub fn state_filter(state: i32) -> Document {
-    match state {
-        CommentState::READ => doc! {
-            "$or": [
-                { "state": CommentState::READ },
-                { "status": { "$in": ["approved", "read"] } }
+    doc! {
+        "$expr": {
+            "$eq": [
+                {
+                    "$switch": {
+                        "branches": [
+                            {
+                                "case": { "$in": ["$status", ["approved", "read"]] },
+                                "then": CommentState::READ
+                            },
+                            {
+                                "case": { "$eq": ["$status", "pending"] },
+                                "then": CommentState::PENDING
+                            },
+                            {
+                                "case": { "$in": ["$status", ["spam", "rejected"]] },
+                                "then": CommentState::SPAM
+                            }
+                        ],
+                        "default": {
+                            "$cond": [
+                                { "$eq": [{ "$type": "$state" }, "int"] },
+                                "$state",
+                                CommentState::UNREAD
+                            ]
+                        }
+                    }
+                },
+                state
             ]
-        },
-        CommentState::SPAM => doc! {
-            "$or": [
-                { "state": CommentState::SPAM },
-                { "status": { "$in": ["spam", "rejected"] } }
-            ]
-        },
-        CommentState::PENDING => doc! {
-            "$or": [
-                { "state": CommentState::PENDING },
-                { "status": "pending" }
-            ]
-        },
-        _ => doc! { "state": state },
+        }
     }
 }
 
@@ -96,6 +110,7 @@ pub fn state_update_doc(state: i32) -> Document {
         "$set": {
             "state": state
         },
+        "$inc": { "moderationRevision": 1 },
         "$unset": {
             "status": ""
         }
@@ -166,7 +181,10 @@ fn admin_comment_from_document(document: Document) -> AdminCommentItem {
         ip: document_string(&document, &["ip"]),
         agent: document_string(&document, &["agent", "userAgent"]),
         pin: document.get_bool("pin").unwrap_or(false),
-        avatar: document_string(&document, &["avatar"]),
+        avatar: document_string(&document, &["avatar"]).or_else(|| {
+            document_string(&document, &["mail", "email"])
+                .map(|mail| CommentService::generate_avatar_url(&mail))
+        }),
         is_whispers: document.get_bool("isWhispers").unwrap_or(false),
         parent_comment_id: document_string(&document, &["parentCommentId", "parent", "parentId"]),
         parent: None,
@@ -308,3 +326,7 @@ async fn hydrate_parent_previews(db: &Database, items: &mut [AdminCommentItem]) 
 
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "../../../tests/unit/comment_state_filter.rs"]
+mod state_filter_tests;

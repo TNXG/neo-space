@@ -7,6 +7,7 @@
 //! 旧版 `keys` 方案已弃用，楼层 key 改为在读取时动态计算。
 
 mod tree;
+pub mod submission;
 
 use crate::auth::extractors::OptionalAuth;
 use crate::error::{AppError, AppResult};

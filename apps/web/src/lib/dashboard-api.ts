@@ -6,12 +6,18 @@ export const DASHBOARD_SESSION_KEY = "dashboard-session";
 export const DASHBOARD_PROFILE_KEY = "dashboard-profile";
 
 /** 后台浏览器请求直接携带 Rust HttpOnly Cookie；写入带来源校验头。 */
-export async function dashboardRequest<T>(path: string, options: RequestInit & { timeout?: number } = {}): Promise<T> {
+export async function dashboardResponse<T>(path: string, options: RequestInit & { timeout?: number } = {}): Promise<ApiResponse<T>> {
   const { timeout = 10000, ...init } = options;
   const headers = new Headers(init.headers);
   if (init.method && init.method !== "GET") headers.set("X-Requested-With", "Neo-Space-Dashboard");
   const result = await apiClient<ApiResponse<T>>(path, { ...init, headers, credentials: "include", cache: "no-store", timeout, clearReaderAuthOnUnauthorized: false });
   if (result.status !== "success") throw new ApiClientError(result.message, result.code);
+  return result;
+}
+
+/** 与后台读取共享同一 Cookie/来源校验传输，供不需要响应包装的调用方使用。 */
+export async function dashboardRequest<T>(path: string, options: RequestInit & { timeout?: number } = {}): Promise<T> {
+  const result = await dashboardResponse<T>(path, options);
   return result.data;
 }
 

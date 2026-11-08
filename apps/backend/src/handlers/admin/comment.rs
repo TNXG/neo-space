@@ -55,7 +55,7 @@ pub async fn update_comment(
     collection
         .update_one(
             doc! { "_id": object_id },
-            doc! { "$set": { "text": &payload.text } },
+            doc! { "$set": { "text": &payload.text }, "$inc": { "moderationRevision": 1 } },
         )
         .await
         .map_err(|e| AppError::Database(format!("Failed to update comment: {}", e)))?;
@@ -180,7 +180,7 @@ pub async fn hide_comment(
     let result = collection
         .update_one(
             doc! { "_id": object_id, "isDeleted": { "$ne": true } },
-            doc! { "$set": { "isWhispers": true } },
+            doc! { "$set": { "isWhispers": true }, "$inc": { "moderationRevision": 1 } },
         )
         .await
         .map_err(|e| AppError::Database(format!("Failed to hide comment: {}", e)))?;
@@ -205,7 +205,7 @@ pub async fn unhide_comment(
     let result = collection
         .update_one(
             doc! { "_id": object_id, "isDeleted": { "$ne": true } },
-            doc! { "$set": { "isWhispers": false } },
+            doc! { "$set": { "isWhispers": false }, "$inc": { "moderationRevision": 1 } },
         )
         .await
         .map_err(|e| AppError::Database(format!("Failed to unhide comment: {}", e)))?;
@@ -230,7 +230,7 @@ pub async fn pin_comment(
     let result = collection
         .update_one(
             doc! { "_id": object_id, "isDeleted": { "$ne": true } },
-            doc! { "$set": { "pin": true } },
+            doc! { "$set": { "pin": true }, "$inc": { "moderationRevision": 1 } },
         )
         .await
         .map_err(|e| AppError::Database(format!("Failed to pin comment: {}", e)))?;
@@ -255,7 +255,7 @@ pub async fn unpin_comment(
     let result = collection
         .update_one(
             doc! { "_id": object_id, "isDeleted": { "$ne": true } },
-            doc! { "$set": { "pin": false } },
+            doc! { "$set": { "pin": false }, "$inc": { "moderationRevision": 1 } },
         )
         .await
         .map_err(|e| AppError::Database(format!("Failed to unpin comment: {}", e)))?;
