@@ -11,17 +11,30 @@ interface OwnerIdentityProps {
   unmatched: boolean;
 }
 
-/** 在身份卡片中呈现等待、识别中、未匹配及公开资料状态。 */
+/** 身份卡片：呈现等待、识别中、未匹配及公开资料状态。 */
 export function OwnerIdentity({ profile, identifying, unmatched }: OwnerIdentityProps) {
   const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const name = identifying ? "正在确认账号…" : unmatched ? "未找到该账号" : profile?.name || profile?.username || "输入账号以继续";
   const avatar = profile?.avatar || "/favicon.webp";
+  const hint = identifying ? "正在连接你的空间" : unmatched ? "检查你的登录凭据" : profile ? "已找到空间主人" : "输入用户名或邮箱以连接";
 
   return (
-    <div id="dashboard-identity-status" role="status" className="flex min-h-16 min-w-0 items-center gap-3 rounded-lg border border-border bg-secondary/40 px-3 py-2" aria-live="polite">
-      <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-secondary text-lg font-medium text-secondary-foreground">
+    <div
+      id="dashboard-identity-status"
+      role="status"
+      aria-live="polite"
+      className="flex min-h-16 min-w-0 items-center gap-3 rounded-xl border border-border/50 bg-background/40 px-3.5 py-2.5 backdrop-blur-sm"
+    >
+      <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-secondary text-lg font-medium text-secondary-foreground">
         <AnimatePresence initial={false}>
-          <motion.div key={avatar} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="absolute inset-0 flex items-center justify-center">
+          <motion.div
+            key={avatar}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
             {failedAvatar !== avatar ? (
               <Image src={avatar} alt="" width={40} height={40} unoptimized className="size-full object-cover" onError={() => setFailedAvatar(avatar)} />
             ) : (
@@ -33,10 +46,19 @@ export function OwnerIdentity({ profile, identifying, unmatched }: OwnerIdentity
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="relative h-5 w-full">
           <AnimatePresence initial={false}>
-            <motion.span key={name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="absolute inset-0 truncate text-sm font-medium">{name}</motion.span>
+            <motion.span
+              key={name}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 truncate text-sm font-medium"
+            >
+              {name}
+            </motion.span>
           </AnimatePresence>
         </div>
-        <span className="text-sm text-foreground/75">{identifying ? "正在连接你的空间" : unmatched ? "请检查用户名或邮箱是否正确" : profile ? "已确认空间主人身份" : "输入用户名或邮箱以继续"}</span>
+        <span className="truncate text-sm text-foreground/70">{hint}</span>
       </div>
     </div>
   );
